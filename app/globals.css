@@ -1,26 +1,26 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@theme {
+  /* Colors */
+  --color-black-100: #121212;
+  --color-black-200: #202020;
+  --color-black-300: #303030;
+  --color-white: #fff;
+  --color-white-100: #bbb;
+  --color-white-200: #999;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-brand: #6dacff;      /* 기존 브랜드 컬러 */
+  --color-paper: #f2f2f2;      /* 본문/제목용 밝은 텍스트 */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Fonts */
+  --font-serif: "Cormorant Garamond", serif;
+  --font-sans: "Pretendard Variable", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
-
+html,
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overscroll-behavior-y: none;
+  overflow-x: hidden ;
 }

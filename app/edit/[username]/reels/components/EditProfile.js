@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/app/contexts/AuthContext";
 
-export default function EditProfile({ reels }) {
+export default function EditProfile({ reel }) {
   const { user, token, signinWithToken } = useAuth();
   const [item, setItem] = useState([
     { label: "이름", value: "", placeholder: "홍길동" },
@@ -20,31 +20,31 @@ export default function EditProfile({ reels }) {
 
   useEffect(() => {
     console.group("EditProfile");
-    console.log("reels:", reels);
+    console.log("reel:", reel);
     console.groupEnd();
 
-    if (!reels) return;
-    setImg(reels.profileImg);
+    if (!reel) return;
+    setImg(reel.profileImg);
 
     setItem([
-      { label: "이름", value: reels.name ?? "", placeholder: "홍길동" },
+      { label: "이름", value: reel.name ?? "", placeholder: "홍길동" },
       {
         label: "출생일",
-        value: reels.birthDate ?? "",
+        value: reel.birthDate ?? "",
         placeholder: "YYYY-MM-DD",
       },
       {
         label: "출생지",
-        value: reels.birthPlace ?? "",
+        value: reel.birthPlace ?? "",
         placeholder: "서울특별시",
       },
       {
         label: "한줄소개",
-        value: reels.motto ?? "",
+        value: reel.motto ?? "",
         placeholder: "한 줄 소개",
       },
     ]);
-  }, [reels]);
+  }, [reel]);
 
   // blob URL 정리
   useEffect(() => {

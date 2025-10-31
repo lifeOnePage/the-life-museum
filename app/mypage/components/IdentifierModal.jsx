@@ -7,7 +7,7 @@ import { SlQuestion } from "react-icons/sl";
 export default function IdentifierModal({
   open,
   title,
-  contentType = "reels", // 'reels' | 'records'
+  contentType = "reel", // 'reel' | 'records'
   onClose,
   onConfirm, // (identifier: string, meta?: { name: string })
 }) {

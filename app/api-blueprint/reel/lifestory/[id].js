@@ -1,9 +1,9 @@
-// app/api/reels/lifestory/[id]/route.js
+// app/api/reel/lifestory/[id]/route.js
 import { NextResponse } from "next/server";
 import client from "@/app/client";
 import { verifyJwt } from "@/app/lib/jwt";
 
-/* GET /api/reels/lifestory/:id
+/* GET /api/reel/lifestory/:id
  * - edit 모드면 전체 반환, 아니면 story만
  * - edit 모드는 ?edit=1 또는 헤더 x-edit-mode: true (GET body는 환경에 따라 무시될 수 있어, 쿼리/헤더를 권장)
  */
@@ -29,7 +29,7 @@ export async function GET(req, { params }) {
     if (body && (body.edit === true || body.mode === "edit")) isEdit = true;
   } catch (_) {}
 
-  const reels = await client.reels.findUnique({
+  const reel = await client.reel.findUnique({
     where: { id: Number(id) },
     select: {
       id: true,
@@ -46,11 +46,11 @@ export async function GET(req, { params }) {
     },
   });
 
-  if (!reels) {
+  if (!reel) {
     return NextResponse.json({ ok: true, item: null });
   }
 
-  const ls = reels.lifestory;
+  const ls = reel.lifestory;
   const data = {
     style: ls?.mood ?? null,
     qaCount: ls?.qaCount ?? 0,
@@ -58,21 +58,21 @@ export async function GET(req, { params }) {
     answers: ls?.qaList?.answers ?? [],
     story: ls?.result ?? "",
     updatedAt: ls?.updatedAt ?? null,
-    name: reels.name,
+    name: reel.name,
   };
 
   if (!isEdit) {
     return NextResponse.json({
       ok: true,
-      item: { story: data.story, name: reels.name },
+      item: { story: data.story, name: reel.name },
     });
   }
   return NextResponse.json({ ok: true, item: data });
 }
 
-/* PATCH /api/reels/lifestory/:id
+/* PATCH /api/reel/lifestory/:id
  * body: { style, questions, answers, story }
- * - Lifestory upsert (reelsId 기준)
+ * - Lifestory upsert (reelId 기준)
  */
 export async function PATCH(req, { params }) {
   const { id } = await params; // Reels.identifier
@@ -83,13 +83,13 @@ export async function PATCH(req, { params }) {
     story = "",
   } = await req.json().catch(() => ({}));
 
-  const reels = await client.reels.findUnique({
+  const reel = await client.reel.findUnique({
     where: { id : Number(id) },
     select: { id: true },
   });
-  if (!reels) {
+  if (!reel) {
     return NextResponse.json(
-      { ok: false, error: "reels not found" },
+      { ok: false, error: "reel not found" },
       { status: 404 },
     );
   }
@@ -102,9 +102,9 @@ export async function PATCH(req, { params }) {
   };
 
   const saved = await client.lifestory.upsert({
-    where: { reelsId: reels.id },
+    where: { reelId: reel.id },
     update: data,
-    create: { reelsId: reels.id, ...data },
+    create: { reelId: reel.id, ...data },
     select: {
       mood: true,
       qaCount: true,

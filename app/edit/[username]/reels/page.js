@@ -34,7 +34,7 @@ export default function EditReels() {
   const [isPreview, setIsPreview] = useState(false);
   const [desktopShowMenu, setDesktopShowMenu] = useState(0);
 
-  const [reels, setReels] = useState(null);
+  const [reel, setReels] = useState(null);
   const [childhood, setChildhood] = useState(null);
   const [memory, setMemory] = useState(null);
   const [relationship, setRelationship] = useState(null);
@@ -68,11 +68,11 @@ export default function EditReels() {
         console.groupEnd();
         const data = await fetchReelsDetails({ token, identifier: username });
 
-        console.group("---fetch reels details---");
+        console.group("---fetch reel details---");
         console.log(data);
         console.groupEnd();
 
-        setReels(data.item.reels);
+        setReels(data.item.reel);
         setChildhood(data.item.childhood);
         setMemory(data.item.memory);
         setRelationship(data.item.relationship);
@@ -84,7 +84,7 @@ export default function EditReels() {
             eng: "Profile",
             editComponent: (
               <EditProfile
-                reels={reels}
+                reel={reel}
                 childhood={childhood}
                 memory={memory}
                 relationship={relationship}
@@ -97,8 +97,8 @@ export default function EditReels() {
             eng: "Lifestory",
             editComponent: (
               <LifestorySection
-                reelsId={data.item.reels.id}
-                userName={data.item.reels.name}
+                reelId={data.item.reel.id}
+                userName={data.item.reel.name}
                 isPreview={isPreview}
               />
             ),
@@ -108,8 +108,8 @@ export default function EditReels() {
             eng: "Gallery",
             editComponent: (
               <EditGallery
-                reelsId={data.item.reels.id}
-                reels={reels}
+                reelId={data.item.reel.id}
+                reel={reel}
                 initial={{
                   childhood: data.item.childhood,
                   memory: data.item.memory,
@@ -130,7 +130,7 @@ export default function EditReels() {
     // 1) 기본 더미(신규 create 위주)로 테스트
     await updateReelsGalleryDetails({
       token, // 없으면 생략 가능 (백엔드가 인증 요구하면 반드시 넣기)
-      id: reels?.identifier, // Reels.identifier
+      id: reel?.identifier, // Reels.identifier
     });
   };
   const mypage = () => {
@@ -171,7 +171,7 @@ export default function EditReels() {
 
         {/* 오른쪽 콘텐츠: 남은 공간 전부 + 같은 min-h */}
         <div className="flex min-w-0 flex-1 flex-col md:min-h-[calc(100vh-(--spacing(20))*2)]">
-          {!reels ? (
+          {!reel ? (
             <div className="px-5 opacity-70">불러오는 중…</div>
           ) : (
             section.map((it, i) => {

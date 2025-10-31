@@ -1,5 +1,5 @@
 export async function fetchPreview(identifier) {
-  const res = await fetch(`/api/reels/view/${encodeURIComponent(identifier)}`, {
+  const res = await fetch(`/api/reel/view/${encodeURIComponent(identifier)}`, {
     cache: "no-store",
   });
   const json = await res.json().catch(() => ({}));

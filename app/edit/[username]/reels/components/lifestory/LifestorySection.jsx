@@ -20,7 +20,7 @@ import { useAuth } from "@/app/contexts/AuthContext";
 const STYLE_OPTIONS = ["진중한", "낭만적인", "재치있는", "신비로운"];
 const COUNT_OPTIONS = [5, 10];
 
-export default function LifestorySection({ reelsId, userName, isPreview }) {
+export default function LifestorySection({ reelId, userName, isPreview }) {
   const { user, token, signinWithToken } = useAuth();
   const [step, setStep] = useState("intro");
   const [selectedStyle, setSelectedStyle] = useState(null);
@@ -49,12 +49,12 @@ export default function LifestorySection({ reelsId, userName, isPreview }) {
   // 初 로드: 저장된 값 하이드레이션
   useEffect(() => {
     console.group("LifestorySection");
-    console.log("reelsId: ", reelsId);
+    console.log("reelId: ", reelId);
     console.log("userName: ", userName);
     console.groupEnd();
     (async () => {
       try {
-        const saved = await fetchLifestory({ token, id: reelsId, edit: true });
+        const saved = await fetchLifestory({ token, id: reelId, edit: true });
         if (!saved) {
           setStep("intro");
           setBoot(false);
@@ -98,7 +98,7 @@ export default function LifestorySection({ reelsId, userName, isPreview }) {
         setBoot(false);
       }
     })();
-  }, [reelsId, token]);
+  }, [reelId, token]);
 
   // QA 진입 시 질문 세팅 (스텁)
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function LifestorySection({ reelsId, userName, isPreview }) {
     setIsSaving(true);
     try {
       await saveLifestory({
-        id: reelsId,
+        id: reelId,
         style: selectedStyle,
         questions,
         answers,

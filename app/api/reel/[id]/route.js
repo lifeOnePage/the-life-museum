@@ -37,6 +37,9 @@ export async function GET(req, { params }) {
       },
     });
 
+    console.group(`api/reels/${id}`)
+    console.log(reel)
+    console.groupEnd()
     if (!reel) {
       // 404 처리
     }

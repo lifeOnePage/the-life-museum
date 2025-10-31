@@ -1,11 +1,11 @@
 // app/mypage/services/mypageApi.js
 export async function fetchMyReels(token) {
-  const res = await fetch("/api/reels", {
+  const res = await fetch("/api/reel", {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
   const json = await res.json();
-  if (!json.ok) throw new Error("failed to fetch reels");
+  if (!json.ok) throw new Error("failed to fetch reel");
   return json;
 }
 
@@ -19,13 +19,24 @@ export async function fetchMyRecords(token) {
   return json;
 }
 
+export async function fetchMyDatas({ token }) {
+  const res = await fetch("/api/data", {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error("failed to fetch reel");
+  return json;
+}
+
 export async function createReel(token, identifier, name) {
   console.group("----createReel----");
   console.log("identifier: ", identifier);
   console.log("name: ", name);
   console.groupEnd();
   const data = { identifier, name };
-  const res = await fetch("/api/reels", {
+  const res = await fetch("/api/reel", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -62,7 +73,7 @@ export async function createRecord(token, identifier, name) {
 
 export async function updateReelIdentifier(token, id, identifier, name) {
   const data = { identifier, name };
-  const res = await fetch(`/api/reels/${id}`, {
+  const res = await fetch(`/api/reel/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

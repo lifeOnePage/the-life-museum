@@ -57,7 +57,7 @@ export default function MobileLayout({
             <RingPictogram />
             <HorizontalThumbs
               items={reels}
-              label="LifeReels"
+              label="Life-Reels"
               onOpenCreate={() => onOpenCreate("reels")}
               onOpenAction={(item) => onOpenAction("reels", item)}
             />
@@ -76,7 +76,7 @@ export default function MobileLayout({
             <TabPlanePictogram size={100} />
             <HorizontalThumbs
               items={records}
-              label="LifeRecords"
+              label="Life-Records"
               onOpenCreate={() => onOpenCreate("records")}
               onOpenAction={(item) => onOpenAction("records", item)}
             />
@@ -102,9 +102,9 @@ export default function MobileLayout({
         open={createModal.open}
         title={
           createModal.type === "reels"
-            ? "새 LifeReels"
+            ? "새 Life-Reels"
             : createModal.type === "records"
-            ? "새 LifeRecords"
+            ? "새 Life-Records"
             : ""
         }
         contentType={createModal.type === "records" ? "records" : "reels"}

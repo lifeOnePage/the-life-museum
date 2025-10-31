@@ -8,6 +8,7 @@ export default function ItemActionModal({ open, type, item, onClose, onSaveIdent
   const [val, setVal] = useState(item?.identifier || "");
   const [name, setName] = useState(item?.name || "")
   useEffect(() => {
+    setName(item?.name || "");
     setVal(item?.identifier || "");
   }, [item?.identifier, open]);
 
@@ -26,6 +27,9 @@ export default function ItemActionModal({ open, type, item, onClose, onSaveIdent
     }
     onSaveIdentifier(type, item.id, v, n);
   };
+  console.group("ItemActionModal")
+  console.log(item)
+  console.groupEnd()
 
   return (
     <div
@@ -40,7 +44,7 @@ export default function ItemActionModal({ open, type, item, onClose, onSaveIdent
         style={{ width: "min(80vw, 760px)", background: "#121212", border: "1px solid #2e2e2e", borderRadius: 12, padding:"40px 16px", color: "#fff" }}
       >
         <div style={{ display: "flex", alignItems: "center" }}>
-          <h3 style={{ margin: 0, flex: 1 }}>{type === "reels" ? "Life-Reels" : "Life-Records"} 설정</h3>
+          <h3 style={{ margin: 0, flex: 1 }}>{type === "reel" ? "Life-Reels" : "Life-Records"} 설정</h3>
           <button onClick={onClose} style={{ ...iconBtn, padding: 6 }}>
             <FiX />
           </button>

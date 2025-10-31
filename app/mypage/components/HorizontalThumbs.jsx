@@ -12,14 +12,14 @@ export default function HorizontalThumbs({
     <div
       style={{
         display: "flex",
-        padding: "50px 0px",
+        padding: "20px 0px",
         gap: 10,
         width: "100%",
         overflowX:"scroll"
       }}
     >
       <CreateThumb onClick={onOpenCreate} />
-      {items.reverse().map((it) => (
+      {items?.reverse().map((it) => (
         <Thumb
           key={`${label}-${it.id}`}
           item={it}
@@ -98,7 +98,7 @@ function CreateThumb({ onClick }) {
         cursor: "pointer",
       }}
     >
-      <div
+      <div className="h-full grow"
         style={{ display: "flex", alignItems: "center", gap: 8, opacity: 0.9 }}
       >
         <FiPlus /> 새로 만들기

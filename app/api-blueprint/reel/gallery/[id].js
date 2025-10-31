@@ -1,4 +1,4 @@
-// app/api/me/reels/[id]/route.js
+// app/api/me/reel/[id]/route.js
 import { NextResponse } from "next/server";
 import { verifyJwt } from "@/app/lib/jwt";
 import client from "@/app/client";
@@ -19,18 +19,18 @@ export async function PATCH(req, { params }) {
   const { childhood, memory, relationship } = (await body) || {};
 
   try {
-    // reelsId만 뽑기 (불필요한 include 최소화)
-    const reels = await client.reels.findUnique({
+    // reelId만 뽑기 (불필요한 include 최소화)
+    const reel = await client.reel.findUnique({
       where: { id: Number(id) },
       select: { id: true },
     });
-    if (!reels) {
+    if (!reel) {
       return NextResponse.json(
-        { ok: false, error: "reels not found" },
+        { ok: false, error: "reel not found" },
         { status: 404 },
       );
     }
-    const reelsId = reels.id;
+    const reelId = reel.id;
 
     // helpers
     const toDateOrNull = (v) => (v ? new Date(v) : null);
@@ -51,7 +51,7 @@ export async function PATCH(req, { params }) {
 
       // (2) 기존 목록
       const existing = await client.wheelTexture.findMany({
-        where: { reelsId },
+        where: { reelId },
         select: { id: true },
       });
       const existingIds = new Set(existing.map((e) => e.id));
@@ -63,7 +63,7 @@ export async function PATCH(req, { params }) {
       const deleteIds = [...existingIds].filter((eid) => !reqIds.has(eid));
       if (deleteIds.length) {
         await client.wheelTexture.deleteMany({
-          where: { reelsId, id: { in: deleteIds } }, // ← srcType 조건 불필요
+          where: { reelId, id: { in: deleteIds } }, // ← srcType 조건 불필요
         });
       }
 
@@ -71,7 +71,7 @@ export async function PATCH(req, { params }) {
       const createItems = normalized
         .filter((x) => !Number.isInteger(x?.id))
         .map((x) => ({
-          reelsId,
+          reelId,
           ...only(x.data, ["srcType", "srcUrl", "caption"]), // caption도 저장
         }))
         // 유효성 (srcUrl/srcType 없으면 제거)
@@ -92,7 +92,7 @@ export async function PATCH(req, { params }) {
       }
     }
 
- // app/api/me/reels/[id]/route.js (메모리/리레이션십 블록 교체/추가)
+ // app/api/me/reel/[id]/route.js (메모리/리레이션십 블록 교체/추가)
 
     // ---------- MEMORY (Memory[] + WheelTexture[]) ----------
     if (Array.isArray(memory)) {
@@ -109,7 +109,7 @@ export async function PATCH(req, { params }) {
 
       // (1) 기존 Memory id들 확인 → 요청에 없는 것은 삭제
       const existingMem = await client.memory.findMany({
-        where: { reelsId },
+        where: { reelId },
         select: { id: true },
       });
       const existingMemIds = new Set(existingMem.map((m) => m.id));
@@ -121,7 +121,7 @@ export async function PATCH(req, { params }) {
       if (deleteMemIds.length) {
         // 연결된 WheelTexture 먼저 제거
         await client.wheelTexture.deleteMany({ where: { memoryId: { in: deleteMemIds } } });
-        await client.memory.deleteMany({ where: { reelsId, id: { in: deleteMemIds } } });
+        await client.memory.deleteMany({ where: { reelId, id: { in: deleteMemIds } } });
       }
 
       // (2) 트랜잭션으로 생성/수정 + 미디어 전체 치환
@@ -134,7 +134,7 @@ export async function PATCH(req, { params }) {
             // 새로 생성
             const created = await tx.memory.create({
               data: {
-                reelsId,
+                reelId,
                 title: d.title ?? "",
                 subTitle: d.subTitle ?? null,
                 date: d.date ? new Date(d.date) : null,
@@ -184,7 +184,7 @@ export async function PATCH(req, { params }) {
       );
 
       const existingRel = await client.relationship.findMany({
-        where: { reelsId },
+        where: { reelId },
         select: { id: true },
       });
       const existingRelIds = new Set(existingRel.map((r) => r.id));
@@ -195,7 +195,7 @@ export async function PATCH(req, { params }) {
       const deleteRelIds = [...existingRelIds].filter((id) => !reqRelIds.has(id));
       if (deleteRelIds.length) {
         await client.wheelTexture.deleteMany({ where: { relationshipId: { in: deleteRelIds } } });
-        await client.relationship.deleteMany({ where: { reelsId, id: { in: deleteRelIds } } });
+        await client.relationship.deleteMany({ where: { reelId, id: { in: deleteRelIds } } });
       }
 
       await client.$transaction(async (tx) => {
@@ -206,7 +206,7 @@ export async function PATCH(req, { params }) {
           if (!Number.isInteger(relId)) {
             const created = await tx.relationship.create({
               data: {
-                reelsId,
+                reelId,
                 name: d.name ?? "",
                 relation: d.relation ?? "",
                 comment: d.comment ?? null,
@@ -246,7 +246,7 @@ export async function PATCH(req, { params }) {
     const results = await client.$transaction(txOps);
 
     // (선택) Reels.updatedAt 만지려면 아래 추가
-    // await client.reels.update({ where: { id: reelsId }, data: {} });
+    // await client.reel.update({ where: { id: reelId }, data: {} });
 
     return NextResponse.json({
       ok: true,

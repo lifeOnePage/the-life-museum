@@ -4,14 +4,14 @@ export async function fetchReelsDetails({ token, identifier }) {
   console.group("fetchReelsDetails");
   console.log("identifier: ", identifier);
   console.groupEnd();
-  const res = await fetch(`/api/reels/${identifier}`, {
+  const res = await fetch(`/api/reel/${identifier}`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
   });
-  if (res.status === 500) throw new Error("get reels failed");
+  if (res.status === 500) throw new Error("get reel failed");
   const json = await res.json();
   if (!json.ok) throw new Error("update reel failed");
   return json;
@@ -20,7 +20,7 @@ export async function fetchReelsDetails({ token, identifier }) {
 export async function updateReelsDetails({ token, id, data }) {
   // // data 구조
   // const data = {
-  //   reels: {},
+  //   reel: {},
   //   lifestory: {},
   //   childhood: {},
   //   memory: {},
@@ -29,7 +29,7 @@ export async function updateReelsDetails({ token, id, data }) {
   if (!data.birthDate) throw new Error("출생일을 입력해주세요.");
   if (!data.birthPlace) throw new Error("출생지를 입력해주세요.");
   if (!data.motto) throw new Error("한줄 소개를 입력해주세요.");
-  const res = await fetch(`api/reels/${id}`, {
+  const res = await fetch(`api/reel/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -52,7 +52,7 @@ export async function updateReelsGalleryDetails({ token, id, data }) {
   console.group("updateReelsGalleryDetails");
   console.log("id: ", id);
   console.groupEnd();
-  const res = await fetch(`/api/reels/gallery/${encodeURIComponent(id)}`, {
+  const res = await fetch(`/api/reel/gallery/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -71,7 +71,7 @@ export async function updateReelsGalleryDetails({ token, id, data }) {
 }
 
 export async function fetchLifestory({ token, id, edit = false }) {
-  const url = `/api/reels/lifestory/${encodeURIComponent(id)}${edit ? "?edit=1" : ""}`;
+  const url = `/api/reel/lifestory/${encodeURIComponent(id)}${edit ? "?edit=1" : ""}`;
   const res = await fetch(url, {
     method: "GET",
     headers: {
@@ -92,7 +92,7 @@ export async function saveLifestory({
   answers,
   story,
 }) {
-  const res = await fetch(`/api/reels/lifestory/${encodeURIComponent(id)}`, {
+  const res = await fetch(`/api/reel/lifestory/${encodeURIComponent(id)}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",

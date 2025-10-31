@@ -15,6 +15,7 @@ import {
   updateReelIdentifier,
   updateRecordIdentifier,
   updateMyProfile,
+  fetchMyDatas,
 } from "./services/mypageApi";
 
 import MobileLayout from "./layouts/MobileLayout";
@@ -44,6 +45,9 @@ export default function Mypage() {
     type: null,
     item: null,
   });
+  console.group("mypage");
+  console.log(actionModal)
+  console.groupEnd()
 
   // 프로필 폼
   const [editingProfile, setEditingProfile] = useState(false);
@@ -87,12 +91,15 @@ export default function Mypage() {
     if (!token) return;
     (async () => {
       try {
-        const [r1, r2] = await Promise.all([
-          fetchMyReels(token),
-          fetchMyRecords(token),
-        ]);
-        setReels(r1.items || []);
-        setRecords(r2.items || []);
+        // const [r1, r2] = await Promise.all([
+        //   fetchMyReels(token),
+        //   fetchMyRecords(token),
+        // ]);
+        // setReels(r1.items || []);
+        // setRecords(r2.items || []);
+        const items = await fetchMyDatas({ token });
+        setReels(items.items.reels)
+        setRecords(items.items.records)
       } catch (e) {
         console.error(e);
         setError("데이터를 불러오는 중 문제가 발생했어요.");
@@ -129,10 +136,10 @@ export default function Mypage() {
         setError(
           e?.message?.includes("409")
             ? "이미 존재하는 identifier예요."
-            : "생성 중 오류가 발생했어요."
+            : "생성 중 오류가 발생했어요.",
         );
       }
-    }
+    },
   );
 
   const onSaveIdentifier = withBusy(
@@ -144,7 +151,7 @@ export default function Mypage() {
             token,
             id,
             nextIdentifier,
-            nextName
+            nextName,
           );
           setReels((arr) =>
             arr.map((x) =>
@@ -155,8 +162,8 @@ export default function Mypage() {
                     name: r.item.name,
                     updatedAt: r.item.updatedAt,
                   }
-                : x
-            )
+                : x,
+            ),
           );
         } else {
           const r = await updateRecordIdentifier(token, id, nextIdentifier);
@@ -168,8 +175,8 @@ export default function Mypage() {
                     identifier: r.item.identifier,
                     updatedAt: r.item.updatedAt,
                   }
-                : x
-            )
+                : x,
+            ),
           );
         }
         closeAction();
@@ -178,10 +185,10 @@ export default function Mypage() {
         setError(
           e?.message?.includes("409")
             ? "이미 존재하는 identifier예요."
-            : "수정 중 오류가 발생했어요."
+            : "수정 중 오류가 발생했어요.",
         );
       }
-    }
+    },
   );
 
   const onSaveProfile = withBusy("저장 중...", async () => {
@@ -200,7 +207,8 @@ export default function Mypage() {
     }
   });
 
-  const goEditPage = (type, item) => router.push(`/edit/${item.identifier}/${type}`); // 블랙박스 라우팅
+  const goEditPage = (type, item) =>
+    router.push(`/edit/${item.identifier}/${type}`); // 블랙박스 라우팅
 
   const pageStyle = {
     fontFamily:

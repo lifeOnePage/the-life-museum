@@ -1,4 +1,4 @@
-// app/api/me/reels/route.js
+// app/api/me/reel/route.js
 import { NextResponse } from "next/server";
 import { verifyJwt } from "@/app/lib/jwt";
 import client from "@/app/client";
@@ -12,16 +12,15 @@ export async function GET(req) {
   if (!payload)
     return NextResponse.json(
       { ok: false, error: "unauthorized" },
-      { status: 401 }
+      { status: 401 },
     );
 
-  const items = await client.reels.findMany({
+  const items = await client.reel.findMany({
     where: { userId: Number(payload.sub) || undefined },
     orderBy: { updatedAt: "desc" },
     select: { id: true, identifier: true, name:true, createdAt: true, updatedAt: true },
   });
-
-  return NextResponse.json({ ok: true, items });
+  return NextResponse.json({ ok: true, items: items });
 }
 
 export async function POST(req) {
@@ -31,7 +30,7 @@ export async function POST(req) {
   if (!payload)
     return NextResponse.json(
       { ok: false, error: "unauthorized" },
-      { status: 401 }
+      { status: 401 },
     );
 
   const { identifier, name } = await req.json();
@@ -44,35 +43,41 @@ export async function POST(req) {
   if (!/^[a-z0-9_-]{3,32}$/i.test(idf))
     return NextResponse.json(
       { ok: false, error: "invalid_identifier" },
-      { status: 400 }
+      { status: 400 },
     );
   if (!name)
     return NextResponse.json(
       { ok: false, error: "invalid_name" },
-      { status: 400 }
+      { status: 400 },
     );
   try {
-    const item = await client.reels.create({
+    const item = await client.reel.create({
       data: {
         identifier: idf,
         name: n, // 스키마가 필수라 임시 빈 값으로 생성
         birthDate: "", // 이후 화면에서 채우도록
         userId: Number(payload.sub),
       },
-      select: { id: true, identifier: true, name:true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        identifier: true,
+        name: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
     return NextResponse.json({ ok: true, item }, { status: 201 });
   } catch (e) {
     if (e?.code === "P2002") {
       return NextResponse.json(
         { ok: false, error: "identifier_taken" },
-        { status: 409 }
+        { status: 409 },
       );
     }
     console.error(e);
     return NextResponse.json(
       { ok: false, error: "internal_error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

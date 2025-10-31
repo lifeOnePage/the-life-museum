@@ -18,7 +18,7 @@ const tabs = [
   { key: "relationship", label: "소중한 인연" }, // <- 오타 수정: 경험 → 인연
 ];
 
-export default function EditGallery({ reelsId, initial = {} }) {
+export default function EditGallery({ reelId, initial = {} }) {
   const [active, setActive] = useState(0);
   const { token } = useAuth();
 
@@ -29,10 +29,10 @@ export default function EditGallery({ reelsId, initial = {} }) {
 
   // 2) 초기 데이터 하이드레이션 플래그 (한 번만)
   const [hydrated, setHydrated] = useState(false);
-  // 3) reelsId & initial 준비되면 한 번만 주입
+  // 3) reelId & initial 준비되면 한 번만 주입
   useEffect(() => {
-    if (!reelsId) return;
-    console.log("reelsId:", reelsId);
+    if (!reelId) return;
+    console.log("reelId:", reelId);
     console.log("initial: ", initial);
     // initial이 비어있는지 판단: 서버에서 오는 구조에 맞게 조건화
     const hasInitial =
@@ -80,10 +80,10 @@ export default function EditGallery({ reelsId, initial = {} }) {
     );
 
     setHydrated(true);
-  }, [reelsId, initial, hydrated]);
+  }, [reelId, initial, hydrated]);
 
   // 4) 렌더 준비 완료 플래그
-  const ready = Boolean(reelsId && hydrated);
+  const ready = Boolean(reelId && hydrated);
 
   // 변경 감지는 추후 dirty 플래그로 교체 권장
   const hasUnsavedChildhood = true;
@@ -97,11 +97,11 @@ export default function EditGallery({ reelsId, initial = {} }) {
     if (!ready) return;
     console.group("save children");
     console.log("token: ", token);
-    console.log("reelsId: ", reelsId);
+    console.log("reelId: ", reelId);
     console.groupEnd;
     try {
       setSaving({ isSaving: true, progress: 10 });
-      await saveChildhood({ token, reelsId, items: childhood });
+      await saveChildhood({ token, reelId, items: childhood });
       setSaving({ isSaving: false, progress: 100 });
       setActive(1);
     } catch (e) {
@@ -114,7 +114,7 @@ export default function EditGallery({ reelsId, initial = {} }) {
     if (!ready) return;
     try {
       setSaving({ isSaving: true, progress: 10 });
-      await saveExperience({ token, reelsId, items: experience });
+      await saveExperience({ token, reelId, items: experience });
       setSaving({ isSaving: false, progress: 100 });
       setActive(2);
     } catch (e) {
@@ -127,7 +127,7 @@ export default function EditGallery({ reelsId, initial = {} }) {
     if (!ready) return;
     try {
       setSaving({ isSaving: true, progress: 10 });
-      await saveRelationship({ token, reelsId, items: relationship });
+      await saveRelationship({ token, reelId, items: relationship });
       setSaving({ isSaving: false, progress: 100 });
       // 마지막 섹션: 탭 유지
     } catch (e) {

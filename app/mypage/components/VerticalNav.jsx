@@ -17,7 +17,7 @@ export default function VerticalNav({ active, onChange }) {
         borderRadius: 10,
         overflow: "hidden",
         color: "#fff",
-        height: "100%",
+        minHeight: "100%",
       }}
     >
       {items.map((it) => (

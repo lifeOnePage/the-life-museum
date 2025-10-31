@@ -16,8 +16,8 @@ export default function LifeCardHero() {
           The Life Records
         </button>
         <button
-          className={`tab ${activeTab === "reels" ? "active" : ""}`}
-          onClick={() => setActiveTab("reels")}
+          className={`tab ${activeTab === "reel" ? "active" : ""}`}
+          onClick={() => setActiveTab("reel")}
         >
           The Life Reels
         </button>
@@ -43,7 +43,7 @@ export default function LifeCardHero() {
           </p>
         </>
       )}
-      {activeTab === "reels" && (
+      {activeTab === "reel" && (
         <>
           <h1 className="headline">All your time, on one reel</h1>
           <p className="subhead">당신의 순간을, 하나의 릴스에.</p>
@@ -51,7 +51,7 @@ export default function LifeCardHero() {
           <div className="img-wrap">
             <img
               className="image"
-              src="/images/main/life-reels-img.png"
+              src="/images/main/life-reel-img.png"
               alt="image"
             />
           </div>

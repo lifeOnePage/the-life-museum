@@ -6,7 +6,7 @@ export async function GET(_req, { params }) {
   const { identifier } = await params;
   console.log(identifier)
   try {
-    const data = await client.reels.findUnique({
+    const data = await client.reel.findUnique({
       where: { identifier },
       select: {
         identifier: true,

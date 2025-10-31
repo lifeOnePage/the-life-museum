@@ -15,7 +15,7 @@ export async function uploadMediaFiles(files, { prefix }) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      prefix, // 예: `reels/${identifier}/childhood`
+      prefix, // 예: `reel/${identifier}/childhood`
       files: files.map((f) => ({ name: f.name, type: f.type })),
     }),
   });
@@ -48,9 +48,9 @@ export async function uploadMediaFiles(files, { prefix }) {
  * 서버로 PATCH 호출
  * payload는 부분 업데이트 허용: { childhood?, memory?, relationship? }
  */
-export async function patchReelsGallery({ token, reelsId, payload }) {
+export async function patchReelsGallery({ token, reelId, payload }) {
   console.log("payload:", payload);
-  const res = await fetch(`/api/reels/gallery/${encodeURIComponent(reelsId)}`, {
+  const res = await fetch(`/api/reel/gallery/${encodeURIComponent(reelId)}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -72,7 +72,7 @@ export async function patchReelsGallery({ token, reelsId, payload }) {
  */
 
 // items: [{ id?, url?, file?, caption? }]
-export async function saveChildhood({ token, reelsId, items }) {
+export async function saveChildhood({ token, reelId, items }) {
   // 1) 파일만 먼저 업로드해서 URL/타입 확보
   const fileIdx = []; // items에서 파일 항목들의 인덱스 기록
   const files = [];
@@ -87,7 +87,7 @@ export async function saveChildhood({ token, reelsId, items }) {
   if (files.length) {
     // [{ url, key, srcType }, ...]
     uploaded = await uploadMediaFiles(files, {
-      prefix: `reels/${reelsId}/childhood`,
+      prefix: `reel/${reelId}/childhood`,
     });
   }
 
@@ -120,14 +120,14 @@ export async function saveChildhood({ token, reelsId, items }) {
   //    순수 객체 배열을 payload로 보냅니다.
   return patchReelsGallery({
     token,
-    reelsId,
+    reelId,
     payload: { childhood: normalized },
   });
 }
 
 // services/galleryService.js (수정본의 핵심 라인만)
 
-export async function saveExperience({ token, reelsId, items }) {
+export async function saveExperience({ token, reelId, items }) {
   // 1) 업로드 대상 추출
   const uploadTargets = [];
   items.forEach((mem, mi) => {
@@ -141,7 +141,7 @@ export async function saveExperience({ token, reelsId, items }) {
   if (uploadTargets.length) {
     uploaded = await uploadMediaFiles(
       uploadTargets.map((u) => u.file),
-      { prefix: `reels/${reelsId}/memory` } // ✅ prefix 통일
+      { prefix: `reel/${reelId}/memory` } // ✅ prefix 통일
     );
   }
 
@@ -167,10 +167,10 @@ export async function saveExperience({ token, reelsId, items }) {
     };
   });
 
-  return patchReelsGallery({ token, reelsId, payload: { memory: normalized } });
+  return patchReelsGallery({ token, reelId, payload: { memory: normalized } });
 }
 
-export async function saveRelationship({ token, reelsId, items }) {
+export async function saveRelationship({ token, reelId, items }) {
   const uploadTargets = [];
   items.forEach((rel, ri) => {
     rel.media.forEach((m, pi) => {
@@ -182,7 +182,7 @@ export async function saveRelationship({ token, reelsId, items }) {
   if (uploadTargets.length) {
     uploaded = await uploadMediaFiles(
       uploadTargets.map((u) => u.file),
-      { prefix: `reels/${reelsId}/relationship` } // ✅ prefix 통일
+      { prefix: `reel/${reelId}/relationship` } // ✅ prefix 통일
     );
   }
 
@@ -206,5 +206,5 @@ export async function saveRelationship({ token, reelsId, items }) {
     };
   });
 
-  return patchReelsGallery({ token, reelsId, payload: { relationship: normalized } });
+  return patchReelsGallery({ token, reelId, payload: { relationship: normalized } });
 }

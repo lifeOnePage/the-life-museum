@@ -19,9 +19,9 @@ export default function HorizontalThumbs({
       }}
     >
       <CreateThumb onClick={onOpenCreate} />
-      {items?.reverse().map((it) => (
+      {items?.reverse().map((it, index) => (
         <Thumb
-          key={`${label}-${it.id}`}
+          key={`${label}-${it.id || it.identifier || index}`}
           item={it}
           onClick={() => onOpenAction(it)}
         />

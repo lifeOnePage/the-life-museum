@@ -5,16 +5,7 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
-    "start": "next start",
-    "copy:api": "python3 scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api || python scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api",
-    "copy:api:dry": "python3 scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api --dry-run --verbose || python scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api --dry-run --verbose",
-    "copy:api:skip": "python3 scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api --skip-existing || python scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api --skip-existing",
-    "copy:api:win": "py -3 scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api",
-    "copy:api:win:dry": "py -3 scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api --dry-run --verbose",
-    "copy:api:win:skip": "py -3 scripts/copy_api_blueprint.py --src app/api-blueprint --dst app/api --skip-existing",
-    "predev": "npm run copy:api",
-    "prebuild": "npm run copy:api",
-    "prestart": "npm run copy:api"
+    "start": "next start"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.917.0",

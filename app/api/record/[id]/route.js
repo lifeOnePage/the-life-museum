@@ -30,8 +30,8 @@ async function getAuthedUser(req) {
   const auth = req.headers.get("authorization") || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
   const payload = token ? verifyJwt(token) : null;
-  if (!payload?.userId) return null;
-  return payload;
+  if (!payload?.sub) return null;
+  return { userId: Number(payload.sub) };
 }
 
 function toRecordResponse(rec) {

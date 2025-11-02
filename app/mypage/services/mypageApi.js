@@ -57,6 +57,10 @@ export async function createReel(token, identifier, name) {
 }
 
 export async function createRecord(token, identifier, name) {
+  if (!token) {
+    console.error("[createRecord] No token provided");
+    throw new Error("인증 토큰이 없습니다. 다시 로그인해주세요.");
+  }
   const res = await fetch("/api/records", {
     method: "POST",
     headers: {
@@ -66,6 +70,11 @@ export async function createRecord(token, identifier, name) {
     body: JSON.stringify({ identifier, name }),
   });
   if (res.status === 409) throw new Error("409");
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("[createRecord] Non-OK response:", res.status, text);
+    throw new Error(`HTTP ${res.status}: ${text.substring(0, 100)}`);
+  }
   const json = await res.json();
   if (!json.ok) throw new Error("create record failed");
   return json;
@@ -87,18 +96,28 @@ export async function updateReelIdentifier(token, id, identifier, name) {
   return json;
 }
 
-export async function updateRecordIdentifier(token, id, identifier) {
+export async function updateRecordIdentifier(token, id, identifier, userName) {
+  const data = { identifier };
+  if (userName !== undefined) {
+    data.userName = userName;
+  }
+  console.log("[updateRecordIdentifier] request:", { id, identifier, userName, data });
   const res = await fetch(`/api/records/${id}`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ identifier }),
+    body: JSON.stringify(data),
   });
+  console.log("[updateRecordIdentifier] response status:", res.status);
   if (res.status === 409) throw new Error("409");
   const json = await res.json();
-  if (!json.ok) throw new Error("update record failed");
+  console.log("[updateRecordIdentifier] response json:", json);
+  if (!json.ok) {
+    console.error("[updateRecordIdentifier] error:", json.error, json.details);
+    throw new Error(json.error || "update record failed");
+  }
   return json;
 }
 

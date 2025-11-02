@@ -6,11 +6,13 @@ import { iconBtn, inputStyle } from "./styles";
 
 export default function ItemActionModal({ open, type, item, onClose, onSaveIdentifier, onOpenEditor }) {
   const [val, setVal] = useState(item?.identifier || "");
-  const [name, setName] = useState(item?.name || "")
+  const [name, setName] = useState(
+    type === "reel" ? item?.name || "" : item?.userName || ""
+  );
   useEffect(() => {
-    setName(item?.name || "");
+    setName(type === "reel" ? item?.name || "" : item?.userName || "");
     setVal(item?.identifier || "");
-  }, [item?.identifier, open]);
+  }, [item?.identifier, item?.name, item?.userName, open, type]);
 
   if (!open || !item) return null;
 

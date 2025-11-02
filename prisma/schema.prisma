@@ -123,6 +123,7 @@ model Record {
 
   identifier String @unique
 
+  userName    String?
   coverUrl    String?
   name        String?
   subName     String?

@@ -20,6 +20,7 @@ export async function GET(req) {
     include: {
       reels: {
         select: {
+          id: true,
           identifier: true,
           name: true,
           createdAt: true,
@@ -29,6 +30,7 @@ export async function GET(req) {
       },
       records: {
         select: {
+          id: true,
           identifier: true,
           name: true,
           createdAt: true,

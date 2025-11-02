@@ -118,10 +118,10 @@ export default function Mypage() {
   const onConfirmCreate = withBusy(
     "생성 중...",
     async ({ identifier, name }) => {
-      // console.group("----onConfirmCreate----");
-      // console.log("identifier: ", identifier);
-      // console.log("name: ", name);
-      // console.groupEnd();
+      if (!token) {
+        setError("로그인이 필요합니다.");
+        return;
+      }
       try {
         if (createModal.type === "reels") {
           const res = await createReel(token, identifier, name);
@@ -136,7 +136,7 @@ export default function Mypage() {
         setError(
           e?.message?.includes("409")
             ? "이미 존재하는 identifier예요."
-            : "생성 중 오류가 발생했어요.",
+            : e?.message || "생성 중 오류가 발생했어요.",
         );
       }
     },

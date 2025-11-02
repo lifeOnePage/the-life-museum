@@ -30,7 +30,7 @@ export async function PATCH(req, { params }) {
     const auth = req.headers.get("authorization") || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     const payload = token ? verifyJwt(token) : null;
-    if (!payload?.userId) {
+    if (!payload?.sub) {
       return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     }
 
@@ -39,7 +39,8 @@ export async function PATCH(req, { params }) {
       return NextResponse.json({ ok: false, error: "invalid id" }, { status: 400 });
     }
 
-    if (!(await ensureItemOwnedBy(payload.userId, id))) {
+    const userId = Number(payload.sub);
+    if (!(await ensureItemOwnedBy(userId, id))) {
       return NextResponse.json({ ok: false, error: "record item not found" }, { status: 404 });
     }
 
@@ -62,7 +63,7 @@ export async function DELETE(req, { params }) {
     const auth = req.headers.get("authorization") || "";
     const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
     const payload = token ? verifyJwt(token) : null;
-    if (!payload?.userId) {
+    if (!payload?.sub) {
       return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
     }
 
@@ -71,7 +72,8 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ ok: false, error: "invalid id" }, { status: 400 });
     }
 
-    if (!(await ensureItemOwnedBy(payload.userId, id))) {
+    const userId = Number(payload.sub);
+    if (!(await ensureItemOwnedBy(userId, id))) {
       return NextResponse.json({ ok: false, error: "record item not found" }, { status: 404 });
     }
 

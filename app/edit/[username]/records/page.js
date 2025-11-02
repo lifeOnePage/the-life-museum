@@ -71,6 +71,8 @@ export default function EditRecords() {
             // 메인 커버 이미지가 없으면 기본 이미지 설정
             coverUrl:
               result.item.record.coverUrl || "/images/records/No image.png",
+            // color가 없으면 기본값 설정
+            color: result.item.record.color || "#121212",
           };
 
           // 타임라인 아이템이 없으면 기본 아이템 1개 생성
@@ -251,6 +253,18 @@ export default function EditRecords() {
     }
   };
 
+  const handleColorChange = (color) => {
+    if (!data) return;
+    setData({
+      ...data,
+      record: {
+        ...data.record,
+        color: color,
+      },
+    });
+    setIsSaved(false);
+  };
+
   const handleImageChange = async (type, itemId, file) => {
     if (!token || !file) return;
 
@@ -348,6 +362,8 @@ export default function EditRecords() {
         save={save}
         logout={logout}
         addItem={addTimelineItem}
+        onColorChange={handleColorChange}
+        currentColor={data?.record?.color || "#121212"}
         isSaved={isSaved}
         isPreview={isPreview}
       />

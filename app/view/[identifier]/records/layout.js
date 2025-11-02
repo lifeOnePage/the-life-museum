@@ -1,9 +1,11 @@
 // app/view/layout.tsx
 export default function ViewLayout({ children }) {
   return (
-    <main className="w-screen bg-black-100 text-white">
+    <main
+      className="bg-black-100 w-screen text-white"
+      style={{ minHeight: "100vh", overflowY: "auto" }}
+    >
       {children}
     </main>
   );
 }
-

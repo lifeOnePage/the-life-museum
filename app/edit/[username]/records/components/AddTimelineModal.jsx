@@ -74,7 +74,9 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
         className="relative w-full max-w-md rounded-lg bg-white p-8 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-6 text-2xl font-bold text-black">새 타임라인 만들기</h2>
+        <h2 className="mb-6 text-2xl font-bold text-black">
+          새 타임라인 만들기
+        </h2>
 
         {/* 이미지 업로드 영역 */}
         <div className="mb-6">
@@ -117,7 +119,7 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="타임라인의 제목을 입력해주세요. (ex.새로운 경험!)"
+            placeholder="이벤트의 이름을 입력해주세요. (ex.새로운 경험!)"
             className="w-full border-b border-gray-300 pb-2 text-black outline-none placeholder:text-gray-400 focus:border-gray-600"
           />
         </div>
@@ -125,13 +127,13 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
         {/* 연도 입력 */}
         <div className="mb-6">
           <label className="mb-2 block text-sm font-medium text-gray-700">
-            연도
+            날짜
           </label>
           <input
             type="text"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            placeholder="2001.08.23"
+            placeholder="날짜를 입력해주세요.(ex. 2000.01.01)"
             className="w-full border-b border-gray-300 pb-2 text-black outline-none placeholder:text-gray-400 focus:border-gray-600"
           />
         </div>
@@ -158,7 +160,7 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="타임라인에 대한 설명을 입력해주세요."
+            placeholder="이벤트에 대한 설명을 입력해주세요.(최대 150자 입력 가능)"
             rows={4}
             maxLength={150}
             className="w-full resize-none border-b border-gray-300 pb-2 text-black outline-none placeholder:text-gray-400 focus:border-gray-600"
@@ -189,4 +191,3 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
     </div>
   );
 }
-

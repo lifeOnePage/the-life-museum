@@ -65,7 +65,7 @@ export default function LifeRecordMobile({
         location: "",
         desc: data.record.description || "",
         cover: data.record.coverUrl || "/images/records/No image.png",
-        isHighlight: false,
+        isHighlight: data.record?.isHighlight || false,
       });
     }
 
@@ -264,7 +264,6 @@ export default function LifeRecordMobile({
                     pointerEvents: "auto",
                     cursor: "pointer",
                     opacity: activeItem?.isHighlight ? 1 : 0.5,
-                    top: "12px",
                   }}
                 >
                   <svg
@@ -288,7 +287,6 @@ export default function LifeRecordMobile({
                   style={{
                     pointerEvents: "auto",
                     cursor: "pointer",
-                    top: "50px",
                   }}
                 >
                   <svg
@@ -318,7 +316,6 @@ export default function LifeRecordMobile({
               style={{
                 pointerEvents: "auto",
                 cursor: "pointer",
-                bottom: "12px",
               }}
             >
               <svg
@@ -374,6 +371,39 @@ export default function LifeRecordMobile({
                 <div className="lr-mobile-char-count">
                   {(data.record?.description || "").length} / 80
                 </div>
+                {/* 하이라이트된 타임라인 아이템 표시 */}
+                {timeline.filter((it) => it.isHighlight && it.kind !== "main")
+                  .length > 0 && (
+                  <div className="lr-mobile-highlight-grid">
+                    {timeline
+                      .filter((it) => it.isHighlight && it.kind !== "main")
+                      .slice(0, 10)
+                      .map((it) => (
+                        <div
+                          key={it.id}
+                          className="lr-mobile-highlight-item"
+                          onClick={() => {
+                            const i = timeline.findIndex((x) => x.id === it.id);
+                            if (i >= 0) {
+                              setIsTransitioning(true);
+                              setTimeout(() => {
+                                setActiveIdx(i);
+                                setIsTransitioning(false);
+                              }, 150);
+                            }
+                          }}
+                        >
+                          <img
+                            src={it.cover || "/images/records/No image.png"}
+                            alt={it.kind === "year" ? it.event : it.title}
+                          />
+                          <span className="lr-mobile-highlight-title">
+                            {it.kind === "year" ? it.event : it.title}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </>
             ) : (
               <>
@@ -384,6 +414,39 @@ export default function LifeRecordMobile({
                 >
                   {activeItem.desc}
                 </div>
+                {/* 하이라이트된 타임라인 아이템 표시 */}
+                {timeline.filter((it) => it.isHighlight && it.kind !== "main")
+                  .length > 0 && (
+                  <div className="lr-mobile-highlight-grid">
+                    {timeline
+                      .filter((it) => it.isHighlight && it.kind !== "main")
+                      .slice(0, 10)
+                      .map((it) => (
+                        <div
+                          key={it.id}
+                          className="lr-mobile-highlight-item"
+                          onClick={() => {
+                            const i = timeline.findIndex((x) => x.id === it.id);
+                            if (i >= 0) {
+                              setIsTransitioning(true);
+                              setTimeout(() => {
+                                setActiveIdx(i);
+                                setIsTransitioning(false);
+                              }, 150);
+                            }
+                          }}
+                        >
+                          <img
+                            src={it.cover || "/images/records/No image.png"}
+                            alt={it.kind === "year" ? it.event : it.title}
+                          />
+                          <span className="lr-mobile-highlight-title">
+                            {it.kind === "year" ? it.event : it.title}
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                )}
               </>
             )}
           </>
@@ -498,27 +561,43 @@ export default function LifeRecordMobile({
       </div>
 
       <nav className="lr-mobile-nav">
-        <span>home</span>
         <span
-          onClick={handlePrev}
-          style={{
-            cursor: activeIdx === 0 ? "not-allowed" : "pointer",
-            opacity: activeIdx === 0 ? 0.3 : 1,
+          onClick={() => {
+            const mainIdx = timeline.findIndex((it) => it.kind === "main");
+            if (mainIdx >= 0) {
+              setIsTransitioning(true);
+              setTimeout(() => {
+                setActiveIdx(mainIdx);
+                setIsTransitioning(false);
+              }, 150);
+            }
           }}
+          style={{ cursor: "pointer" }}
         >
-          &lt;
+          home
         </span>
-        <span>{activeItem.label || "PLAY"}</span>
-        <span
-          onClick={handleNext}
-          style={{
-            cursor:
-              activeIdx === timeline.length - 1 ? "not-allowed" : "pointer",
-            opacity: activeIdx === timeline.length - 1 ? 0.3 : 1,
-          }}
-        >
-          &gt;
-        </span>
+        <div className="lr-mobile-nav-timeline">
+          <span
+            onClick={handlePrev}
+            style={{
+              cursor: activeIdx === 0 ? "not-allowed" : "pointer",
+              opacity: activeIdx === 0 ? 0.3 : 1,
+            }}
+          >
+            &lt;
+          </span>
+          <span>{activeItem.label || "PLAY"}</span>
+          <span
+            onClick={handleNext}
+            style={{
+              cursor:
+                activeIdx === timeline.length - 1 ? "not-allowed" : "pointer",
+              opacity: activeIdx === timeline.length - 1 ? 0.3 : 1,
+            }}
+          >
+            &gt;
+          </span>
+        </div>
         <span onClick={handleMenuClick} style={{ cursor: "pointer" }}>
           ≡
         </span>

@@ -240,7 +240,7 @@ export default function LoginPage() {
               zIndex: 100,
               width: "100%",
               height: 36,
-              marginTop:20,
+              marginTop:60,
               border: "none",
               background: "transparent",
               cursor: "pointer",
@@ -262,7 +262,7 @@ export default function LoginPage() {
         )}
 
         <div
-          style={{ padding: "24px 20px 24px" }}
+          style={{ padding: "4px 24px" }}
         >
           <AnimatePresence mode="wait" initial={false}>
             {stage === "phone" && (

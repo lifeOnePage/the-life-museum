@@ -18,7 +18,7 @@ const tabs = [
   { key: "relationship", label: "소중한 인연" }, // <- 오타 수정: 경험 → 인연
 ];
 
-export default function EditGallery({ reelId, initial = {} }) {
+export default function EditGallery({onToast, reelId, initial = {} }) {
   const [active, setActive] = useState(0);
   const { token } = useAuth();
 
@@ -104,9 +104,11 @@ export default function EditGallery({ reelId, initial = {} }) {
       await saveChildhood({ token, reelId, items: childhood });
       setSaving({ isSaving: false, progress: 100 });
       setActive(1);
+      onToast?.("저장되었습니다.", { tone: "success" });
     } catch (e) {
       setSaving({ isSaving: false, progress: 0 });
-      alert(e.message);
+      // alert(e.message);
+      onToast?.("저장 중 오류가 발생했어요.", { tone: "error" });
     }
   };
 
@@ -117,9 +119,11 @@ export default function EditGallery({ reelId, initial = {} }) {
       await saveExperience({ token, reelId, items: experience });
       setSaving({ isSaving: false, progress: 100 });
       setActive(2);
+      onToast?.("저장되었습니다.", { tone: "success" });
     } catch (e) {
       setSaving({ isSaving: false, progress: 0 });
-      alert(e.message);
+      // alert(e.message);
+      onToast?.("저장 중 오류가 발생했어요.", { tone: "error" });
     }
   };
 
@@ -130,9 +134,12 @@ export default function EditGallery({ reelId, initial = {} }) {
       await saveRelationship({ token, reelId, items: relationship });
       setSaving({ isSaving: false, progress: 100 });
       // 마지막 섹션: 탭 유지
+      onToast?.("저장되었습니다.", { tone: "success" });
     } catch (e) {
       setSaving({ isSaving: false, progress: 0 });
-      alert(e.message);
+      // alert(e.message);
+      onToast?.("저장 중 오류가 발생했어요.", { tone: "error" });
+      
     }
   };
 

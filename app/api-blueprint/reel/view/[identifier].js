@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import client from "@/app/client";
 
-// 프리뷰: 필요한 최소 필드만 반환
+// 확장: 확실치 않을 때도 안전하게 select (caption/srcType이 없으면 제거하거나 나중에 추가)
 export async function GET(_req, { params }) {
   const { identifier } = await params;
-  console.log(identifier)
+
   try {
     const data = await client.reel.findUnique({
       where: { identifier },
@@ -16,33 +16,73 @@ export async function GET(_req, { params }) {
         motto: true,
         profileImg: true,
         lifestory: { select: { result: true } },
-        childhood: { select: { srcUrl: true } },
-        memory: {
+
+        // 유년시절: 이미지 배열
+        childhood: {
+          select: {
+            srcUrl: true,
+            caption: true,   // optional
+            srcType: true,   // optional (0=image,1=video)
+          },
+        },
+
+        // 소중한 기억: 개별 카드 + 사진들
+        memorys: {
           select: {
             id: true,
             title: true,
-            comment: true,
-            WheelTexture: { select: { srcUrl: true } },
+            comment: true, // description
+            wheelTextures: {
+              select: {
+                srcUrl: true,
+                caption: true, // optional
+                srcType: true, // optional
+              },
+            },
           },
         },
-        relationship: {
+
+        // 소중한 인연
+        relationships: {
           select: {
             id: true,
             name: true,
             relation: true,
-            // 대표 이미지는 클라이언트에서 첫 번째로 처리 (DB에 필드 있으면 select에 추가)
-            WheelTexture: { select: { srcUrl: true } },
+            wheelTextures: {
+              select: {
+                srcUrl: true,
+                caption: true, // optional
+                srcType: true, // optional
+              },
+            },
           },
         },
       },
     });
-    console.log(data)
 
     if (!data) {
       return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
     }
 
-    // 클라이언트가 만들 링 프레임을 쉽게 구성할 수 있도록 정규화
+    // kind 추론 (srcType 우선, 없으면 확장자로 추정)
+    const inferKind = (url, type) => {
+      if (typeof type === "number") return type === 1 ? "video" : "image";
+      return /\.(mp4|webm|ogg|ogv|mov|m4v)$/i.test(String(url)) ? "video" : "image";
+    };
+
+    const normMedia = (arr = []) =>
+      (arr || [])
+        .map((m) => {
+          const url = m?.srcUrl || "";
+          if (!url) return null;
+          return {
+            url,
+            kind: inferKind(url, m?.srcType),
+            caption: m?.caption || "",
+          };
+        })
+        .filter(Boolean);
+
     const payload = {
       profile: {
         name: data.name,
@@ -50,21 +90,27 @@ export async function GET(_req, { params }) {
         birthPlace: data.birthPlace,
         motto: data.motto || "",
         profileImg: data.profileImg || "",
-        story: data.lifestory?.result || "",
+        story: data.lifestory?.result || "", // 생애문 텍스트
       },
+
       gallery: {
-        childhood: (data.childhood || []).map((w) => w.srcUrl),
-        experience: (data.memory || []).map((m) => ({
+        // 단순 배열(각 item: {url, kind, caption})
+        childhood: normMedia(data.childhood),
+
+        // 경험(=소중한 기억): 각 항목에 title/description + photos[]
+        experience: (data.memorys || []).map((m) => ({
           id: m.id,
           title: m.title || "",
           description: m.comment || "",
-          photos: (m.WheelTexture || []).map((w) => w.srcUrl),
+          photos: normMedia(m.wheelTextures),
         })),
-        relationship: (data.relationship || []).map((r) => ({
+
+        // 인연(=소중한 인연): 각 항목에 name/relation + photos[]
+        relationship: (data.relationships || []).map((r) => ({
           id: r.id,
           name: r.name || "",
           relation: r.relation || "",
-          photos: (r.WheelTexture || []).map((w) => w.srcUrl),
+          photos: normMedia(r.wheelTextures),
         })),
       },
     };

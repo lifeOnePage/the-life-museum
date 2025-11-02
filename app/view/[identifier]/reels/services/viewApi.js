@@ -1,4 +1,4 @@
-export async function fetchPreview(identifier) {
+export async function fetchPreview({ identifier }) {
   const res = await fetch(`/api/reel/view/${encodeURIComponent(identifier)}`, {
     cache: "no-store",
   });

@@ -16,8 +16,8 @@ export default function LifeCardHero() {
           The Life Records
         </button>
         <button
-          className={`tab ${activeTab === "reel" ? "active" : ""}`}
-          onClick={() => setActiveTab("reel")}
+          className={`tab ${activeTab === "reels" ? "active" : ""}`}
+          onClick={() => setActiveTab("reels")}
         >
           The Life Reels
         </button>

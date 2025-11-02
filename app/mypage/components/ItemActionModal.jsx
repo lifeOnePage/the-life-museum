@@ -5,10 +5,12 @@ import { FiSave, FiX } from "react-icons/fi";
 import { iconBtn, inputStyle } from "./styles";
 
 export default function ItemActionModal({ open, type, item, onClose, onSaveIdentifier, onOpenEditor }) {
+  
   const [val, setVal] = useState(item?.identifier || "");
   const [name, setName] = useState(
     type === "reel" ? item?.name || "" : item?.userName || ""
   );
+  console.log(type, name)
   useEffect(() => {
     setName(type === "reel" ? item?.name || "" : item?.userName || "");
     setVal(item?.identifier || "");

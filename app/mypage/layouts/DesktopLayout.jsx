@@ -78,8 +78,8 @@ export default function DesktopLayout({
                 <HorizontalThumbs
                   items={reels}
                   label="Life-Reels"
-                  onOpenCreate={() => onOpenCreate("reels")}
-                  onOpenAction={(item) => onOpenAction("reels", item)}
+                  onOpenCreate={() => onOpenCreate("reel")}
+                  onOpenAction={(item) => onOpenAction("reel", item)}
                 />
               </Section>
 

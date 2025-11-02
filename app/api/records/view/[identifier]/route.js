@@ -5,7 +5,7 @@ import client from "@/app/client";
 export async function GET(_req, { params }) {
   const { identifier } = await params;
   console.log("[records/view] identifier:", identifier);
-  
+
   try {
     const record = await client.record.findUnique({
       where: { identifier },
@@ -18,6 +18,7 @@ export async function GET(_req, { params }) {
         description: true,
         bgm: true,
         color: true,
+        userName: true,
         userId: true,
         user: {
           select: {
@@ -42,16 +43,25 @@ export async function GET(_req, { params }) {
     });
 
     console.log("[records/view] found record:", record ? "yes" : "no");
-    console.log("[records/view] user:", record?.user ? record.user.name : "null");
+    console.log(
+      "[records/view] user:",
+      record?.user ? record.user.name : "null",
+    );
     console.log("[records/view] userId:", record?.userId);
 
     if (!record) {
       // 데이터가 없어도 에러 대신 빈 응답 반환 (클라이언트에서 더미 데이터 사용)
-      return NextResponse.json({ ok: false, error: "not found" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "not found" },
+        { status: 404 },
+      );
     }
 
-    // user relation이 없으면 userId로 직접 조회
-    let userName = record.user?.name || null;
+    // userName 우선순위: record.userName > user.name > null
+    let userName = record.userName || null;
+    if (!userName && record.user) {
+      userName = record.user.name || null;
+    }
     if (!userName && record.userId) {
       const user = await client.user.findUnique({
         where: { id: record.userId },
@@ -90,7 +100,9 @@ export async function GET(_req, { params }) {
   } catch (e) {
     console.error("[records/view] error:", e);
     // 에러 발생 시에도 클라이언트에서 더미 데이터 사용 가능하도록
-    return NextResponse.json({ ok: false, error: "server error", details: e.message }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "server error", details: e.message },
+      { status: 500 },
+    );
   }
 }
-

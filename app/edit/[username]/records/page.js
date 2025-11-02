@@ -59,16 +59,14 @@ export default function EditRecords() {
         if (result?.ok && result?.item) {
           setRecordId(result.item.record.id);
 
-          // 사용자 이름 가져오기
-          const userName = user?.name || user?.username || "사용자";
+          const userName = user?.userName || "사용자";
 
-          // 빈 문자열인 경우 기본값 설정
           const record = {
             ...result.item.record,
             name: result.item.record.name?.trim() || `${userName}의 이야기`,
             description:
               result.item.record.description?.trim() ||
-              `${userName}에 관한 이야기입니다. 일상의 작은 순간들을 모아 하나의 긴 기억으로 만들어가는 시간입니다.`,
+              "당신에 관한 이야기입니다. 일상의 작은 순간들을 모아 하나의 긴 기억으로 만들어가는 시간입니다.",
             // 메인 커버 이미지가 없으면 기본 이미지 설정
             coverUrl:
               result.item.record.coverUrl || "/images/records/No image.png",
@@ -231,7 +229,11 @@ export default function EditRecords() {
   };
 
   const handleDeleteItem = async (itemId) => {
-    if (!confirm("이 타임라인 항목을 삭제하시겠습니까?")) {
+    if (
+      !confirm(
+        "이 이벤트를 삭제하시겠습니까? 삭제한 내용은 복구할 수 없습니다.",
+      )
+    ) {
       return;
     }
 
@@ -256,7 +258,7 @@ export default function EditRecords() {
 
   const handleColorChange = (color) => {
     if (!data) return;
-    
+
     // 활성화된 item이 main이면 record의 color 변경, 아니면 해당 item의 color 변경
     if (activeItem && activeItem.kind === "main") {
       setData({
@@ -387,6 +389,18 @@ export default function EditRecords() {
         addItem={addTimelineItem}
         onColorChange={handleColorChange}
         currentColor={activeItem?.color || data?.record?.color || "#121212"}
+        onBgmChange={(bgmUrl) => {
+          if (!data) return;
+          setData({
+            ...data,
+            record: {
+              ...data.record,
+              bgm: bgmUrl,
+            },
+          });
+          setIsSaved(false);
+        }}
+        currentBgm={data?.record?.bgm || ""}
         isSaved={isSaved}
         isPreview={isPreview}
       />

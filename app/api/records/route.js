@@ -22,6 +22,7 @@ export async function GET(req) {
       id: true,
       identifier: true,
       name: true,
+      userName: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -52,11 +53,19 @@ export async function POST(req) {
       );
     }
 
+    // 사용자 이름 가져오기
+    const userId = Number(payload.sub);
+    const user = await client.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
+
     const created = await client.record.create({
       data: {
         identifier,
         name: name ?? null,
-        userId: Number(payload.sub),
+        userName: user?.name || null,
+        userId: userId,
       },
       select: {
         id: true,

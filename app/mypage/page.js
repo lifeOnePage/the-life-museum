@@ -166,13 +166,14 @@ export default function Mypage() {
             ),
           );
         } else {
-          const r = await updateRecordIdentifier(token, id, nextIdentifier);
+          const r = await updateRecordIdentifier(token, id, nextIdentifier, nextName);
           setRecords((arr) =>
             arr.map((x) =>
               x.id === id
                 ? {
                     ...x,
                     identifier: r.item.identifier,
+                    userName: r.item.userName,
                     updatedAt: r.item.updatedAt,
                   }
                 : x,

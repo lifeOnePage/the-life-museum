@@ -108,6 +108,39 @@ export default function LifeRecordMobile({
   const DEFAULT_THEME = BG_THEME_PALETTE[0];
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
+  const bgmAudioRef = useRef(null);
+  const [isBgmPlaying, setIsBgmPlaying] = useState(false);
+
+  // BGM 재생/정지 기능
+  useEffect(() => {
+    if (!data.record?.bgm) return;
+
+    const audio = new Audio(data.record.bgm);
+    audio.loop = true;
+    audio.volume = 0.5;
+    bgmAudioRef.current = audio;
+
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = "";
+      }
+    };
+  }, [data.record?.bgm]);
+
+  const handleBgmToggle = () => {
+    if (!bgmAudioRef.current) return;
+
+    if (isBgmPlaying) {
+      bgmAudioRef.current.pause();
+      setIsBgmPlaying(false);
+    } else {
+      bgmAudioRef.current.play().catch((err) => {
+        console.error("BGM 재생 실패:", err);
+      });
+      setIsBgmPlaying(true);
+    }
+  };
 
   const activeItem = timeline[activeIdx] || {};
 
@@ -182,6 +215,55 @@ export default function LifeRecordMobile({
       className="lr-mobile-root"
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
+      {/* BGM 재생 버튼 (우측 상단 고정) */}
+      {!isEditing && data.record?.bgm && (
+        <button
+          onClick={handleBgmToggle}
+          style={{
+            position: "fixed",
+            top: "16px",
+            right: "16px",
+            zIndex: 10000,
+            width: "44px",
+            height: "44px",
+            borderRadius: "50%",
+            background: isBgmPlaying ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.1)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            color: theme.text,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+          }}
+          title={isBgmPlaying ? "음악 정지" : "음악 재생"}
+        >
+          {isBgmPlaying ? (
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ) : (
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+            </svg>
+          )}
+        </button>
+      )}
+
       <header className="lr-mobile-header">
         <div className="lr-mobile-title">Life-Records</div>
         <div className="lr-mobile-desc">

@@ -33,6 +33,7 @@ export async function GET(req) {
           id: true,
           identifier: true,
           name: true,
+          userName: true,
           createdAt: true,
           updatedAt: true,
           coverUrl: true,

@@ -7,6 +7,8 @@ import { FiEye, FiEyeOff, FiSave } from "react-icons/fi";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { MdAdd } from "react-icons/md";
 import { MdPalette } from "react-icons/md";
+import { MdMusicNote } from "react-icons/md";
+import BgmSelector from "@/app/edit/[username]/records/components/BgmSelector";
 
 const BG_THEME_PALETTE = [
   { name: "Coal", bg: "#121212", text: "#F2F2F2" },
@@ -27,12 +29,15 @@ export default function FloatingToolbar({
   addItem,
   onColorChange,
   currentColor,
+  onBgmChange,
+  currentBgm,
   isSaved = true,
   isPreview = false,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [hovered, setHovered] = useState(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [showBgmSelector, setShowBgmSelector] = useState(false);
 
   const contStyle = {
     position: "relative",
@@ -68,6 +73,13 @@ export default function FloatingToolbar({
       icon: <MdPalette size={20} />,
       disabled: false,
       getLabel: () => "배경색 선택",
+    },
+    {
+      key: "bgm",
+      onClick: () => setShowBgmSelector((p) => !p),
+      icon: <MdMusicNote size={20} />,
+      disabled: false,
+      getLabel: () => "배경음악 선택",
     },
     {
       key: "preview",
@@ -129,7 +141,6 @@ export default function FloatingToolbar({
           position: "relative",
         }}
       >
-        {/* 접기/펼치기 */}
         <div
           style={contStyle}
           onMouseEnter={() => setHovered(collapsed ? "minimize" : "maximize")}
@@ -171,9 +182,11 @@ export default function FloatingToolbar({
                   onMouseEnter={() => setHovered(item.key)}
                   onMouseLeave={() => setHovered(null)}
                 >
-                  {hovered === item.key && item.key !== "color" && (
-                    <div style={tooltipStyle}>{item.getLabel()}</div>
-                  )}
+                  {hovered === item.key &&
+                    item.key !== "color" &&
+                    item.key !== "bgm" && (
+                      <div style={tooltipStyle}>{item.getLabel()}</div>
+                    )}
                   <button
                     onClick={item.onClick}
                     disabled={item.disabled}
@@ -262,6 +275,43 @@ export default function FloatingToolbar({
                 }}
               />
             ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {showBgmSelector && !collapsed && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            transition={{ duration: 0.2 }}
+            style={{
+              position: "absolute",
+              bottom: collapsed ? "68px" : "calc(100% + 12px)",
+              left: "-200%",
+              transform: "translateX(-50%)",
+              background: "#1a1a1aff",
+              padding: "16px",
+              borderRadius: "12px",
+              width: "320px",
+              maxHeight: "400px",
+              overflowY: "auto",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+              zIndex: 10001,
+              pointerEvents: "auto",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <BgmSelector
+              selectedBgm={currentBgm || ""}
+              onSelect={(bgmUrl) => {
+                if (onBgmChange) {
+                  onBgmChange(bgmUrl);
+                }
+                setShowBgmSelector(false);
+              }}
+            />
           </motion.div>
         )}
       </AnimatePresence>

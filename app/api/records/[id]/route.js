@@ -96,52 +96,75 @@ export async function GET(req, { params }) {
 }
 
 export async function PATCH(req, { params }) {
-  const { id } = await params;
-  const auth = req.headers.get("authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-  const payload = token ? verifyJwt(token) : null;
-  if (!payload)
-    return NextResponse.json(
-      { ok: false, error: "unauthorized" },
-      { status: 401 },
-    );
-
-  const { identifier } = await req.json();
-  const idf = String(identifier || "").trim();
-  if (!/^[a-z0-9_-]{3,32}$/i.test(idf))
-    return NextResponse.json(
-      { ok: false, error: "invalid_identifier" },
-      { status: 400 },
-    );
-
-  const target = await client.record.findFirst({
-    where: { identifier: id, userId: Number(payload.sub) },
-    select: { id: true, userId: true },
-  });
-  if (!target || target.userId !== Number(payload.sub)) {
-    return NextResponse.json(
-      { ok: false, error: "not_found_or_forbidden" },
-      { status: 404 },
-    );
-  }
-
   try {
+    const { id } = await params;
+    const auth = req.headers.get("authorization") || "";
+    const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
+    const payload = token ? verifyJwt(token) : null;
+    if (!payload)
+      return NextResponse.json(
+        { ok: false, error: "unauthorized" },
+        { status: 401 },
+      );
+
+    const body = await req.json().catch(() => ({}));
+    const { identifier, userName } = body || {};
+    console.log("[records:PATCH] params id:", id, "body:", { identifier, userName });
+    const idf = String(identifier || "").trim();
+    if (!/^[a-z0-9_-]{3,32}$/i.test(idf))
+      return NextResponse.json(
+        { ok: false, error: "invalid_identifier" },
+        { status: 400 },
+      );
+
+    // id가 숫자면 숫자 ID로, 아니면 identifier로 찾기
+    const idParam = String(id || "").trim();
+    const isNumericId = /^\d+$/.test(idParam);
+    
+    let target;
+    if (isNumericId) {
+      // 숫자 ID로 직접 찾기
+      target = await client.record.findUnique({
+        where: { id: Number(idParam) },
+        select: { id: true, userId: true },
+      });
+    } else {
+      // identifier로 찾기
+      target = await client.record.findFirst({
+        where: { identifier: idParam, userId: Number(payload.sub) },
+        select: { id: true, userId: true },
+      });
+    }
+    
+    console.log("[records:PATCH] target:", target);
+    if (!target || target.userId !== Number(payload.sub)) {
+      return NextResponse.json(
+        { ok: false, error: "not_found_or_forbidden" },
+        { status: 404 },
+      );
+    }
+
+    const updateData = { identifier: idf };
+    if (userName !== undefined && userName !== null) {
+      updateData.userName = String(userName).trim() || null;
+    }
+    console.log("[records:PATCH] updateData:", updateData);
     const item = await client.record.update({
       where: { id: target.id },
-      data: { identifier: idf },
-      select: { id: true, identifier: true, createdAt: true, updatedAt: true },
+      data: updateData,
+      select: { id: true, identifier: true, userName: true, createdAt: true, updatedAt: true },
     });
     return NextResponse.json({ ok: true, item });
   } catch (e) {
+    console.error("[records:PATCH] error:", e);
     if (e?.code === "P2002") {
       return NextResponse.json(
         { ok: false, error: "identifier_taken" },
         { status: 409 },
       );
     }
-    console.error(e);
     return NextResponse.json(
-      { ok: false, error: "internal_error" },
+      { ok: false, error: "internal_error", details: e.message },
       { status: 500 },
     );
   }

@@ -170,6 +170,39 @@ export default function LifeRecordDesktop({
 
   const wheelTimer = useRef(null);
   const scrollSound = useRef(null);
+  const bgmAudioRef = useRef(null);
+  const [isBgmPlaying, setIsBgmPlaying] = useState(false);
+
+  // BGM 재생/정지 기능
+  useEffect(() => {
+    if (!data.record?.bgm) return;
+
+    const audio = new Audio(data.record.bgm);
+    audio.loop = true;
+    audio.volume = 0.5;
+    bgmAudioRef.current = audio;
+
+    return () => {
+      if (audio) {
+        audio.pause();
+        audio.src = "";
+      }
+    };
+  }, [data.record?.bgm]);
+
+  const handleBgmToggle = () => {
+    if (!bgmAudioRef.current) return;
+
+    if (isBgmPlaying) {
+      bgmAudioRef.current.pause();
+      setIsBgmPlaying(false);
+    } else {
+      bgmAudioRef.current.play().catch((err) => {
+        console.error("BGM 재생 실패:", err);
+      });
+      setIsBgmPlaying(true);
+    }
+  };
 
   const isMobile = useIsMobile();
   const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 280, ANCHOR: 0 };
@@ -189,6 +222,13 @@ export default function LifeRecordDesktop({
     const base = angleForIndex(i);
     const cur = norm360(base + rotation);
     const delta = wrapTo180(anchor - cur);
+    // 마우스 클릭 시에도 scroll sound 재생
+    if (scrollSound.current) {
+      scrollSound.current.currentTime = 0;
+      scrollSound.current.play().catch((err) => {
+        console.error("Scroll sound 재생 실패:", err);
+      });
+    }
     setRotation(rotation + delta);
     setActiveIdx(i);
   };
@@ -238,6 +278,55 @@ export default function LifeRecordDesktop({
       className="lr-page"
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
+      {/* BGM 재생 버튼 (우측 상단 고정) */}
+      {!isEditing && data.record?.bgm && (
+        <button
+          onClick={handleBgmToggle}
+          style={{
+            position: "fixed",
+            top: "24px",
+            right: "24px",
+            zIndex: 10000,
+            width: "48px",
+            height: "48px",
+            borderRadius: "50%",
+            background: isBgmPlaying
+              ? "rgba(255, 255, 255, 0.2)"
+              : "rgba(255, 255, 255, 0.1)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            color: theme.text,
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = isBgmPlaying
+              ? "rgba(255, 255, 255, 0.2)"
+              : "rgba(255, 255, 255, 0.1)";
+          }}
+          title={isBgmPlaying ? "음악 정지" : "음악 재생"}
+        >
+          {isBgmPlaying ? (
+            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ) : (
+            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+            </svg>
+          )}
+        </button>
+      )}
+
       <div className="lr-grid">
         <section className="lr-left">
           <h1 className="lr-title">Life- Records</h1>

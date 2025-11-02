@@ -246,7 +246,7 @@
 .lr-mobile-meta-title.lr-mobile-edit-input,
 textarea.lr-mobile-meta-title.lr-mobile-edit-input {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
@@ -258,6 +258,7 @@ textarea.lr-mobile-meta-title.lr-mobile-edit-input {
   font-weight: inherit;
   letter-spacing: inherit;
   line-height: inherit;
+  margin-bottom: 16px;
 
   color: var(--text);
   font-family: "Helvetica Neue LT Std";
@@ -283,12 +284,12 @@ textarea.lr-mobile-meta-title.lr-mobile-edit-input {
 
 .lr-mobile-meta-desc.lr-mobile-edit-input {
   background: transparent;
-  border: 1px dashed rgba(255, 255, 255, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
   width: 100%;
-  resize: none;
+  height: auto;
   overflow-y: auto;
   overflow-x: hidden;
   white-space: pre-wrap;
@@ -307,24 +308,27 @@ textarea.lr-mobile-meta-title.lr-mobile-edit-input {
 .lr-mobile-meta-name.lr-mobile-edit-input,
 textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
   width: 100%;
   resize: none;
   overflow: hidden;
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
+
+  color: var(--text);
+  font-family: "Helvetica Neue LT Std";
+  font-size: 1.5625rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.15625rem;
 }
 
 .lr-mobile-meta-date.lr-mobile-edit-input,
 .lr-mobile-meta-location.lr-mobile-edit-input {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
@@ -473,7 +477,7 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
 .lr-mobile-edit-input,
 .lr-mobile-edit-textarea {
   width: 180%;
-  border: 2px dashed rgba(255, 255, 255, 0.5);
+  border: 2px dashed rgba(255, 255, 255);
   border-radius: 8px;
   padding: 16px;
   background: transparent;
@@ -553,7 +557,7 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
 .lr-mobile-char-count {
   font-family: "Pretendard Variable";
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--text);
   text-align: right;
   margin-top: 4px;
 }

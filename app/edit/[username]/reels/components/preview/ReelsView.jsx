@@ -1,15 +1,15 @@
+// app/view/[identifier]/reels/ReelsView.jsx
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useParams } from "next/navigation";
-import ProfileCurtain from "./components/ProfileCurtain";
-import RingSlider from "./components/RingSlider";
-import LeftSprite from "./components/LeftSprite";
-import { fetchPreview } from "./services/viewApi";
+import { useEffect, useMemo, useState } from "react";
+import ProfileCurtain from "@/app/view/[identifier]/reels/components/ProfileCurtain";
+import RingSlider from "@/app/view/[identifier]/reels/components/RingSlider";
+import LeftSprite from "@/app/view/[identifier]/reels/components/LeftSprite";
+import { fetchPreview } from "@/app/view/[identifier]/reels/services/viewApi";
 
 // 3D Ring (ssr off)
-const Ring = dynamic(() => import("./components/Ring"), { ssr: false });
+const Ring = dynamic(() => import("@/app/view/[identifier]/reels/components/Ring"), { ssr: false });
 
 // ----------------- 도우미 -----------------
 const VIDEO_EXT = /\.(mp4|webm|ogg|ogv|mov|m4v)$/i;
@@ -180,13 +180,11 @@ function computeLabels(slideKey, slot) {
   return { main, sub };
 }
 
-// ----------------- 페이지 -----------------
-export default function ViewPage() {
-  const { identifier } = useParams();
-
-  const [loading, setLoading] = useState(true);
+// ----------------- 재사용 가능한 뷰 컴포넌트 -----------------
+export default function ReelsView({ identifier, initialData = null }) {
+  const [loading, setLoading] = useState(!initialData);
   const [err, setErr] = useState("");
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(initialData);
 
   const [slots, setSlots] = useState([]);
   const [ranges, setRanges] = useState({});
@@ -198,33 +196,49 @@ export default function ViewPage() {
 
   const [curtainOpen, setCurtainOpen] = useState(true);
 
-  // 초기 로드
+  // 초기 로드 (initialData 없을 때만 fetch)
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        setLoading(true);
-        const res = await fetchPreview({ identifier });
-        if (!mounted) return;
-        setData(res);
+        if (!initialData) {
+          setLoading(true);
+          const res = await fetchPreview({ identifier });
+          if (!mounted) return;
+          setData(res);
 
-        const built = buildAll(res);
-        setSlots(built.slots);
-        setRanges(built.ranges);
-        setSliderSections(built.sliderSections);
+          const built = buildAll(res);
+          setSlots(built.slots);
+          setRanges(built.ranges);
+          setSliderSections(built.sliderSections);
 
-        const [start] = built.ranges.all || [0, 0];
-        setActiveKey("all");
-        setLeftIndex(start);
+          const [start] = built.ranges.all || [0, 0];
+          setActiveKey("all");
+          setLeftIndex(start);
+          setLoading(false);
+        } else {
+          // initialData로 즉시 세팅
+          const built = buildAll(initialData);
+          setSlots(built.slots);
+          setRanges(built.ranges);
+          setSliderSections(built.sliderSections);
+
+          const [start] = built.ranges.all || [0, 0];
+          setActiveKey("all");
+          setLeftIndex(start);
+        }
       } catch (e) {
         console.error(e);
-        if (mounted) setErr("미리보기 불러오기 실패");
-      } finally {
-        if (mounted) setLoading(false);
+        if (mounted) {
+          setErr("미리보기 불러오기 실패");
+          setLoading(false);
+        }
       }
     })();
-    return () => (mounted = false);
-  }, [identifier]);
+    return () => {
+      mounted = false;
+    };
+  }, [identifier, initialData]);
 
   // 현재 섹션 범위
   const currentRange = useMemo(() => {
@@ -252,8 +266,8 @@ export default function ViewPage() {
     const start = Number.isFinite(sec?.start)
       ? toInt(sec.start, 0)
       : Array.isArray(ranges?.[key]) && ranges[key].length >= 2
-      ? toInt(ranges[key][0], 0)
-      : 0;
+        ? toInt(ranges[key][0], 0)
+        : 0;
     setLeftIndex(Math.min(Math.max(start, 0), max));
   };
 
@@ -265,7 +279,7 @@ export default function ViewPage() {
     setLeftIndex(v);
   };
 
-  // ── 변경점 ①: ‘전체’일 때도 현재 사진의 실제 섹션 라벨을 표시 ──
+  // ‘전체’일 때도 현재 사진의 실제 섹션 라벨을 표시
   const effectiveKeyForLabels = useMemo(() => {
     if (activeKey !== "all") return activeKey;
     const sec = sectionByIndex(sliderSections, leftSnap);
@@ -278,10 +292,10 @@ export default function ViewPage() {
   const lifestoryText = data?.profile?.story || "";
 
   if (loading) {
-    return <div className="bg-black-100 grid min-h-screen place-items-center text-white/80">불러오는 중…</div>;
+    return <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">불러오는 중…</div>;
   }
   if (err) {
-    return <div className="bg-black-100 grid min-h-screen place-items-center text-red-400">{err}</div>;
+    return <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-red-400">{err}</div>;
   }
 
   const totalSlots = toInt(slots?.length ?? 0, 0);
@@ -299,7 +313,7 @@ export default function ViewPage() {
       </button>
 
       {/* 상단 LeftSprite(3D) */}
-      <div className="absolute inset-x-0 h-[60vh] top-16 z-20 mx-auto w-[94vw] max-w-[680px]">
+      <div className="h-[50vh] absolute inset-x-0 top-16 z-20 mx-auto w-[94vw] max-w-[680px]">
         <LeftSprite
           item={currentSlot}
           activeKey={effectiveKeyForLabels}

@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 
 export default function MobileTabs({ active, onChange }) {
   const tabs = [
-    { key: "reel", label: "LifeReels" },
+    { key: "reels", label: "LifeReels" },
     { key: "records", label: "LifeRecords" },
     { key: "plan", label: "Plan" },
   ];

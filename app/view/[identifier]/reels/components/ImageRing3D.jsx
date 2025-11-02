@@ -1,270 +1,196 @@
+// app/view/[identifier]/reels/components/ImageRing3D.jsx
 "use client";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+
 import * as THREE from "three";
-import { useMemo, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useVideoTexture, useTexture } from "@react-three/drei";
+import { useMemo, useRef, useState, useEffect } from "react";
 
-const isPOT = (n) => (n & (n - 1)) === 0;
-
-/** 텍스처 로드 + cover 크롭 + NPOT 안전 설정 */
-function makeMaterialFromImage(url, planeAspect, maxAniso) {
-  const loader = new THREE.TextureLoader();
-  const tex = loader.load(url, (t) => {
-    console.log(url);
-    const w = t.image?.width || 1;
-    const h = t.image?.height || 1;
-    const pot = isPOT(w) && isPOT(h);
-
-    // NPOT 안전 설정
-    t.generateMipmaps = pot;
-    t.minFilter = pot ? THREE.LinearMipmapLinearFilter : THREE.LinearFilter;
-    t.magFilter = THREE.LinearFilter;
-    t.wrapS = THREE.ClampToEdgeWrapping;
-    t.wrapT = THREE.ClampToEdgeWrapping;
-    t.anisotropy = Math.min(8, maxAniso || 1);
-    t.colorSpace = THREE.SRGBColorSpace;
-
-    // object-fit: cover (UV 크롭)
-    const imgAspect = w / h;
-    t.center.set(0.5, 0.5);
-    if (imgAspect > planeAspect) {
-      const repX = planeAspect / imgAspect;
-      t.repeat.set(repX, 1);
-      t.offset.set((1 - repX) / 2, 0);
-    } else {
-      const repY = imgAspect / planeAspect;
-      t.repeat.set(1, repY);
-      t.offset.set(0, (1 - repY) / 2);
-    }
-    t.needsUpdate = true;
-  });
-
-  // 기본은 불투명(겹침/깜빡임 최소화). 필요 시 opacity만 조절.
-  const mat = new THREE.MeshBasicMaterial({
-    map: tex,
-    opacity: 0.5,
-    transparent: false,
-    depthWrite: true,
-    side: THREE.DoubleSide,
-  });
-  return mat;
-}
-
-function Ring({
-  frames, // [{url, kind:'image', cat?:string}, ...]  ← 실제 프레임
-  targetIndex, // 슬라이더에서 오는 '정수 스냅' 인덱스
-  minSlots = 100, // 전체 슬롯 하한(요구사항 1)
-  lerp = 0.12, // 부드러운 회전
-  radius = 11,
-  planeW = 5.0,
-  planeH = 5.0,
-  yOffset = 0,
-  ringOffsetX = -15, // 화면 오른쪽으로 이동
-  tiltY = 0.0, // 살짝 기울임을 원할 때만 사용
-  chooseSide = "left", // 'left' | 'right' : 스프라이트 선택 기준
-  activeCategory = null, // 선택된 카테고리(없으면 null)
-  onChooseIndex, // 선택된(왼/오른) 슬롯 인덱스
-  onProjectChoose, // 선택된 슬롯의 스크린 좌표
-}) {
-  const nReal = Math.max(frames.length, 0);
-  const slots = Math.max(nReal, minSlots); // 100 미만이면 100 슬롯
-  const step = (Math.PI * 2) / slots;
-  const planeAspect = planeW / planeH;
-
-  const group = useRef();
-  const planes = useRef([]);
-  const mats = useRef([]);
-  const { camera, size, gl } = useThree();
-  const maxAniso = gl.capabilities.getMaxAnisotropy();
-
-  // 슬롯별 데이터(실제 프레임 or placeholder)
-  const slotData = useMemo(() => {
-    const arr = new Array(slots).fill(null).map((_, i) => {
-      if (i < nReal) {
-        return { type: "real", frame: frames[i], realIndex: i };
-      }
-      return { type: "placeholder", frame: null, realIndex: -1 };
-    });
-    return arr;
-  }, [frames, slots, nReal]);
-  // console.log(slotData)
-
-  // 고정 위치
-  const positions = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < slots; i++) {
-      const a = i * step;
-      arr.push([Math.cos(a) * radius, yOffset, Math.sin(a) * radius]);
-    }
-    return arr;
-  }, [slots, step, radius, yOffset]);
-
-  // 머티리얼 준비
-  const materials = useMemo(() => {
-    const list = [];
-    for (let i = 0; i < slots; i++) {
-      const s = slotData[i];
-      if (s.type === "real" && s.frame?.url) {
-        // console.log(s.frame.url)
-        list[i] = makeMaterialFromImage(s.frame.url, planeAspect, maxAniso);
-      } else {
-        // placeholder: 반투명 흰색
-        list[i] = new THREE.MeshBasicMaterial({
-          color: 0xffffff,
-          opacity: 0.1,
-          transparent: true,
-          depthWrite: false,
-          side: THREE.DoubleSide,
-        });
-      }
-    }
-    return list;
-  }, [slotData, planeAspect, maxAniso, slots]);
-
-  // 현재 각도(연속 보간)
-  const currentAngle = useRef(0);
-
-  useFrame(() => {
-    if (!group.current) return;
-
-    // 그룹 회전(연속)
-    const targetAngle = (targetIndex % slots) * step;
-    currentAngle.current = THREE.MathUtils.lerp(
-      currentAngle.current,
-      targetAngle,
-      lerp,
-    );
-    group.current.rotation.set(0, currentAngle.current + tiltY, 0);
-    group.current.position.x = ringOffsetX;
-
-    // 그룹 월드 회전 상쇄 → 모든 패널이 '정면'을 바라보게
-    const gwq = group.current.getWorldQuaternion(new THREE.Quaternion());
-    const invGwq = gwq.clone().invert(); // 이걸 각 mesh 로컬 quat에 곱해 월드 회전을 0에 가깝게
-    planes.current.forEach((m) => {
-      if (!m) return;
-      m.quaternion.copy(invGwq); // 월드에서 (0,0,0) 정면향
-    });
-
-    // 카테고리/placeholder 반투명 처리
-    for (let i = 0; i < slots; i++) {
-      const s = slotData[i];
-      const mat = mats.current[i];
-      if (!mat) continue;
-
-      // placeholder는 이미 반투명
-      if (s.type === "placeholder") continue;
-
-      const inCategory = !activeCategory || s.frame?.cat === activeCategory;
-
-      const wantDim = !inCategory; // 선택 카테고리가 있고 그에 속하지 않으면 dim
-      // 투명 처리(깊이 충돌 줄이기 위해 dim일 때만 transparent)
-      if (wantDim) {
-        mat.transparent = true;
-        mat.depthWrite = false;
-        mat.opacity = 0.35;
-      } else {
-        mat.opacity = 1.0;
-        mat.transparent = false;
-        mat.depthWrite = true;
-      }
-    }
-
-    // 화면 좌표로 왼쪽/오른쪽 가장자리 슬롯 선택
-    let pick = 0;
-    let best = chooseSide === "left" ? Infinity : -Infinity;
-    const tmp = new THREE.Vector3();
-    for (let i = 0; i < slots; i++) {
-      const m = planes.current[i];
-      // console.log(m)
-      if (!m) continue;
-      // 선택 기준은 placeholder도 포함(원하면 여기서 제외 가능)
-      const wp = m.getWorldPosition(new THREE.Vector3());
-      tmp.copy(wp).project(camera);
-      const sx = (tmp.x * 0.5 + 0.5) * size.width;
-      if (chooseSide === "left") {
-        if (sx < best) {
-          best = sx;
-          pick = i;
-        }
-      } else {
-        if (sx > best) {
-          best = sx;
-          pick = i;
-        }
-      }
-    }
-    onChooseIndex?.(pick);
-
-    // DOM 연결선용 좌표
-    const chosen = planes.current[pick];
-    if (chosen) {
-      const v = chosen.getWorldPosition(new THREE.Vector3()).project(camera);
-      onProjectChoose?.({
-        x: (v.x * 0.5 + 0.5) * size.width,
-        y: (-v.y * 0.5 + 0.5) * size.height,
-      });
-    }
-  });
+// ---- Canvas 바깥에서는 일반 React 훅만 사용 (필요시)
+export default function ImageRing3D(props) {
+  const { camY = 7.5, camZ = 18 } = props;
 
   return (
-    <group ref={group}>
-      {positions.map(([x, y, z], i) => (
-        <mesh
-          key={i}
-          ref={(el) => (planes.current[i] = el)}
-          position={[x, y, z]}
-          frustumCulled={false}
-        >
-          <planeGeometry args={[planeW, planeH]} />
-          <primitive
-            object={(mats.current[i] = materials[i])}
-            attach="material"
-          />
-        </mesh>
-      ))}
+    <div className="absolute inset-0">
+      <Canvas
+        camera={{ position: [0, camY, camZ], fov: 50 }}
+        gl={{ antialias: true }}
+      >
+        <ambientLight intensity={0.95} />
+        <directionalLight position={[6, 10, 6]} intensity={0.7} />
+        {/* ✅ 모든 R3F/Drei 훅은 이 내부 컴포넌트에서만 사용 */}
+        <RingScene {...props} />
+      </Canvas>
+    </div>
+  );
+}
+
+// ---- 여기부터는 반드시 Canvas 내부에서만 렌더됨
+function RingScene({
+  radius = 6, // 기존 값 유지
+  planeW = 2.2, // 기존 값 유지
+  planeH = 2.8, // 기존 값 유지
+  shiftRight = true, // 모바일에서 오른쪽으로 반쯤 잘리게
+  items = [], // { url, kind: 'image'|'video'|'empty' } 등
+  rotTarget = 0, // 외부에서 제어하는 목표 인덱스(스냅)
+  onLeftmost, // 왼쪽 슬롯 URL 보고용 콜백 (LeftSprite 갱신)
+}) {
+  const groupRef = useRef();
+  const [rotIndex, setRotIndex] = useState(0);
+
+  // 부드러운 스냅(3D는 연속 회전, HUD는 스냅)
+  useFrame((_, dt) => {
+    const k = 8; // 빠르게 수렴
+    const next = rotIndex + (rotTarget - rotIndex) * Math.min(1, k * dt);
+    if (Math.abs(next - rotIndex) > 1e-4) setRotIndex(next);
+  });
+
+  // 회전 → 각도로 변환
+  const nSlots = items.length || 100;
+  const step = (Math.PI * 2) / nSlots;
+  const baseAngle = useMemo(
+    () => -Math.PI / 2,
+    [
+      /* 고정: 왼쪽이 index 0이 되도록 */
+    ],
+  );
+
+  // rotIndex가 바뀔 때 왼쪽 슬롯 계산 & 보고
+  useEffect(() => {
+    const idx = ((Math.round(rotIndex) % nSlots) + nSlots) % nSlots;
+    const leftIdx = idx; // 왼쪽 슬롯이 곧 rotIndex 정수부
+    const leftItem = items[leftIdx];
+    if (onLeftmost)
+      onLeftmost(leftItem?.url ?? null, leftItem ?? null, leftIdx);
+  }, [rotIndex, nSlots, items, onLeftmost]);
+
+  // 그룹 위치: 모바일에서 오른쪽으로 절반쯤 잘리게 이동
+  const offsetX = shiftRight ? radius * 0.75 : 0;
+
+  return (
+    <group ref={groupRef} position={[offsetX, 0, 0]}>
+      {/* 링 전체 회전: rotIndex에 따라 연속 회전 */}
+      <group rotation={[0, baseAngle + rotIndex * step, 0]}>
+        {items.map((it, i) => {
+          // i번째 슬롯의 각도(왼쪽이 index 0)
+          const ang = i * step;
+          // 원형 배치 좌표
+          const x = Math.cos(ang) * radius;
+          const z = Math.sin(ang) * radius;
+
+          // 정면(=화면)으로 보이게 Y회전: 슬롯 각도 보정
+          // 그룹 회전을 포함해 항상 '화면'을 향하도록 -ang 로 보정
+          const rotationY = -ang;
+
+          return (
+            <Thumb
+              key={i}
+              position={[x, 0, z]}
+              rotation={[0, rotationY, 0]}
+              url={it?.url || null}
+              kind={it?.kind || "empty"} // 'image'|'video'|'empty'
+              width={planeW}
+              height={planeH}
+              dimType={it?.dimType || (it?.kind === "empty" ? "empty" : "on")}
+              // 가장 왼쪽 슬롯을 약간 튀어나오게 하고 싶다면
+              inflateLeft={
+                i === Math.round(((rotIndex % nSlots) + nSlots) % nSlots)
+              }
+              radius={radius}
+            />
+          );
+        })}
+      </group>
     </group>
   );
 }
 
-export default function ImageRing3D({
-  frames,
-  index, // 정수 스냅 값
-  onChooseIndex,
-  onProjectChoose,
-  // 옵션
-  minSlots = 100,
-  radius = 5.6,
-  planeW = 2.4,
-  planeH = 2.4,
-  yOffset = 0,
-  ringOffsetX = -8,
-  tiltY = 0.0,
-  camZ = 26,
-  lerp = 0.12,
-  chooseSide = "left",
-  activeCategory = null,
+function Thumb({
+  position,
+  rotation,
+  url,
+  kind,
+  width,
+  height,
+  dimType,
+  inflateLeft,
+  radius,
 }) {
-  return (
-    <div style={{bottom:-400}} className="absolute inset-0">
-      <Canvas camera={{ position: [0, 6, camZ], fov: 50 }}>
-        <ambientLight intensity={0.95} />
-        <directionalLight position={[6, 10, 6]} intensity={0.7} />
-        <Ring
-          frames={frames}
-          targetIndex={index}
-          minSlots={minSlots}
-          lerp={lerp}
-          radius={radius}
-          planeW={planeW}
-          planeH={planeH}
-          yOffset={yOffset}
-          ringOffsetX={ringOffsetX}
-          tiltY={tiltY}
-          chooseSide={chooseSide}
-          activeCategory={activeCategory}
-          onChooseIndex={onChooseIndex}
-          onProjectChoose={onProjectChoose}
+  const meshRef = useRef();
+
+  // 왼쪽 슬롯을 살짝 튀어나오게 (radius + delta)
+  const finalPos = useMemo(() => {
+    if (!inflateLeft) return position;
+    // position은 [x,0,z], 원점 기준 반경을 약간 늘려준다
+    const [x, y, z] = position;
+    const r = Math.hypot(x, z) || radius;
+    const scale = (r + 0.2) / r; // 0.2만큼 바깥으로
+    return [x * scale, y, z * scale];
+  }, [position, inflateLeft, radius]);
+
+  // 머티리얼 분기
+  if (!url || kind === "empty") {
+    return (
+      <mesh ref={meshRef} position={finalPos} rotation={rotation}>
+        <planeGeometry args={[width, height]} />
+        <meshBasicMaterial
+          color="white"
+          transparent
+          opacity={0.25}
+          toneMapped={false}
         />
-      </Canvas>
-    </div>
+      </mesh>
+    );
+  }
+
+  if (kind === "video") {
+    const tex = useVideoTexture(url, {
+      crossOrigin: "anonymous",
+      muted: true,
+      start: true,
+      loop: true,
+      // playsInline: true 는 내부에서 처리됨
+    });
+    useEffect(() => {
+      if (!tex) return;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 4;
+      tex.wrapS = THREE.ClampToEdgeWrapping;
+      tex.wrapT = THREE.ClampToEdgeWrapping;
+    }, [tex]);
+
+    return (
+      <mesh ref={meshRef} position={finalPos} rotation={rotation}>
+        <planeGeometry args={[width, height]} />
+        <meshBasicMaterial
+          map={tex}
+          transparent
+          opacity={dimType === "off" ? 0.5 : 1}
+          toneMapped={false}
+        />
+      </mesh>
+    );
+  }
+
+  // kind === 'image'
+  const tex = useTexture(url);
+  useEffect(() => {
+    if (!tex) return;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+  }, [tex]);
+
+  return (
+    <mesh ref={meshRef} position={finalPos} rotation={rotation}>
+      <planeGeometry args={[width, height]} />
+      <meshBasicMaterial
+        map={tex}
+        transparent
+        opacity={dimType === "off" ? 0.5 : 1}
+        toneMapped={false}
+      />
+    </mesh>
   );
 }

@@ -1,8 +1,12 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { fetchReelsDetails, updateReelsGalleryDetails } from "../editApi";
-import { useEffect, useState } from "react";
+import {
+  fetchReelsDetails,
+  updateReelsDetails,
+  updateReelsGalleryDetails,
+} from "../editApi";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import Toolbar from "@/app/components/edit/ToolBar";
 import TitleBlock from "./components/TitleBlock";
@@ -10,6 +14,9 @@ import EditProfile from "./components/EditProfile";
 import EditGallery from "./components/gallery/EditGallery";
 import EditNavDrawer from "./components/EditNavDrawer";
 import LifestorySection from "./components/lifestory/LifestorySection";
+import ToastStack from "@/app/components/Toast";
+import ViewPage from "@/app/view/[identifier]/reels/page";
+import ReelsView from "./components/preview/ReelsView";
 
 function useIsDesktop(min = 1024) {
   // lg 기준
@@ -34,11 +41,35 @@ export default function EditReels() {
   const [isPreview, setIsPreview] = useState(false);
   const [desktopShowMenu, setDesktopShowMenu] = useState(0);
 
-  const [reel, setReels] = useState(null);
+  const [reel, setReel] = useState(null);
   const [childhood, setChildhood] = useState(null);
   const [memory, setMemory] = useState(null);
   const [relationship, setRelationship] = useState(null);
   const [lifestory, setLifestory] = useState(null);
+
+  // ---------- Toast 상태/함수 ----------
+  const [toasts, setToasts] = useState([]);
+  const timersRef = useRef(new Map());
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+    const timer = timersRef.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      timersRef.current.delete(id);
+    }
+  };
+
+  const showToast = (message, { tone = "success", duration = 2400 } = {}) => {
+    const id = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+    setToasts((prev) => [...prev, { id, message, tone, duration }]);
+    if (duration > 0) {
+      const timer = setTimeout(() => removeToast(id), duration + 120);
+      timersRef.current.set(id, timer);
+    }
+  };
+
+  useEffect(() => () => timersRef.current.forEach((t) => clearTimeout(t)), []);
 
   const [section, setSection] = useState([
     {
@@ -69,10 +100,10 @@ export default function EditReels() {
         const data = await fetchReelsDetails({ token, identifier: username });
 
         console.group("---fetch reel details---");
-        console.log(data);
+        console.log(data.item.reel);
         console.groupEnd();
 
-        setReels(data.item.reel);
+        setReel(data.item.reel);
         setChildhood(data.item.childhood);
         setMemory(data.item.memory);
         setRelationship(data.item.relationship);
@@ -84,11 +115,13 @@ export default function EditReels() {
             eng: "Profile",
             editComponent: (
               <EditProfile
-                reel={reel}
+                reel={data.item.reel}
+                onSaveReelProfile={handleSaveReelProfile}
                 childhood={childhood}
                 memory={memory}
                 relationship={relationship}
                 lifestory={lifestory}
+                onToast={showToast}
               />
             ),
           },
@@ -100,6 +133,7 @@ export default function EditReels() {
                 reelId={data.item.reel.id}
                 userName={data.item.reel.name}
                 isPreview={isPreview}
+                onToast={showToast}
               />
             ),
           },
@@ -115,6 +149,7 @@ export default function EditReels() {
                   memory: data.item.memory,
                   relationship: data.item.relationship,
                 }}
+                onToast={showToast}
               />
             ),
           },
@@ -133,6 +168,20 @@ export default function EditReels() {
       id: reel?.identifier, // Reels.identifier
     });
   };
+
+  const handleSaveReelProfile = async ({ img, item }) => {
+    console.log(item);
+    const id = item.id;
+    const profile = {
+      profileImg: img,
+      name: item.name,
+      birthDate: item.birthDate,
+      birthPlace: item.birthPlace,
+      motto: item.motto,
+    };
+    await updateReelsDetails({ token, id, data: profile });
+  };
+
   const mypage = () => {
     console.group("[onClick mypage] edit/[username]/page ");
     console.log("clicked");
@@ -145,9 +194,30 @@ export default function EditReels() {
   const preview = () => setIsPreview((p) => !p);
   const save = () => {};
   const logout = () => {};
+  if (isPreview)
+    return (
+      <div className="bg-black-100 relative h-screen w-screen overflow-hidden justify-around text-white">
+        <ReelsView identifier={username} />
+        <div className="relative flex h-full w-full max-w-5xl items-stretch md:min-h-[calc(100vh-(--spacing(20))*2)]">
+          {/* sticky Toolbar 래퍼는 그대로 */}
+          <div className="pointer-events-none sticky top-[calc(100vh-80px)] z-1000">
+            <div className="pointer-events-auto">
+              <Toolbar
+                mypage={mypage}
+                preview={preview}
+                save={save}
+                logout={logout}
+              />
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    );
   return (
     <div className="bg-black-100 relative flex min-h-screen w-screen justify-around py-20 text-white">
-      <div className="relative flex w-full max-w-5xl items-stretch md:min-h-[calc(100vh-(--spacing(20))*2)]">
+      <ToastStack toasts={toasts} onDismiss={removeToast} />
+      <div className="relative flex h-full w-full max-w-5xl items-stretch md:min-h-[calc(100vh-(--spacing(20))*2)]">
         {/* sticky Toolbar 래퍼는 그대로 */}
         <div className="pointer-events-none sticky top-[calc(100vh-80px)] z-1000">
           <div className="pointer-events-auto">

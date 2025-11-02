@@ -44,6 +44,7 @@ export default function EditRecords() {
   const [data, setData] = useState(null);
   const [recordId, setRecordId] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [activeItem, setActiveItem] = useState(null);
 
   useEffect(() => {
     if (!token || !username) return;
@@ -255,13 +256,35 @@ export default function EditRecords() {
 
   const handleColorChange = (color) => {
     if (!data) return;
-    setData({
-      ...data,
-      record: {
-        ...data.record,
-        color: color,
-      },
-    });
+    
+    // 활성화된 item이 main이면 record의 color 변경, 아니면 해당 item의 color 변경
+    if (activeItem && activeItem.kind === "main") {
+      setData({
+        ...data,
+        record: {
+          ...data.record,
+          color: color,
+        },
+      });
+    } else if (activeItem && activeItem.id) {
+      // 해당 item의 color 변경
+      const newItems = data.items.map((item) =>
+        item.id === activeItem.id ? { ...item, color: color } : item,
+      );
+      setData({
+        ...data,
+        items: newItems,
+      });
+    } else {
+      // 기본적으로 record의 color 변경
+      setData({
+        ...data,
+        record: {
+          ...data.record,
+          color: color,
+        },
+      });
+    }
     setIsSaved(false);
   };
 
@@ -363,7 +386,7 @@ export default function EditRecords() {
         logout={logout}
         addItem={addTimelineItem}
         onColorChange={handleColorChange}
-        currentColor={data?.record?.color || "#121212"}
+        currentColor={activeItem?.color || data?.record?.color || "#121212"}
         isSaved={isSaved}
         isPreview={isPreview}
       />
@@ -374,6 +397,7 @@ export default function EditRecords() {
           onDataChange={isPreview ? undefined : handleDataChange}
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
+          onActiveItemChange={setActiveItem}
         />
       ) : (
         <LifeRecordDesktop
@@ -382,6 +406,7 @@ export default function EditRecords() {
           onDataChange={isPreview ? undefined : handleDataChange}
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
+          onActiveItemChange={setActiveItem}
         />
       )}
     </>

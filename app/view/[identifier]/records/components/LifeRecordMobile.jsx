@@ -49,6 +49,7 @@ export default function LifeRecordMobile({
   onDataChange,
   onDeleteItem,
   onImageChange,
+  onActiveItemChange,
 }) {
   const router = useRouter();
   // API 데이터를 timeline 형식으로 변환
@@ -108,10 +109,24 @@ export default function LifeRecordMobile({
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
 
-  // API에서 받은 color를 사용하여 테마 설정
+  const activeItem = timeline[activeIdx] || {};
+
+  // 활성화된 item 변경 시 부모에게 알림
+  useEffect(() => {
+    if (onActiveItemChange && activeItem) {
+      onActiveItemChange({
+        id: activeItem.id,
+        kind: activeItem.kind,
+        color: activeItem.color || data.record?.color || "#121212",
+      });
+    }
+  }, [activeIdx, activeItem, onActiveItemChange, data.record?.color]);
+
+  // 활성화된 item의 color를 우선 사용, 없으면 record의 color 사용
   const theme = useMemo(() => {
-    if (data.record?.color) {
-      const colorHex = data.record.color;
+    // 활성화된 item의 color가 있으면 우선 사용
+    const colorHex = activeItem.color || data.record?.color;
+    if (colorHex) {
       const matchedTheme = BG_THEME_PALETTE.find(
         (t) => t.bg.toLowerCase() === colorHex.toLowerCase(),
       );
@@ -124,9 +139,7 @@ export default function LifeRecordMobile({
       };
     }
     return DEFAULT_THEME;
-  }, [data.record?.color]);
-
-  const activeItem = timeline[activeIdx] || {};
+  }, [activeItem.color, data.record?.color]);
 
   const mainTitle = useMemo(() => {
     const mainItem = timeline.find((it) => it.kind === "main");

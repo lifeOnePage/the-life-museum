@@ -74,6 +74,7 @@ export default function LifeRecordDesktop({
   onDataChange,
   onDeleteItem,
   onImageChange,
+  onActiveItemChange,
 }) {
   const router = useRouter();
   // API 데이터를 timeline 형식으로 변환
@@ -133,11 +134,24 @@ export default function LifeRecordDesktop({
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
 
-  // API에서 받은 color를 사용하여 테마 설정
+  const activeItem = timeline[activeIdx] || {};
+
+  // 활성화된 item 변경 시 부모에게 알림
+  useEffect(() => {
+    if (onActiveItemChange && activeItem) {
+      onActiveItemChange({
+        id: activeItem.id,
+        kind: activeItem.kind,
+        color: activeItem.color || data.record?.color || "#121212",
+      });
+    }
+  }, [activeIdx, activeItem, onActiveItemChange, data.record?.color]);
+
+  // 활성화된 item의 color를 우선 사용, 없으면 record의 color 사용
   const theme = useMemo(() => {
-    if (data.record?.color) {
-      // color가 hex 코드인 경우 직접 사용
-      const colorHex = data.record.color;
+    // 활성화된 item의 color가 있으면 우선 사용
+    const colorHex = activeItem.color || data.record?.color;
+    if (colorHex) {
       // BG_THEME_PALETTE에서 일치하는 것을 찾거나, 없으면 직접 생성
       const matchedTheme = BG_THEME_PALETTE.find(
         (t) => t.bg.toLowerCase() === colorHex.toLowerCase(),
@@ -152,7 +166,7 @@ export default function LifeRecordDesktop({
       };
     }
     return DEFAULT_THEME;
-  }, [data.record?.color]);
+  }, [activeItem.color, data.record?.color]);
 
   const wheelTimer = useRef(null);
   const scrollSound = useRef(null);
@@ -214,7 +228,6 @@ export default function LifeRecordDesktop({
   }, []);
 
   const safeIdx = Math.min(activeIdx, Math.max(0, (timeline?.length || 1) - 1));
-  const activeItem = timeline?.[safeIdx] || null;
   const mainTitle = useMemo(() => {
     const mainItem = timeline.find((it) => it.kind === "main");
     return mainItem?.title || "사용자의 이야기";

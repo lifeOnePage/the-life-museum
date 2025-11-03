@@ -58,8 +58,8 @@ export default function MobileLayout({
             <HorizontalThumbs
               items={reels}
               label="Life-Reels"
-              onOpenCreate={() => onOpenCreate("reel")}
-              onOpenAction={(item) => onOpenAction("reel", item)}
+              onOpenCreate={() => onOpenCreate("reels")}
+              onOpenAction={(item) => onOpenAction("reels", item)}
             />
           </motion.div>
         )}

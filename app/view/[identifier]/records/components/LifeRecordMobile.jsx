@@ -51,8 +51,11 @@ export default function LifeRecordMobile({
   onImageChange,
   onActiveItemChange,
   isUploadingImage = false,
+  onNavigateToItem,
 }) {
   const router = useRouter();
+  const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
+
   // API 데이터를 timeline 형식으로 변환
   const timeline = useMemo(() => {
     const result = [];
@@ -74,7 +77,7 @@ export default function LifeRecordMobile({
       });
     }
 
-    // RecordItems를 year 타입으로 변환하고 연도 순서대로 정렬
+    // RecordItems를 year 타입으로 변환
     const items = (data.items || []).map((item) => {
       const [y] = (item.date || "").split(".");
       const coverUrl = item.coverUrl || "/images/records/No image.png";
@@ -95,19 +98,22 @@ export default function LifeRecordMobile({
       };
     });
 
-    // 연도 순서대로 정렬 (오름차순: 오래된 것부터)
-    items.sort((a, b) => {
-      // 연도가 없는 경우 뒤로
-      if (!a.year && !b.year) return 0;
-      if (!a.year) return 1;
-      if (!b.year) return -1;
-      return a.year - b.year;
-    });
+    // 날짜 입력 중이 아닐 때만 정렬
+    if (!editingDateItemId) {
+      // 연도 순서대로 정렬 (오름차순: 오래된 것부터)
+      items.sort((a, b) => {
+        // 연도가 없는 경우 뒤로
+        if (!a.year && !b.year) return 0;
+        if (!a.year) return 1;
+        if (!b.year) return -1;
+        return a.year - b.year;
+      });
+    }
 
     result.push(...items);
 
     return result;
-  }, [data]);
+  }, [data, editingDateItemId]);
 
   const [activeIdx, setActiveIdx] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
@@ -117,6 +123,68 @@ export default function LifeRecordMobile({
   const itemImageInputRef = useRef(null);
   const bgmAudioRef = useRef(null);
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
+  const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
+  const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
+
+  const activeItem = timeline[activeIdx] || {};
+
+  // activeItem.id가 변경될 때 ref 업데이트
+  useEffect(() => {
+    if (activeItem?.id) {
+      activeItemIdRef.current = activeItem.id;
+    }
+  }, [activeItem?.id]);
+
+  // timeline이 변경될 때 현재 활성화된 항목의 ID를 유지
+  useEffect(() => {
+    // 외부에서 명시적으로 이동을 요청한 경우가 아니고, 추적 중인 항목 ID가 있는 경우
+    if (!isNavigatingRef.current && activeItemIdRef.current) {
+      const newIdx = timeline.findIndex(
+        (item) => item.id === activeItemIdRef.current,
+      );
+      if (newIdx !== -1 && newIdx !== activeIdx) {
+        // 같은 ID를 가진 항목의 새 인덱스로 이동
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setActiveIdx(newIdx);
+          setIsTransitioning(false);
+        }, 150);
+      }
+    }
+  }, [timeline]);
+
+  // 외부에서 인덱스 변경 요청 처리
+  useEffect(() => {
+    if (onNavigateToItem !== undefined && onNavigateToItem !== null) {
+      isNavigatingRef.current = true; // 외부 이동 시작
+      const targetIdx = Math.max(
+        0,
+        Math.min(onNavigateToItem, timeline.length - 1),
+      );
+      if (targetIdx !== activeIdx) {
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setActiveIdx(targetIdx);
+          setIsTransitioning(false);
+        }, 150);
+      }
+      // 사용 후 리셋 (무한 루프 방지)
+      if (onActiveItemChangeRef.current) {
+        onActiveItemChangeRef.current({
+          id: timeline[targetIdx]?.id,
+          kind: timeline[targetIdx]?.kind,
+          color: timeline[targetIdx]?.color || data.record?.color || "#121212",
+          index: targetIdx,
+          label: timeline[targetIdx]?.label,
+          event: timeline[targetIdx]?.event,
+        });
+      }
+      // 이동 완료 후 플래그 리셋
+      setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, 100);
+    }
+  }, [onNavigateToItem, timeline.length]);
 
   // BGM 재생/정지 기능
   useEffect(() => {
@@ -149,12 +217,28 @@ export default function LifeRecordMobile({
     }
   };
 
-  const activeItem = timeline[activeIdx] || {};
-
   // 활성화된 item 변경 시 부모에게 알림
+  const prevActiveIdxRef = useRef(activeIdx);
+  const prevActiveItemIdRef = useRef(activeItem?.id);
+  const onActiveItemChangeRef = useRef(onActiveItemChange);
+
+  // onActiveItemChange ref 업데이트
   useEffect(() => {
-    if (onActiveItemChange && activeItem) {
-      onActiveItemChange({
+    onActiveItemChangeRef.current = onActiveItemChange;
+  }, [onActiveItemChange]);
+
+  useEffect(() => {
+    // activeIdx나 activeItem.id가 실제로 변경된 경우에만 호출
+    if (
+      onActiveItemChangeRef.current &&
+      activeItem &&
+      (prevActiveIdxRef.current !== activeIdx ||
+        prevActiveItemIdRef.current !== activeItem.id)
+    ) {
+      prevActiveIdxRef.current = activeIdx;
+      prevActiveItemIdRef.current = activeItem.id;
+
+      onActiveItemChangeRef.current({
         id: activeItem.id,
         kind: activeItem.kind,
         color: activeItem.color || data.record?.color || "#121212",
@@ -163,7 +247,15 @@ export default function LifeRecordMobile({
         event: activeItem.event, // event 추가
       });
     }
-  }, [activeIdx, activeItem, onActiveItemChange, data.record?.color]);
+  }, [
+    activeIdx,
+    activeItem?.id,
+    activeItem?.kind,
+    activeItem?.color,
+    activeItem?.event,
+    activeItem?.label,
+    data.record?.color,
+  ]);
 
   // 활성화된 item의 color를 우선 사용, 없으면 record의 color 사용
   const theme = useMemo(() => {
@@ -282,7 +374,7 @@ export default function LifeRecordMobile({
               activeItem.kind === "main" ? mainImageInputRef : itemImageInputRef
             }
             type="file"
-            accept="image/*,video/*"
+            accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
             style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
@@ -652,6 +744,50 @@ export default function LifeRecordMobile({
                             : item,
                         );
                         onDataChange?.({ ...data, items: newItems });
+                      }}
+                      onFocus={() => {
+                        // 날짜 입력 시작
+                        if (activeItem?.id) {
+                          setEditingDateItemId(activeItem.id);
+                        }
+                      }}
+                      onBlur={() => {
+                        // 날짜 입력 완료 - 정렬하고 새 위치로 이동
+                        if (activeItem?.id) {
+                          setEditingDateItemId(null);
+
+                          // 정렬된 위치 계산
+                          const sortedItems = [...(data.items || [])].map(
+                            (item) => {
+                              const [y] = (item.date || "").split(".");
+                              return {
+                                ...item,
+                                year: y ? parseInt(y, 10) : 0,
+                              };
+                            },
+                          );
+
+                          sortedItems.sort((a, b) => {
+                            if (!a.year && !b.year) return 0;
+                            if (!a.year) return 1;
+                            if (!b.year) return -1;
+                            return a.year - b.year;
+                          });
+
+                          // 정렬된 위치에서 현재 항목의 인덱스 찾기 (main 제외)
+                          const sortedIdx = sortedItems.findIndex(
+                            (item) => item.id === activeItem.id,
+                          );
+                          if (sortedIdx !== -1) {
+                            // main이 첫 번째이므로 +1
+                            const targetIdx = sortedIdx + 1;
+                            setIsTransitioning(true);
+                            setTimeout(() => {
+                              setActiveIdx(targetIdx);
+                              setIsTransitioning(false);
+                            }, 150);
+                          }
+                        }
                       }}
                       placeholder="예: 2024.01.15"
                       className="lr-mobile-meta-date lr-mobile-edit-input"

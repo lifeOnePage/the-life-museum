@@ -26,8 +26,8 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
       });
       setCoverUrl(url);
     } catch (error) {
-      console.error("이미지 업로드 실패:", error);
-      alert("이미지 업로드에 실패했습니다.");
+      console.error("미디어 업로드 실패:", error);
+      alert("미디어 업로드에 실패했습니다.");
     } finally {
       setIsUploading(false);
     }
@@ -78,18 +78,26 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
           새 타임라인 만들기
         </h2>
 
-        {/* 이미지 업로드 영역 */}
+        {/* 미디어 업로드 영역 */}
         <div className="mb-6">
           <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
             {coverUrl ? (
-              <img
-                src={coverUrl}
-                alt="커버 이미지"
-                className="h-full w-full object-cover"
-              />
+              coverUrl.match(/\.(mp4|webm)$/i) ? (
+                <video
+                  src={coverUrl}
+                  className="h-full w-full object-cover"
+                  controls
+                />
+              ) : (
+                <img
+                  src={coverUrl}
+                  alt="커버 미디어"
+                  className="h-full w-full object-cover"
+                />
+              )
             ) : (
               <div className="flex h-full w-full items-center justify-center text-gray-400">
-                이미지 없음
+                미디어 없음
               </div>
             )}
             <button
@@ -98,12 +106,12 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
               disabled={isUploading}
               className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-md bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
             >
-              {isUploading ? "업로드 중..." : "이미지 변경"}
+              {isUploading ? "업로드 중..." : "미디어 변경"}
             </button>
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
               onChange={handleImageChange}
               className="hidden"
             />

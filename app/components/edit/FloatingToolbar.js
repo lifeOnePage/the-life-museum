@@ -33,6 +33,7 @@ export default function FloatingToolbar({
   currentBgm,
   isSaved = true,
   isPreview = false,
+  isSaving = false,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [hovered, setHovered] = useState(null);
@@ -96,8 +97,11 @@ export default function FloatingToolbar({
       ) : (
         <FiSave size={20} />
       ),
-      disabled: isSaved,
-      getLabel: () => (isSaved ? "변경사항이 저장됨" : "저장하려면 클릭하세요"),
+      disabled: isSaved || isSaving,
+      getLabel: () => {
+        if (isSaving) return "저장 중...";
+        return isSaved ? "변경사항이 저장됨" : "저장하려면 클릭하세요";
+      },
     },
     {
       key: "logout",

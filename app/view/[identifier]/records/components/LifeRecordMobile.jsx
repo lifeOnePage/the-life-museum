@@ -50,6 +50,7 @@ export default function LifeRecordMobile({
   onDeleteItem,
   onImageChange,
   onActiveItemChange,
+  isUploadingImage = false,
 }) {
   const router = useRouter();
   // API 데이터를 timeline 형식으로 변환
@@ -57,15 +58,18 @@ export default function LifeRecordMobile({
     const result = [];
 
     if (data.record) {
+      const coverUrl = data.record.coverUrl || "/images/records/No image.png";
+      const isVideo = coverUrl.match(/\.(mp4|mov|webm|m4v|avi)$/i);
       result.push({
-        id: "PLAY",
+        id: "home",
         kind: "main",
-        label: "PLAY",
+        label: "home",
         title: data.record.name || "사용자의 이야기",
         date: "",
         location: "",
         desc: data.record.description || "",
-        cover: data.record.coverUrl || "/images/records/No image.png",
+        cover: isVideo ? null : coverUrl,
+        video: isVideo ? coverUrl : null,
         isHighlight: data.record?.isHighlight || false,
       });
     }
@@ -73,6 +77,8 @@ export default function LifeRecordMobile({
     // RecordItems를 year 타입으로 변환하고 연도 순서대로 정렬
     const items = (data.items || []).map((item) => {
       const [y] = (item.date || "").split(".");
+      const coverUrl = item.coverUrl || "/images/records/No image.png";
+      const isVideo = coverUrl.match(/\.(mp4|mov|webm|m4v|avi)$/i);
       return {
         id: item.id,
         kind: "year",
@@ -80,7 +86,8 @@ export default function LifeRecordMobile({
         event: item.title || "",
         date: item.date || "",
         location: item.location || "",
-        cover: item.coverUrl || "/images/records/No image.png",
+        cover: isVideo ? null : coverUrl,
+        video: isVideo ? coverUrl : null,
         desc: item.description || "",
         isHighlight: item.isHighlight || false,
         color: item.color || "",
@@ -151,6 +158,9 @@ export default function LifeRecordMobile({
         id: activeItem.id,
         kind: activeItem.kind,
         color: activeItem.color || data.record?.color || "#121212",
+        index: activeIdx, // timeline에서의 인덱스 추가
+        label: activeItem.label, // label 추가
+        event: activeItem.event, // event 추가
       });
     }
   }, [activeIdx, activeItem, onActiveItemChange, data.record?.color]);
@@ -227,7 +237,9 @@ export default function LifeRecordMobile({
             width: "44px",
             height: "44px",
             borderRadius: "50%",
-            background: isBgmPlaying ? "rgba(255, 255, 255, 0.2)" : "rgba(255, 255, 255, 0.1)",
+            background: isBgmPlaying
+              ? "rgba(255, 255, 255, 0.2)"
+              : "rgba(255, 255, 255, 0.1)",
             border: "1px solid rgba(255, 255, 255, 0.2)",
             color: theme.text,
             cursor: "pointer",
@@ -239,12 +251,7 @@ export default function LifeRecordMobile({
           title={isBgmPlaying ? "음악 정지" : "음악 재생"}
         >
           {isBgmPlaying ? (
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path
                 fillRule="evenodd"
                 d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
@@ -252,12 +259,7 @@ export default function LifeRecordMobile({
               />
             </svg>
           ) : (
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
               <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
             </svg>
           )}
@@ -267,13 +269,13 @@ export default function LifeRecordMobile({
       <header className="lr-mobile-header">
         <div className="lr-mobile-title">Life-Records</div>
         <div className="lr-mobile-desc">
-          <b>{data.record?.userName || "사용자"}</b>님의 포스트 카드입니다.
+          <b>{data.record?.userName || "사용자"}</b>님의 라이프 레코드입니다.
           <br />
           "작은 장면을 모아 긴 기억을 만듭니다"
         </div>
       </header>
 
-      <div className="lr-mobile-cover-wrap">
+      <div className="lr-mobile-cover-wrap" style={{ position: "relative" }}>
         {isEditing && (
           <input
             ref={
@@ -322,6 +324,47 @@ export default function LifeRecordMobile({
               }}
             />
           </>
+        )}
+        {isUploadingImage && (
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 10,
+              borderRadius: "inherit",
+            }}
+          >
+            <div
+              style={{
+                color: "#fff",
+                fontSize: "16px",
+                fontWeight: "500",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: "12px",
+              }}
+            >
+              <div
+                style={{
+                  width: "40px",
+                  height: "40px",
+                  border: "3px solid rgba(255, 255, 255, 0.3)",
+                  borderTop: "3px solid #fff",
+                  borderRadius: "50%",
+                  animation: "spin 1s linear infinite",
+                }}
+              />
+              <span>업로드 중...</span>
+            </div>
+          </div>
         )}
         {!isEditing &&
           activeItem?.isHighlight &&
@@ -450,6 +493,7 @@ export default function LifeRecordMobile({
                     onDataChange?.(newData);
                   }}
                   className="lr-mobile-meta-title lr-mobile-edit-input"
+                  placeholder="레코드의 제목을 입력하세요"
                 />
                 <textarea
                   value={data.record?.description || ""}
@@ -462,6 +506,7 @@ export default function LifeRecordMobile({
                   }}
                   className="lr-mobile-meta-desc lr-mobile-edit-input"
                   maxLength={80}
+                  placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 80자)"
                 />
                 <div className="lr-mobile-char-count">
                   {(data.record?.description || "").length} / 80
@@ -564,6 +609,7 @@ export default function LifeRecordMobile({
                   }}
                   className="lr-mobile-meta-desc lr-mobile-edit-input"
                   maxLength={150}
+                  placeholder="이 순간에 대한 이야기를 자유롭게 적어보세요 (최대 150자)"
                 />
                 <div className="lr-mobile-char-count">
                   {
@@ -590,6 +636,7 @@ export default function LifeRecordMobile({
                     }}
                     className="lr-mobile-meta-name lr-mobile-edit-input"
                     rows={2}
+                    placeholder="이 순간을 표현할 수 있는 제목을 입력하세요"
                   />
                   <div className="lr-mobile-meta-right">
                     <input
@@ -606,7 +653,7 @@ export default function LifeRecordMobile({
                         );
                         onDataChange?.({ ...data, items: newItems });
                       }}
-                      placeholder="2001.08.23"
+                      placeholder="예: 2024.01.15"
                       className="lr-mobile-meta-date lr-mobile-edit-input"
                     />
                     <input
@@ -623,7 +670,7 @@ export default function LifeRecordMobile({
                         );
                         onDataChange?.({ ...data, items: newItems });
                       }}
-                      placeholder="장소"
+                      placeholder="예: 서울, 파리, 제주도"
                       className="lr-mobile-meta-location lr-mobile-edit-input"
                     />
                   </div>
@@ -667,7 +714,11 @@ export default function LifeRecordMobile({
               }, 150);
             }
           }}
-          style={{ cursor: "pointer" }}
+          style={{
+            cursor: activeIdx === 0 ? "default" : "pointer",
+            opacity: activeIdx === 0 ? 0 : 1,
+            pointerEvents: activeIdx === 0 ? "none" : "auto",
+          }}
         >
           home
         </span>
@@ -675,19 +726,21 @@ export default function LifeRecordMobile({
           <span
             onClick={handlePrev}
             style={{
-              cursor: activeIdx === 0 ? "not-allowed" : "pointer",
-              opacity: activeIdx === 0 ? 0.3 : 1,
+              cursor: activeIdx === 0 ? "default" : "pointer",
+              opacity: activeIdx === 0 ? 0 : 1,
+              pointerEvents: activeIdx === 0 ? "none" : "auto",
             }}
           >
             &lt;
           </span>
-          <span>{activeItem.label || "PLAY"}</span>
+          <span>{activeItem.label || "home"}</span>
           <span
             onClick={handleNext}
             style={{
-              cursor:
-                activeIdx === timeline.length - 1 ? "not-allowed" : "pointer",
-              opacity: activeIdx === timeline.length - 1 ? 0.3 : 1,
+              cursor: activeIdx === timeline.length - 1 ? "default" : "pointer",
+              opacity: activeIdx === timeline.length - 1 ? 0 : 1,
+              pointerEvents:
+                activeIdx === timeline.length - 1 ? "none" : "auto",
             }}
           >
             &gt;

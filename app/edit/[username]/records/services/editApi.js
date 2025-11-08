@@ -20,7 +20,8 @@ export async function updateRecordDetails({ token, id, data }) {
     body: JSON.stringify(data),
   });
   const json = await res.json();
-  if (!res.ok || !json.ok) throw new Error(json?.error || "update record failed");
+  if (!res.ok || !json.ok)
+    throw new Error(json?.error || "update record failed");
   return json;
 }
 
@@ -61,28 +62,35 @@ export async function deleteRecordItem({ token, itemId }) {
 
 export async function uploadRecordFile({ token, file, prefix }) {
   try {
-    console.log("[uploadRecordFile] Starting upload:", { prefix, fileName: file.name, fileType: file.type, fileSize: file.size });
-    
+    console.log("[uploadRecordFile] Starting upload:", {
+      prefix,
+      fileName: file.name,
+      fileType: file.type,
+      fileSize: file.size,
+    });
+
     if (!file || !file.name || !file.type) {
       throw new Error("유효하지 않은 파일입니다.");
     }
-    
-    // 서버 프록시를 통해 업로드 (CORS 문제 해결)
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("prefix", prefix);
 
-    const uploadRes = await fetch("/api/storage/upload", {
+    // 1) Presign URL 요청 (파일 메타데이터만 전송)
+    const presignRes = await fetch("/api/storage/presign", {
       method: "POST",
-      body: formData,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prefix,
+        files: [{ name: file.name, type: file.type }],
+      }),
     });
 
-    console.log("[uploadRecordFile] Upload response status:", uploadRes.status);
-
-    if (!uploadRes.ok) {
-      const errorText = await uploadRes.text();
-      console.error("[uploadRecordFile] upload failed:", uploadRes.status, errorText);
-      let errorMessage = `업로드 실패: ${uploadRes.status}`;
+    if (!presignRes.ok) {
+      const errorText = await presignRes.text();
+      console.error(
+        "[uploadRecordFile] presign failed:",
+        presignRes.status,
+        errorText,
+      );
+      let errorMessage = `Presign 실패: ${presignRes.status}`;
       try {
         const errorJson = JSON.parse(errorText);
         errorMessage = errorJson.error || errorMessage;
@@ -92,19 +100,36 @@ export async function uploadRecordFile({ token, file, prefix }) {
       throw new Error(errorMessage);
     }
 
-    const uploadJson = await uploadRes.json();
-    console.log("[uploadRecordFile] Upload response:", uploadJson);
-
-    if (!uploadJson.ok) {
-      throw new Error(uploadJson.error || "업로드 실패");
+    const presignJson = await presignRes.json();
+    if (
+      !presignJson.ok ||
+      !presignJson.items ||
+      presignJson.items.length === 0
+    ) {
+      throw new Error(presignJson.error || "Presign 응답 오류");
     }
 
-    if (!uploadJson.publicUrl) {
-      throw new Error("업로드 응답에 URL이 없습니다.");
+    const { uploadUrl, publicUrl, headers } = presignJson.items[0];
+
+    // 2) 클라이언트에서 직접 R2에 업로드 (서버를 거치지 않음)
+    const uploadRes = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: headers,
+      body: file,
+    });
+
+    if (!uploadRes.ok) {
+      const errorText = await uploadRes.text();
+      console.error(
+        "[uploadRecordFile] upload failed:",
+        uploadRes.status,
+        errorText,
+      );
+      throw new Error(`업로드 실패: ${uploadRes.status}`);
     }
 
-    console.log("[uploadRecordFile] Upload successful, publicUrl:", uploadJson.publicUrl);
-    return uploadJson.publicUrl;
+    console.log("[uploadRecordFile] Upload successful, publicUrl:", publicUrl);
+    return publicUrl;
   } catch (error) {
     console.error("[uploadRecordFile] error:", error);
     console.error("[uploadRecordFile] error name:", error.name);
@@ -112,4 +137,3 @@ export async function uploadRecordFile({ token, file, prefix }) {
     throw error;
   }
 }
-

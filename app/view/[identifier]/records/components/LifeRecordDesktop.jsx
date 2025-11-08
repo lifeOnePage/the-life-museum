@@ -75,6 +75,7 @@ export default function LifeRecordDesktop({
   onDeleteItem,
   onImageChange,
   onActiveItemChange,
+  isUploadingImage = false,
 }) {
   const router = useRouter();
   // API 데이터를 timeline 형식으로 변환
@@ -159,7 +160,6 @@ export default function LifeRecordDesktop({
       if (matchedTheme) {
         return matchedTheme;
       }
-      // 일치하는 테마가 없으면 새로운 테마 생성
       return {
         bg: colorHex,
         text: "#F2F2F2", // 기본 텍스트 색상
@@ -344,7 +344,7 @@ export default function LifeRecordDesktop({
             }`}
           >
             <div key={activeIdx} className="card-fade">
-              <div className="lr-card-media">
+              <div className="lr-card-media" style={{ position: "relative" }}>
                 {isEditing && (
                   <input
                     ref={
@@ -389,6 +389,47 @@ export default function LifeRecordDesktop({
                       }}
                     />
                   </>
+                )}
+                {isUploadingImage && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      backgroundColor: "rgba(0, 0, 0, 0.7)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 10,
+                      borderRadius: "inherit",
+                    }}
+                  >
+                    <div
+                      style={{
+                        color: "#fff",
+                        fontSize: "16px",
+                        fontWeight: "500",
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: "12px",
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "40px",
+                          height: "40px",
+                          border: "3px solid rgba(255, 255, 255, 0.3)",
+                          borderTop: "3px solid #fff",
+                          borderRadius: "50%",
+                          animation: "spin 1s linear infinite",
+                        }}
+                      />
+                      <span>업로드 중...</span>
+                    </div>
+                  </div>
                 )}
 
                 {!isEditing && activeItem?.isHighlight && (
@@ -517,6 +558,7 @@ export default function LifeRecordDesktop({
                             onDataChange?.(newData);
                           }}
                           className="lr-name"
+                          placeholder="레코드의 제목을 입력하세요"
                         />
                       ) : (
                         <div className="lr-name">{mainTitle}</div>
@@ -538,6 +580,7 @@ export default function LifeRecordDesktop({
                           }}
                           className="lr-desc-input"
                           maxLength={80}
+                          placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 80자)"
                         />
                         <div className="lr-char-count">
                           {(data.record?.description || "").length} / 80
@@ -575,6 +618,7 @@ export default function LifeRecordDesktop({
                           }}
                           className="lr-desc-input"
                           maxLength={150}
+                          placeholder="이 순간에 대한 이야기를 자유롭게 적어보세요 (최대 150자)"
                         />
                         <div className="lr-char-count">
                           {
@@ -608,6 +652,7 @@ export default function LifeRecordDesktop({
                           }}
                           className="lr-name"
                           rows={2}
+                          placeholder="이 순간을 표현할 수 있는 제목을 입력하세요"
                         />
                       ) : (
                         <div className="lr-name">
@@ -634,7 +679,7 @@ export default function LifeRecordDesktop({
                                 );
                                 onDataChange?.({ ...data, items: newItems });
                               }}
-                              placeholder="2001.08.23"
+                              placeholder="예: 2024.01.15"
                               className="lr-date-input"
                               style={{
                                 width: "100%",
@@ -656,7 +701,7 @@ export default function LifeRecordDesktop({
                                 );
                                 onDataChange?.({ ...data, items: newItems });
                               }}
-                              placeholder="장소"
+                              placeholder="예: 서울, 파리, 제주도"
                               className="lr-location-input"
                               style={{
                                 width: "100%",

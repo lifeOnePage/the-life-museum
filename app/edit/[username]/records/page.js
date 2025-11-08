@@ -61,12 +61,22 @@ export default function EditRecords() {
 
           const userName = user?.userName || "사용자";
 
+          // 메인 레코드가 비어있으면 가이드라인 표시
+          const isNewRecord =
+            !result.item.record.name?.trim() &&
+            !result.item.record.description?.trim() &&
+            !result.item.record.coverUrl;
+
           const record = {
             ...result.item.record,
-            name: result.item.record.name?.trim() || `${userName}의 이야기`,
+            name:
+              result.item.record.name?.trim() ||
+              (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
             description:
               result.item.record.description?.trim() ||
-              "당신에 관한 이야기입니다. 일상의 작은 순간들을 모아 하나의 긴 기억으로 만들어가는 시간입니다.",
+              (isNewRecord
+                ? "일상의 작은 순간들을 관찰하고 기록하는 아티스트입니다.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브할 수 있도록 돕습니다."
+                : "당신을 소개하는 문구를 작성해주세요! (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)"),
             // 메인 커버 이미지가 없으면 기본 이미지 설정
             coverUrl:
               result.item.record.coverUrl || "/images/records/No image.png",
@@ -86,11 +96,11 @@ export default function EditRecords() {
             items = [
               {
                 id: null, // 새 항목
-                title: "첫 번째 타임라인",
+                title: "첫 번째 순간(예:출생)",
                 date: dateStr,
                 location: "",
                 description:
-                  "첫 번째 타임라인을 추가해보세요. 소중한 순간을 기록해보세요.",
+                  "기록할 만한 일들이 있나요? 작은 일들도 좋아요.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브해보세요.",
                 color: "",
                 isHighlight: false,
                 coverUrl: "/images/records/No image.png",
@@ -241,15 +251,71 @@ export default function EditRecords() {
       // DB에 저장된 항목이면 API 호출
       if (itemId) {
         await deleteRecordItem({ token, itemId });
-      }
 
-      // 데이터에서 제거
-      const newItems = data.items.filter((item) => item.id !== itemId);
-      setData({
-        ...data,
-        items: newItems,
-      });
-      setIsSaved(false);
+        // 삭제 후 DB에서 최신 데이터 다시 불러오기
+        const result = await fetchRecordDetails({
+          token,
+          identifier: username,
+        });
+        if (result?.ok && result?.item) {
+          const userName = user?.userName || "사용자";
+
+          // 메인 레코드가 비어있으면 가이드라인 표시
+          const isNewRecord =
+            !result.item.record.name?.trim() &&
+            !result.item.record.description?.trim() &&
+            !result.item.record.coverUrl;
+
+          const record = {
+            ...result.item.record,
+            name:
+              result.item.record.name?.trim() ||
+              (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
+            description:
+              result.item.record.description?.trim() ||
+              (isNewRecord
+                ? "일상의 작은 순간들을 관찰하고 기록하는 아티스트입니다.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브할 수 있도록 돕습니다."
+                : "당신을 소개하는 문구를 작성해보세요. (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)"),
+            coverUrl:
+              result.item.record.coverUrl || "/images/records/No image.png",
+            color: result.item.record.color || "#121212",
+          };
+          let items = result.item.recordItems || [];
+          if (items.length === 0) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, "0");
+            const day = String(today.getDate()).padStart(2, "0");
+            const dateStr = `${year}.${month}.${day}`;
+            items = [
+              {
+                id: null,
+                title: "첫 번째 기록(예: 출생)",
+                date: dateStr,
+                location: "",
+                description:
+                  "기록할 만한 일들이 있나요? 작은 일들도 좋아요.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브해보세요.",
+                color: "",
+                isHighlight: false,
+                coverUrl: "/images/records/No image.png",
+              },
+            ];
+          }
+          setData({
+            record,
+            items,
+          });
+        }
+        setIsSaved(true);
+      } else {
+        // 새로 만든 항목(id가 없는)은 로컬에서만 제거
+        const newItems = data.items.filter((item) => item.id !== itemId);
+        setData({
+          ...data,
+          items: newItems,
+        });
+        setIsSaved(false);
+      }
     } catch (e) {
       console.error("[delete item] error:", e);
       alert(`삭제 실패: ${e.message || "알 수 없는 오류"}`);

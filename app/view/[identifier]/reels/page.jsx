@@ -209,6 +209,7 @@ export default function ViewPage() {
         setData(res);
 
         const built = buildAll(res);
+        console.log(built)
         setSlots(built.slots);
         setRanges(built.ranges);
         setSliderSections(built.sliderSections);

@@ -54,7 +54,18 @@ export default function MobileLayout({
             transition={{ duration: 0.18 }}
             style={{ marginTop: 12 }}
           >
-            <RingPictogram />
+            {/* <RingPictogram /> */}
+            <div className="gap-3 my-4">
+              <div className=" text-white text-sm/loose font">
+                Life-Reels는 소중한 관계와 순간을 영화처럼 이어붙인 디지털
+                아카이브입니다. 시간의 흐름 속에서 움직이는 추억을 담아내어,
+                당신만의 이야기를 감각적으로 기록하고 나눕니다.
+              </div>
+              <div className="mt-4 text-white-100 text-sm/loose">
+                원하는 대상의 Reels를 새로 제작하거나, 기존 Reels를 클릭하여
+                [편집하기]를 눌러 내용을 수정할 수 있어요.
+              </div>
+            </div>
             <HorizontalThumbs
               items={reels}
               label="Life-Reels"
@@ -73,7 +84,16 @@ export default function MobileLayout({
             transition={{ duration: 0.18 }}
             style={{ marginTop: 12 }}
           >
-            <TabPlanePictogram size={100} />
+            {/* <TabPlanePictogram size={100} /> */}
+            <div className="gap-3 my-4">
+              <div className=" text-white text-sm/loose font">
+                Life-Records는 당신의 삶에서 소중한 순간들을 레코드로 기록하는 디지털 아카이브입니다. 이름과 출생 정보, 내용, 연도별 타임라인, 사진을 기록하고, 링크로 쉽게 공유합니다.
+              </div>
+              <div className="mt-4 text-white-100 text-sm/loose">
+                원하는 대상의 Records를 새로 제작하거나, 기존 Records를 클릭하여
+                [편집하기]를 눌러 내용을 수정할 수 있어요.
+              </div>
+            </div>
             <HorizontalThumbs
               items={records}
               label="Life-Records"
@@ -104,8 +124,8 @@ export default function MobileLayout({
           createModal.type === "reels"
             ? "새 Life-Reels"
             : createModal.type === "records"
-            ? "새 Life-Records"
-            : ""
+              ? "새 Life-Records"
+              : ""
         }
         contentType={createModal.type === "records" ? "records" : "reels"}
         onClose={closeCreate}

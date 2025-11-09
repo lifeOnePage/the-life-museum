@@ -200,6 +200,8 @@ export default function LeftSprite({
     console.log("mainLabel: ", mainLabel);
     console.log("subLabel: ", subLabel);
     console.log("caption: ", caption);
+  } else {
+    console.log("item: ", item);
   }
   return (
     <div className="mx-auto h-full w-full max-w-[680px]">
@@ -226,14 +228,16 @@ export default function LeftSprite({
       <div className="mt-3 rounded-2xl border border-white/10 bg-black/40 p-3 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-3">
           <div className="text-[12px] font-semibold tracking-wide text-white/80">
-            {mainLabel}
+            {subLabel}
           </div>
           <div className="h-px flex-1 bg-white/10" />
-          <div className="truncate text-[12px] text-white/70">{subLabel}</div>
+          <div className="truncate text-[12px] text-white/70">{mainLabel}</div>
         </div>
         {mainLabel === "People" ? (
           <div className="mt-2 text-[13px] leading-relaxed text-white/50">
-            {item?._relMeta?.relation}
+            <p className="text-white font-bold">{item?._relMeta?.relation}</p>
+            {/* <br /> */}
+            {item?._relMeta?.comment}
           </div>
         ) : mainLabel === "Memory" ? (
           <div className="mt-2 text-[13px] leading-relaxed text-white/85">

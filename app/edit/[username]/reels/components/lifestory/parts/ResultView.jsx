@@ -7,7 +7,7 @@ export default function ResultView({
   onGoToQA,
   story,
   isEditing,
-  setIsEditing,
+  setIsEditingResult,
   onChangeStory,
 }) {
   console.log(tokenUsage);
@@ -36,7 +36,7 @@ export default function ResultView({
       ) : (
         <div
           onClick={() => {
-            setIsEditing(true);
+            setIsEditingResult(true);
           }}
           className="bg-black-200 cursor-text rounded-xl border border-dashed border-white/20 p-3 text-sm/8 whitespace-pre-wrap"
           title="클릭하여 직접 수정할 수 있어요"

@@ -175,6 +175,9 @@ export default function EntityGallerySection({
       {/* 카드들 (순서 유지) */}
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
         {items.map((it, i) => {
+          console.group("entityGallerySection")
+          console.log(it)
+          console.groupEnd()
           const thumbs = it.media?.slice?.(0, 4) ?? [];
           const key = it.id ?? it._tmpId ?? i; // 키 안정성
           return (

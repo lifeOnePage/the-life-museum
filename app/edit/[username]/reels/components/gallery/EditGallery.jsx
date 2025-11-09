@@ -1,6 +1,11 @@
-// components/gallery/EditGallery.jsx
 "use client";
-import { useEffect, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+} from "react";
 import { motion } from "framer-motion";
 import ChildhoodSection from "./ChildhoodSection";
 import EntityGallerySection from "./EntityGallerySection";
@@ -15,42 +20,32 @@ import { useAuth } from "@/app/contexts/AuthContext";
 const tabs = [
   { key: "childhood", label: "유년시절" },
   { key: "experience", label: "소중한 기억" },
-  { key: "relationship", label: "소중한 인연" }, // <- 오타 수정: 경험 → 인연
+  { key: "relationship", label: "소중한 인연" },
 ];
 
-export default function EditGallery({onToast, reelId, initial = {} }) {
-  const [active, setActive] = useState(0);
+function EditGalleryInner(
+  { onToast, reelId, initial = {}, onDirtyAnyChange },
+  ref,
+) {
   const { token } = useAuth();
+  const [active, setActive] = useState(0);
 
-  // 1) 빈 상태로 시작
+  // 섹션별 상태
   const [childhood, setChildhood] = useState([]);
   const [experience, setExperience] = useState([]);
   const [relationship, setRelationship] = useState([]);
 
-  // 2) 초기 데이터 하이드레이션 플래그 (한 번만)
+  // 하이드레이션
   const [hydrated, setHydrated] = useState(false);
-  // 3) reelId & initial 준비되면 한 번만 주입
   useEffect(() => {
     if (!reelId) return;
-    console.log("reelId:", reelId);
-    console.log("initial: ", initial);
-    // initial이 비어있는지 판단: 서버에서 오는 구조에 맞게 조건화
-    const hasInitial =
-      initial &&
-      (initial.childhood?.length ||
-        initial.memory?.length ||
-        initial.relationship?.length);
-
-    // if (!hasInitial || hydrated) return;
-
-    // ---- 주입 ----
+    // 초기 주입
     setChildhood(
       (initial.childhood || []).map((it) => ({
         url: it.srcUrl,
         caption: it.caption ?? "",
       })),
     );
-
     setExperience(
       (initial.memory || []).map((m) => ({
         id: m.id,
@@ -58,13 +53,12 @@ export default function EditGallery({onToast, reelId, initial = {} }) {
         subTitle: m.subTitle || "",
         date: m.date || null,
         comment: m.comment || "",
-        media: (m.WheelTexture || []).map((w) => ({
+        media: (m.wheelTextures || []).map((w) => ({
           url: w.srcUrl,
           caption: w.caption || "",
         })),
       })),
     );
-
     setRelationship(
       (initial.relationship || []).map((rel) => ({
         id: rel.id,
@@ -72,79 +66,80 @@ export default function EditGallery({onToast, reelId, initial = {} }) {
         relation: rel.relation || "",
         comment: rel.comment || "",
         representative: 0,
-        media: (rel.WheelTexture || []).map((w) => ({
+        media: (rel.wheelTextures || []).map((w) => ({
           url: w.srcUrl,
           caption: w.caption || "",
         })),
       })),
     );
-
     setHydrated(true);
-  }, [reelId, initial, hydrated]);
+  }, [reelId, initial]);
 
-  // 4) 렌더 준비 완료 플래그
-  const ready = Boolean(reelId && hydrated);
-
-  // 변경 감지는 추후 dirty 플래그로 교체 권장
-  const hasUnsavedChildhood = true;
-  const hasUnsavedExperience = true;
-  const hasUnsavedRelationship = true;
+  // 더티 상태 (간단 모드: set 함수가 호출되면 true)
+  const [dirty, setDirty] = useState({ child: false, exp: false, rel: false });
+  useEffect(() => {
+    onDirtyAnyChange?.(dirty.child || dirty.exp || dirty.rel);
+  }, [dirty, onDirtyAnyChange]);
 
   const [saving, setSaving] = useState({ isSaving: false, progress: 0 });
 
-  // 5) 안전 가드 + 저장 핸들러
+  // 저장 핸들러 (기존 로직 호출)
   const handleSaveChildhood = async () => {
-    if (!ready) return;
-    console.group("save children");
-    console.log("token: ", token);
-    console.log("reelId: ", reelId);
-    console.groupEnd;
+    if (!reelId) return;
     try {
       setSaving({ isSaving: true, progress: 10 });
       await saveChildhood({ token, reelId, items: childhood });
+      setDirty((d) => ({ ...d, child: false }));
       setSaving({ isSaving: false, progress: 100 });
-      setActive(1);
       onToast?.("저장되었습니다.", { tone: "success" });
     } catch (e) {
       setSaving({ isSaving: false, progress: 0 });
-      // alert(e.message);
       onToast?.("저장 중 오류가 발생했어요.", { tone: "error" });
+      throw e;
     }
   };
-
   const handleSaveExperience = async () => {
-    if (!ready) return;
+    if (!reelId) return;
     try {
       setSaving({ isSaving: true, progress: 10 });
       await saveExperience({ token, reelId, items: experience });
+      setDirty((d) => ({ ...d, exp: false }));
       setSaving({ isSaving: false, progress: 100 });
-      setActive(2);
       onToast?.("저장되었습니다.", { tone: "success" });
     } catch (e) {
       setSaving({ isSaving: false, progress: 0 });
-      // alert(e.message);
       onToast?.("저장 중 오류가 발생했어요.", { tone: "error" });
+      throw e;
     }
   };
-
   const handleSaveRelationship = async () => {
-    if (!ready) return;
+    if (!reelId) return;
     try {
       setSaving({ isSaving: true, progress: 10 });
       await saveRelationship({ token, reelId, items: relationship });
+      setDirty((d) => ({ ...d, rel: false }));
       setSaving({ isSaving: false, progress: 100 });
-      // 마지막 섹션: 탭 유지
       onToast?.("저장되었습니다.", { tone: "success" });
     } catch (e) {
       setSaving({ isSaving: false, progress: 0 });
-      // alert(e.message);
       onToast?.("저장 중 오류가 발생했어요.", { tone: "error" });
-      
+      throw e;
     }
   };
 
-  // 6) 준비 전 UI 가드 (스켈레톤/로딩)
-  if (!ready) {
+  // 외부 호출용 API
+  useImperativeHandle(ref, () => ({
+    hasUnsaved: () => dirty.child || dirty.exp || dirty.rel,
+    saveAll: async () => {
+      // 더티인 섹션만 순차 저장
+      if (dirty.child) await handleSaveChildhood();
+      if (dirty.exp) await handleSaveExperience();
+      if (dirty.rel) await handleSaveRelationship();
+      return true;
+    },
+  }));
+
+  if (!hydrated) {
     return (
       <div className="w-full text-white/70">
         <div className="mb-3 h-9 w-1/2 rounded bg-white/10" />
@@ -164,8 +159,11 @@ export default function EditGallery({onToast, reelId, initial = {} }) {
         {active === 0 && (
           <ChildhoodSection
             items={childhood}
-            setItems={setChildhood}
-            hasUnsavedChanges={hasUnsavedChildhood}
+            setItems={(updater) => {
+              setChildhood(typeof updater === "function" ? updater : updater);
+              setDirty((d) => ({ ...d, child: true }));
+            }}
+            hasUnsavedChanges={dirty.child}
             onSave={handleSaveChildhood}
             savingState={saving}
           />
@@ -175,8 +173,11 @@ export default function EditGallery({onToast, reelId, initial = {} }) {
           <EntityGallerySection
             type="experience"
             items={experience}
-            setItems={setExperience}
-            hasUnsavedChanges={hasUnsavedExperience}
+            setItems={(updater) => {
+              setExperience(typeof updater === "function" ? updater : updater);
+              setDirty((d) => ({ ...d, exp: true }));
+            }}
+            hasUnsavedChanges={dirty.exp}
             onSave={handleSaveExperience}
             onSavedNext={() => setActive(2)}
             savingState={saving}
@@ -196,8 +197,13 @@ export default function EditGallery({onToast, reelId, initial = {} }) {
           <EntityGallerySection
             type="relationship"
             items={relationship}
-            setItems={setRelationship}
-            hasUnsavedChanges={hasUnsavedRelationship}
+            setItems={(updater) => {
+              setRelationship(
+                typeof updater === "function" ? updater : updater,
+              );
+              setDirty((d) => ({ ...d, rel: true }));
+            }}
+            hasUnsavedChanges={dirty.rel}
             onSave={handleSaveRelationship}
             savingState={saving}
             maxCards={12}
@@ -217,3 +223,5 @@ export default function EditGallery({onToast, reelId, initial = {} }) {
     </div>
   );
 }
+
+export default forwardRef(EditGalleryInner);

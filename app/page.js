@@ -18,6 +18,9 @@ export default function Home() {
   const logout = async () => {
     signout();
   };
+  const mypage = () => {
+    router.push(`/mypage`);
+  };
   return (
     <div
       style={{
@@ -26,7 +29,7 @@ export default function Home() {
         fontFamily: "pretendard",
       }}
     >
-      <Header login={login} logout={logout} />
+      <Header page="main" mypage={mypage} login={login} logout={logout} />
       {/* <Landing /> */}
       <AboutInfo />
       <AboutDetail />

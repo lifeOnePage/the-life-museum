@@ -117,6 +117,7 @@ export default function EntityGallerySection({
     });
   };
 
+
   return (
     <motion.section variants={fade} initial="initial" animate="animate" className="w-full">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">

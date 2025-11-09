@@ -46,8 +46,8 @@ export default function Mypage() {
     item: null,
   });
   console.group("mypage");
-  console.log(actionModal)
-  console.groupEnd()
+  console.log(actionModal);
+  console.groupEnd();
 
   // 프로필 폼
   const [editingProfile, setEditingProfile] = useState(false);
@@ -98,8 +98,8 @@ export default function Mypage() {
         // setReels(r1.items || []);
         // setRecords(r2.items || []);
         const items = await fetchMyDatas({ token });
-        setReels(items.items.reels)
-        setRecords(items.items.records)
+        setReels(items.items.reels);
+        setRecords(items.items.records);
       } catch (e) {
         console.error(e);
         setError("데이터를 불러오는 중 문제가 발생했어요.");
@@ -123,6 +123,9 @@ export default function Mypage() {
         return;
       }
       try {
+        console.group("onConfirmCreate");
+        console.log(createModal.type);
+        console.groupEnd();
         if (createModal.type === "reels") {
           const res = await createReel(token, identifier, name);
           setReels((arr) => [res.item, ...arr]);
@@ -166,7 +169,12 @@ export default function Mypage() {
             ),
           );
         } else {
-          const r = await updateRecordIdentifier(token, id, nextIdentifier, nextName);
+          const r = await updateRecordIdentifier(
+            token,
+            id,
+            nextIdentifier,
+            nextName,
+          );
           setRecords((arr) =>
             arr.map((x) =>
               x.id === id

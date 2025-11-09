@@ -146,8 +146,8 @@ export default function EditReels() {
                 reel={reel}
                 initial={{
                   childhood: data.item.childhood,
-                  memory: data.item.memory,
-                  relationship: data.item.relationship,
+                  memory: data.item.memorys,
+                  relationship: data.item.relationships,
                 }}
                 onToast={showToast}
               />

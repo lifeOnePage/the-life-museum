@@ -244,6 +244,7 @@ export async function PATCH(req, { params }) {
 
     // 모든 작업을 하나의 트랜잭션으로
     const results = await client.$transaction(txOps);
+    console.log(results)
 
     // (선택) Reels.updatedAt 만지려면 아래 추가
     // await client.reel.update({ where: { id: reelId }, data: {} });

@@ -1,5 +1,6 @@
 "use client";
 import { motion } from "framer-motion";
+import { ChevronUp } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function ProfileCurtain({ open, onClose, profile }) {
@@ -74,9 +75,11 @@ export default function ProfileCurtain({ open, onClose, profile }) {
               {profile.story}
             </div>
           )}
-          <p className="pt-2 text-right text-xs text-white/50">
-            위로 드래그하여 닫기
-          </p>
+
+            <p className="flex items-end gap-2 pt-2 text-right text-xs text-white/50 w-fit ml-auto">
+              <ChevronUp className="ml-1 h-4 w-4" />
+              위로 드래그하여 닫기
+            </p>
         </div>
 
         {/* 초기 터치 유도 힌트: 흰 원이 커지며 사라지는 subtle 애니메이션 (한 번만) */}

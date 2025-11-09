@@ -348,7 +348,7 @@ export default function LoginPage() {
                 </div>
 
                 <div style={{ marginTop: 8 }}>
-                  {currentSignupField?.skippable && (
+                  {/* {currentSignupField?.skippable && (
                     <SecondaryButton
                       onClick={async () => {
                         onSkipEmail();
@@ -358,7 +358,7 @@ export default function LoginPage() {
                     >
                       이메일이 없어요 / 입력하지 않고 넘어가기
                     </SecondaryButton>
-                  )}
+                  )} */}
                   <PrimaryButton
                     onClick={onSubmitSignupField}
                     disabled={loading}

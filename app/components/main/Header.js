@@ -1,14 +1,23 @@
 "use client";
 
-export default function Header({ login }) {
+import { useAuth } from "@/app/contexts/AuthContext";
+
+export default function Header({ login, logout, main }) {
+  const { user, token, signout } = useAuth();
   return (
-    <div className="box-border w-[100vw] h-18 p-3 text-nav text-white bg-black-100">
-      <div className="flex items-center w-full h-full px-3 py-1 bg-black-200 border-b border-white text-white">
-        <div className="flex-1 w-full">TheLifeMuseum</div>
-        <div className="flex flex-1 w-full">
-          <div className="flex gap-5 flex-1 justify-end">
-            <p>About</p>
-            <p onClick={login}>Login</p>
+    <div className="text-nav bg-transparent fixed z-1000 top-0  box-border h-18 w-[100vw] p-3 text-white">
+      <div className="bg-black-200 flex h-full w-full items-center border-b border-white px-3 py-1 text-white">
+        <div className="w-full flex-1">TheLifeMuseum</div>
+        <div className="flex w-full flex-1">
+          <div className="flex flex-1 justify-end gap-5">
+            {user ? (
+              <div className="flex flex-1 justify-end gap-5">
+                <p onClick={logout}>Logout</p>
+                <p onClick={main}>Main</p>
+              </div>
+            ) : (
+              <p onClick={login}>Login</p>
+            )}
           </div>
         </div>
       </div>

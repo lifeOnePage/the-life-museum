@@ -20,9 +20,10 @@ import {
 
 import MobileLayout from "./layouts/MobileLayout";
 import DesktopLayout from "./layouts/DesktopLayout";
+import Header from "../components/main/Header";
 
 export default function Mypage() {
-  const { user, token, signinWithToken } = useAuth();
+  const { user, token, signinWithToken, signout } = useAuth();
   const router = useRouter();
 
   const [isMobile, setIsMobile] = useState(false);
@@ -46,8 +47,8 @@ export default function Mypage() {
     item: null,
   });
   console.group("mypage");
-  console.log(actionModal)
-  console.groupEnd()
+  console.log(actionModal);
+  console.groupEnd();
 
   // 프로필 폼
   const [editingProfile, setEditingProfile] = useState(false);
@@ -98,8 +99,8 @@ export default function Mypage() {
         // setReels(r1.items || []);
         // setRecords(r2.items || []);
         const items = await fetchMyDatas({ token });
-        setReels(items.items.reels)
-        setRecords(items.items.records)
+        setReels(items.items.reels);
+        setRecords(items.items.records);
       } catch (e) {
         console.error(e);
         setError("데이터를 불러오는 중 문제가 발생했어요.");
@@ -123,6 +124,9 @@ export default function Mypage() {
         return;
       }
       try {
+        console.group("onConfirmCreate");
+        console.log(createModal.type);
+        console.groupEnd();
         if (createModal.type === "reels") {
           const res = await createReel(token, identifier, name);
           setReels((arr) => [res.item, ...arr]);
@@ -166,7 +170,12 @@ export default function Mypage() {
             ),
           );
         } else {
-          const r = await updateRecordIdentifier(token, id, nextIdentifier, nextName);
+          const r = await updateRecordIdentifier(
+            token,
+            id,
+            nextIdentifier,
+            nextName,
+          );
           setRecords((arr) =>
             arr.map((x) =>
               x.id === id
@@ -228,11 +237,19 @@ export default function Mypage() {
     width: "100vw",
     maxWidth: 768,
     boxSizing: "border-box",
-    padding: isMobile ? "80px 24px" : "100px 40px",
+    padding: isMobile ? "140px 24px" : "160px 40px",
   };
+  const logout = async () => {
+    signout();
+    router.push(`/`);
+  };
+  const main = () => {
+    router.push(`/`);
+  }
 
   return (
     <>
+      <Header logout={logout} main={main} />
       {/* 상단 진행바: 가벼운 시각 피드백 */}
       <TopProgress active={busy.active} />
       <div style={pageStyle}>

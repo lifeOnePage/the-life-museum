@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { FiSave, FiX } from "react-icons/fi";
+import { FaEdit } from "react-icons/fa";
 import { iconBtn, inputStyle } from "./styles";
 
 export default function ItemActionModal({ open, type, item, onClose, onSaveIdentifier, onOpenEditor }) {
@@ -65,7 +66,7 @@ export default function ItemActionModal({ open, type, item, onClose, onSaveIdent
         </div>
 
         <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 12 }}>
-          <button onClick={() => onOpenEditor(type, item)} style={iconBtn}>에딧 페이지로 이동</button>
+          <button onClick={() => onOpenEditor(type, item)} style={iconBtn}> <FaEdit /> 편집하기</button>
           <button onClick={submit} style={iconBtn}><FiSave /> 저장</button>
         </div>
       </motion.div>

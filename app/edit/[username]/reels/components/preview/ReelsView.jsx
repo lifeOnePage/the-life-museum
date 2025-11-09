@@ -7,9 +7,13 @@ import ProfileCurtain from "@/app/view/[identifier]/reels/components/ProfileCurt
 import RingSlider from "@/app/view/[identifier]/reels/components/RingSlider";
 import LeftSprite from "@/app/view/[identifier]/reels/components/LeftSprite";
 import { fetchPreview } from "@/app/view/[identifier]/reels/services/viewApi";
+import { ChevronDown } from "lucide-react";
 
 // 3D Ring (ssr off)
-const Ring = dynamic(() => import("@/app/view/[identifier]/reels/components/Ring"), { ssr: false });
+const Ring = dynamic(
+  () => import("@/app/view/[identifier]/reels/components/Ring"),
+  { ssr: false },
+);
 
 // ----------------- 도우미 -----------------
 const VIDEO_EXT = /\.(mp4|webm|ogg|ogv|mov|m4v)$/i;
@@ -42,19 +46,26 @@ function buildAll(preview) {
   let cursor = 0;
 
   const profileImg = preview?.profile?.profileImg || "";
-  const storyText  = preview?.profile?.story || "";
+  const storyText = preview?.profile?.story || "";
   const hasProfile = !!profileImg;
-  const hasStory   = !!storyText.trim();
+  const hasStory = !!storyText.trim();
 
   // 1) 프로필
   if (hasProfile) {
-    outMedia.push({ section: "profile", url: profileImg, kind: inferKind(profileImg), caption: "" });
+    outMedia.push({
+      section: "profile",
+      url: profileImg,
+      kind: inferKind(profileImg),
+      caption: "",
+    });
     ranges.profile = [cursor, cursor];
     cursor += 1;
   }
 
   // 2) 유년시절
-  const childhood = Array.isArray(preview?.gallery?.childhood) ? preview.gallery.childhood : [];
+  const childhood = Array.isArray(preview?.gallery?.childhood)
+    ? preview.gallery.childhood
+    : [];
   if (childhood.length > 0) {
     const start = cursor;
     for (const m of childhood) {
@@ -70,7 +81,9 @@ function buildAll(preview) {
   }
 
   // 3) 소중한 기억 (경험)
-  const memories = Array.isArray(preview?.gallery?.experience) ? preview.gallery.experience : [];
+  const memories = Array.isArray(preview?.gallery?.experience)
+    ? preview.gallery.experience
+    : [];
   memories.forEach((mem, i) => {
     const photos = Array.isArray(mem?.photos) ? mem.photos : [];
     if (photos.length === 0) return;
@@ -79,6 +92,7 @@ function buildAll(preview) {
     const key = `memory:${mem?.id ?? i}`;
     const title = (mem?.title || "").trim() || `기억 ${i + 1}`;
     const description = mem?.description || "";
+    const comment = mem?.comment || "";
 
     for (const p of photos) {
       outMedia.push({
@@ -86,7 +100,7 @@ function buildAll(preview) {
         url: p?.url || "",
         kind: p?.kind || inferKind(p?.url),
         caption: p?.caption || "",
-        _memoryMeta: { id: mem?.id ?? i, title, description },
+        _memoryMeta: { id: mem?.id ?? i, title, description, comment },
       });
       cursor++;
     }
@@ -94,7 +108,9 @@ function buildAll(preview) {
   });
 
   // 4) 소중한 인연
-  const relationships = Array.isArray(preview?.gallery?.relationship) ? preview.gallery.relationship : [];
+  const relationships = Array.isArray(preview?.gallery?.relationship)
+    ? preview.gallery.relationship
+    : [];
   relationships.forEach((rel, i) => {
     const photos = Array.isArray(rel?.photos) ? rel.photos : [];
     if (photos.length === 0) return;
@@ -103,6 +119,7 @@ function buildAll(preview) {
     const key = `relationship:${rel?.id ?? i}`;
     const name = (rel?.name || "").trim() || `인연 ${i + 1}`;
     const relation = rel?.relation || "";
+    const comment = rel?.comment || "";
 
     for (const p of photos) {
       outMedia.push({
@@ -110,7 +127,7 @@ function buildAll(preview) {
         url: p?.url || "",
         kind: p?.kind || inferKind(p?.url),
         caption: p?.caption || "",
-        _relMeta: { id: rel?.id ?? i, name, relation },
+        _relMeta: { id: rel?.id ?? i, name, relation, comment },
       });
       cursor++;
     }
@@ -124,21 +141,43 @@ function buildAll(preview) {
   // 6) 슬롯(최소 100)
   const slotCount = Math.max(100, totalMedia);
   const slots = Array.from({ length: slotCount }, (_, i) =>
-    i < totalMedia ? outMedia[i] : { section: "empty", kind: "empty", url: null, caption: "" },
+    i < totalMedia
+      ? outMedia[i]
+      : { section: "empty", kind: "empty", url: null, caption: "" },
   );
 
   // 7) 슬라이더 목차(실제 제목/이름 사용)
-  sliderSections.push({ key: "all", label: "전체", start: 0, end: Math.max(0, totalMedia - 1) });
+  sliderSections.push({
+    key: "all",
+    label: "전체",
+    start: 0,
+    end: Math.max(0, totalMedia - 1),
+  });
 
   if (hasProfile) {
-    sliderSections.push({ key: "profile", label: "프로필 사진", start: ranges.profile[0], end: ranges.profile[1] });
+    sliderSections.push({
+      key: "profile",
+      label: "프로필 사진",
+      start: ranges.profile[0],
+      end: ranges.profile[1],
+    });
   }
   if (hasStory) {
     const anchor = hasProfile ? ranges.profile[0] : 0;
-    sliderSections.push({ key: "lifestory", label: "생애문", start: anchor, end: anchor });
+    sliderSections.push({
+      key: "lifestory",
+      label: "생애문",
+      start: anchor,
+      end: anchor,
+    });
   }
   if (ranges.childhood) {
-    sliderSections.push({ key: "childhood", label: "유년시절", start: ranges.childhood[0], end: ranges.childhood[1] });
+    sliderSections.push({
+      key: "childhood",
+      label: "유년시절",
+      start: ranges.childhood[0],
+      end: ranges.childhood[1],
+    });
   }
 
   Object.keys(ranges)
@@ -148,7 +187,12 @@ function buildAll(preview) {
       const firstIdx = ranges[key][0];
       const m = outMedia[firstIdx]?._memoryMeta;
       const title = (m?.title || "").trim() || "소중한 기억";
-      sliderSections.push({ key, label: `${title}`, start: ranges[key][0], end: ranges[key][1] });
+      sliderSections.push({
+        key,
+        label: `${title}`,
+        start: ranges[key][0],
+        end: ranges[key][1],
+      });
     });
 
   Object.keys(ranges)
@@ -158,7 +202,12 @@ function buildAll(preview) {
       const firstIdx = ranges[key][0];
       const m = outMedia[firstIdx]?._relMeta;
       const who = (m?.name || "").trim() || "소중한 인연";
-      sliderSections.push({ key, label: `${who}`, start: ranges[key][0], end: ranges[key][1] });
+      sliderSections.push({
+        key,
+        label: `${who}`,
+        start: ranges[key][0],
+        end: ranges[key][1],
+      });
     });
 
   return { slots, ranges, sliderSections };
@@ -174,8 +223,10 @@ function computeLabels(slideKey, slot) {
   else if (slideKey?.startsWith("relationship:")) main = "People";
 
   let sub = "";
-  if (slideKey?.startsWith("memory:") && slot?._memoryMeta) sub = slot._memoryMeta.title || "";
-  else if (slideKey?.startsWith("relationship:") && slot?._relMeta) sub = slot._relMeta.name || "";
+  if (slideKey?.startsWith("memory:") && slot?._memoryMeta)
+    sub = slot._memoryMeta.title || "";
+  else if (slideKey?.startsWith("relationship:") && slot?._relMeta)
+    sub = slot._relMeta.name || "";
 
   return { main, sub };
 }
@@ -208,6 +259,7 @@ export default function ReelsView({ identifier, initialData = null }) {
           setData(res);
 
           const built = buildAll(res);
+          console.log(built);
           setSlots(built.slots);
           setRanges(built.ranges);
           setSliderSections(built.sliderSections);
@@ -287,15 +339,26 @@ export default function ReelsView({ identifier, initialData = null }) {
   }, [activeKey, sliderSections, leftSnap]);
 
   const currentSlot = slots[leftSnap] || null;
-  const { main: mainLabel, sub: subLabel } = computeLabels(effectiveKeyForLabels, currentSlot);
+  const { main: mainLabel, sub: subLabel } = computeLabels(
+    effectiveKeyForLabels,
+    currentSlot,
+  );
   const caption = currentSlot?.caption || "";
   const lifestoryText = data?.profile?.story || "";
 
   if (loading) {
-    return <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">불러오는 중…</div>;
+    return (
+      <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
+        불러오는 중…
+      </div>
+    );
   }
   if (err) {
-    return <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-red-400">{err}</div>;
+    return (
+      <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-red-400">
+        {err}
+      </div>
+    );
   }
 
   const totalSlots = toInt(slots?.length ?? 0, 0);
@@ -303,17 +366,22 @@ export default function ReelsView({ identifier, initialData = null }) {
   return (
     <div className="bg-black-100 relative h-screen w-screen overflow-hidden text-white">
       {/* 상단 프로필 커튼 */}
-      <ProfileCurtain open={curtainOpen} onClose={() => setCurtainOpen(false)} profile={data?.profile} />
+      <ProfileCurtain
+        open={curtainOpen}
+        onClose={() => setCurtainOpen(false)}
+        profile={data?.profile}
+      />
       {/* 커튼 다시 열기 버튼 */}
       <button
         onClick={() => setCurtainOpen(true)}
-        className="absolute left-4 top-4 z-40 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/90 backdrop-blur-md active:scale-95"
+        className=" flex gap-2 absolute top-4 left-4 z-40 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-white/90 backdrop-blur-md active:scale-95"
       >
+        <ChevronDown className=" h-4 w-4" />
         프로필 보기
       </button>
 
       {/* 상단 LeftSprite(3D) */}
-      <div className="h-[50vh] absolute inset-x-0 top-16 z-20 mx-auto w-[94vw] max-w-[680px]">
+      <div className="absolute inset-x-0 top-16 z-20 mx-auto h-[50vh] w-[94vw] max-w-[680px]">
         <LeftSprite
           item={currentSlot}
           activeKey={effectiveKeyForLabels}
@@ -325,7 +393,7 @@ export default function ReelsView({ identifier, initialData = null }) {
       </div>
 
       {/* 하단 Ring (모바일 기준 오른쪽 반 잘린 위치 유지) */}
-      <div className="absolute inset-0 top-[440px] h-[50vh] w-[220vw]">
+      <div className="absolute inset-0 top-[420px] h-[50vh] w-[220vw]">
         <Ring
           slots={slots}
           leftIndex={leftIndex}

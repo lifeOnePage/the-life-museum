@@ -117,6 +117,7 @@ export default function EntityGallerySection({
     });
   };
 
+
   return (
     <motion.section variants={fade} initial="initial" animate="animate" className="w-full">
       <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -174,6 +175,9 @@ export default function EntityGallerySection({
       {/* 카드들 (순서 유지) */}
       <div className="grid grid-cols-1 gap-4 sm:gap-5 md:grid-cols-2">
         {items.map((it, i) => {
+          console.group("entityGallerySection")
+          console.log(it)
+          console.groupEnd()
           const thumbs = it.media?.slice?.(0, 4) ?? [];
           const key = it.id ?? it._tmpId ?? i; // 키 안정성
           return (

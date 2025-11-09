@@ -82,7 +82,7 @@ export default function AboutInfo() {
         </div>
       </div>
 
-      <div
+      {/* <div
         aria-hidden="true"
         className={`pointer-events-none absolute bottom-[15vh] left-1/2 w-[min(70%,900px)] -translate-x-1/2 opacity-90 ${appear} ${show} `}
         style={{ transitionDelay: "450ms" }}
@@ -92,7 +92,7 @@ export default function AboutInfo() {
           alt=""
           className="block h-auto w-full"
         />
-      </div>
+      </div> */}
     </section>
   );
 }

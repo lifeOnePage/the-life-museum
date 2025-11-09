@@ -1,6 +1,13 @@
 // app/components/lifestory/LifestorySection.jsx
 "use client";
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+  useImperativeHandle,
+  forwardRef,
+  useRef,
+  useMemo,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Header from "./parts/Header";
 import StylePicker from "./parts/StylePicker";
@@ -21,12 +28,24 @@ import {
 const STYLE_OPTIONS = ["진중한", "낭만적인", "재치있는", "신비로운"];
 const COUNT_OPTIONS = [5, 10];
 
-export default function LifestorySection({
-  reelId,
-  userName,
-  isPreview,
-  onToast,
-}) {
+function jsonStable(v) {
+  try {
+    return JSON.stringify(v);
+  } catch {
+    return "";
+  }
+}
+
+export default forwardRef(function LifestorySection(
+  {
+    reelId,
+    userName,
+    isPreview,
+    onToast,
+    onDirtyChange, // (NEW) 더티 상태 통지
+  },
+  ref,
+) {
   const { token } = useAuth();
   const [step, setStep] = useState("intro");
   const [selectedStyle, setSelectedStyle] = useState(null);
@@ -36,7 +55,7 @@ export default function LifestorySection({
   const [answerMap, setAnswerMap] = useState({});
   const [currentIdx, setCurrentIdx] = useState(0);
 
-  const [tokenUsage, setTokenUsage] = useState(0); // 사용량
+  const [tokenUsage, setTokenUsage] = useState(0);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedStory, setGeneratedStory] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -45,13 +64,42 @@ export default function LifestorySection({
   const [hasSaved, setHasSaved] = useState(false);
   const [isEditingResult, setIsEditingResult] = useState(true);
 
-  if (isPreview) {
-    return (
-      <div className="bg-black-100 relative grid min-h-screen w-full place-items-center p-6 text-white">
-        <div className="text-white/60">프리뷰 모드는 별도 구현 예정</div>
-      </div>
-    );
-  }
+  // ===== (NEW) 저장 스냅샷 & 더티 감지 =====
+  const savedSnapshotRef = useRef(null);
+  const prevDirtyRef = useRef(false);
+
+  const makeSnapshot = useMemo(
+    () => () => ({
+      style: selectedStyle ?? null,
+      questions,
+      answers,
+      story: generatedStory ?? "",
+    }),
+    [selectedStyle, questions, answers, generatedStory],
+  );
+
+  const computeDirty = useMemo(
+    () => () => {
+      const curr = makeSnapshot();
+      const prev = savedSnapshotRef.current || {};
+      return jsonStable(curr) !== jsonStable(prev);
+    },
+    [makeSnapshot],
+  );
+
+  // 외부에서 save() 호출 가능
+  useImperativeHandle(ref, () => ({
+    hasUnsaved: () => !hasSaved || isEditingResult,
+    save: async () => {
+      // 프리뷰든 아니든, 이 컴포넌트가 마운트돼 있다면 저장 시도 가능
+      // 변경 없으면 스킵
+      console.log("lifestory saved by saveall")
+      if (!computeDirty()) return { ok: true, skipped: true };
+      await handleSave();
+      return { ok: true };
+    },
+  }));
+
 
   // 초기 로드
   useEffect(() => {
@@ -60,6 +108,15 @@ export default function LifestorySection({
         const saved = await fetchLifestory({ token, id: reelId, edit: true });
         if (!saved) {
           setStep("intro");
+          // 초기 저장 스냅샷(빈 상태)
+          savedSnapshotRef.current = {
+            style: null,
+            questions: [],
+            answers: [],
+            story: "",
+          };
+          prevDirtyRef.current = false;
+          onDirtyChange?.(false);
           setBoot(false);
           return;
         }
@@ -69,14 +126,15 @@ export default function LifestorySection({
           questions = [],
           answers = [],
           story = "",
-          tokenUsage = 0, //
+          tokenUsage = 0,
         } = saved;
 
         setSelectedStyle(style ?? null);
         setQuestionCount(questions.length || qaCount || null);
         setQuestions(questions);
         setAnswers(answers);
-        setTokenUsage(tokenUsage); //
+        setTokenUsage(tokenUsage);
+
         const map = {};
         questions.forEach((q, i) => (map[q] = answers[i] ?? ""));
         setAnswerMap(map);
@@ -100,10 +158,21 @@ export default function LifestorySection({
         } else {
           setStep("intro");
         }
+
+        // 초기 저장 스냅샷(서버 상태)
+        savedSnapshotRef.current = {
+          style: style ?? null,
+          questions,
+          answers,
+          story: story ?? "",
+        };
+        prevDirtyRef.current = false;
+        onDirtyChange?.(false);
       } finally {
         setBoot(false);
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reelId, token]);
 
   // QA 진입 시 기본 질문 세팅
@@ -133,6 +202,16 @@ export default function LifestorySection({
     })();
   }, [step, selectedStyle, questionCount, shouldFetchOnQA]); // eslint-disable-line
 
+  // 더티 상태 변화를 부모에 알림
+  useEffect(() => {
+    if (boot) return;
+    const dirty = computeDirty();
+    if (dirty !== prevDirtyRef.current) {
+      prevDirtyRef.current = dirty;
+      onDirtyChange?.(dirty);
+    }
+  }, [boot, computeDirty, onDirtyChange]);
+
   const fadeSlide = {
     initial: { x: 24, opacity: 0 },
     animate: { x: 0, opacity: 1, transition: { duration: 0.25 } },
@@ -157,21 +236,16 @@ export default function LifestorySection({
 
   /** 마지막 질문에서 '생애문 생성하기!' */
   const handleNextQA = async () => {
-    // 마지막 질문이면 생성 단계
     if (currentIdx === questions.length - 1) {
-      // 사용량 체크
       if (tokenUsage >= 3) {
         onToast?.("이미 생성 기회를 모두 사용했어요 🥹", { tone: "error" });
         return;
       }
-
       setIsGenerating(true);
       try {
-        // 서버에 사용량 +1 먼저 반영 (낙관적 업데이트)
         await incrementLifestoryUsage({ token, id: reelId });
         setTokenUsage((u) => u + 1);
 
-        // 생성
         const messages = [];
         for (let i = 0; i < questions.length; i++) {
           messages.push({ sender: "bot", text: `질문: ${questions[i]}` });
@@ -195,7 +269,6 @@ export default function LifestorySection({
       }
       return;
     }
-    // 다음 질문으로
     setCurrentIdx((i) => Math.min(i + 1, questions.length - 1));
   };
 
@@ -203,7 +276,7 @@ export default function LifestorySection({
     if (idx <= currentIdx) setCurrentIdx(idx);
   };
 
-  /** 저장(사용량 증가 없음) */
+  /** 내부 저장(사용량 증가 없음) — 외부 save()가 이걸 호출 */
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -219,6 +292,14 @@ export default function LifestorySection({
       });
       setHasSaved(true);
       setIsEditingResult(false);
+
+      // (NEW) 저장 스냅샷 갱신 + 더티 false 통지
+      savedSnapshotRef.current = makeSnapshot();
+      if (prevDirtyRef.current !== false) {
+        prevDirtyRef.current = false;
+        onDirtyChange?.(false);
+      }
+
       onToast?.("생애문을 저장했어요.", { tone: "success" });
     } catch (e) {
       onToast?.("저장 중 오류가 발생했어요.", { tone: "error" });
@@ -228,7 +309,14 @@ export default function LifestorySection({
     }
   };
 
-  return (
+  // === 렌더 ===
+  const PreviewPane = (
+    <div className="bg-black-100 relative grid min-h-screen w-full place-items-center p-6 text-white">
+      <div className="text-white/60">프리뷰 모드는 별도 구현 예정</div>
+    </div>
+  );
+
+  const EditorPane = (
     <div className="bg-black-100 flex h-full w-full items-center justify-center py-14 text-white">
       <div className="box-border h-full flex-1 px-1 py-5">
         <AnimatePresence mode="wait">
@@ -244,89 +332,79 @@ export default function LifestorySection({
             </motion.div>
           )}
 
-          {/* 단계별 UI는 기존과 동일 */}
           {step === "intro" && !boot && (
             <motion.section
               key="intro"
               {...fadeSlide}
               className="flex h-full w-full flex-1 flex-col items-center justify-center text-center"
             >
-              {" "}
               <motion.h2
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="m-0 text-xl font-bold"
               >
-                {" "}
-                당신의 이야기를 알려주세요{" "}
-              </motion.h2>{" "}
+                당신의 이야기를 알려주세요
+              </motion.h2>
               <motion.p
                 initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="mt-2 text-sm opacity-85"
               >
-                {" "}
                 <strong>{userName}</strong>님의 생애문을 함께 정성스럽게 작성해
-                드릴게요. <br /> 시작해볼까요?{" "}
-              </motion.p>{" "}
+                드릴게요. <br /> 시작해볼까요?
+              </motion.p>
               <div className="mt-5">
-                {" "}
-                <Primary onClick={goNextFromIntro}>시작하기</Primary>{" "}
-              </div>{" "}
+                <Primary onClick={goNextFromIntro}>시작하기</Primary>
+              </div>
               <p className="mt-5 text-[0.8rem] text-white/60">
-                {" "}
-                약 5분~10분 정도 소요돼요.{" "}
-              </p>{" "}
+                약 5분~10분 정도 소요돼요.
+              </p>
             </motion.section>
           )}
+
           {step === "style" && !boot && (
             <motion.section
               key="style"
               {...fadeSlide}
               className="flex h-full w-full flex-1 flex-col"
             >
-              {" "}
               <Header
                 title="어떤 분위기의 생애문을 원하시나요?"
                 subtitle="원하는 스타일을 선택해 주세요."
-              />{" "}
+              />
               <StylePicker
                 options={STYLE_OPTIONS}
                 selected={selectedStyle}
                 onSelect={setSelectedStyle}
-              />{" "}
+              />
               <div className="mt-8 flex justify-end">
-                {" "}
                 <Primary disabled={!selectedStyle} onClick={goNextFromStyle}>
-                  {" "}
-                  다음{" "}
-                </Primary>{" "}
-              </div>{" "}
+                  다음
+                </Primary>
+              </div>
             </motion.section>
           )}
+
           {step === "count" && !boot && (
             <motion.section
               key="count"
               {...fadeSlide}
               className="flex h-full w-full flex-col"
             >
-              {" "}
               <Header
                 title="질문 개수를 고를게요"
                 subtitle={`몇 개의 질문에 답하시겠어요? 더 많은 질문에 대답하면 ${userName}님의 이야기를 보다 잘 담을 수 있어요.`}
-              />{" "}
+              />
               <CountPicker
                 options={COUNT_OPTIONS}
                 selected={questionCount}
                 onSelect={setQuestionCount}
-              />{" "}
+              />
               <div className="mt-8 flex justify-end">
-                {" "}
                 <Primary disabled={!questionCount} onClick={goNextFromCount}>
-                  {" "}
-                  다음{" "}
-                </Primary>{" "}
-              </div>{" "}
+                  다음
+                </Primary>
+              </div>
             </motion.section>
           )}
 
@@ -339,7 +417,9 @@ export default function LifestorySection({
               <ProgressDots
                 total={questions.length}
                 current={currentIdx}
-                onDotClick={handleDotClick}
+                onDotClick={(i) => {
+                  if (i <= currentIdx) setCurrentIdx(i);
+                }}
               />
               <div className="relative mt-4">
                 <PrevButton onClick={handlePrevQA} />
@@ -428,7 +508,6 @@ export default function LifestorySection({
                 />
               </div>
               <div className="mt-2 flex items-center justify-between">
-                {/* 재생성 버튼: 사용량 체크 */}
                 <Secondary
                   onClick={() => {
                     if (tokenUsage >= 3) {
@@ -443,7 +522,7 @@ export default function LifestorySection({
                     setStep("style");
                   }}
                 >
-                  다시 생성하기 {"("+(3-tokenUsage)+"/3)"}
+                  다시 생성하기 {"(" + (3 - tokenUsage) + "/3)"}
                 </Secondary>
 
                 {isEditingResult && (
@@ -461,4 +540,6 @@ export default function LifestorySection({
       </div>
     </div>
   );
-}
+
+  return isPreview ? PreviewPane : EditorPane;
+});

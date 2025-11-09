@@ -48,6 +48,7 @@ export async function GET(_req, { params }) {
             id: true,
             name: true,
             relation: true,
+            comment:true,
             wheelTextures: {
               select: {
                 srcUrl: true,
@@ -102,6 +103,7 @@ export async function GET(_req, { params }) {
           id: m.id,
           title: m.title || "",
           description: m.comment || "",
+          comment: m.comment || "",
           photos: normMedia(m.wheelTextures),
         })),
 
@@ -110,6 +112,7 @@ export async function GET(_req, { params }) {
           id: r.id,
           name: r.name || "",
           relation: r.relation || "",
+          comment: r.comment || "",
           photos: normMedia(r.wheelTextures),
         })),
       },

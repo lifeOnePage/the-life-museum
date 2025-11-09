@@ -20,9 +20,10 @@ import {
 
 import MobileLayout from "./layouts/MobileLayout";
 import DesktopLayout from "./layouts/DesktopLayout";
+import Header from "../components/main/Header";
 
 export default function Mypage() {
-  const { user, token, signinWithToken } = useAuth();
+  const { user, token, signinWithToken, signout } = useAuth();
   const router = useRouter();
 
   const [isMobile, setIsMobile] = useState(false);
@@ -236,11 +237,19 @@ export default function Mypage() {
     width: "100vw",
     maxWidth: 768,
     boxSizing: "border-box",
-    padding: isMobile ? "80px 24px" : "100px 40px",
+    padding: isMobile ? "140px 24px" : "160px 40px",
   };
+  const logout = async () => {
+    signout();
+    router.push(`/`);
+  };
+  const main = () => {
+    router.push(`/`);
+  }
 
   return (
     <>
+      <Header logout={logout} main={main} />
       {/* 상단 진행바: 가벼운 시각 피드백 */}
       <TopProgress active={busy.active} />
       <div style={pageStyle}>

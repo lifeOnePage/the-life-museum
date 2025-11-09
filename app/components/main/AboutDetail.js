@@ -58,7 +58,7 @@ export default function LifeCardHero() {
           <div className="img-wrap">
             <img
               className="image"
-              src="/images/main/life-reel-img.png"
+              src="/images/main/life-reels-img.png"
               alt="image"
             />
           </div>

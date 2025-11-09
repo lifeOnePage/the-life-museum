@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 
 /**
  * RingSlider
@@ -101,12 +106,15 @@ export default function RingSlider({
   // 드롭다운 그룹핑
   const grouped = useMemo(() => {
     const common = [];
+    const childhood = [];
     const memories = [];
     const rels = [];
     const others = [];
     for (const s of sections || []) {
+      console.log(s);
       if (s.key === "all") continue;
-      if (s.key === "profile" || s.key === "lifestory") common.push(s);
+      if (s.key === "profile" || s.key === "lifestory" || s.key === "childhood")
+        common.push(s);
       else if (s.key?.startsWith("memory:")) memories.push(s);
       else if (s.key?.startsWith("relationship:")) rels.push(s);
       else others.push(s);
@@ -125,7 +133,7 @@ export default function RingSlider({
           // onMouseDown={() => !disabled && startHold(stepPrev)}
           onMouseUp={stopHold}
           onMouseLeave={stopHold}
-          onClick={()=>stepPrev()}
+          onClick={() => stepPrev()}
           // onTouchStart={() => !disabled && startHold(stepPrev)}
           // onTouchEnd={stopHold}
           disabled={disabled}
@@ -158,7 +166,7 @@ export default function RingSlider({
           // onMouseDown={() => !disabled && startHold(stepNext)}
           onMouseUp={stopHold}
           onMouseLeave={stopHold}
-          onClick={()=>stepNext()}
+          onClick={() => stepNext()}
           // onTouchStart={() => !disabled && startHold(stepNext)}
           // onTouchEnd={stopHold}
           disabled={disabled}
@@ -170,22 +178,49 @@ export default function RingSlider({
         {/* 메뉴 버튼 */}
         <button
           onClick={() => setOpen((o) => !o)}
-          className="ml-2 flex h-9 items-center gap-1 rounded-lg border border-white/10 bg.white/5 px-2 text-sm text-white/90 active:scale-95"
+          className="bg.white/5 ml-2 flex h-9 items-center gap-1 rounded-lg border border-white/10 px-2 text-sm text-white/90 active:scale-95"
           aria-expanded={open}
           aria-haspopup="true"
         >
-          목차 {open ? <ChevronDown className="ml-1 h-4 w-4" /> : <ChevronUp className="ml-1 h-4 w-4" />}
+          목차{" "}
+          {open ? (
+            <ChevronDown className="ml-1 h-4 w-4" />
+          ) : (
+            <ChevronUp className="ml-1 h-4 w-4" />
+          )}
         </button>
 
         {/* 드롭다운 (위로) */}
         {open && (
-          <div className="absolute bottom-12 right-0 z-50 w-[min(92vw,340px)] rounded-xl border border-white/10 bg-black/80 p-2 backdrop-blur-md">
+          <div className="absolute right-0 bottom-12 z-50 w-[min(92vw,340px)] rounded-xl border border-white/10 bg-black/80 p-2 backdrop-blur-md">
             {sections?.some((s) => s.key === "all") && (
               <>
-                <MenuSectionHeader>전체</MenuSectionHeader>
-                {sections
-                  .filter((s) => s.key === "all")
-                  .map((s) => (
+                <div className="my-4">
+                  <MenuSectionHeader>전체</MenuSectionHeader>
+                  {sections
+                    .filter((s) => s.key === "all")
+                    .map((s) => (
+                      <MenuItem
+                        key={s.key}
+                        active={activeKey === s.key}
+                        onClick={() => {
+                          onChangeSection?.(s.key);
+                          setOpen(false);
+                          playSnap();
+                        }}
+                      >
+                        {s.label}
+                      </MenuItem>
+                    ))}
+                </div>
+              </>
+            )}
+
+            {grouped.common.length > 0 && (
+              <>
+                <div className="my-4">
+                  <MenuSectionHeader>공통</MenuSectionHeader>
+                  {grouped.common.map((s) => (
                     <MenuItem
                       key={s.key}
                       active={activeKey === s.key}
@@ -198,44 +233,28 @@ export default function RingSlider({
                       {s.label}
                     </MenuItem>
                   ))}
-              </>
-            )}
-
-            {grouped.common.length > 0 && (
-              <>
-                <MenuSectionHeader>공통</MenuSectionHeader>
-                {grouped.common.map((s) => (
-                  <MenuItem
-                    key={s.key}
-                    active={activeKey === s.key}
-                    onClick={() => {
-                      onChangeSection?.(s.key);
-                      setOpen(false);
-                      playSnap();
-                    }}
-                  >
-                    {s.label}
-                  </MenuItem>
-                ))}
+                </div>
               </>
             )}
 
             {grouped.memories.length > 0 && (
               <>
-                <MenuSectionHeader>소중한 기억</MenuSectionHeader>
-                {grouped.memories.map((s) => (
-                  <MenuItem
-                    key={s.key}
-                    active={activeKey === s.key}
-                    onClick={() => {
-                      onChangeSection?.(s.key);
-                      setOpen(false);
-                      playSnap();
-                    }}
-                  >
-                    {s.label}
-                  </MenuItem>
-                ))}
+                <div className="my-4">
+                  <MenuSectionHeader>소중한 기억</MenuSectionHeader>
+                  {grouped.memories.map((s) => (
+                    <MenuItem
+                      key={s.key}
+                      active={activeKey === s.key}
+                      onClick={() => {
+                        onChangeSection?.(s.key);
+                        setOpen(false);
+                        playSnap();
+                      }}
+                    >
+                      {s.label}
+                    </MenuItem>
+                  ))}
+                </div>
               </>
             )}
 
@@ -266,8 +285,9 @@ export default function RingSlider({
 
 function MenuSectionHeader({ children }) {
   return (
-    <div className="px-2 py-1 text-[11px] font-semibold tracking-wide text-white/60">
+    <div className="flex items-center justify-between gap-1 px-2 py-1 text-[11px] font-semibold tracking-wide text-white/60">
       {children}
+      <div className="h-px flex-1 bg-white/50"></div>
     </div>
   );
 }
@@ -275,7 +295,9 @@ function MenuItem({ children, active, onClick }) {
   return (
     <button
       className={`w-full rounded-md px-2 py-1.5 text-left text-[13px] ${
-        active ? "bg-white/15 text-white" : "text-white/85 hover:bg-white/10 active:bg-white/15"
+        active
+          ? "bg-white/15 text-white"
+          : "text-white/85 hover:bg-white/10 active:bg-white/15"
       }`}
       onClick={onClick}
     >

@@ -7,6 +7,7 @@ import ProfileCurtain from "@/app/view/[identifier]/reels/components/ProfileCurt
 import RingSlider from "@/app/view/[identifier]/reels/components/RingSlider";
 import LeftSprite from "@/app/view/[identifier]/reels/components/LeftSprite";
 import { fetchPreview } from "@/app/view/[identifier]/reels/services/viewApi";
+import { ChevronDown } from "lucide-react";
 
 // 3D Ring (ssr off)
 const Ring = dynamic(
@@ -373,8 +374,9 @@ export default function ReelsView({ identifier, initialData = null }) {
       {/* 커튼 다시 열기 버튼 */}
       <button
         onClick={() => setCurtainOpen(true)}
-        className="absolute top-4 left-4 z-40 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs text-white/90 backdrop-blur-md active:scale-95"
+        className=" flex gap-2 absolute top-4 left-4 z-40 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-white/90 backdrop-blur-md active:scale-95"
       >
+        <ChevronDown className=" h-4 w-4" />
         프로필 보기
       </button>
 
@@ -391,7 +393,7 @@ export default function ReelsView({ identifier, initialData = null }) {
       </div>
 
       {/* 하단 Ring (모바일 기준 오른쪽 반 잘린 위치 유지) */}
-      <div className="absolute inset-0 top-[440px] h-[50vh] w-[220vw]">
+      <div className="absolute inset-0 top-[420px] h-[50vh] w-[220vw]">
         <Ring
           slots={slots}
           leftIndex={leftIndex}

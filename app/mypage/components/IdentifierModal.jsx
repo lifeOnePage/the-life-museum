@@ -52,7 +52,8 @@ export default function IdentifierModal({
       idHeader: "ID에 대하여",
       idLines: [
         "Life-Reels의 고유 이름이에요.",
-        "완성된 Life-Reels를 ID가 포함된 링크로 공유할 수 있어요.",
+        "완성된 Life-Reels를 ID가 포함된 링크로 공유할 수 있어요: ",
+        `https://the-life-museum.vercel.app/view/${identifier}/reels`,
         "다른 Life-Reels와 중복될 수 없고, 영문/숫자/언더스코어(_)/하이픈(-)만 사용할 수 있어요.",
         "마이페이지에서 언제든 다시 변경할 수 있어요.",
       ],

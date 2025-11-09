@@ -15,11 +15,12 @@
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
+  padding-bottom: 150px; /* nav(80px) + footer(약 70px) 높이만큼 하단 패딩 추가 */
 }
 
 .lr-mobile-header {
   text-align: left;
-  padding: 4rem 2rem 3.6rem 2rem;
+  padding: 3rem 2rem 2.3rem 2rem;
 }
 
 .lr-mobile-title {
@@ -389,8 +390,8 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
 /* 하이라이트 그리드 */
 .lr-mobile-highlight-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
   margin-top: 20px;
   padding: 0;
 }
@@ -399,7 +400,7 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   width: 100%;
   aspect-ratio: 1 / 1;
   position: relative;
-  border-radius: 8px;
+  border-radius: 4px;
   background: #000;
   cursor: pointer;
   overflow: hidden;
@@ -414,7 +415,7 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   transition:
     transform 160ms ease,
     opacity 160ms ease;
-  border-radius: 8px;
+  border-radius: 4px;
 }
 
 .lr-mobile-highlight-item:hover img {
@@ -426,7 +427,7 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   position: absolute;
   inset: 0;
   background: rgba(0, 0, 0, 0.45);
-  border-radius: 8px;
+  border-radius: 4px;
   z-index: 1;
 }
 
@@ -690,9 +691,17 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0px 2rem 40px 2rem;
-  position: relative;
+  padding: 0px 2rem 0rem 2rem;
+  position: fixed;
+  bottom: 50px;
+  left: 0;
+  right: 0;
   z-index: 100;
+  background: var(--bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  height: 80px; /* nav 높이 고정 */
+  box-sizing: border-box;
 }
 
 .lr-mobile-nav span {
@@ -743,10 +752,14 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   gap: 8px;
   padding: 16px 24px;
   background: rgba(18, 18, 18, 0.95);
-
-  position: relative;
+  position: fixed;
+  bottom: 0; /* 화면 맨 아래 */
+  left: 0;
+  right: 0;
   z-index: 99;
   flex-wrap: wrap;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .lr-mobile-footer-logo {
@@ -839,6 +852,15 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   }
   to {
     transform: translateY(0);
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
   }
 }
 

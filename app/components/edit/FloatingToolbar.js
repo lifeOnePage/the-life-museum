@@ -33,6 +33,7 @@ export default function FloatingToolbar({
   currentBgm,
   isSaved = true,
   isPreview = false,
+  isSaving = false,
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [hovered, setHovered] = useState(null);
@@ -96,8 +97,11 @@ export default function FloatingToolbar({
       ) : (
         <FiSave size={20} />
       ),
-      disabled: isSaved,
-      getLabel: () => (isSaved ? "변경사항이 저장됨" : "저장하려면 클릭하세요"),
+      disabled: isSaved || isSaving,
+      getLabel: () => {
+        if (isSaving) return "저장 중...";
+        return isSaved ? "변경사항이 저장됨" : "저장하려면 클릭하세요";
+      },
     },
     {
       key: "logout",
@@ -136,6 +140,7 @@ export default function FloatingToolbar({
           alignItems: "center",
           gap: 20,
           width: 100,
+          border: "2px solid rgba(255, 255, 255, 0.3)",
           boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
           overflow: "hidden",
           position: "relative",
@@ -227,6 +232,7 @@ export default function FloatingToolbar({
               gridTemplateColumns: "repeat(4, 1fr)",
               gap: "8px",
               width: "200px",
+              border: "2px solid rgba(255, 255, 255, 0.3)",
               boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
               zIndex: 10001,
               pointerEvents: "auto",
@@ -297,6 +303,7 @@ export default function FloatingToolbar({
               width: "320px",
               maxHeight: "400px",
               overflowY: "auto",
+              border: "2px solid rgba(255, 255, 255, 0.3)",
               boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
               zIndex: 10001,
               pointerEvents: "auto",

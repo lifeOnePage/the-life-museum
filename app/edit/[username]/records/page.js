@@ -45,6 +45,8 @@ export default function EditRecords() {
   const [recordId, setRecordId] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [navigateToItem, setNavigateToItem] = useState(null);
 
   useEffect(() => {
     if (!token || !username) return;
@@ -61,12 +63,22 @@ export default function EditRecords() {
 
           const userName = user?.userName || "사용자";
 
+          // 메인 레코드가 비어있으면 가이드라인 표시
+          const isNewRecord =
+            !result.item.record.name?.trim() &&
+            !result.item.record.description?.trim() &&
+            !result.item.record.coverUrl;
+
           const record = {
             ...result.item.record,
-            name: result.item.record.name?.trim() || `${userName}의 이야기`,
+            name:
+              result.item.record.name?.trim() ||
+              (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
             description:
               result.item.record.description?.trim() ||
-              "당신에 관한 이야기입니다. 일상의 작은 순간들을 모아 하나의 긴 기억으로 만들어가는 시간입니다.",
+              (isNewRecord
+                ? "일상의 작은 순간들을 관찰하고 기록하는 아티스트입니다.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브할 수 있도록 돕습니다."
+                : "당신을 소개하는 문구를 작성해주세요! (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)"),
             // 메인 커버 이미지가 없으면 기본 이미지 설정
             coverUrl:
               result.item.record.coverUrl || "/images/records/No image.png",
@@ -83,14 +95,16 @@ export default function EditRecords() {
             const day = String(today.getDate()).padStart(2, "0");
             const dateStr = `${year}.${month}.${day}`;
 
+            // 초기 항목에도 임시 ID 부여 (key 중복 방지)
+            const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             items = [
               {
-                id: null, // 새 항목
-                title: "첫 번째 타임라인",
+                id: tempId, // 임시 ID 부여
+                title: "첫 번째 순간(예:출생)",
                 date: dateStr,
                 location: "",
                 description:
-                  "첫 번째 타임라인을 추가해보세요. 소중한 순간을 기록해보세요.",
+                  "기록할 만한 일들이 있나요? 작은 일들도 좋아요.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브해보세요.",
                 color: "",
                 isHighlight: false,
                 coverUrl: "/images/records/No image.png",
@@ -129,6 +143,11 @@ export default function EditRecords() {
   };
 
   const save = async () => {
+    // 이미 저장 중이면 중복 실행 방지
+    if (isSaving) {
+      return;
+    }
+
     if (!token || !recordId || !data) {
       alert("저장할 데이터가 없습니다.");
       return;
@@ -154,8 +173,9 @@ export default function EditRecords() {
       });
 
       // 2. RecordItems 업데이트 (기존 items와 새 items 비교)
-      const existingItems = data.items.filter((item) => item.id);
-      const newItems = data.items.filter((item) => !item.id);
+      // 임시 ID는 문자열로 시작하므로 숫자 ID만 기존 항목으로 간주
+      const existingItems = data.items.filter((item) => item.id && typeof item.id === 'number');
+      const newItems = data.items.filter((item) => !item.id || (typeof item.id === 'string' && item.id.startsWith('temp-')));
 
       // 기존 items 업데이트
       for (const item of existingItems) {
@@ -174,9 +194,10 @@ export default function EditRecords() {
         });
       }
 
-      // 새 items 생성
+      // 새 items 생성 및 임시 ID를 실제 ID로 교체
+      const updatedItems = [...data.items];
       for (const item of newItems) {
-        await createRecordItem({
+        const result = await createRecordItem({
           token,
           recordId,
           data: {
@@ -189,7 +210,24 @@ export default function EditRecords() {
             coverUrl: item.coverUrl,
           },
         });
+        
+        // 생성된 항목의 실제 ID로 교체
+        if (result?.ok && result?.item?.id) {
+          const tempIdIndex = updatedItems.findIndex((i) => i.id === item.id);
+          if (tempIdIndex !== -1) {
+            updatedItems[tempIdIndex] = {
+              ...updatedItems[tempIdIndex],
+              id: result.item.id,
+            };
+          }
+        }
       }
+
+      // 업데이트된 items로 상태 갱신
+      setData({
+        ...data,
+        items: updatedItems,
+      });
 
       // 삭제된 items 제거 (필요시 구현)
       // 삭제는 별도로 처리하거나, handleDataChange에서 관리
@@ -216,10 +254,29 @@ export default function EditRecords() {
   const handleAddTimelineItem = (newItem) => {
     if (!data) return;
 
+    // 새 항목에 임시 고유 ID 부여 (DB에 저장되기 전까지 사용)
+    // 음수나 문자열로 생성하여 DB ID와 구분
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const itemWithTempId = {
+      ...newItem,
+      id: tempId, // null 대신 임시 ID 사용
+    };
+
+    const newItems = [...(data.items || []), itemWithTempId];
     setData({
       ...data,
-      items: [...(data.items || []), newItem],
+      items: newItems,
     });
+    
+    // 생성된 항목으로 이동 (main이 첫 번째이므로 items.length)
+    // 타임라인은 연도 순으로 정렬되므로, 실제로는 마지막 항목이 아닐 수 있음
+    // 하지만 일단 마지막에 추가된 것으로 간주하고 이동
+    const targetIndex = newItems.length; // main(0) + items.length
+    setTimeout(() => {
+      setNavigateToItem(targetIndex);
+      setTimeout(() => setNavigateToItem(null), 100);
+    }, 100);
+    
     setIsSaved(false);
   };
 
@@ -238,18 +295,98 @@ export default function EditRecords() {
     }
 
     try {
-      // DB에 저장된 항목이면 API 호출
-      if (itemId) {
+      // 현재 활성화된 항목의 인덱스 저장 (삭제 후 이동용)
+      const currentIndex = activeItem?.index || 0;
+      
+      // DB에 저장된 항목(숫자 ID)이면 API 호출
+      // 임시 ID(문자열)는 로컬에서만 제거
+      if (itemId && typeof itemId === 'number') {
         await deleteRecordItem({ token, itemId });
-      }
 
-      // 데이터에서 제거
-      const newItems = data.items.filter((item) => item.id !== itemId);
-      setData({
-        ...data,
-        items: newItems,
-      });
-      setIsSaved(false);
+        // 삭제 후 DB에서 최신 데이터 다시 불러오기
+        const result = await fetchRecordDetails({
+          token,
+          identifier: username,
+        });
+        if (result?.ok && result?.item) {
+          const userName = user?.userName || "사용자";
+
+          // 메인 레코드가 비어있으면 가이드라인 표시
+          const isNewRecord =
+            !result.item.record.name?.trim() &&
+            !result.item.record.description?.trim() &&
+            !result.item.record.coverUrl;
+
+          const record = {
+            ...result.item.record,
+            name:
+              result.item.record.name?.trim() ||
+              (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
+            description:
+              result.item.record.description?.trim() ||
+              (isNewRecord
+                ? "일상의 작은 순간들을 관찰하고 기록하는 아티스트입니다.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브할 수 있도록 돕습니다."
+                : "당신을 소개하는 문구를 작성해보세요. (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)"),
+            coverUrl:
+              result.item.record.coverUrl || "/images/records/No image.png",
+            color: result.item.record.color || "#121212",
+          };
+          let items = result.item.recordItems || [];
+          if (items.length === 0) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, "0");
+            const day = String(today.getDate()).padStart(2, "0");
+            const dateStr = `${year}.${month}.${day}`;
+            // 초기 항목에도 임시 ID 부여 (key 중복 방지)
+            const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            items = [
+              {
+                id: tempId, // 임시 ID 부여
+                title: "첫 번째 기록(예: 출생)",
+                date: dateStr,
+                location: "",
+                description:
+                  "기록할 만한 일들이 있나요? 작은 일들도 좋아요.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브해보세요.",
+                color: "",
+                isHighlight: false,
+                coverUrl: "/images/records/No image.png",
+              },
+            ];
+          }
+          setData({
+            record,
+            items,
+          });
+          
+          // 삭제된 항목이 마지막이 아니면 직전 항목으로 이동 (인덱스는 main 포함이므로 -1)
+          // main이 첫 번째이므로, 타임라인 항목의 인덱스는 currentIndex - 1
+          const targetIndex = Math.max(0, currentIndex - 1);
+          setTimeout(() => {
+            setNavigateToItem(targetIndex);
+            setTimeout(() => setNavigateToItem(null), 100);
+          }, 100);
+        }
+        setIsSaved(true);
+      } else {
+        // 임시 ID를 가진 항목은 로컬에서만 제거
+        const deletedIndex = data.items.findIndex((item) => item.id === itemId);
+        const newItems = data.items.filter((item) => item.id !== itemId);
+        setData({
+          ...data,
+          items: newItems,
+        });
+        
+        // 삭제된 항목이 마지막이 아니면 직전 항목으로 이동
+        // main이 첫 번째이므로, 타임라인 항목의 인덱스는 deletedIndex + 1 (main 포함)
+        // 삭제 후에는 deletedIndex + 1이 되므로, Math.max(0, deletedIndex)로 설정
+        const targetIndex = Math.max(0, deletedIndex);
+        setTimeout(() => {
+          setNavigateToItem(targetIndex);
+          setTimeout(() => setNavigateToItem(null), 100);
+        }, 100);
+        setIsSaved(false);
+      }
     } catch (e) {
       console.error("[delete item] error:", e);
       alert(`삭제 실패: ${e.message || "알 수 없는 오류"}`);
@@ -259,7 +396,7 @@ export default function EditRecords() {
   const handleColorChange = (color) => {
     if (!data) return;
 
-    // 활성화된 item이 main이면 record의 color 변경, 아니면 해당 item의 color 변경
+    // 활성화된 item이 main이면 record의 color 변경
     if (activeItem && activeItem.kind === "main") {
       setData({
         ...data,
@@ -268,15 +405,50 @@ export default function EditRecords() {
           color: color,
         },
       });
-    } else if (activeItem && activeItem.id) {
-      // 해당 item의 color 변경
-      const newItems = data.items.map((item) =>
-        item.id === activeItem.id ? { ...item, color: color } : item,
-      );
-      setData({
-        ...data,
-        items: newItems,
-      });
+    } else if (activeItem && activeItem.kind === "year") {
+      // 타임라인 항목의 color 변경 (임시 ID를 가진 새 항목도 포함)
+      if (activeItem.id) {
+        // 기존 항목 또는 임시 ID를 가진 항목: id로 찾아서 변경
+        const newItems = data.items.map((item) =>
+          item.id === activeItem.id ? { ...item, color: color } : item,
+        );
+        setData({
+          ...data,
+          items: newItems,
+        });
+      } else {
+        // id가 없는 경우 (이론적으로는 발생하지 않아야 하지만 안전장치)
+        // timeline 인덱스 또는 속성으로 찾기
+        const itemIndex = activeItem.index !== undefined ? activeItem.index - 1 : -1;
+        
+        if (itemIndex >= 0 && itemIndex < data.items.length) {
+          const newItems = data.items.map((item, idx) =>
+            idx === itemIndex ? { ...item, color: color } : item,
+          );
+          setData({
+            ...data,
+            items: newItems,
+          });
+        } else {
+          // 인덱스를 찾을 수 없는 경우, title과 date로 매칭
+          const newItems = data.items.map((item) => {
+            if (
+              (!item.id || (typeof item.id === 'string' && item.id.startsWith('temp-'))) &&
+              activeItem.event &&
+              item.title === activeItem.event &&
+              activeItem.date &&
+              item.date === activeItem.date
+            ) {
+              return { ...item, color: color };
+            }
+            return item;
+          });
+          setData({
+            ...data,
+            items: newItems,
+          });
+        }
+      }
     } else {
       // 기본적으로 record의 color 변경
       setData({
@@ -299,6 +471,7 @@ export default function EditRecords() {
     }
 
     try {
+      setIsUploadingImage(true);
       let uploadUrl;
       if (type === "main") {
         uploadUrl = await uploadRecordFile({
@@ -331,6 +504,8 @@ export default function EditRecords() {
     } catch (e) {
       console.error("[image upload] error:", e);
       alert(`이미지 업로드 실패: ${e.message || "알 수 없는 오류"}`);
+    } finally {
+      setIsUploadingImage(false);
     }
   };
 
@@ -403,6 +578,7 @@ export default function EditRecords() {
         currentBgm={data?.record?.bgm || ""}
         isSaved={isSaved}
         isPreview={isPreview}
+        isSaving={isSaving}
       />
       {width <= 768 ? (
         <LifeRecordMobile
@@ -412,6 +588,8 @@ export default function EditRecords() {
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
           onActiveItemChange={setActiveItem}
+          isUploadingImage={isUploadingImage}
+          onNavigateToItem={navigateToItem}
         />
       ) : (
         <LifeRecordDesktop
@@ -421,6 +599,8 @@ export default function EditRecords() {
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
           onActiveItemChange={setActiveItem}
+          isUploadingImage={isUploadingImage}
+          onNavigateToItem={navigateToItem}
         />
       )}
     </>

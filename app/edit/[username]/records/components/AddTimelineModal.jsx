@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { uploadRecordFile } from "../services/editApi";
 import { useAuth } from "@/app/contexts/AuthContext";
+import ImageCropOverlay from "./ImageCropOverlay";
 
 export default function AddTimelineModal({ isOpen, onClose, onSave }) {
   const { token } = useAuth();
@@ -11,17 +12,45 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
   const [description, setDescription] = useState("");
   const [coverUrl, setCoverUrl] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleImageChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !token) return;
 
+    // 이미지 파일인 경우 크롭 모달 표시
+    if (file.type.startsWith("image/")) {
+      setSelectedImageFile(file);
+      setShowCropModal(true);
+    } else {
+      // 비디오 파일인 경우 바로 업로드
+      try {
+        setIsUploading(true);
+        const url = await uploadRecordFile({
+          token,
+          file,
+          prefix: "records/timeline",
+        });
+        setCoverUrl(url);
+      } catch (error) {
+        console.error("미디어 업로드 실패:", error);
+        alert("미디어 업로드에 실패했습니다.");
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
+
+  const handleCropComplete = async (croppedFile) => {
+    if (!token || !croppedFile) return;
+
     try {
       setIsUploading(true);
       const url = await uploadRecordFile({
         token,
-        file,
+        file: croppedFile,
         prefix: "records/timeline",
       });
       setCoverUrl(url);
@@ -30,6 +59,7 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
       alert("미디어 업로드에 실패했습니다.");
     } finally {
       setIsUploading(false);
+      setSelectedImageFile(null);
     }
   };
 
@@ -60,6 +90,7 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
     setLocation("");
     setDescription("");
     setCoverUrl("");
+    setSelectedImageFile(null);
     onClose();
   };
 
@@ -67,9 +98,9 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50"
-      onClick={handleClose}
-    >
+        className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50"
+        onClick={handleClose}
+      >
       <div
         className="relative w-full max-w-md rounded-lg bg-white p-8 shadow-xl"
         onClick={(e) => e.stopPropagation()}
@@ -81,7 +112,20 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
         {/* 미디어 업로드 영역 */}
         <div className="mb-6">
           <div className="relative aspect-video w-full overflow-hidden rounded-lg bg-gray-200">
-            {coverUrl ? (
+            {showCropModal && selectedImageFile ? (
+              <ImageCropOverlay
+                imageFile={selectedImageFile}
+                onCropComplete={handleCropComplete}
+                onCancel={() => {
+                  setShowCropModal(false);
+                  setSelectedImageFile(null);
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = "";
+                  }
+                }}
+                aspectRatio={1}
+              />
+            ) : coverUrl ? (
               coverUrl.match(/\.(mp4|webm)$/i) ? (
                 <video
                   src={coverUrl}
@@ -100,21 +144,25 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
                 미디어 없음
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-              className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-md bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
-            >
-              {isUploading ? "업로드 중..." : "미디어 변경"}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
-              onChange={handleImageChange}
-              className="hidden"
-            />
+            {!showCropModal && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-md bg-gray-800 px-4 py-2 text-sm text-white hover:bg-gray-700 disabled:opacity-50"
+                >
+                  {isUploading ? "업로드 중..." : "미디어 변경"}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
+                  onChange={handleImageChange}
+                  className="hidden"
+                />
+              </>
+            )}
           </div>
         </div>
 

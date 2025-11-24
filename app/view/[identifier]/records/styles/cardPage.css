@@ -23,6 +23,10 @@ body,
   overflow-y: hidden;
 }
 
+.lr-page--editing {
+  overflow-y: auto;
+}
+
 .lr-page {
   min-height: 100vh;
   display: grid;
@@ -928,4 +932,92 @@ input.lr-name {
   font-weight: 300;
   line-height: 110%;
   letter-spacing: -0.125rem;
+}
+
+.lr-display-mode-control {
+  margin-top: 1rem;
+}
+
+.lr-display-mode-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.lr-display-mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lr-mode-label {
+  font-family: "Pretendard Variable";
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: rgba(0, 0, 0, 0.6);
+}
+
+.lr-mode-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 2px;
+}
+
+.lr-mode-switch:hover {
+  border-color: rgba(0, 0, 0, 0.6);
+}
+
+.lr-mode-switch.active {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.6);
+}
+
+.lr-mode-switch-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.lr-mode-switch.active .lr-mode-switch-slider {
+  left: 22px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.lr-birthdate-input-inline {
+  flex: 1;
+  min-width: 200px;
+  background: transparent;
+  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  padding: 6px 10px;
+  color: inherit;
+  font-family: "Pretendard Variable";
+  font-size: 0.9rem;
+  font-weight: 400;
+  transition:
+    opacity 0.2s ease,
+    visibility 0.2s ease;
+}
+
+.lr-birthdate-input-inline:focus {
+  outline: none;
+  border-color: rgba(0, 0, 0, 0.6);
+}
+
+.lr-birthdate-input-hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
 }

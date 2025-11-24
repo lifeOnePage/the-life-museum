@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import ImageCropOverlay from "@/app/edit/[username]/records/components/ImageCropOverlay";
 import "../styles/cardPage.css";
 import "../styles/cardPage-mobile.css";
 
@@ -55,6 +56,30 @@ const angDist = (a, b) => {
   return Math.min(d, 360 - d);
 };
 
+// 생년월일과 이벤트 날짜로 나이 계산
+const calculateAge = (birthDate, eventDate) => {
+  if (!birthDate || !eventDate) return null;
+
+  const [birthY, birthM, birthD] = birthDate.split(".").map(Number);
+  const [eventY, eventM, eventD] = eventDate.split(".").map(Number);
+
+  if (!birthY || !eventY) return null;
+
+  let age = eventY - birthY;
+
+  // 월과 일이 있으면 더 정확하게 계산
+  if (birthM && eventM) {
+    if (
+      eventM < birthM ||
+      (eventM === birthM && eventD && birthD && eventD < birthD)
+    ) {
+      age--;
+    }
+  }
+
+  return age >= 0 ? age : null;
+};
+
 function useIsMobile(bp = 768) {
   const [m, setM] = React.useState(
     typeof window !== "undefined" ? window.innerWidth <= bp : false,
@@ -77,9 +102,28 @@ export default function LifeRecordDesktop({
   onActiveItemChange,
   isUploadingImage = false,
   onNavigateToItem,
+  cropState = { isActive: false, imageFile: null, type: null, itemId: null },
+  onCropComplete,
+  onCropCancel,
+  aspectRatio = 1,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
+  const [displayMode, setDisplayMode] = useState(
+    data.record?.displayMode || "year",
+  ); // "year" or "age"
+  const [birthDate, setBirthDate] = useState(data.record?.birthDate || ""); // 생년월일 로컬 state (입력 중)
+  const [isEditingBirthDate, setIsEditingBirthDate] = useState(false); // 생년월일 입력 중인지 추적
+
+  // data가 변경될 때 displayMode와 birthDate 동기화 (입력 중이 아닐 때만)
+  useEffect(() => {
+    if (data.record?.displayMode !== undefined) {
+      setDisplayMode(data.record.displayMode);
+    }
+    if (data.record?.birthDate !== undefined && !isEditingBirthDate) {
+      setBirthDate(data.record.birthDate);
+    }
+  }, [data.record?.displayMode, data.record?.birthDate, isEditingBirthDate]);
 
   // API 데이터를 timeline 형식으로 변환
   const timeline = useMemo(() => {
@@ -88,9 +132,9 @@ export default function LifeRecordDesktop({
     // 메인 아이템
     if (data.record) {
       result.push({
-        id: "PLAY",
+        id: "Home",
         kind: "main",
-        label: "PLAY",
+        label: "Home",
         title: data.record.name || "사용자의 이야기",
         date: "",
         location: "",
@@ -103,10 +147,21 @@ export default function LifeRecordDesktop({
     // RecordItems를 year 타입으로 변환
     const items = (data.items || []).map((item) => {
       const [y] = (item.date || "").split(".");
+      const year = y ? parseInt(y, 10) : 0;
+
+      // displayMode에 따라 label 결정 (입력 중이 아닐 때만 나이 계산)
+      let label = y || item.id.toString();
+      if (displayMode === "age" && !isEditingBirthDate && data.record?.birthDate && item.date) {
+        const age = calculateAge(data.record.birthDate, item.date);
+        if (age !== null) {
+          label = `${age}세`;
+        }
+      }
+
       return {
         id: item.id,
         kind: "year",
-        label: y || item.id.toString(),
+        label: label,
         event: item.title || "",
         date: item.date || "",
         location: item.location || "",
@@ -114,7 +169,7 @@ export default function LifeRecordDesktop({
         desc: item.description || "",
         isHighlight: item.isHighlight || false,
         color: item.color || "",
-        year: y ? parseInt(y, 10) : 0, // 정렬을 위한 연도 숫자
+        year: year, // 정렬을 위한 연도 숫자
       };
     });
 
@@ -133,7 +188,7 @@ export default function LifeRecordDesktop({
     result.push(...items);
 
     return result;
-  }, [data, editingDateItemId]);
+  }, [data, editingDateItemId, displayMode, isEditingBirthDate]);
 
   const [rotation, setRotation] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -214,6 +269,16 @@ export default function LifeRecordDesktop({
     if (n <= 0) return CFG.START;
     const step = CFG.SWEEP / n;
     return CFG.START + step * (i + 0.5);
+  };
+
+  const getOpacityForAngle = (angle) => {
+    const anchor = getAnchor();
+    let diff = Math.abs(norm360(angle) - norm360(anchor));
+    if (diff > 180) diff = 360 - diff;
+
+    const normalizedDiff = Math.min(diff / 90, 1);
+    const opacity = 1 - normalizedDiff * normalizedDiff * 1;
+    return Math.max(opacity, 0);
   };
 
   // activeItem.id가 변경될 때 ref 업데이트
@@ -369,7 +434,7 @@ export default function LifeRecordDesktop({
 
   return (
     <main
-      className="lr-page"
+      className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
       {/* BGM 재생 버튼 (우측 상단 고정) */}
@@ -463,7 +528,27 @@ export default function LifeRecordDesktop({
                     }}
                   />
                 )}
-                {activeItem.video ? (
+                {cropState.isActive &&
+                cropState.imageFile &&
+                ((cropState.type === "main" && activeItem.kind === "main") ||
+                  (cropState.type === "item" &&
+                    cropState.itemId === activeItem.id)) ? (
+                  <div
+                    className="lr-cover"
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    <ImageCropOverlay
+                      imageFile={cropState.imageFile}
+                      onCropComplete={onCropComplete}
+                      onCancel={onCropCancel}
+                      aspectRatio={aspectRatio}
+                    />
+                  </div>
+                ) : activeItem.video ? (
                   <video
                     className="lr-cover"
                     src={activeItem.video}
@@ -658,6 +743,59 @@ export default function LifeRecordDesktop({
                         <div className="lr-name">{mainTitle}</div>
                       )}
                     </div>
+                    {/* 연도/나이 표시 토글 및 생년월일 입력 */}
+                    {isEditing && (
+                      <div className="lr-display-mode-control">
+                        <div className="lr-display-mode-row">
+                          <div className="lr-display-mode-toggle">
+                            <span className="lr-mode-label">연도</span>
+                            <button
+                              type="button"
+                              className={`lr-mode-switch ${displayMode === "year" ? "" : "active"}`}
+                              onClick={() => {
+                                const newMode =
+                                  displayMode === "year" ? "age" : "year";
+                                setDisplayMode(newMode);
+                                const newData = {
+                                  ...data,
+                                  record: {
+                                    ...data.record,
+                                    displayMode: newMode,
+                                  },
+                                };
+                                onDataChange?.(newData);
+                              }}
+                            >
+                              <span className="lr-mode-switch-slider"></span>
+                            </button>
+                            <span className="lr-mode-label">나이</span>
+                          </div>
+                          <input
+                            type="text"
+                            value={birthDate}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setBirthDate(value);
+                            }}
+                            onFocus={() => {
+                              setIsEditingBirthDate(true);
+                            }}
+                            onBlur={() => {
+                              setIsEditingBirthDate(false);
+                              const newData = {
+                                ...data,
+                                record: { ...data.record, birthDate: birthDate },
+                              };
+                              onDataChange?.(newData);
+                            }}
+                            className={`lr-birthdate-input-inline ${displayMode === "age" ? "" : "lr-birthdate-input-hidden"}`}
+                            placeholder="출생년도를 입력하세요. (예: 1949)"
+                            maxLength={10}
+                            disabled={displayMode !== "age"}
+                          />
+                        </div>
+                      </div>
+                    )}
                     {isEditing ? (
                       <>
                         <textarea
@@ -914,12 +1052,16 @@ export default function LifeRecordDesktop({
             <div className="year-circle">
               {timeline.map((item, i) => {
                 const phi = angleForIndex(i) + rotation;
+                const opacity = getOpacityForAngle(phi);
                 return (
                   <span
                     key={item.id}
                     className={`year-item ${i === activeIdx ? "active" : ""}`}
                     style={{
                       transform: `rotate(${phi}deg) translate(${RADIUS}px) rotate(${-phi}deg)`,
+                      opacity: opacity,
+                      transition:
+                        "opacity 0.25s ease, transform 0.25s ease, color 0.25s ease",
                     }}
                     onClick={() => snapToIndex(i)}
                   >

@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import ImageCropOverlay from "@/app/edit/[username]/records/components/ImageCropOverlay";
 import "../styles/cardPage-mobile.css";
 
 const MONTHS = [
@@ -52,6 +53,10 @@ export default function LifeRecordMobile({
   onActiveItemChange,
   isUploadingImage = false,
   onNavigateToItem,
+  cropState = { isActive: false, imageFile: null, type: null, itemId: null },
+  onCropComplete,
+  onCropCancel,
+  aspectRatio = 1,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -390,7 +395,22 @@ export default function LifeRecordMobile({
             }}
           />
         )}
-        {activeItem.video ? (
+        {cropState.isActive &&
+        cropState.imageFile &&
+        ((cropState.type === "main" && activeItem.kind === "main") ||
+          (cropState.type === "item" && cropState.itemId === activeItem.id)) ? (
+          <div
+            className={`lr-mobile-cover ${isTransitioning ? "fade-out" : "fade-in"}`}
+            style={{ position: "relative", width: "100%", height: "100%" }}
+          >
+            <ImageCropOverlay
+              imageFile={cropState.imageFile}
+              onCropComplete={onCropComplete}
+              onCancel={onCropCancel}
+              aspectRatio={aspectRatio}
+            />
+          </div>
+        ) : activeItem.video ? (
           <video
             className={`lr-mobile-cover ${
               isTransitioning ? "fade-out" : "fade-in"

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import ImageCropOverlay from "@/app/edit/[username]/records/components/ImageCropOverlay";
 import "../styles/cardPage.css";
 import "../styles/cardPage-mobile.css";
 
@@ -77,6 +78,10 @@ export default function LifeRecordDesktop({
   onActiveItemChange,
   isUploadingImage = false,
   onNavigateToItem,
+  cropState = { isActive: false, imageFile: null, type: null, itemId: null },
+  onCropComplete,
+  onCropCancel,
+  aspectRatio = 1,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -214,6 +219,16 @@ export default function LifeRecordDesktop({
     if (n <= 0) return CFG.START;
     const step = CFG.SWEEP / n;
     return CFG.START + step * (i + 0.5);
+  };
+
+  const getOpacityForAngle = (angle) => {
+    const anchor = getAnchor();
+    let diff = Math.abs(norm360(angle) - norm360(anchor));
+    if (diff > 180) diff = 360 - diff;
+
+    const normalizedDiff = Math.min(diff / 90, 1);
+    const opacity = 1 - normalizedDiff * normalizedDiff * 1;
+    return Math.max(opacity, 0);
   };
 
   // activeItem.id가 변경될 때 ref 업데이트
@@ -463,7 +478,27 @@ export default function LifeRecordDesktop({
                     }}
                   />
                 )}
-                {activeItem.video ? (
+                {cropState.isActive &&
+                cropState.imageFile &&
+                ((cropState.type === "main" && activeItem.kind === "main") ||
+                  (cropState.type === "item" &&
+                    cropState.itemId === activeItem.id)) ? (
+                  <div
+                    className="lr-cover"
+                    style={{
+                      position: "relative",
+                      width: "100%",
+                      height: "100%",
+                    }}
+                  >
+                    <ImageCropOverlay
+                      imageFile={cropState.imageFile}
+                      onCropComplete={onCropComplete}
+                      onCancel={onCropCancel}
+                      aspectRatio={aspectRatio}
+                    />
+                  </div>
+                ) : activeItem.video ? (
                   <video
                     className="lr-cover"
                     src={activeItem.video}
@@ -914,12 +949,16 @@ export default function LifeRecordDesktop({
             <div className="year-circle">
               {timeline.map((item, i) => {
                 const phi = angleForIndex(i) + rotation;
+                const opacity = getOpacityForAngle(phi);
                 return (
                   <span
                     key={item.id}
                     className={`year-item ${i === activeIdx ? "active" : ""}`}
                     style={{
                       transform: `rotate(${phi}deg) translate(${RADIUS}px) rotate(${-phi}deg)`,
+                      opacity: opacity,
+                      transition:
+                        "opacity 0.25s ease, transform 0.25s ease, color 0.25s ease",
                     }}
                     onClick={() => snapToIndex(i)}
                   >

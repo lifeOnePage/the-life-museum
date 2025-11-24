@@ -14,6 +14,7 @@ import {
   uploadRecordFile,
 } from "./services/editApi";
 import AddTimelineModal from "./components/AddTimelineModal";
+import ImageCropOverlay from "./components/ImageCropOverlay";
 import "@/app/view/[identifier]/records/styles/cardPage.css";
 import "@/app/view/[identifier]/records/styles/cardPage-mobile.css";
 
@@ -47,6 +48,12 @@ export default function EditRecords() {
   const [activeItem, setActiveItem] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [navigateToItem, setNavigateToItem] = useState(null);
+  const [cropState, setCropState] = useState({
+    isActive: false,
+    imageFile: null,
+    type: null,
+    itemId: null,
+  });
 
   useEffect(() => {
     if (!token || !username) return;
@@ -470,6 +477,23 @@ export default function EditRecords() {
       return;
     }
 
+    // 이미지 파일인 경우 크롭 모드 활성화
+    if (file.type.startsWith("image/")) {
+      setCropState({
+        isActive: true,
+        imageFile: file,
+        type,
+        itemId,
+      });
+    } else {
+      // 비디오 파일인 경우 바로 업로드
+      await uploadImageFile(type, itemId, file);
+    }
+  };
+
+  const uploadImageFile = async (type, itemId, file) => {
+    if (!token || !file || !recordId) return;
+
     try {
       setIsUploadingImage(true);
       let uploadUrl;
@@ -507,6 +531,26 @@ export default function EditRecords() {
     } finally {
       setIsUploadingImage(false);
     }
+  };
+
+  const handleCropComplete = async (croppedFile) => {
+    const { type, itemId } = cropState;
+    await uploadImageFile(type, itemId, croppedFile);
+    setCropState({
+      isActive: false,
+      imageFile: null,
+      type: null,
+      itemId: null,
+    });
+  };
+
+  const handleCropCancel = () => {
+    setCropState({
+      isActive: false,
+      imageFile: null,
+      type: null,
+      itemId: null,
+    });
   };
 
   if (isLoading) {
@@ -590,6 +634,10 @@ export default function EditRecords() {
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
+          cropState={cropState}
+          onCropComplete={handleCropComplete}
+          onCropCancel={handleCropCancel}
+          aspectRatio={1}
         />
       ) : (
         <LifeRecordDesktop
@@ -601,6 +649,10 @@ export default function EditRecords() {
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
+          cropState={cropState}
+          onCropComplete={handleCropComplete}
+          onCropCancel={handleCropCancel}
+          aspectRatio={1}
         />
       )}
     </>

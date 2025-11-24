@@ -56,6 +56,30 @@ const angDist = (a, b) => {
   return Math.min(d, 360 - d);
 };
 
+// 생년월일과 이벤트 날짜로 나이 계산
+const calculateAge = (birthDate, eventDate) => {
+  if (!birthDate || !eventDate) return null;
+
+  const [birthY, birthM, birthD] = birthDate.split(".").map(Number);
+  const [eventY, eventM, eventD] = eventDate.split(".").map(Number);
+
+  if (!birthY || !eventY) return null;
+
+  let age = eventY - birthY;
+
+  // 월과 일이 있으면 더 정확하게 계산
+  if (birthM && eventM) {
+    if (
+      eventM < birthM ||
+      (eventM === birthM && eventD && birthD && eventD < birthD)
+    ) {
+      age--;
+    }
+  }
+
+  return age >= 0 ? age : null;
+};
+
 function useIsMobile(bp = 768) {
   const [m, setM] = React.useState(
     typeof window !== "undefined" ? window.innerWidth <= bp : false,
@@ -85,6 +109,21 @@ export default function LifeRecordDesktop({
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
+  const [displayMode, setDisplayMode] = useState(
+    data.record?.displayMode || "year",
+  ); // "year" or "age"
+  const [birthDate, setBirthDate] = useState(data.record?.birthDate || ""); // 생년월일 로컬 state (입력 중)
+  const [isEditingBirthDate, setIsEditingBirthDate] = useState(false); // 생년월일 입력 중인지 추적
+
+  // data가 변경될 때 displayMode와 birthDate 동기화 (입력 중이 아닐 때만)
+  useEffect(() => {
+    if (data.record?.displayMode !== undefined) {
+      setDisplayMode(data.record.displayMode);
+    }
+    if (data.record?.birthDate !== undefined && !isEditingBirthDate) {
+      setBirthDate(data.record.birthDate);
+    }
+  }, [data.record?.displayMode, data.record?.birthDate, isEditingBirthDate]);
 
   // API 데이터를 timeline 형식으로 변환
   const timeline = useMemo(() => {
@@ -93,9 +132,9 @@ export default function LifeRecordDesktop({
     // 메인 아이템
     if (data.record) {
       result.push({
-        id: "PLAY",
+        id: "Home",
         kind: "main",
-        label: "PLAY",
+        label: "Home",
         title: data.record.name || "사용자의 이야기",
         date: "",
         location: "",
@@ -108,10 +147,21 @@ export default function LifeRecordDesktop({
     // RecordItems를 year 타입으로 변환
     const items = (data.items || []).map((item) => {
       const [y] = (item.date || "").split(".");
+      const year = y ? parseInt(y, 10) : 0;
+
+      // displayMode에 따라 label 결정 (입력 중이 아닐 때만 나이 계산)
+      let label = y || item.id.toString();
+      if (displayMode === "age" && !isEditingBirthDate && data.record?.birthDate && item.date) {
+        const age = calculateAge(data.record.birthDate, item.date);
+        if (age !== null) {
+          label = `${age}세`;
+        }
+      }
+
       return {
         id: item.id,
         kind: "year",
-        label: y || item.id.toString(),
+        label: label,
         event: item.title || "",
         date: item.date || "",
         location: item.location || "",
@@ -119,7 +169,7 @@ export default function LifeRecordDesktop({
         desc: item.description || "",
         isHighlight: item.isHighlight || false,
         color: item.color || "",
-        year: y ? parseInt(y, 10) : 0, // 정렬을 위한 연도 숫자
+        year: year, // 정렬을 위한 연도 숫자
       };
     });
 
@@ -138,7 +188,7 @@ export default function LifeRecordDesktop({
     result.push(...items);
 
     return result;
-  }, [data, editingDateItemId]);
+  }, [data, editingDateItemId, displayMode, isEditingBirthDate]);
 
   const [rotation, setRotation] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
@@ -384,7 +434,7 @@ export default function LifeRecordDesktop({
 
   return (
     <main
-      className="lr-page"
+      className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
       {/* BGM 재생 버튼 (우측 상단 고정) */}
@@ -693,6 +743,59 @@ export default function LifeRecordDesktop({
                         <div className="lr-name">{mainTitle}</div>
                       )}
                     </div>
+                    {/* 연도/나이 표시 토글 및 생년월일 입력 */}
+                    {isEditing && (
+                      <div className="lr-display-mode-control">
+                        <div className="lr-display-mode-row">
+                          <div className="lr-display-mode-toggle">
+                            <span className="lr-mode-label">연도</span>
+                            <button
+                              type="button"
+                              className={`lr-mode-switch ${displayMode === "year" ? "" : "active"}`}
+                              onClick={() => {
+                                const newMode =
+                                  displayMode === "year" ? "age" : "year";
+                                setDisplayMode(newMode);
+                                const newData = {
+                                  ...data,
+                                  record: {
+                                    ...data.record,
+                                    displayMode: newMode,
+                                  },
+                                };
+                                onDataChange?.(newData);
+                              }}
+                            >
+                              <span className="lr-mode-switch-slider"></span>
+                            </button>
+                            <span className="lr-mode-label">나이</span>
+                          </div>
+                          <input
+                            type="text"
+                            value={birthDate}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setBirthDate(value);
+                            }}
+                            onFocus={() => {
+                              setIsEditingBirthDate(true);
+                            }}
+                            onBlur={() => {
+                              setIsEditingBirthDate(false);
+                              const newData = {
+                                ...data,
+                                record: { ...data.record, birthDate: birthDate },
+                              };
+                              onDataChange?.(newData);
+                            }}
+                            className={`lr-birthdate-input-inline ${displayMode === "age" ? "" : "lr-birthdate-input-hidden"}`}
+                            placeholder="출생년도를 입력하세요. (예: 1949)"
+                            maxLength={10}
+                            disabled={displayMode !== "age"}
+                          />
+                        </div>
+                      </div>
+                    )}
                     {isEditing ? (
                       <>
                         <textarea

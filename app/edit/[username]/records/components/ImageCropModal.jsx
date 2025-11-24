@@ -6,7 +6,7 @@ export default function ImageCropModal({
   onClose,
   imageFile,
   onCropComplete,
-  aspectRatio = null, // null이면 자유 비율, 숫자면 고정 비율 (예: 16/9)
+  aspectRatio = null,
   minWidth = 100,
   minHeight = 100,
 }) {
@@ -62,9 +62,7 @@ export default function ImageCropModal({
 
       // 초기 크롭 영역 설정 (이미지 중앙에 기본 크기)
       const initialSize = Math.min(displayWidth * 0.8, displayHeight * 0.8);
-      const initialWidth = aspectRatio
-        ? initialSize
-        : initialSize;
+      const initialWidth = aspectRatio ? initialSize : initialSize;
       const initialHeight = aspectRatio
         ? initialSize / aspectRatio
         : initialSize;
@@ -169,7 +167,7 @@ export default function ImageCropModal({
       if (aspectRatio) {
         // 비율 고정 모드: 중심점 기준으로 크기 조정
         let newWidth, newHeight;
-        
+
         if (corner.includes("e") && corner.includes("s")) {
           // 우하단
           newWidth = startCrop.width + dx;
@@ -270,7 +268,7 @@ export default function ImageCropModal({
       0,
       0,
       cropWidth,
-      cropHeight
+      cropHeight,
     );
 
     // Canvas를 Blob으로 변환
@@ -285,7 +283,7 @@ export default function ImageCropModal({
         }
       },
       imageFile.type,
-      0.95
+      0.95,
     );
   };
 
@@ -325,7 +323,7 @@ export default function ImageCropModal({
             ref={imageRef}
             src={imageSrc}
             alt="크롭할 이미지"
-            className="absolute left-0 top-0 h-full w-full object-contain"
+            className="absolute top-0 left-0 h-full w-full object-contain"
             draggable={false}
           />
 
@@ -378,4 +376,3 @@ export default function ImageCropModal({
     </div>
   );
 }
-

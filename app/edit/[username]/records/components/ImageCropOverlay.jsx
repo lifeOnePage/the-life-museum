@@ -62,7 +62,9 @@ export default function ImageCropOverlay({
       // 초기 크롭 영역 설정
       const initialSize = Math.min(displayWidth * 0.8, displayHeight * 0.8);
       const initialWidth = aspectRatio ? initialSize : initialSize;
-      const initialHeight = aspectRatio ? initialSize / aspectRatio : initialSize;
+      const initialHeight = aspectRatio
+        ? initialSize / aspectRatio
+        : initialSize;
 
       setCropArea({
         x: offsetX + (displayWidth - initialWidth) / 2,
@@ -255,7 +257,7 @@ export default function ImageCropOverlay({
       0,
       0,
       cropWidth,
-      cropHeight
+      cropHeight,
     );
 
     canvas.toBlob(
@@ -268,7 +270,7 @@ export default function ImageCropOverlay({
         }
       },
       imageFile.type,
-      0.95
+      0.95,
     );
   };
 
@@ -277,7 +279,7 @@ export default function ImageCropOverlay({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full"
+      className="relative h-full w-full"
       style={{ minHeight: "400px", position: "relative" }}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
@@ -287,14 +289,14 @@ export default function ImageCropOverlay({
         ref={imageRef}
         src={imageSrc}
         alt="크롭할 이미지"
-        className="absolute inset-0 w-full h-full object-contain"
+        className="absolute inset-0 h-full w-full object-contain"
         draggable={false}
         style={{ pointerEvents: "none" }}
       />
 
       {/* 크롭 영역 오버레이 */}
       <div
-        className="absolute border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.5)] cursor-move"
+        className="absolute cursor-move border-2 border-white shadow-[0_0_0_9999px_rgba(0,0,0,0.5)]"
         style={{
           left: `${cropArea.x}px`,
           top: `${cropArea.y}px`,
@@ -306,10 +308,22 @@ export default function ImageCropOverlay({
       >
         {/* 크롭 영역 핸들 */}
         {[
-          { corner: "nw", style: { top: "-6px", left: "-6px", cursor: "nw-resize" } },
-          { corner: "ne", style: { top: "-6px", right: "-6px", cursor: "ne-resize" } },
-          { corner: "sw", style: { bottom: "-6px", left: "-6px", cursor: "sw-resize" } },
-          { corner: "se", style: { bottom: "-6px", right: "-6px", cursor: "se-resize" } },
+          {
+            corner: "nw",
+            style: { top: "-6px", left: "-6px", cursor: "nw-resize" },
+          },
+          {
+            corner: "ne",
+            style: { top: "-6px", right: "-6px", cursor: "ne-resize" },
+          },
+          {
+            corner: "sw",
+            style: { bottom: "-6px", left: "-6px", cursor: "sw-resize" },
+          },
+          {
+            corner: "se",
+            style: { bottom: "-6px", right: "-6px", cursor: "se-resize" },
+          },
         ].map(({ corner, style }) => (
           <div
             key={corner}
@@ -321,16 +335,16 @@ export default function ImageCropOverlay({
       </div>
 
       {/* 컨트롤 버튼 */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-3 z-20">
+      <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-3">
         <button
           onClick={onCancel}
-          className="px-6 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 shadow-lg"
+          className="rounded-md bg-gray-700 px-6 py-2 text-white shadow-lg hover:bg-gray-600"
         >
           취소
         </button>
         <button
           onClick={handleCrop}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 shadow-lg"
+          className="rounded-md bg-blue-600 px-6 py-2 text-white shadow-lg hover:bg-blue-700"
         >
           크롭 완료
         </button>
@@ -340,4 +354,3 @@ export default function ImageCropOverlay({
     </div>
   );
 }
-

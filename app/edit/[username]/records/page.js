@@ -48,13 +48,14 @@ export default function EditRecords() {
   const [activeItem, setActiveItem] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [navigateToItem, setNavigateToItem] = useState(null);
-  const [cropState, setCropState] = useState({
+  // 크롭 기능 제거됨 - 항상 비활성화 상태로 유지
+  const cropState = {
     isActive: false,
     imageFile: null,
     type: null,
     itemId: null,
     targetSlotIndex: null,
-  });
+  };
 
   useEffect(() => {
     if (!token || !username) return;
@@ -480,19 +481,8 @@ export default function EditRecords() {
       return;
     }
 
-    // 이미지 파일인 경우 크롭 모드 활성화
-    if (file.type.startsWith("image/")) {
-      setCropState({
-        isActive: true,
-        imageFile: file,
-        type,
-        itemId,
-        targetSlotIndex, // 슬롯 인덱스 저장
-      });
-    } else {
-      // 비디오 파일인 경우 바로 업로드
-      await uploadImageFile(type, itemId, file, targetSlotIndex);
-    }
+    // 크롭 없이 바로 업로드
+    await uploadImageFile(type, itemId, file, targetSlotIndex);
   };
 
   const uploadImageFile = async (type, itemId, file, targetSlotIndex = null) => {
@@ -543,6 +533,13 @@ export default function EditRecords() {
               if (firstNullIndex !== -1) {
                 currentImages[firstNullIndex] = uploadUrl;
               } else {
+                // 빈 슬롯이 없고 이미 5개가 있으면 경고
+                const validImageCount = currentImages.filter(img => img).length;
+                if (validImageCount >= 5) {
+                  alert("이미지는 최대 5장까지 추가할 수 있습니다.");
+                  setIsUploadingImage(false);
+                  return;
+                }
                 // 빈 슬롯이 없으면 끝에 추가
                 currentImages.push(uploadUrl);
               }
@@ -580,25 +577,11 @@ export default function EditRecords() {
   };
 
   const handleCropComplete = async (croppedFile) => {
-    const { type, itemId, targetSlotIndex } = cropState;
-    await uploadImageFile(type, itemId, croppedFile, targetSlotIndex);
-    setCropState({
-      isActive: false,
-      imageFile: null,
-      type: null,
-      itemId: null,
-      targetSlotIndex: null,
-    });
+    // 크롭 기능 제거됨 - 사용되지 않음
   };
 
   const handleCropCancel = () => {
-    setCropState({
-      isActive: false,
-      imageFile: null,
-      type: null,
-      itemId: null,
-      targetSlotIndex: null,
-    });
+    // 크롭 기능 제거됨 - 사용되지 않음
   };
 
   const handleImageDelete = (itemId, imageIndex) => {

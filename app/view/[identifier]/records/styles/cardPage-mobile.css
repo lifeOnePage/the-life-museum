@@ -880,15 +880,13 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   justify-content: space-between;
   gap: 8px;
   padding: 16px 24px;
-  background: rgba(18, 18, 18, 0.95);
+  background: var(--bg);
   position: fixed;
   bottom: 0; /* 화면 맨 아래 */
   left: 0;
   right: 0;
   z-index: 99;
   flex-wrap: wrap;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
 }
 
 .lr-mobile-footer-logo {

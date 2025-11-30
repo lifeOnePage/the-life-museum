@@ -666,7 +666,7 @@ export default function LifeRecordMobile({
                     onDataChange?.(newData);
                   }}
                   className="lr-mobile-meta-subtitle lr-mobile-edit-input"
-                  placeholder="서브 타이틀을 입력하세요"
+                  placeholder="레코드에 대한 소개를 입력하세요"
                 />
                 <textarea
                   value={data.record?.description || ""}

@@ -919,15 +919,20 @@ input.lr-name {
   padding: 10px 8px;
 }
 
+input.lr-name::placeholder,
+textarea.lr-name::placeholder {
+  color: var(--text);
+  opacity: 0.5;
+}
+
 .lr-subtitle {
   font-family: "Pretendard Variable";
   font-size: 1.2rem;
   font-style: normal;
-  font-weight: 300;
+  font-weight: 400;
   line-height: normal;
   letter-spacing: -0.05rem;
-  margin-top: 8px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
   opacity: 0.8;
 }
 
@@ -938,12 +943,17 @@ input.lr-subtitle {
   padding: 8px;
   color: inherit;
   width: 100%;
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  letter-spacing: inherit;
-  line-height: inherit;
+  font-size: 1.2rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.05rem;
   opacity: 1;
+}
+
+input.lr-subtitle::placeholder {
+  color: var(--text);
+  opacity: 0.5;
 }
 
 .lr-date-input,

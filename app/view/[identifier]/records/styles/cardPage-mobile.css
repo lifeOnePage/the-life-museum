@@ -283,7 +283,7 @@ textarea.lr-mobile-meta-title.lr-mobile-edit-input {
   font-family: "Pretendard Variable";
   font-size: 1rem;
   font-style: normal;
-  font-weight: 300;
+  font-weight: 400;
   line-height: normal;
   letter-spacing: -0.05rem;
   margin-top: 4px;
@@ -298,13 +298,14 @@ textarea.lr-mobile-meta-title.lr-mobile-edit-input {
   padding: 8px;
   color: inherit;
   width: 100%;
-  font-family: inherit;
-  font-size: inherit;
-  font-weight: inherit;
-  letter-spacing: inherit;
+  font-family: "Pretendard Variable";
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.05rem;
   line-height: inherit;
   margin-bottom: 16px;
-  opacity: 1;
 }
 
 .lr-mobile-meta-desc {
@@ -537,7 +538,8 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
 
 .lr-mobile-edit-input::placeholder,
 .lr-mobile-edit-textarea::placeholder {
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--text);
+  opacity: 0.5;
 }
 
 .lr-mobile-edit-textarea {

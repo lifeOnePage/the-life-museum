@@ -117,12 +117,19 @@ export default function LifeRecordDesktop({
 
   // data가 변경될 때 displayMode와 birthDate 동기화 (입력 중이 아닐 때만)
   useEffect(() => {
-    if (data.record?.displayMode !== undefined && data.record?.displayMode !== null) {
+    if (
+      data.record?.displayMode !== undefined &&
+      data.record?.displayMode !== null
+    ) {
       setDisplayMode(data.record.displayMode);
     } else {
       setDisplayMode("year"); // 기본값
     }
-    if (data.record?.birthDate !== undefined && data.record?.birthDate !== null && !isEditingBirthDate) {
+    if (
+      data.record?.birthDate !== undefined &&
+      data.record?.birthDate !== null &&
+      !isEditingBirthDate
+    ) {
       setBirthDate(data.record.birthDate);
     } else if (data.record?.birthDate === null && !isEditingBirthDate) {
       setBirthDate(""); // null이면 빈 문자열로
@@ -156,7 +163,12 @@ export default function LifeRecordDesktop({
 
       // displayMode에 따라 label 결정 (입력 중이 아닐 때만 나이 계산)
       let label = y || item.id.toString();
-      if (displayMode === "age" && !isEditingBirthDate && data.record?.birthDate && item.date) {
+      if (
+        displayMode === "age" &&
+        !isEditingBirthDate &&
+        data.record?.birthDate &&
+        item.date
+      ) {
         const age = calculateAge(data.record.birthDate, item.date);
         if (age !== null) {
           label = `${age}세`;
@@ -738,7 +750,10 @@ export default function LifeRecordDesktop({
                             onChange={(e) => {
                               const newData = {
                                 ...data,
-                                record: { ...data.record, name: e.target.value },
+                                record: {
+                                  ...data.record,
+                                  name: e.target.value,
+                                },
                               };
                               onDataChange?.(newData);
                             }}
@@ -751,19 +766,24 @@ export default function LifeRecordDesktop({
                             onChange={(e) => {
                               const newData = {
                                 ...data,
-                                record: { ...data.record, subName: e.target.value },
+                                record: {
+                                  ...data.record,
+                                  subName: e.target.value,
+                                },
                               };
                               onDataChange?.(newData);
                             }}
                             className="lr-subtitle"
-                            placeholder="서브 타이틀을 입력하세요"
+                            placeholder="레코드에 대한 소개를 입력하세요"
                           />
                         </>
                       ) : (
                         <>
                           <div className="lr-name">{mainTitle}</div>
                           {activeItem.subtitle && (
-                            <div className="lr-subtitle">{activeItem.subtitle}</div>
+                            <div className="lr-subtitle">
+                              {activeItem.subtitle}
+                            </div>
                           )}
                         </>
                       )}
@@ -809,7 +829,10 @@ export default function LifeRecordDesktop({
                               setIsEditingBirthDate(false);
                               const newData = {
                                 ...data,
-                                record: { ...data.record, birthDate: birthDate },
+                                record: {
+                                  ...data.record,
+                                  birthDate: birthDate,
+                                },
                               };
                               onDataChange?.(newData);
                             }}

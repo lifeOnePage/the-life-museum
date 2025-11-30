@@ -1,7 +1,14 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { HiHome, HiPlay, HiStop } from "react-icons/hi";
+import {
+  HiHome,
+  HiPlay,
+  HiStop,
+  HiStar,
+  HiOutlineStar,
+  HiTrash,
+} from "react-icons/hi";
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import "../styles/cardPage-mobile.css";
 
@@ -584,17 +591,7 @@ export default function LifeRecordMobile({
           activeItem?.isHighlight &&
           activeItem.kind !== "main" && (
             <div className="lr-mobile-fav-badge" aria-label="즐겨찾기">
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                  fill="currentColor"
-                />
-              </svg>
+              <HiStar size={18} />
             </div>
           )}
         {isEditing && (
@@ -618,17 +615,11 @@ export default function LifeRecordMobile({
                     opacity: activeItem?.isHighlight ? 1 : 0.5,
                   }}
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                      fill="currentColor"
-                    />
-                  </svg>
+                  {activeItem?.isHighlight ? (
+                    <HiStar size={18} />
+                  ) : (
+                    <HiOutlineStar size={18} />
+                  )}
                 </button>
                 <button
                   className="lr-mobile-delete-badge"
@@ -641,17 +632,7 @@ export default function LifeRecordMobile({
                     cursor: "pointer",
                   }}
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    aria-hidden="true"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                  </svg>
+                  <HiTrash size={18} />
                 </button>
               </>
             )}

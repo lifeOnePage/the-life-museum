@@ -37,6 +37,7 @@ export async function GET(_req, { params }) {
             color: true,
             isHighlight: true,
             coverUrl: true,
+            images: true,
             createdAt: true,
           },
           orderBy: { createdAt: "asc" },
@@ -95,6 +96,7 @@ export async function GET(_req, { params }) {
         color: item.color || "",
         isHighlight: item.isHighlight || false,
         coverUrl: item.coverUrl || "",
+        images: item.images || [],
       })),
     };
 

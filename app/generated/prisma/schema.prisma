@@ -126,7 +126,8 @@ model RecordItem {
   description String?
   color       String?
   isHighlight Boolean  @default(false)
-  coverUrl    String?
+  coverUrl    String? // 하위 호환성을 위해 유지 (첫 번째 이미지)
+  images      String[] @default([]) // 최대 5개 이미지 배열
   recordId    Int
   record      Record   @relation(fields: [recordId], references: [id])
 }

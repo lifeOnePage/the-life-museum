@@ -53,6 +53,7 @@ export default function EditRecords() {
     imageFile: null,
     type: null,
     itemId: null,
+    targetSlotIndex: null,
   });
 
   useEffect(() => {
@@ -471,7 +472,7 @@ export default function EditRecords() {
     setIsSaved(false);
   };
 
-  const handleImageChange = async (type, itemId, file) => {
+  const handleImageChange = async (type, itemId, file, targetSlotIndex = null) => {
     if (!token || !file) return;
 
     if (!recordId) {
@@ -486,14 +487,15 @@ export default function EditRecords() {
         imageFile: file,
         type,
         itemId,
+        targetSlotIndex, // 슬롯 인덱스 저장
       });
     } else {
       // 비디오 파일인 경우 바로 업로드
-      await uploadImageFile(type, itemId, file);
+      await uploadImageFile(type, itemId, file, targetSlotIndex);
     }
   };
 
-  const uploadImageFile = async (type, itemId, file) => {
+  const uploadImageFile = async (type, itemId, file, targetSlotIndex = null) => {
     if (!token || !file || !recordId) return;
 
     try {
@@ -518,9 +520,51 @@ export default function EditRecords() {
           file,
           prefix: `records/${recordId}/timeline`,
         });
-        const newItems = data.items.map((item) =>
-          item.id === itemId ? { ...item, coverUrl: uploadUrl } : item,
-        );
+        const newItems = data.items.map((item) => {
+          if (item.id === itemId) {
+            // 기존 images 배열이 있으면 사용, 없으면 coverUrl로 초기화
+            let currentImages = item.images || [];
+            
+            // images 배열이 비어있고 coverUrl이 있으면 첫 번째 요소로 추가
+            if (currentImages.length === 0 && item.coverUrl) {
+              currentImages = [item.coverUrl];
+            }
+            
+            // targetSlotIndex가 지정되어 있으면 해당 슬롯에 추가
+            if (targetSlotIndex !== null && targetSlotIndex >= 0 && targetSlotIndex < 5) {
+              // 배열이 충분히 길지 않으면 확장
+              while (currentImages.length <= targetSlotIndex) {
+                currentImages.push(null);
+              }
+              currentImages[targetSlotIndex] = uploadUrl;
+            } else {
+              // targetSlotIndex가 없으면 첫 번째 빈 슬롯에 추가
+              const firstNullIndex = currentImages.findIndex(img => !img);
+              if (firstNullIndex !== -1) {
+                currentImages[firstNullIndex] = uploadUrl;
+              } else {
+                // 빈 슬롯이 없으면 끝에 추가
+                currentImages.push(uploadUrl);
+              }
+            }
+            
+            // 최대 5개로 제한
+            while (currentImages.length < 5) {
+              currentImages.push(null);
+            }
+            currentImages = currentImages.slice(0, 5);
+            
+            // 첫 번째 유효한 이미지를 coverUrl로도 유지 (하위 호환성)
+            const firstValidImage = currentImages.find(img => img) || uploadUrl;
+            
+            return {
+              ...item,
+              coverUrl: firstValidImage,
+              images: currentImages,
+            };
+          }
+          return item;
+        });
         setData({
           ...data,
           items: newItems,
@@ -536,13 +580,14 @@ export default function EditRecords() {
   };
 
   const handleCropComplete = async (croppedFile) => {
-    const { type, itemId } = cropState;
-    await uploadImageFile(type, itemId, croppedFile);
+    const { type, itemId, targetSlotIndex } = cropState;
+    await uploadImageFile(type, itemId, croppedFile, targetSlotIndex);
     setCropState({
       isActive: false,
       imageFile: null,
       type: null,
       itemId: null,
+      targetSlotIndex: null,
     });
   };
 
@@ -552,7 +597,37 @@ export default function EditRecords() {
       imageFile: null,
       type: null,
       itemId: null,
+      targetSlotIndex: null,
     });
+  };
+
+  const handleImageDelete = (itemId, imageIndex) => {
+    if (!data || !itemId) return;
+    
+    const newItems = data.items.map((item) => {
+      if (item.id === itemId) {
+        const currentImages = item.images || [];
+        // 해당 인덱스의 이미지를 null로 변경
+        const updatedImages = [...currentImages];
+        updatedImages[imageIndex] = null;
+        
+        // 첫 번째 유효한 이미지를 coverUrl로도 유지 (하위 호환성)
+        const firstValidImage = updatedImages.find(img => img) || null;
+        
+        return {
+          ...item,
+          coverUrl: firstValidImage,
+          images: updatedImages,
+        };
+      }
+      return item;
+    });
+    
+    setData({
+      ...data,
+      items: newItems,
+    });
+    setIsSaved(false);
   };
 
   if (isLoading) {
@@ -633,6 +708,7 @@ export default function EditRecords() {
           onDataChange={isPreview ? undefined : handleDataChange}
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
+          onImageDelete={isPreview ? undefined : handleImageDelete}
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
@@ -648,6 +724,7 @@ export default function EditRecords() {
           onDataChange={isPreview ? undefined : handleDataChange}
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
+          onImageDelete={isPreview ? undefined : handleImageDelete}
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}

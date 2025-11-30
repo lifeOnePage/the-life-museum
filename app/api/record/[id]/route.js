@@ -23,6 +23,7 @@ const ALLOWED_ITEM_FIELDS = [
   "color",
   "isHighlight",
   "coverUrl",
+  "images",
 ];
 
 const pick = (obj, keys) =>
@@ -49,12 +50,15 @@ function toRecordResponse(rec) {
     birthDate: rec.birthDate || null,
     displayMode: rec.displayMode || "year",
     recordItems: (rec.recordItems || []).map((it) => ({
+      id: it.id,
       title: it.title,
+      date: it.date,
       location: it.location,
       description: it.description,
       color: it.color,
       isHighlight: it.isHighlight,
       coverUrl: it.coverUrl,
+      images: it.images || [],
     })),
   };
 }
@@ -93,6 +97,7 @@ export async function GET(req, { params }) {
             color: true,
             isHighlight: true,
             coverUrl: true,
+            images: true,
             createdAt: true,
           },
           orderBy: { createdAt: "asc" },

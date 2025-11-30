@@ -216,6 +216,7 @@ exports.Prisma.RecordItemScalarFieldEnum = {
   color: 'color',
   isHighlight: 'isHighlight',
   coverUrl: 'coverUrl',
+  images: 'images',
   recordId: 'recordId'
 };
 

@@ -10173,6 +10173,7 @@ export namespace Prisma {
     color: number
     isHighlight: number
     coverUrl: number
+    images: number
     recordId: number
     _all: number
   }
@@ -10227,6 +10228,7 @@ export namespace Prisma {
     color?: true
     isHighlight?: true
     coverUrl?: true
+    images?: true
     recordId?: true
     _all?: true
   }
@@ -10328,6 +10330,7 @@ export namespace Prisma {
     color: string | null
     isHighlight: boolean
     coverUrl: string | null
+    images: string[]
     recordId: number
     _count: RecordItemCountAggregateOutputType | null
     _avg: RecordItemAvgAggregateOutputType | null
@@ -10361,6 +10364,7 @@ export namespace Prisma {
     color?: boolean
     isHighlight?: boolean
     coverUrl?: boolean
+    images?: boolean
     recordId?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
@@ -10376,6 +10380,7 @@ export namespace Prisma {
     color?: boolean
     isHighlight?: boolean
     coverUrl?: boolean
+    images?: boolean
     recordId?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
@@ -10391,6 +10396,7 @@ export namespace Prisma {
     color?: boolean
     isHighlight?: boolean
     coverUrl?: boolean
+    images?: boolean
     recordId?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
@@ -10406,10 +10412,11 @@ export namespace Prisma {
     color?: boolean
     isHighlight?: boolean
     coverUrl?: boolean
+    images?: boolean
     recordId?: boolean
   }
 
-  export type RecordItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "date" | "location" | "description" | "color" | "isHighlight" | "coverUrl" | "recordId", ExtArgs["result"]["recordItem"]>
+  export type RecordItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "date" | "location" | "description" | "color" | "isHighlight" | "coverUrl" | "images" | "recordId", ExtArgs["result"]["recordItem"]>
   export type RecordItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }
@@ -10436,6 +10443,7 @@ export namespace Prisma {
       color: string | null
       isHighlight: boolean
       coverUrl: string | null
+      images: string[]
       recordId: number
     }, ExtArgs["result"]["recordItem"]>
     composites: {}
@@ -10871,6 +10879,7 @@ export namespace Prisma {
     readonly color: FieldRef<"RecordItem", 'String'>
     readonly isHighlight: FieldRef<"RecordItem", 'Boolean'>
     readonly coverUrl: FieldRef<"RecordItem", 'String'>
+    readonly images: FieldRef<"RecordItem", 'String[]'>
     readonly recordId: FieldRef<"RecordItem", 'Int'>
   }
     
@@ -11417,6 +11426,7 @@ export namespace Prisma {
     color: 'color',
     isHighlight: 'isHighlight',
     coverUrl: 'coverUrl',
+    images: 'images',
     recordId: 'recordId'
   };
 
@@ -12137,6 +12147,7 @@ export namespace Prisma {
     color?: StringNullableFilter<"RecordItem"> | string | null
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
+    images?: StringNullableListFilter<"RecordItem">
     recordId?: IntFilter<"RecordItem"> | number
     record?: XOR<RecordScalarRelationFilter, RecordWhereInput>
   }
@@ -12152,6 +12163,7 @@ export namespace Prisma {
     color?: SortOrderInput | SortOrder
     isHighlight?: SortOrder
     coverUrl?: SortOrderInput | SortOrder
+    images?: SortOrder
     recordId?: SortOrder
     record?: RecordOrderByWithRelationInput
   }
@@ -12170,6 +12182,7 @@ export namespace Prisma {
     color?: StringNullableFilter<"RecordItem"> | string | null
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
+    images?: StringNullableListFilter<"RecordItem">
     recordId?: IntFilter<"RecordItem"> | number
     record?: XOR<RecordScalarRelationFilter, RecordWhereInput>
   }, "id">
@@ -12185,6 +12198,7 @@ export namespace Prisma {
     color?: SortOrderInput | SortOrder
     isHighlight?: SortOrder
     coverUrl?: SortOrderInput | SortOrder
+    images?: SortOrder
     recordId?: SortOrder
     _count?: RecordItemCountOrderByAggregateInput
     _avg?: RecordItemAvgOrderByAggregateInput
@@ -12207,6 +12221,7 @@ export namespace Prisma {
     color?: StringNullableWithAggregatesFilter<"RecordItem"> | string | null
     isHighlight?: BoolWithAggregatesFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableWithAggregatesFilter<"RecordItem"> | string | null
+    images?: StringNullableListFilter<"RecordItem">
     recordId?: IntWithAggregatesFilter<"RecordItem"> | number
   }
 
@@ -12822,6 +12837,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
     record: RecordCreateNestedOneWithoutRecordItemsInput
   }
 
@@ -12836,6 +12852,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
     recordId: number
   }
 
@@ -12849,6 +12866,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
     record?: RecordUpdateOneRequiredWithoutRecordItemsNestedInput
   }
 
@@ -12863,6 +12881,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
     recordId?: IntFieldUpdateOperationsInput | number
   }
 
@@ -12877,6 +12896,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
     recordId: number
   }
 
@@ -12890,6 +12910,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateManyInput = {
@@ -12903,6 +12924,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
     recordId?: IntFieldUpdateOperationsInput | number
   }
 
@@ -13558,6 +13580,14 @@ export namespace Prisma {
     not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
+  export type StringNullableListFilter<$PrismaModel = never> = {
+    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    has?: string | StringFieldRefInput<$PrismaModel> | null
+    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
+    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
+  }
+
   export type RecordScalarRelationFilter = {
     is?: RecordWhereInput
     isNot?: RecordWhereInput
@@ -13574,6 +13604,7 @@ export namespace Prisma {
     color?: SortOrder
     isHighlight?: SortOrder
     coverUrl?: SortOrder
+    images?: SortOrder
     recordId?: SortOrder
   }
 
@@ -14147,6 +14178,10 @@ export namespace Prisma {
     deleteMany?: RecordItemScalarWhereInput | RecordItemScalarWhereInput[]
   }
 
+  export type RecordItemCreateimagesInput = {
+    set: string[]
+  }
+
   export type RecordCreateNestedOneWithoutRecordItemsInput = {
     create?: XOR<RecordCreateWithoutRecordItemsInput, RecordUncheckedCreateWithoutRecordItemsInput>
     connectOrCreate?: RecordCreateOrConnectWithoutRecordItemsInput
@@ -14155,6 +14190,11 @@ export namespace Prisma {
 
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
+  }
+
+  export type RecordItemUpdateimagesInput = {
+    set?: string[]
+    push?: string | string[]
   }
 
   export type RecordUpdateOneRequiredWithoutRecordItemsNestedInput = {
@@ -15405,6 +15445,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemUncheckedCreateWithoutRecordInput = {
@@ -15418,6 +15459,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemCreateOrConnectWithoutRecordInput = {
@@ -15490,6 +15532,7 @@ export namespace Prisma {
     color?: StringNullableFilter<"RecordItem"> | string | null
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
+    images?: StringNullableListFilter<"RecordItem">
     recordId?: IntFilter<"RecordItem"> | number
   }
 
@@ -15917,6 +15960,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemUpdateWithoutRecordInput = {
@@ -15929,6 +15973,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateWithoutRecordInput = {
@@ -15942,6 +15987,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateManyWithoutRecordInput = {
@@ -15955,6 +16001,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
 

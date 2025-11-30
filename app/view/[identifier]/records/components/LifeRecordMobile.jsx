@@ -776,10 +776,10 @@ export default function LifeRecordMobile({
                         border: "none",
                         background:
                           idx === currentImageIndex
-                            ? "rgba(255, 255, 255, 0.9)"
+                            ? `color-mix(in srgb, var(--text) 90%, transparent)`
                             : _ === null
-                              ? "rgba(255, 255, 255, 0.2)"
-                              : "rgba(255, 255, 255, 0.4)",
+                              ? `color-mix(in srgb, var(--text) 20%, transparent)`
+                              : `color-mix(in srgb, var(--text) 40%, transparent)`,
                         cursor: "pointer",
                         padding: 0,
                       }}
@@ -856,8 +856,8 @@ export default function LifeRecordMobile({
                               border: "none",
                               background:
                                 idx === currentImageIndex
-                                  ? "rgba(255, 255, 255, 0.9)"
-                                  : "rgba(255, 255, 255, 0.5)",
+                                  ? `color-mix(in srgb, var(--text) 90%, transparent)`
+                                  : `color-mix(in srgb, var(--text) 50%, transparent)`,
                               cursor: "pointer",
                               padding: 0,
                               transition: "background 0.2s ease",

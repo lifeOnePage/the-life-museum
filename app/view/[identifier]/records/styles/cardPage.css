@@ -521,18 +521,21 @@ body,
   font-size: 0.7rem;
   font-weight: 300;
   font-family: "Pretendard Variable";
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
 }
 
 .footer-copyright {
   font-size: 0.7rem;
   font-weight: 300;
   font-family: "Pretendard Variable";
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
 }
 
 .login-btn-fixed {
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
   font-size: 0.7rem;
   font-family: "Pretendard Variable";
   cursor: pointer;

@@ -2,6 +2,8 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import ImageCropOverlay from "@/app/edit/[username]/records/components/ImageCropOverlay";
+import { HiPlay, HiStop } from "react-icons/hi";
+import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import "../styles/cardPage.css";
 import "../styles/cardPage-mobile.css";
 
@@ -209,12 +211,24 @@ export default function LifeRecordDesktop({
 
   const [rotation, setRotation] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
   const DEFAULT_THEME = BG_THEME_PALETTE[0];
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
   const editingDateItemIdRef = useRef(null); // 날짜 입력 중인 항목의 ID 추적 (useMemo에서 사용)
+  const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
+  const rotationRef = useRef(0); // 자동 슬라이드를 위한 rotation ref
+
+  // activeIdx와 rotation이 변경될 때 ref 업데이트
+  useEffect(() => {
+    activeIdxRef.current = activeIdx;
+  }, [activeIdx]);
+
+  useEffect(() => {
+    rotationRef.current = rotation;
+  }, [rotation]);
 
   const activeItem = timeline[activeIdx] || {};
 
@@ -288,8 +302,7 @@ export default function LifeRecordDesktop({
     return CFG.START + step * (i + 0.5);
   };
 
-  const getOpacityForAngle = (angle) => {
-    const anchor = getAnchor();
+  const getOpacityForAngle = (angle, anchor = getAnchor()) => {
     let diff = Math.abs(norm360(angle) - norm360(anchor));
     if (diff > 180) diff = 360 - diff;
 
@@ -394,18 +407,31 @@ export default function LifeRecordDesktop({
     data.record?.color,
   ]);
 
-  const snapToIndex = (i, anchor = getAnchor()) => {
+  const snapToIndex = (
+    i,
+    anchor = getAnchor(),
+    reverse = false,
+    isAutoSlide = false,
+  ) => {
     const base = angleForIndex(i);
-    const cur = norm360(base + rotation);
+    const currentRotation = rotationRef.current || rotation;
+    const cur = norm360(base + currentRotation);
     const delta = wrapTo180(anchor - cur);
-    // 마우스 클릭 시에도 scroll sound 재생
+
     if (scrollSound.current) {
       scrollSound.current.currentTime = 0;
+
+      if (isAutoSlide) {
+        scrollSound.current.volume = 0.05;
+      } else {
+        scrollSound.current.volume = 1.0;
+      }
       scrollSound.current.play().catch((err) => {
         console.error("Scroll sound 재생 실패:", err);
       });
     }
-    setRotation(rotation + delta);
+    // reverse가 true면 반대 방향으로 회전
+    setRotation(norm360(currentRotation + (reverse ? -delta : delta)));
     setActiveIdx(i);
   };
 
@@ -443,6 +469,27 @@ export default function LifeRecordDesktop({
     scrollSound.current = new Audio("/sounds/scroll.m4a");
   }, []);
 
+  // 자동 슬라이드 기능 (view 모드일 때만)
+  useEffect(() => {
+    if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
+
+    const autoSlideInterval = setInterval(() => {
+      const currentIdx = activeIdxRef.current;
+      let newIdx;
+      if (currentIdx >= timeline.length - 1) {
+        newIdx = 0;
+      } else {
+        newIdx = currentIdx + 1;
+      }
+
+      // snapToIndex를 사용하여 정확한 위치로 이동 (정상 방향)
+      // isAutoSlide=true로 설정하여 볼륨을 절반으로 낮춤
+      snapToIndex(newIdx, getAnchor(), false, true);
+    }, 5000); // 5초마다 자동으로 넘어감
+
+    return () => clearInterval(autoSlideInterval);
+  }, [isEditing, autoSlideEnabled, timeline.length]);
+
   const safeIdx = Math.min(activeIdx, Math.max(0, (timeline?.length || 1) - 1));
   const mainTitle = useMemo(() => {
     const mainItem = timeline.find((it) => it.kind === "main");
@@ -454,53 +501,84 @@ export default function LifeRecordDesktop({
       className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
-      {/* BGM 재생 버튼 (우측 상단 고정) */}
-      {!isEditing && data.record?.bgm && (
-        <button
-          onClick={handleBgmToggle}
+      {/* BGM 재생 버튼 및 자동 슬라이드 토글 버튼 (우측 상단 고정) */}
+      {!isEditing && (
+        <div
           style={{
             position: "fixed",
             top: "24px",
             right: "24px",
             zIndex: 10000,
-            width: "48px",
-            height: "48px",
-            borderRadius: "50%",
-            background: isBgmPlaying
-              ? "rgba(255, 255, 255, 0.2)"
-              : "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            color: theme.text,
-            cursor: "pointer",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.2s",
+            gap: "12px",
+            flexDirection: "column",
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = isBgmPlaying
-              ? "rgba(255, 255, 255, 0.2)"
-              : "rgba(255, 255, 255, 0.1)";
-          }}
-          title={isBgmPlaying ? "음악 정지" : "음악 재생"}
         >
-          {isBgmPlaying ? (
-            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          ) : (
-            <svg width="24" height="24" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-            </svg>
+          {data.record?.bgm && (
+            <button
+              onClick={handleBgmToggle}
+              style={{
+                width: "48px",
+                height: "48px",
+                borderRadius: "50%",
+                background: isBgmPlaying
+                  ? "rgba(255, 255, 255, 0.2)"
+                  : "rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                color: theme.text,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = isBgmPlaying
+                  ? "rgba(255, 255, 255, 0.2)"
+                  : "rgba(255, 255, 255, 0.1)";
+              }}
+              title={isBgmPlaying ? "음악 정지" : "음악 재생"}
+            >
+              {isBgmPlaying ? (
+                <HiVolumeUp size={24} />
+              ) : (
+                <HiVolumeOff size={24} />
+              )}
+            </button>
           )}
-        </button>
+          <button
+            onClick={() => setAutoSlideEnabled(!autoSlideEnabled)}
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "50%",
+              background: autoSlideEnabled
+                ? "rgba(255, 255, 255, 0.2)"
+                : "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              color: theme.text,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = autoSlideEnabled
+                ? "rgba(255, 255, 255, 0.2)"
+                : "rgba(255, 255, 255, 0.1)";
+            }}
+            title={autoSlideEnabled ? "자동재생 끄기" : "자동재생 켜기"}
+          >
+            {autoSlideEnabled ? <HiStop size={24} /> : <HiPlay size={24} />}
+          </button>
+        </div>
       )}
 
       <div className="lr-grid">
@@ -1099,8 +1177,14 @@ export default function LifeRecordDesktop({
             />
             <div className="year-circle">
               {timeline.map((item, i) => {
-                const phi = angleForIndex(i) + rotation;
-                const opacity = getOpacityForAngle(phi);
+                const baseAngle = angleForIndex(i);
+                const phi = baseAngle + rotation;
+                // anchor 위치(0도)에서의 거리를 기준으로 opacity 계산
+                // rotation이 변경되어도 각 항목의 baseAngle은 고정이므로,
+                // rotation을 고려한 실제 화면상 위치를 계산
+                const anchor = getAnchor();
+                const relativeAngle = norm360(phi - anchor);
+                const opacity = getOpacityForAngle(relativeAngle, 0);
                 return (
                   <span
                     key={item.id}

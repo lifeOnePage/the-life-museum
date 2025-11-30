@@ -1,7 +1,8 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { HiHome } from "react-icons/hi";
+import { HiHome, HiPlay, HiStop } from "react-icons/hi";
+import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import "../styles/cardPage-mobile.css";
 
 const MONTHS = [
@@ -186,6 +187,7 @@ export default function LifeRecordMobile({
   const [activeIdx, setActiveIdx] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
   const DEFAULT_THEME = BG_THEME_PALETTE[0];
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
@@ -193,6 +195,12 @@ export default function LifeRecordMobile({
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
+  const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
+
+  // activeIdx가 변경될 때 ref 업데이트
+  useEffect(() => {
+    activeIdxRef.current = activeIdx;
+  }, [activeIdx]);
 
   const activeItem = timeline[activeIdx] || {};
 
@@ -367,6 +375,29 @@ export default function LifeRecordMobile({
     }, 150);
   };
 
+  // 자동 슬라이드 기능 (view 모드일 때만)
+  useEffect(() => {
+    if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
+
+    const autoSlideInterval = setInterval(() => {
+      const currentIdx = activeIdxRef.current;
+      let newIdx;
+      if (currentIdx >= timeline.length - 1) {
+        newIdx = 0;
+      } else {
+        newIdx = currentIdx + 1;
+      }
+
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setActiveIdx(newIdx);
+        setIsTransitioning(false);
+      }, 150);
+    }, 5000); // 5초마다 자동으로 넘어감
+
+    return () => clearInterval(autoSlideInterval);
+  }, [isEditing, autoSlideEnabled, timeline.length]);
+
   const handleMenuClick = () => {
     setShowMenu(!showMenu);
   };
@@ -385,45 +416,68 @@ export default function LifeRecordMobile({
       className="lr-mobile-root"
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
-      {/* BGM 재생 버튼 (우측 상단 고정) */}
-      {!isEditing && data.record?.bgm && (
-        <button
-          onClick={handleBgmToggle}
+      {/* BGM 재생 버튼 및 자동 슬라이드 토글 버튼 (우측 상단 고정) */}
+      {!isEditing && (
+        <div
           style={{
             position: "fixed",
             top: "16px",
             right: "16px",
             zIndex: 10000,
-            width: "44px",
-            height: "44px",
-            borderRadius: "50%",
-            background: isBgmPlaying
-              ? "rgba(255, 255, 255, 0.2)"
-              : "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            color: theme.text,
-            cursor: "pointer",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.2s",
+            gap: "8px",
+            flexDirection: "column",
           }}
-          title={isBgmPlaying ? "음악 정지" : "음악 재생"}
         >
-          {isBgmPlaying ? (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-            </svg>
+          {data.record?.bgm && (
+            <button
+              onClick={handleBgmToggle}
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "50%",
+                background: isBgmPlaying
+                  ? "rgba(255, 255, 255, 0.2)"
+                  : "rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                color: theme.text,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s",
+              }}
+              title={isBgmPlaying ? "음악 정지" : "음악 재생"}
+            >
+              {isBgmPlaying ? (
+                <HiVolumeUp size={20} />
+              ) : (
+                <HiVolumeOff size={20} />
+              )}
+            </button>
           )}
-        </button>
+          <button
+            onClick={() => setAutoSlideEnabled(!autoSlideEnabled)}
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
+              background: autoSlideEnabled
+                ? "rgba(255, 255, 255, 0.2)"
+                : "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              color: theme.text,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+            }}
+            title={autoSlideEnabled ? "자동재생 끄기" : "자동재생 켜기"}
+          >
+            {autoSlideEnabled ? <HiStop size={20} /> : <HiPlay size={20} />}
+          </button>
+        </div>
       )}
 
       <header className="lr-mobile-header">
@@ -666,7 +720,7 @@ export default function LifeRecordMobile({
                     onDataChange?.(newData);
                   }}
                   className="lr-mobile-meta-subtitle lr-mobile-edit-input"
-                  placeholder="레코드에 대한 소개를 입력하세요"
+                  placeholder="레코드의 상세 설명을 입력하세요"
                 />
                 <textarea
                   value={data.record?.description || ""}

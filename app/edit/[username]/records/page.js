@@ -176,6 +176,8 @@ export default function EditRecords() {
           description: data.record.description,
           bgm: data.record.bgm,
           color: data.record.color,
+          birthDate: data.record.birthDate,
+          displayMode: data.record.displayMode,
         },
       });
 

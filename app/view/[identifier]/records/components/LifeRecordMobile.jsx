@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { HiHome } from "react-icons/hi";
 import "../styles/cardPage-mobile.css";
 
 const MONTHS = [
@@ -87,11 +88,22 @@ export default function LifeRecordMobile({
 
   // data가 변경될 때 displayMode와 birthDate 동기화 (입력 중이 아닐 때만)
   useEffect(() => {
-    if (data.record?.displayMode !== undefined) {
+    if (
+      data.record?.displayMode !== undefined &&
+      data.record?.displayMode !== null
+    ) {
       setDisplayMode(data.record.displayMode);
+    } else {
+      setDisplayMode("year"); // 기본값
     }
-    if (data.record?.birthDate !== undefined && !isEditingBirthDate) {
+    if (
+      data.record?.birthDate !== undefined &&
+      data.record?.birthDate !== null &&
+      !isEditingBirthDate
+    ) {
       setBirthDate(data.record.birthDate);
+    } else if (data.record?.birthDate === null && !isEditingBirthDate) {
+      setBirthDate(""); // null이면 빈 문자열로
     }
   }, [data.record?.displayMode, data.record?.birthDate, isEditingBirthDate]);
 
@@ -107,6 +119,7 @@ export default function LifeRecordMobile({
         kind: "main",
         label: "home",
         title: data.record.name || "사용자의 이야기",
+        subtitle: data.record.subName || "",
         date: "",
         location: "",
         desc: data.record.description || "",
@@ -125,7 +138,12 @@ export default function LifeRecordMobile({
 
       // displayMode에 따라 label 결정 (입력 중이 아닐 때만 나이 계산)
       let label = y || item.id.toString();
-      if (displayMode === "age" && !isEditingBirthDate && data.record?.birthDate && item.date) {
+      if (
+        displayMode === "age" &&
+        !isEditingBirthDate &&
+        data.record?.birthDate &&
+        item.date
+      ) {
         const age = calculateAge(data.record.birthDate, item.date);
         if (age !== null) {
           label = `${age}세`;
@@ -637,6 +655,19 @@ export default function LifeRecordMobile({
                   className="lr-mobile-meta-title lr-mobile-edit-input"
                   placeholder="레코드의 제목을 입력하세요"
                 />
+                <input
+                  type="text"
+                  value={data.record?.subName || ""}
+                  onChange={(e) => {
+                    const newData = {
+                      ...data,
+                      record: { ...data.record, subName: e.target.value },
+                    };
+                    onDataChange?.(newData);
+                  }}
+                  className="lr-mobile-meta-subtitle lr-mobile-edit-input"
+                  placeholder="서브 타이틀을 입력하세요"
+                />
                 <textarea
                   value={data.record?.description || ""}
                   onChange={(e) => {
@@ -738,6 +769,11 @@ export default function LifeRecordMobile({
             ) : (
               <>
                 <div className="lr-mobile-meta-title">{mainTitle}</div>
+                {activeItem.subtitle && (
+                  <div className="lr-mobile-meta-subtitle">
+                    {activeItem.subtitle}
+                  </div>
+                )}
                 <div
                   className="lr-mobile-meta-desc"
                   style={{ marginBottom: "16px" }}
@@ -952,9 +988,12 @@ export default function LifeRecordMobile({
             cursor: activeIdx === 0 ? "default" : "pointer",
             opacity: activeIdx === 0 ? 0 : 1,
             pointerEvents: activeIdx === 0 ? "none" : "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          home
+          <HiHome size={30} />
         </span>
         <div className="lr-mobile-nav-timeline">
           <span
@@ -963,6 +1002,7 @@ export default function LifeRecordMobile({
               cursor: activeIdx === 0 ? "default" : "pointer",
               opacity: activeIdx === 0 ? 0 : 1,
               pointerEvents: activeIdx === 0 ? "none" : "auto",
+              fontSize: "1.8rem",
             }}
           >
             &lt;
@@ -975,18 +1015,29 @@ export default function LifeRecordMobile({
               opacity: activeIdx === timeline.length - 1 ? 0 : 1,
               pointerEvents:
                 activeIdx === timeline.length - 1 ? "none" : "auto",
+              fontSize: "1.8rem",
             }}
           >
             &gt;
           </span>
         </div>
-        <span onClick={handleMenuClick} style={{ cursor: "pointer" }}>
+        <span
+          onClick={handleMenuClick}
+          style={{
+            cursor: "pointer",
+            fontSize: "1.8rem",
+            fontWeight: "400",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           ≡
         </span>
       </nav>
 
       <footer className="lr-mobile-footer">
-        <div className="lr-mobile-footer-logo">The Life Gallery</div>
+        <div className="lr-mobile-footer-logo">The Life Museum</div>
         <div className="lr-mobile-footer-copyright">
           Copyright 2025. Creative Computing Group.
           <br />

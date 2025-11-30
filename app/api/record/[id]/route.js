@@ -11,6 +11,8 @@ const ALLOWED_RECORD_FIELDS = [
   "description",
   "bgm",
   "color",
+  "birthDate",
+  "displayMode",
 ];
 
 const ALLOWED_ITEM_FIELDS = [
@@ -44,6 +46,8 @@ function toRecordResponse(rec) {
     description: rec.description,
     bgm: rec.bgm,
     color: rec.color,
+    birthDate: rec.birthDate || null,
+    displayMode: rec.displayMode || "year",
     recordItems: (rec.recordItems || []).map((it) => ({
       title: it.title,
       location: it.location,
@@ -77,6 +81,8 @@ export async function GET(req, { params }) {
         description: true,
         bgm: true,
         color: true,
+        birthDate: true,
+        displayMode: true,
         recordItems: {
           select: {
             id: true,

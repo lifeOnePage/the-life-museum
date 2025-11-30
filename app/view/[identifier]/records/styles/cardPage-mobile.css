@@ -278,6 +278,35 @@ textarea.lr-mobile-meta-title.lr-mobile-edit-input {
   letter-spacing: -0.15625rem;
 }
 
+.lr-mobile-meta-subtitle {
+  color: var(--text);
+  font-family: "Pretendard Variable";
+  font-size: 1rem;
+  font-style: normal;
+  font-weight: 300;
+  line-height: normal;
+  letter-spacing: -0.05rem;
+  margin-top: 4px;
+  margin-bottom: 16px;
+  opacity: 0.8;
+}
+
+.lr-mobile-meta-subtitle.lr-mobile-edit-input {
+  background: transparent;
+  border: 1px dashed var(--text);
+  border-radius: 4px;
+  padding: 8px;
+  color: inherit;
+  width: 100%;
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  line-height: inherit;
+  margin-bottom: 16px;
+  opacity: 1;
+}
+
 .lr-mobile-meta-desc {
   font-family: "Pretendard Variable";
   font-size: 0.85rem;
@@ -432,15 +461,6 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   transform: scale(1.02);
 }
 
-.lr-mobile-highlight-item::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 4px;
-  z-index: 1;
-}
-
 .lr-mobile-highlight-title {
   width: 100%;
   position: absolute;
@@ -454,12 +474,17 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   color: #fff;
   font-size: 0.7rem;
   line-height: 1.2;
-  font-weight: 500;
+  font-weight: 600;
   font-family: "Pretendard Variable";
   z-index: 2;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.9),
+    0 2px 6px rgba(0, 0, 0, 0.8),
+    0 0 12px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 /* =========================
@@ -481,7 +506,7 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   font-family: "Pretendard Variable";
   font-size: 1.2rem;
   font-weight: 600;
-  color: var(--text, #ffffff);
+  color: var(--text);
   letter-spacing: -0.02em;
 }
 
@@ -492,7 +517,7 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   border-radius: 8px;
   padding: 16px;
   background: transparent;
-  color: var(--text, #ffffff);
+  color: --text;
   transition: border-color 0.2s ease;
 
   font-family: "Pretendard Variable";

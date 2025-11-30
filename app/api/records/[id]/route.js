@@ -36,6 +36,8 @@ export async function GET(req, { params }) {
         description: true,
         bgm: true,
         color: true,
+        birthDate: true,
+        displayMode: true,
         recordItems: {
           select: {
             id: true,
@@ -72,6 +74,8 @@ export async function GET(req, { params }) {
           description: record.description,
           bgm: record.bgm,
           color: record.color,
+          birthDate: record.birthDate || null,
+          displayMode: record.displayMode || "year",
         },
         recordItems: (record.recordItems || []).map((item) => ({
           id: item.id,

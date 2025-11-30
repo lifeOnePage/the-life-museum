@@ -117,11 +117,15 @@ export default function LifeRecordDesktop({
 
   // data가 변경될 때 displayMode와 birthDate 동기화 (입력 중이 아닐 때만)
   useEffect(() => {
-    if (data.record?.displayMode !== undefined) {
+    if (data.record?.displayMode !== undefined && data.record?.displayMode !== null) {
       setDisplayMode(data.record.displayMode);
+    } else {
+      setDisplayMode("year"); // 기본값
     }
-    if (data.record?.birthDate !== undefined && !isEditingBirthDate) {
+    if (data.record?.birthDate !== undefined && data.record?.birthDate !== null && !isEditingBirthDate) {
       setBirthDate(data.record.birthDate);
+    } else if (data.record?.birthDate === null && !isEditingBirthDate) {
+      setBirthDate(""); // null이면 빈 문자열로
     }
   }, [data.record?.displayMode, data.record?.birthDate, isEditingBirthDate]);
 
@@ -136,6 +140,7 @@ export default function LifeRecordDesktop({
         kind: "main",
         label: "Home",
         title: data.record.name || "사용자의 이야기",
+        subtitle: data.record.subName || "",
         date: "",
         location: "",
         desc: data.record.description || "",
@@ -726,21 +731,41 @@ export default function LifeRecordDesktop({
                   <>
                     <div className="lr-meta lr-meta--mainTop">
                       {isEditing ? (
-                        <input
-                          type="text"
-                          value={data.record?.name || ""}
-                          onChange={(e) => {
-                            const newData = {
-                              ...data,
-                              record: { ...data.record, name: e.target.value },
-                            };
-                            onDataChange?.(newData);
-                          }}
-                          className="lr-name"
-                          placeholder="레코드의 제목을 입력하세요"
-                        />
+                        <>
+                          <input
+                            type="text"
+                            value={data.record?.name || ""}
+                            onChange={(e) => {
+                              const newData = {
+                                ...data,
+                                record: { ...data.record, name: e.target.value },
+                              };
+                              onDataChange?.(newData);
+                            }}
+                            className="lr-name"
+                            placeholder="레코드의 제목을 입력하세요"
+                          />
+                          <input
+                            type="text"
+                            value={data.record?.subName || ""}
+                            onChange={(e) => {
+                              const newData = {
+                                ...data,
+                                record: { ...data.record, subName: e.target.value },
+                              };
+                              onDataChange?.(newData);
+                            }}
+                            className="lr-subtitle"
+                            placeholder="서브 타이틀을 입력하세요"
+                          />
+                        </>
                       ) : (
-                        <div className="lr-name">{mainTitle}</div>
+                        <>
+                          <div className="lr-name">{mainTitle}</div>
+                          {activeItem.subtitle && (
+                            <div className="lr-subtitle">{activeItem.subtitle}</div>
+                          )}
+                        </>
                       )}
                     </div>
                     {/* 연도/나이 표시 토글 및 생년월일 입력 */}
@@ -1080,7 +1105,7 @@ export default function LifeRecordDesktop({
       </div>
 
       <footer className="footer">
-        <div className="footer-logo">The Life Gallery</div>
+        <div className="footer-logo">The Life Museum</div>
         <div className="footer-copyright">
           Copyright 2025. Creative Computing Group. All rights reserved.
         </div>

@@ -18,6 +18,8 @@ export async function GET(_req, { params }) {
         description: true,
         bgm: true,
         color: true,
+        birthDate: true,
+        displayMode: true,
         userName: true,
         userId: true,
         user: {
@@ -80,6 +82,8 @@ export async function GET(_req, { params }) {
         description: record.description,
         bgm: record.bgm,
         color: record.color,
+        birthDate: record.birthDate || null,
+        displayMode: record.displayMode || "year",
         userName: userName,
       },
       items: (record.recordItems || []).map((item) => ({

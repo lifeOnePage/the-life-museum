@@ -6,9 +6,13 @@ import client from "@/app/client";
 export const runtime = "nodejs";
 
 export async function GET(req) {
-  const auth = req.headers.get("authorization") || "";
+  const auth = req.headers.get("Authorization") || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
   const payload = token ? verifyJwt(token) : null;
+  console.group("token parsing");
+  console.log("token: ", token);
+  console.log("payload: ", payload);
+  console.groupEnd();
   if (!payload)
     return NextResponse.json(
       { ok: false, error: "unauthorized" },

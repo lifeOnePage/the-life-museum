@@ -20,6 +20,7 @@ export async function fetchMyRecords(token) {
 }
 
 export async function fetchMyDatas({ token }) {
+  console.log(token)
   const res = await fetch("/api/data", {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },

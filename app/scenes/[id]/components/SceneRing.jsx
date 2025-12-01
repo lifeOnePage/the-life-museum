@@ -2,16 +2,16 @@
 "use client";
 
 import * as THREE from "three";
-import React, { Suspense, useEffect, useMemo, useRef } from "react";
+import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useLoader } from "@react-three/fiber";
-import { useVideoTexture } from "@react-three/drei";
+import { useVideoTexture, Line } from "@react-three/drei";
 
 // ▶︎ 고정 파라미터
 const RADIUS = 4;
-const PLANE_W = 1.3;
-const PLANE_H = 1.2;
+const PLANE_W = 1.2;
+const PLANE_H = 0.8;
 const CAM_Y = 8;
-const CAM_Z = 16;
+const CAM_Z = 10;
 
 // 프록시 함수
 function proxify(u) {
@@ -114,6 +114,184 @@ function EmptyMat({ opacity = 0.08 }) {
   );
 }
 
+// ===== Leftmost Sprite =====
+function LeftmostSprite({ slot, spritePosition }) {
+  const spriteRef = useRef();
+  const kind = slot?.kind ?? slot?.type ?? "empty";
+  const url = slot?.url ?? null;
+
+  // 스프라이트 최대 크기 제한
+  const MAX_WIDTH = 3;
+  const MAX_HEIGHT = 4.0;
+
+  // 항상 카메라를 향하도록 (billboard)
+  useFrame(({ camera }) => {
+    if (spriteRef.current) {
+      spriteRef.current.lookAt(camera.position);
+    }
+  });
+
+  if (!url || kind === "empty") return null;
+
+  return (
+    <sprite ref={spriteRef} position={spritePosition} scale={[MAX_WIDTH, MAX_HEIGHT, 1]}>
+      {kind === "image" ? (
+        <Suspense fallback={<spriteMaterial transparent opacity={0.3} />}>
+          <SpriteImageMat url={url} />
+        </Suspense>
+      ) : kind === "video" ? (
+        <Suspense fallback={<spriteMaterial transparent opacity={0.3} />}>
+          <SpriteVideoMat url={url} />
+        </Suspense>
+      ) : (
+        <spriteMaterial transparent opacity={0.3} />
+      )}
+    </sprite>
+  );
+}
+
+// ===== Sprite용 텍스처 머티리얼 =====
+function SpriteImageMat({ url }) {
+  const effUrl = useMemo(() => proxify(url), [url]);
+  const tex = useLoader(THREE.TextureLoader, effUrl, (loader) => {
+    loader.setCrossOrigin("anonymous");
+  });
+
+  useEffect(() => {
+    if (!tex || !tex.image) return;
+
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+
+    // Cover 효과: 스프라이트 비율에 맞춰 이미지 crop
+    const MAX_WIDTH = 3;
+    const MAX_HEIGHT = 4.0;
+    const spriteAspect = MAX_WIDTH / MAX_HEIGHT; // 1.25
+    const imageAspect = tex.image.width / tex.image.height;
+
+    if (imageAspect > spriteAspect) {
+      // 이미지가 더 넓음 - 가로를 crop
+      const scale = spriteAspect / imageAspect;
+      tex.repeat.set(scale, 1);
+      tex.offset.set((1 - scale) / 2, 0);
+    } else {
+      // 이미지가 더 높음 - 세로를 crop
+      const scale = imageAspect / spriteAspect;
+      tex.repeat.set(1, scale);
+      tex.offset.set(0, (1 - scale) / 2);
+    }
+
+    tex.needsUpdate = true;
+  }, [tex, url]);
+
+  return <spriteMaterial map={tex} transparent opacity={0.95} />;
+}
+
+function SpriteVideoMat({ url }) {
+  const effUrl = useMemo(() => proxify(url), [url]);
+  const vtex = useVideoTexture(effUrl, {
+    crossOrigin: "anonymous",
+    muted: true,
+    loop: true,
+    start: true,
+    playsInline: true,
+    preload: "auto",
+  });
+
+  useEffect(() => {
+    if (!vtex || !vtex.image) return;
+
+    vtex.colorSpace = THREE.SRGBColorSpace;
+
+    // Cover 효과: 스프라이트 비율에 맞춰 비디오 crop
+    const MAX_WIDTH = 3;
+    const MAX_HEIGHT = 4.0;
+    const spriteAspect = MAX_WIDTH / MAX_HEIGHT; // 1.25
+    const videoAspect = vtex.image.videoWidth / vtex.image.videoHeight;
+
+    if (videoAspect > spriteAspect) {
+      // 비디오가 더 넓음 - 가로를 crop
+      const scale = spriteAspect / videoAspect;
+      vtex.repeat.set(scale, 1);
+      vtex.offset.set((1 - scale) / 2, 0);
+    } else {
+      // 비디오가 더 높음 - 세로를 crop
+      const scale = videoAspect / spriteAspect;
+      vtex.repeat.set(1, scale);
+      vtex.offset.set(0, (1 - scale) / 2);
+    }
+
+    vtex.needsUpdate = true;
+  }, [vtex, url]);
+
+  return <spriteMaterial map={vtex} transparent opacity={0.95} />;
+}
+
+// ===== 투영선 =====
+function ProjectionLines({ planePosition, planeRotation, spritePosition }) {
+  // 플레인의 상단 좌우 꼭짓점 계산
+  const planeCorners = useMemo(() => {
+    if (!planePosition || !planeRotation) return null;
+
+    const planeMatrix = new THREE.Matrix4();
+    planeMatrix.makeRotationFromEuler(new THREE.Euler(planeRotation[0], planeRotation[1], planeRotation[2]));
+    planeMatrix.setPosition(planePosition[0], planePosition[1], planePosition[2]);
+
+    // 플레인의 로컬 좌표계에서 상단 좌우 꼭짓점
+    const topLeft = new THREE.Vector3(-PLANE_W / 2, PLANE_H / 2, 0);
+    const topRight = new THREE.Vector3(PLANE_W / 2, PLANE_H / 2, 0);
+
+    // 월드 좌표로 변환
+    topLeft.applyMatrix4(planeMatrix);
+    topRight.applyMatrix4(planeMatrix);
+
+    return { topLeft, topRight };
+  }, [planePosition, planeRotation]);
+
+  // 스프라이트의 하단 좌우 꼭짓점 계산
+  const spriteCorners = useMemo(() => {
+    if (!spritePosition) return null;
+
+    const MAX_WIDTH = 3;
+    const MAX_HEIGHT = 4.0;
+
+    // 스프라이트는 항상 카메라를 향하므로 x축으로만 오프셋
+    const bottomLeft = new THREE.Vector3(
+      spritePosition[0] - MAX_WIDTH / 2-0.4,
+      spritePosition[1] - MAX_HEIGHT / 2,
+      spritePosition[2]
+    );
+    const bottomRight = new THREE.Vector3(
+      spritePosition[0] + MAX_WIDTH / 2-0.2,
+      spritePosition[1] - MAX_HEIGHT / 2,
+      spritePosition[2]
+    );
+
+    return { bottomLeft, bottomRight };
+  }, [spritePosition]);
+
+  if (!planeCorners || !spriteCorners) return null;
+
+  return (
+    <>
+      <Line
+        points={[planeCorners.topLeft, spriteCorners.bottomLeft]}
+        color="white"
+        lineWidth={1}
+        opacity={0.3}
+        transparent
+      />
+      <Line
+        points={[planeCorners.topRight, spriteCorners.bottomRight]}
+        color="white"
+        lineWidth={1}
+        opacity={0.3}
+        transparent
+      />
+    </>
+  );
+}
+
 // ===== 개별 플레인 =====
 const MediaPlane = React.forwardRef(function MediaPlane({ slot, isSelected }, ref) {
   const kind = slot?.kind ?? slot?.type ?? "empty";
@@ -164,6 +342,12 @@ function RingInner({
   if (baseAnglesRef.current.length !== N) baseAnglesRef.current = Array.from({ length: N }, (_, i) => i * step);
 
   const lastNotifiedIdx = useRef(-1);
+
+  // Leftmost 플레인 위치/회전 추적
+  const [leftmostPlaneInfo, setLeftmostPlaneInfo] = useState({
+    position: [0, 0, 0],
+    rotation: [0, 0, 0],
+  });
   useFrame((_, dt) => {
     // 1. 선택된 아이템의 itemId를 leftIndex로부터 가져옴
     const selectedItemId = slots[leftIndex]?.itemId;
@@ -252,7 +436,7 @@ function RingInner({
       const m = planeRefs.current[i];
       if (!m) continue;
       m.position.set(x, y, z);
-      m.rotation.set(-0.4, 0, 0);
+      m.rotation.set(-0.6, 0, 0);
     }
 
     // 좌측 인덱스 스냅 콜백(회전이 거의 완료되었을 때만)
@@ -265,10 +449,29 @@ function RingInner({
         onLeftmostChange(bestIdx);
       }
     }
+
+    // Leftmost 플레인 위치 업데이트 (매 프레임)
+    const leftPlane = planeRefs.current[leftIndex];
+    if (leftPlane) {
+      setLeftmostPlaneInfo({
+        position: [leftPlane.position.x, leftPlane.position.y, leftPlane.position.z],
+        rotation: [leftPlane.rotation.x, leftPlane.rotation.y, leftPlane.rotation.z],
+      });
+    }
   });
 
   // leftIndex에 해당하는 아이템의 itemId 계산
   const selectedItemId = slots[leftIndex]?.itemId;
+
+  // Sprite 위치 계산
+  const spritePosition = useMemo(() => {
+    if (!leftmostPlaneInfo.position) return [0, 4, 0];
+    return [
+      leftmostPlaneInfo.position[0],
+      leftmostPlaneInfo.position[1] +4,
+      leftmostPlaneInfo.position[2],
+    ];
+  }, [leftmostPlaneInfo.position]);
 
   return (
     <group position={[0, 0, 0]} rotation={[0, 0, 0]}>
@@ -283,6 +486,19 @@ function RingInner({
           />
         );
       })}
+
+      {/* Leftmost Sprite */}
+      <LeftmostSprite
+        slot={slots[leftIndex]}
+        spritePosition={spritePosition}
+      />
+
+      {/* Projection Lines */}
+      <ProjectionLines
+        planePosition={leftmostPlaneInfo.position}
+        planeRotation={leftmostPlaneInfo.rotation}
+        spritePosition={spritePosition}
+      />
     </group>
   );
 }

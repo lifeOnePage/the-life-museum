@@ -52,14 +52,14 @@ export default function ViewPage() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 font-sans relative h-screen w-screen overflow-hidden text-white">
+    <div className="bg-gradient-to-br from-black-100 via-black-200 to-black-300 font-sans relative h-screen w-screen overflow-hidden text-white">
       {/* SceneRing - 중앙 배치 */}
-      <div className="absolute inset-0 w-[100%]">
+      <div className="absolute inset-0 w-[280%] ">
         <SceneRing
           slots={textureData.textures}
           leftIndex={leftIndex}
           onLeftmostChange={setLeftIndex}
-          snapSpeed={6}
+          snapSpeed={10}
           popMode="band"
           popSpanSlots={1.2}
           bulge={1.2}
@@ -91,7 +91,7 @@ export default function ViewPage() {
       </div>
 
       {/* Pannel - 하단 배치 (RingSlider 뒤에) */}
-      <Pannel
+      {/* <Pannel
         type="list"
         mode={mode}
         items={items}
@@ -99,7 +99,7 @@ export default function ViewPage() {
         profile={profile}
         setProfile={setProfile}
         onItemClick={handleItemClick}
-      />
+      /> */}
     </div>
   );
 }

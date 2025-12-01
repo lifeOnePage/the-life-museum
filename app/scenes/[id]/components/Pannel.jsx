@@ -162,7 +162,7 @@ export default function Pannel({
 
   if (isProfileView) {
     return (
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[400px] bg-black/20 backdrop-blur-md rounded-tl-[20px] rounded-tr-[20px] border border-white overflow-hidden flex flex-col">
+      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[240px] bg-black/20 backdrop-blur-md rounded-tl-[20px] rounded-tr-[20px] border border-white overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
@@ -179,9 +179,9 @@ export default function Pannel({
     );
   }
 
-  if (selectedItem) {
+  if (selectedItem && (mode === "view")) {
     return (
-      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[400px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white overflow-hidden flex flex-col">
+      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[240px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
@@ -199,9 +199,29 @@ export default function Pannel({
     );
   }
 
-  if (type === "list") {
+  if (selectedItem && (mode !== "view")) {
     return (
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[400px] bg-black/20 backdrop-blur-md rounded-tl-[20px] rounded-tr-[20px] border border-white overflow-hidden flex flex-col">
+      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[640px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white overflow-hidden flex flex-col">
+        <Header
+          mode={mode}
+          hasChanges={hasChanges}
+          onSave={handleSaveItem}
+          onBack={handleBack}
+        />
+        <div className="flex-1 overflow-y-auto">
+          {mode === "view" ? (
+            <DetailView item={selectedItem} />
+          ) : (
+            <DetailEdit item={editedData} onChange={handleChange} />
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (type === "list"&& (mode === "view")) {
+    return (
+      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[200px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white-100 overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}
@@ -234,7 +254,7 @@ export default function Pannel({
             onClick={handleProfileClick}
             className="flex items-center justify-between py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10"
           >
-            <span className="text-white text-base">프로필</span>
+            <span className="text-white text-sm">프로필</span>
           </button>
           <DndContext
             sensors={sensors}
@@ -266,6 +286,72 @@ export default function Pannel({
     );
   }
 
+    if (type === "list"&& (mode !== "view")) {
+    return (
+      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[400px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white overflow-hidden flex flex-col">
+        <Header
+          mode={mode}
+          hasChanges={listHasChanges || unsavedItemIds.size > 0}
+          onSave={handleSaveAll}
+        />
+        <div className="flex flex-col flex-1 overflow-y-auto">
+          {mode === "edit" && (
+            <button
+              onClick={handleAddNew}
+              className="flex items-center gap-2 py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10"
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 20 20"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M10 5V15M5 10H15"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+              </svg>
+              <span className="text-white text-base">새로 만들기</span>
+            </button>
+          )}
+          <button
+            onClick={handleProfileClick}
+            className="flex items-center justify-between py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10"
+          >
+            <span className="text-white text-sm">프로필</span>
+          </button>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={items.map((item) => item.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="flex flex-col">
+                {items.map((item) => (
+                  <ItemBlock
+                    key={item.id}
+                    id={item.id}
+                    title={item.title}
+                    date={item.date}
+                    mode={mode}
+                    hasUnsavedChanges={unsavedItemIds.has(item.id)}
+                    onClick={() => handleItemClick(item)}
+                    onDelete={() => handleDeleteItem(item.id)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
+      </div>
+    );
+  }
   return (
     <div className="w-full h-full bg-transparent text-white">
       <p>Type: {type}</p>

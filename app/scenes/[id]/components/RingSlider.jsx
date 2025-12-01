@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Lock, Unlock } from "lucide-react";
+import { Lock, Unlock, ChevronLeft, ChevronRight } from "lucide-react";
 
 /**
  * RingSlider - 링 조작을 위한 2단 슬라이더
@@ -57,42 +57,59 @@ export default function RingSlider({
 
   const tickWidth = 20; // 각 눈금의 너비 (px)
 
-  // 슬라이더 드래그 핸들러
-  const handleMouseDown = (e) => {
+  // clientX 좌표 가져오기 (마우스/터치 통합)
+  const getClientX = (e) => {
+    if (e.touches && e.touches.length > 0) {
+      return e.touches[0].clientX;
+    }
+    if (e.changedTouches && e.changedTouches.length > 0) {
+      return e.changedTouches[0].clientX;
+    }
+    return e.clientX;
+  };
+
+  // 슬라이더 드래그 핸들러 (마우스/터치 통합)
+  const handleStart = (e) => {
     isDraggingRef.current = true;
-    startXRef.current = e.clientX;
+    startXRef.current = getClientX(e);
     dragOffsetRef.current = 0;
   };
 
-  const handleMouseMove = (e) => {
+  const handleMove = (e) => {
     if (!isDraggingRef.current) return;
     e.preventDefault();
 
-    const deltaX = e.clientX - startXRef.current;
+    const deltaX = getClientX(e) - startXRef.current;
     const ticksDelta = Math.round(deltaX / tickWidth);
 
     // 드래그한 거리만큼 인덱스 변경
     const newIndex = leftIndex - ticksDelta;
     if (newIndex >= minIndex && newIndex <= maxIndex && newIndex !== leftIndex) {
       onChangeLeftIndex?.(newIndex);
-      startXRef.current = e.clientX;
+      startXRef.current = getClientX(e);
     }
   };
 
-  const handleMouseUp = () => {
+  const handleEnd = () => {
     isDraggingRef.current = false;
   };
 
   useEffect(() => {
-    const handleGlobalMouseMove = (e) => handleMouseMove(e);
-    const handleGlobalMouseUp = () => handleMouseUp();
+    const handleGlobalMove = (e) => handleMove(e);
+    const handleGlobalEnd = () => handleEnd();
 
-    document.addEventListener("mousemove", handleGlobalMouseMove);
-    document.addEventListener("mouseup", handleGlobalMouseUp);
+    // 마우스 이벤트
+    document.addEventListener("mousemove", handleGlobalMove);
+    document.addEventListener("mouseup", handleGlobalEnd);
+    // 터치 이벤트
+    document.addEventListener("touchmove", handleGlobalMove, { passive: false });
+    document.addEventListener("touchend", handleGlobalEnd);
 
     return () => {
-      document.removeEventListener("mousemove", handleGlobalMouseMove);
-      document.removeEventListener("mouseup", handleGlobalMouseUp);
+      document.removeEventListener("mousemove", handleGlobalMove);
+      document.removeEventListener("mouseup", handleGlobalEnd);
+      document.removeEventListener("touchmove", handleGlobalMove);
+      document.removeEventListener("touchend", handleGlobalEnd);
     };
   }, [leftIndex, minIndex, maxIndex]);
 
@@ -103,7 +120,7 @@ export default function RingSlider({
         {/* 이전 아이템 */}
         <button
           onClick={() => handleItemClick(prevItem, "prev")}
-          className="text-xs text-white/50 hover:text-white/80 transition-colors truncate max-w-[30%]"
+          className="text-[10px] text-white/50 hover:text-white/80 transition-colors truncate max-w-[30%]"
         >
           {prevItem?.title || ""}
         </button>
@@ -120,13 +137,42 @@ export default function RingSlider({
         {/* 다음 아이템 */}
         <button
           onClick={() => handleItemClick(nextItem, "next")}
-          className="text-xs text-white/50 hover:text-white/80 transition-colors truncate max-w-[30%]"
+          className="text-[10px] text-white/50 hover:text-white/80 transition-colors truncate max-w-[30%]"
         >
           {nextItem?.title || ""}
         </button>
       </div>
 
-      {/* 두 번째 단: 인덱스 슬라이더 */}
+      {/* 두 번째 단: 네비게이션 버튼 */}
+      <div className="flex items-center justify-center gap-6 px-4 py-2 border-b border-white/10">
+        <button
+          onClick={() => {
+            const newIndex = leftIndex - 1;
+            if (newIndex >= minIndex) {
+              onChangeLeftIndex?.(newIndex);
+            }
+          }}
+          disabled={leftIndex <= minIndex}
+          className="text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronLeft className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => {
+            const newIndex = leftIndex + 1;
+            if (newIndex <= maxIndex) {
+              onChangeLeftIndex?.(newIndex);
+            }
+          }}
+          disabled={leftIndex >= maxIndex}
+          className="text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          <ChevronRight className="w-5 h-5" />
+        </button>
+      </div>
+
+      {/* 세 번째 단: 인덱스 슬라이더 */}
       <div className="relative px-4 py-4 overflow-hidden">
         {/* 중앙 기준선 */}
         <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/80 z-10 pointer-events-none" />
@@ -134,7 +180,8 @@ export default function RingSlider({
         {/* 눈금 슬라이더 */}
         <div
           ref={containerRef}
-          onMouseDown={handleMouseDown}
+          onMouseDown={handleStart}
+          onTouchStart={handleStart}
           className="cursor-grab active:cursor-grabbing select-none"
         >
           <div
@@ -170,10 +217,10 @@ export default function RingSlider({
         </div>
 
         {/* 인덱스 표시 */}
-        <div className="text-center text-xs text-white/70 mt-2">
+        {/* <div className="text-center text-xs text-white/70 mt-2">
           {leftIndex} / {maxIndex}
           {isLocked && ` (${currentItem?.title || ""})`}
-        </div>
+        </div> */}
       </div>
     </div>
   );

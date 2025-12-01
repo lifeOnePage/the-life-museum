@@ -1,13 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider      = "prisma-client-js"
   output        = "../app/generated/prisma"
   binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+  output   = "./ERD.svg"
 }
 
 datasource db {
@@ -15,139 +14,120 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-generator erd {
-  provider = "prisma-erd-generator"
-  output   = "./ERD.svg" // png, svg, md 등 가능
-  // theme = "light"      // 옵션
-  // relationships = true // 기본 true
-}
-
 model User {
   id        Int      @id @default(autoincrement())
   name      String
   mobile    String   @unique
+  plan      String   @default("free")
   birthDate String
   email     String?  @unique
-  plan      String   @default("free")
-  reels     Reel[]
   records   Record[]
+  reels     Reel[]
 }
 
 model Reel {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  identifier String @unique
-
-  name       String
-  birthDate  String
-  profileImg String?
-  birthPlace String?
-  motto      String?
-
-  lifestory   Lifestory?
-  lifestoryId Int?
-
-  user   User? @relation(fields: [userId], references: [id])
-  userId Int?
-
-  childhood     WheelTexture[]
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  identifier    String         @unique
+  name          String
+  birthDate     String
+  profileImg    String?
+  birthPlace    String?
+  motto         String?
+  lifestoryId   Int?
+  userId        Int?
+  lifestory     Lifestory?
   memorys       Memory[]
+  user          User?          @relation(fields: [userId], references: [id])
   relationships Relationship[]
+  childhood     WheelTexture[]
 }
 
 model Lifestory {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tokenUsage Int     @default(0)
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  tokenUsage Int      @default(0)
   mood       String?
   qaCount    Int?
   qaList     Json?
   result     String?
-  reel       Reel    @relation(fields: [reelId], references: [id])
-  reelId     Int     @unique
+  reelId     Int      @unique
+  reel       Reel     @relation(fields: [reelId], references: [id])
 }
 
 model WheelTexture {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  srcType Int
-  srcUrl  String
-
-  caption String?
-
-  memory         Memory?       @relation(fields: [memoryId], references: [id])
+  id             Int           @id @default(autoincrement())
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  srcType        Int
+  srcUrl         String
   memoryId       Int?
-  relationship   Relationship? @relation(fields: [relationshipId], references: [id])
   relationshipId Int?
-  reels          Reel?         @relation(fields: [reelId], references: [id])
+  caption        String?
   reelId         Int?
+  memory         Memory?       @relation(fields: [memoryId], references: [id])
+  reels          Reel?         @relation(fields: [reelId], references: [id])
+  relationship   Relationship? @relation(fields: [relationshipId], references: [id])
 }
 
 model Memory {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   title         String
   subTitle      String?
   date          DateTime?
   comment       String?
-  wheelTextures WheelTexture[]
-  reel          Reel?          @relation(fields: [reelId], references: [id])
   reelId        Int
+  reel          Reel           @relation(fields: [reelId], references: [id])
+  wheelTextures WheelTexture[]
 }
 
 model Relationship {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id            Int            @id @default(autoincrement())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
   name          String
   relation      String
   comment       String?
+  reelId        Int?
+  reels         Reel?          @relation(fields: [reelId], references: [id])
   wheelTextures WheelTexture[]
-
-  reels  Reel? @relation(fields: [reelId], references: [id])
-  reelId Int?
 }
 
 model Record {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  identifier String @unique
-
-  userName    String?
+  id          Int          @id @default(autoincrement())
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  identifier  String       @unique
   coverUrl    String?
   name        String?
   subName     String?
   description String?
   bgm         String?
   color       String?
-  user        User?        @relation(fields: [userId], references: [id])
   userId      Int?
+  userName    String?
+  birthDate   String?
+  displayMode String?      @default("year")
+  user        User?        @relation(fields: [userId], references: [id])
   recordItems RecordItem[]
 }
 
 model RecordItem {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   title       String?
   date        String?
   location    String?
   description String?
   color       String?
-  isHighlight Boolean @default(false)
-  coverUrl    String?
-  record      Record  @relation(fields: [recordId], references: [id])
+  isHighlight Boolean  @default(false)
+  coverUrl    String? // 하위 호환성을 위해 유지 (첫 번째 이미지)
+  images      String[] @default([]) // 최대 5개 이미지 배열
   recordId    Int
+  record      Record   @relation(fields: [recordId], references: [id])
 }

@@ -48,12 +48,14 @@ export default function EditRecords() {
   const [activeItem, setActiveItem] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [navigateToItem, setNavigateToItem] = useState(null);
-  const [cropState, setCropState] = useState({
+  // 크롭 기능 제거됨 - 항상 비활성화 상태로 유지
+  const cropState = {
     isActive: false,
     imageFile: null,
     type: null,
     itemId: null,
-  });
+    targetSlotIndex: null,
+  };
 
   useEffect(() => {
     if (!token || !username) return;
@@ -95,6 +97,15 @@ export default function EditRecords() {
 
           // 타임라인 아이템이 없으면 기본 아이템 1개 생성
           let items = result.item.recordItems || [];
+          console.log(
+            "[LOAD] Fetched items:",
+            items.map((it) => ({
+              id: it.id,
+              title: it.title,
+              images: it.images,
+              imagesLength: it.images?.length,
+            })),
+          );
           if (items.length === 0) {
             const today = new Date();
             const year = today.getFullYear();
@@ -176,16 +187,29 @@ export default function EditRecords() {
           description: data.record.description,
           bgm: data.record.bgm,
           color: data.record.color,
+          birthDate: data.record.birthDate,
+          displayMode: data.record.displayMode,
         },
       });
 
       // 2. RecordItems 업데이트 (기존 items와 새 items 비교)
       // 임시 ID는 문자열로 시작하므로 숫자 ID만 기존 항목으로 간주
-      const existingItems = data.items.filter((item) => item.id && typeof item.id === 'number');
-      const newItems = data.items.filter((item) => !item.id || (typeof item.id === 'string' && item.id.startsWith('temp-')));
+      const existingItems = data.items.filter(
+        (item) => item.id && typeof item.id === "number",
+      );
+      const newItems = data.items.filter(
+        (item) =>
+          !item.id ||
+          (typeof item.id === "string" && item.id.startsWith("temp-")),
+      );
 
       // 기존 items 업데이트
       for (const item of existingItems) {
+        console.log("[SAVE] Updating item:", item.id, {
+          title: item.title,
+          images: item.images,
+          imagesLength: item.images?.length,
+        });
         await updateRecordItem({
           token,
           itemId: item.id,
@@ -197,8 +221,10 @@ export default function EditRecords() {
             color: item.color,
             isHighlight: item.isHighlight,
             coverUrl: item.coverUrl,
+            images: item.images || [], // images 배열 추가
           },
         });
+        console.log("[SAVE] Item updated successfully:", item.id);
       }
 
       // 새 items 생성 및 임시 ID를 실제 ID로 교체
@@ -215,16 +241,17 @@ export default function EditRecords() {
             color: item.color,
             isHighlight: item.isHighlight,
             coverUrl: item.coverUrl,
+            images: item.images || [], // images 배열 추가
           },
         });
-        
+
         // 생성된 항목의 실제 ID로 교체
-        if (result?.ok && result?.item?.id) {
+        if (result?.ok && result?.id) {
           const tempIdIndex = updatedItems.findIndex((i) => i.id === item.id);
           if (tempIdIndex !== -1) {
             updatedItems[tempIdIndex] = {
               ...updatedItems[tempIdIndex],
-              id: result.item.id,
+              id: result.id,
             };
           }
         }
@@ -270,20 +297,40 @@ export default function EditRecords() {
     };
 
     const newItems = [...(data.items || []), itemWithTempId];
+
+    // timeline 배열과 동일한 정렬 로직으로 정렬하여 인덱스 계산
+    const sortedItems = [...newItems].map((item) => {
+      const [y] = (item.date || "").split(".");
+      const year = y ? parseInt(y, 10) : 0;
+      return { ...item, year };
+    });
+
+    // 연도 순서대로 정렬 (오름차순: 오래된 것부터)
+    sortedItems.sort((a, b) => {
+      if (!a.year && !b.year) return 0;
+      if (!a.year) return 1;
+      if (!b.year) return -1;
+      return a.year - b.year;
+    });
+
+    // 정렬된 배열에서 생성된 항목의 인덱스 찾기
+    const createdItemIndex = sortedItems.findIndex(
+      (item) => item.id === tempId,
+    );
+
     setData({
       ...data,
       items: newItems,
     });
-    
-    // 생성된 항목으로 이동 (main이 첫 번째이므로 items.length)
-    // 타임라인은 연도 순으로 정렬되므로, 실제로는 마지막 항목이 아닐 수 있음
-    // 하지만 일단 마지막에 추가된 것으로 간주하고 이동
-    const targetIndex = newItems.length; // main(0) + items.length
-    setTimeout(() => {
-      setNavigateToItem(targetIndex);
-      setTimeout(() => setNavigateToItem(null), 100);
-    }, 100);
-    
+
+    if (createdItemIndex !== -1) {
+      const targetIndex = createdItemIndex + 1;
+      setTimeout(() => {
+        setNavigateToItem(targetIndex);
+        setTimeout(() => setNavigateToItem(null), 100);
+      }, 100);
+    }
+
     setIsSaved(false);
   };
 
@@ -304,10 +351,10 @@ export default function EditRecords() {
     try {
       // 현재 활성화된 항목의 인덱스 저장 (삭제 후 이동용)
       const currentIndex = activeItem?.index || 0;
-      
+
       // DB에 저장된 항목(숫자 ID)이면 API 호출
       // 임시 ID(문자열)는 로컬에서만 제거
-      if (itemId && typeof itemId === 'number') {
+      if (itemId && typeof itemId === "number") {
         await deleteRecordItem({ token, itemId });
 
         // 삭제 후 DB에서 최신 데이터 다시 불러오기
@@ -365,7 +412,7 @@ export default function EditRecords() {
             record,
             items,
           });
-          
+
           // 삭제된 항목이 마지막이 아니면 직전 항목으로 이동 (인덱스는 main 포함이므로 -1)
           // main이 첫 번째이므로, 타임라인 항목의 인덱스는 currentIndex - 1
           const targetIndex = Math.max(0, currentIndex - 1);
@@ -383,7 +430,7 @@ export default function EditRecords() {
           ...data,
           items: newItems,
         });
-        
+
         // 삭제된 항목이 마지막이 아니면 직전 항목으로 이동
         // main이 첫 번째이므로, 타임라인 항목의 인덱스는 deletedIndex + 1 (main 포함)
         // 삭제 후에는 deletedIndex + 1이 되므로, Math.max(0, deletedIndex)로 설정
@@ -426,8 +473,9 @@ export default function EditRecords() {
       } else {
         // id가 없는 경우 (이론적으로는 발생하지 않아야 하지만 안전장치)
         // timeline 인덱스 또는 속성으로 찾기
-        const itemIndex = activeItem.index !== undefined ? activeItem.index - 1 : -1;
-        
+        const itemIndex =
+          activeItem.index !== undefined ? activeItem.index - 1 : -1;
+
         if (itemIndex >= 0 && itemIndex < data.items.length) {
           const newItems = data.items.map((item, idx) =>
             idx === itemIndex ? { ...item, color: color } : item,
@@ -440,7 +488,8 @@ export default function EditRecords() {
           // 인덱스를 찾을 수 없는 경우, title과 date로 매칭
           const newItems = data.items.map((item) => {
             if (
-              (!item.id || (typeof item.id === 'string' && item.id.startsWith('temp-'))) &&
+              (!item.id ||
+                (typeof item.id === "string" && item.id.startsWith("temp-"))) &&
               activeItem.event &&
               item.title === activeItem.event &&
               activeItem.date &&
@@ -469,7 +518,12 @@ export default function EditRecords() {
     setIsSaved(false);
   };
 
-  const handleImageChange = async (type, itemId, file) => {
+  const handleImageChange = async (
+    type,
+    itemId,
+    file,
+    targetSlotIndex = null,
+  ) => {
     if (!token || !file) return;
 
     if (!recordId) {
@@ -477,21 +531,16 @@ export default function EditRecords() {
       return;
     }
 
-    // 이미지 파일인 경우 크롭 모드 활성화
-    if (file.type.startsWith("image/")) {
-      setCropState({
-        isActive: true,
-        imageFile: file,
-        type,
-        itemId,
-      });
-    } else {
-      // 비디오 파일인 경우 바로 업로드
-      await uploadImageFile(type, itemId, file);
-    }
+    // 크롭 없이 바로 업로드
+    await uploadImageFile(type, itemId, file, targetSlotIndex);
   };
 
-  const uploadImageFile = async (type, itemId, file) => {
+  const uploadImageFile = async (
+    type,
+    itemId,
+    file,
+    targetSlotIndex = null,
+  ) => {
     if (!token || !file || !recordId) return;
 
     try {
@@ -516,13 +565,82 @@ export default function EditRecords() {
           file,
           prefix: `records/${recordId}/timeline`,
         });
-        const newItems = data.items.map((item) =>
-          item.id === itemId ? { ...item, coverUrl: uploadUrl } : item,
-        );
+        const newItems = data.items.map((item) => {
+          if (item.id === itemId) {
+            // 기존 images 배열이 있으면 사용, 없으면 coverUrl로 초기화
+            let currentImages = item.images || [];
+            console.log("[UPLOAD] Before update - itemId:", itemId, {
+              currentImages,
+              currentImagesLength: currentImages.length,
+              targetSlotIndex,
+              uploadUrl,
+            });
+
+            // images 배열이 비어있고 coverUrl이 있으면 첫 번째 요소로 추가
+            if (currentImages.length === 0 && item.coverUrl) {
+              currentImages = [item.coverUrl];
+            }
+
+            // targetSlotIndex가 지정되어 있으면 해당 슬롯에 추가
+            if (
+              targetSlotIndex !== null &&
+              targetSlotIndex >= 0 &&
+              targetSlotIndex < 5
+            ) {
+              // 배열이 충분히 길지 않으면 확장
+              while (currentImages.length <= targetSlotIndex) {
+                currentImages.push(null);
+              }
+              currentImages[targetSlotIndex] = uploadUrl;
+            } else {
+              // targetSlotIndex가 없으면 첫 번째 빈 슬롯에 추가
+              const firstNullIndex = currentImages.findIndex((img) => !img);
+              if (firstNullIndex !== -1) {
+                currentImages[firstNullIndex] = uploadUrl;
+              } else {
+                // 빈 슬롯이 없고 이미 5개가 있으면 경고
+                const validImageCount = currentImages.filter(
+                  (img) => img,
+                ).length;
+                if (validImageCount >= 5) {
+                  alert("이미지는 최대 5장까지 추가할 수 있습니다.");
+                  setIsUploadingImage(false);
+                  return;
+                }
+                // 빈 슬롯이 없으면 끝에 추가
+                currentImages.push(uploadUrl);
+              }
+            }
+
+            // 최대 5개로 제한
+            while (currentImages.length < 5) {
+              currentImages.push(null);
+            }
+            currentImages = currentImages.slice(0, 5);
+
+            // 첫 번째 유효한 이미지를 coverUrl로도 유지 (하위 호환성)
+            const firstValidImage =
+              currentImages.find((img) => img) || uploadUrl;
+
+            console.log("[UPLOAD] After update - itemId:", itemId, {
+              currentImages,
+              currentImagesLength: currentImages.length,
+              validImages: currentImages.filter((img) => img),
+            });
+
+            return {
+              ...item,
+              coverUrl: firstValidImage,
+              images: currentImages,
+            };
+          }
+          return item;
+        });
         setData({
           ...data,
           items: newItems,
         });
+        console.log("[UPLOAD] Data updated, newItems:", newItems);
       }
       setIsSaved(false);
     } catch (e) {
@@ -534,23 +652,40 @@ export default function EditRecords() {
   };
 
   const handleCropComplete = async (croppedFile) => {
-    const { type, itemId } = cropState;
-    await uploadImageFile(type, itemId, croppedFile);
-    setCropState({
-      isActive: false,
-      imageFile: null,
-      type: null,
-      itemId: null,
-    });
+    // 크롭 기능 제거됨 - 사용되지 않음
   };
 
   const handleCropCancel = () => {
-    setCropState({
-      isActive: false,
-      imageFile: null,
-      type: null,
-      itemId: null,
+    // 크롭 기능 제거됨 - 사용되지 않음
+  };
+
+  const handleImageDelete = (itemId, imageIndex) => {
+    if (!data || !itemId) return;
+
+    const newItems = data.items.map((item) => {
+      if (item.id === itemId) {
+        const currentImages = item.images || [];
+        // 해당 인덱스의 이미지를 null로 변경
+        const updatedImages = [...currentImages];
+        updatedImages[imageIndex] = null;
+
+        // 첫 번째 유효한 이미지를 coverUrl로도 유지 (하위 호환성)
+        const firstValidImage = updatedImages.find((img) => img) || null;
+
+        return {
+          ...item,
+          coverUrl: firstValidImage,
+          images: updatedImages,
+        };
+      }
+      return item;
     });
+
+    setData({
+      ...data,
+      items: newItems,
+    });
+    setIsSaved(false);
   };
 
   if (isLoading) {
@@ -631,6 +766,7 @@ export default function EditRecords() {
           onDataChange={isPreview ? undefined : handleDataChange}
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
+          onImageDelete={isPreview ? undefined : handleImageDelete}
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
@@ -646,6 +782,7 @@ export default function EditRecords() {
           onDataChange={isPreview ? undefined : handleDataChange}
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
+          onImageDelete={isPreview ? undefined : handleImageDelete}
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}

@@ -36,6 +36,8 @@ export async function GET(req, { params }) {
         description: true,
         bgm: true,
         color: true,
+        birthDate: true,
+        displayMode: true,
         recordItems: {
           select: {
             id: true,
@@ -46,6 +48,7 @@ export async function GET(req, { params }) {
             color: true,
             isHighlight: true,
             coverUrl: true,
+            images: true,
             createdAt: true,
           },
           orderBy: { createdAt: "asc" },
@@ -72,18 +75,24 @@ export async function GET(req, { params }) {
           description: record.description,
           bgm: record.bgm,
           color: record.color,
+          birthDate: record.birthDate || null,
+          displayMode: record.displayMode || "year",
         },
-        recordItems: (record.recordItems || []).map((item) => ({
-          id: item.id,
-          title: item.title || "",
-          date: item.date || "",
-          location: item.location || "",
-          description: item.description || "",
-          color: item.color || "",
-          isHighlight: item.isHighlight || false,
-          coverUrl: item.coverUrl || "",
-          createdAt: item.createdAt,
-        })),
+        recordItems: (record.recordItems || []).map((item) => {
+          console.log("[API GET /records/[id]] Item:", item.id, "images from DB:", item.images);
+          return {
+            id: item.id,
+            title: item.title || "",
+            date: item.date || "",
+            location: item.location || "",
+            description: item.description || "",
+            color: item.color || "",
+            isHighlight: item.isHighlight || false,
+            coverUrl: item.coverUrl || "",
+            images: item.images || [],
+            createdAt: item.createdAt,
+          };
+        }),
       },
     });
   } catch (e) {

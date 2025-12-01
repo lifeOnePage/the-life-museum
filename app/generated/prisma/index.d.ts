@@ -1497,13 +1497,13 @@ export namespace Prisma {
    */
 
   export type UserCountOutputType = {
-    reels: number
     records: number
+    reels: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    reels?: boolean | UserCountOutputTypeCountReelsArgs
     records?: boolean | UserCountOutputTypeCountRecordsArgs
+    reels?: boolean | UserCountOutputTypeCountReelsArgs
   }
 
   // Custom InputTypes
@@ -1520,15 +1520,15 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountReelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: ReelWhereInput
+  export type UserCountOutputTypeCountRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordWhereInput
   }
 
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: RecordWhereInput
+  export type UserCountOutputTypeCountReelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: ReelWhereInput
   }
 
 
@@ -1537,15 +1537,15 @@ export namespace Prisma {
    */
 
   export type ReelCountOutputType = {
-    childhood: number
     memorys: number
     relationships: number
+    childhood: number
   }
 
   export type ReelCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    childhood?: boolean | ReelCountOutputTypeCountChildhoodArgs
     memorys?: boolean | ReelCountOutputTypeCountMemorysArgs
     relationships?: boolean | ReelCountOutputTypeCountRelationshipsArgs
+    childhood?: boolean | ReelCountOutputTypeCountChildhoodArgs
   }
 
   // Custom InputTypes
@@ -1562,13 +1562,6 @@ export namespace Prisma {
   /**
    * ReelCountOutputType without action
    */
-  export type ReelCountOutputTypeCountChildhoodArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: WheelTextureWhereInput
-  }
-
-  /**
-   * ReelCountOutputType without action
-   */
   export type ReelCountOutputTypeCountMemorysArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: MemoryWhereInput
   }
@@ -1578,6 +1571,13 @@ export namespace Prisma {
    */
   export type ReelCountOutputTypeCountRelationshipsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: RelationshipWhereInput
+  }
+
+  /**
+   * ReelCountOutputType without action
+   */
+  export type ReelCountOutputTypeCountChildhoodArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WheelTextureWhereInput
   }
 
 
@@ -1702,27 +1702,27 @@ export namespace Prisma {
     id: number | null
     name: string | null
     mobile: string | null
+    plan: string | null
     birthDate: string | null
     email: string | null
-    plan: string | null
   }
 
   export type UserMaxAggregateOutputType = {
     id: number | null
     name: string | null
     mobile: string | null
+    plan: string | null
     birthDate: string | null
     email: string | null
-    plan: string | null
   }
 
   export type UserCountAggregateOutputType = {
     id: number
     name: number
     mobile: number
+    plan: number
     birthDate: number
     email: number
-    plan: number
     _all: number
   }
 
@@ -1739,27 +1739,27 @@ export namespace Prisma {
     id?: true
     name?: true
     mobile?: true
+    plan?: true
     birthDate?: true
     email?: true
-    plan?: true
   }
 
   export type UserMaxAggregateInputType = {
     id?: true
     name?: true
     mobile?: true
+    plan?: true
     birthDate?: true
     email?: true
-    plan?: true
   }
 
   export type UserCountAggregateInputType = {
     id?: true
     name?: true
     mobile?: true
+    plan?: true
     birthDate?: true
     email?: true
-    plan?: true
     _all?: true
   }
 
@@ -1853,9 +1853,9 @@ export namespace Prisma {
     id: number
     name: string
     mobile: string
+    plan: string
     birthDate: string
     email: string | null
-    plan: string
     _count: UserCountAggregateOutputType | null
     _avg: UserAvgAggregateOutputType | null
     _sum: UserSumAggregateOutputType | null
@@ -1881,11 +1881,11 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     mobile?: boolean
+    plan?: boolean
     birthDate?: boolean
     email?: boolean
-    plan?: boolean
-    reels?: boolean | User$reelsArgs<ExtArgs>
     records?: boolean | User$recordsArgs<ExtArgs>
+    reels?: boolean | User$reelsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -1893,33 +1893,33 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     mobile?: boolean
+    plan?: boolean
     birthDate?: boolean
     email?: boolean
-    plan?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
     mobile?: boolean
+    plan?: boolean
     birthDate?: boolean
     email?: boolean
-    plan?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
     id?: boolean
     name?: boolean
     mobile?: boolean
+    plan?: boolean
     birthDate?: boolean
     email?: boolean
-    plan?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "mobile" | "birthDate" | "email" | "plan", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "mobile" | "plan" | "birthDate" | "email", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    reels?: boolean | User$reelsArgs<ExtArgs>
     records?: boolean | User$recordsArgs<ExtArgs>
+    reels?: boolean | User$reelsArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1928,16 +1928,16 @@ export namespace Prisma {
   export type $UserPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "User"
     objects: {
-      reels: Prisma.$ReelPayload<ExtArgs>[]
       records: Prisma.$RecordPayload<ExtArgs>[]
+      reels: Prisma.$ReelPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
       name: string
       mobile: string
+      plan: string
       birthDate: string
       email: string | null
-      plan: string
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -2332,8 +2332,8 @@ export namespace Prisma {
    */
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    reels<T extends User$reelsArgs<ExtArgs> = {}>(args?: Subset<T, User$reelsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     records<T extends User$recordsArgs<ExtArgs> = {}>(args?: Subset<T, User$recordsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    reels<T extends User$reelsArgs<ExtArgs> = {}>(args?: Subset<T, User$reelsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2366,9 +2366,9 @@ export namespace Prisma {
     readonly id: FieldRef<"User", 'Int'>
     readonly name: FieldRef<"User", 'String'>
     readonly mobile: FieldRef<"User", 'String'>
+    readonly plan: FieldRef<"User", 'String'>
     readonly birthDate: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
-    readonly plan: FieldRef<"User", 'String'>
   }
     
 
@@ -2757,30 +2757,6 @@ export namespace Prisma {
   }
 
   /**
-   * User.reels
-   */
-  export type User$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Reel
-     */
-    select?: ReelSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Reel
-     */
-    omit?: ReelOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ReelInclude<ExtArgs> | null
-    where?: ReelWhereInput
-    orderBy?: ReelOrderByWithRelationInput | ReelOrderByWithRelationInput[]
-    cursor?: ReelWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: ReelScalarFieldEnum | ReelScalarFieldEnum[]
-  }
-
-  /**
    * User.records
    */
   export type User$recordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2802,6 +2778,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: RecordScalarFieldEnum | RecordScalarFieldEnum[]
+  }
+
+  /**
+   * User.reels
+   */
+  export type User$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Reel
+     */
+    select?: ReelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Reel
+     */
+    omit?: ReelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReelInclude<ExtArgs> | null
+    where?: ReelWhereInput
+    orderBy?: ReelOrderByWithRelationInput | ReelOrderByWithRelationInput[]
+    cursor?: ReelWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: ReelScalarFieldEnum | ReelScalarFieldEnum[]
   }
 
   /**
@@ -3078,10 +3078,10 @@ export namespace Prisma {
     lifestoryId?: boolean
     userId?: boolean
     lifestory?: boolean | Reel$lifestoryArgs<ExtArgs>
-    user?: boolean | Reel$userArgs<ExtArgs>
-    childhood?: boolean | Reel$childhoodArgs<ExtArgs>
     memorys?: boolean | Reel$memorysArgs<ExtArgs>
+    user?: boolean | Reel$userArgs<ExtArgs>
     relationships?: boolean | Reel$relationshipsArgs<ExtArgs>
+    childhood?: boolean | Reel$childhoodArgs<ExtArgs>
     _count?: boolean | ReelCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["reel"]>
 
@@ -3132,10 +3132,10 @@ export namespace Prisma {
   export type ReelOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "name" | "birthDate" | "profileImg" | "birthPlace" | "motto" | "lifestoryId" | "userId", ExtArgs["result"]["reel"]>
   export type ReelInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     lifestory?: boolean | Reel$lifestoryArgs<ExtArgs>
-    user?: boolean | Reel$userArgs<ExtArgs>
-    childhood?: boolean | Reel$childhoodArgs<ExtArgs>
     memorys?: boolean | Reel$memorysArgs<ExtArgs>
+    user?: boolean | Reel$userArgs<ExtArgs>
     relationships?: boolean | Reel$relationshipsArgs<ExtArgs>
+    childhood?: boolean | Reel$childhoodArgs<ExtArgs>
     _count?: boolean | ReelCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type ReelIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3149,10 +3149,10 @@ export namespace Prisma {
     name: "Reel"
     objects: {
       lifestory: Prisma.$LifestoryPayload<ExtArgs> | null
-      user: Prisma.$UserPayload<ExtArgs> | null
-      childhood: Prisma.$WheelTexturePayload<ExtArgs>[]
       memorys: Prisma.$MemoryPayload<ExtArgs>[]
+      user: Prisma.$UserPayload<ExtArgs> | null
       relationships: Prisma.$RelationshipPayload<ExtArgs>[]
+      childhood: Prisma.$WheelTexturePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -3561,10 +3561,10 @@ export namespace Prisma {
   export interface Prisma__ReelClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     lifestory<T extends Reel$lifestoryArgs<ExtArgs> = {}>(args?: Subset<T, Reel$lifestoryArgs<ExtArgs>>): Prisma__LifestoryClient<$Result.GetResult<Prisma.$LifestoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    user<T extends Reel$userArgs<ExtArgs> = {}>(args?: Subset<T, Reel$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    childhood<T extends Reel$childhoodArgs<ExtArgs> = {}>(args?: Subset<T, Reel$childhoodArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     memorys<T extends Reel$memorysArgs<ExtArgs> = {}>(args?: Subset<T, Reel$memorysArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MemoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    user<T extends Reel$userArgs<ExtArgs> = {}>(args?: Subset<T, Reel$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     relationships<T extends Reel$relationshipsArgs<ExtArgs> = {}>(args?: Subset<T, Reel$relationshipsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    childhood<T extends Reel$childhoodArgs<ExtArgs> = {}>(args?: Subset<T, Reel$childhoodArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4020,49 +4020,6 @@ export namespace Prisma {
   }
 
   /**
-   * Reel.user
-   */
-  export type Reel$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the User
-     */
-    select?: UserSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the User
-     */
-    omit?: UserOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: UserInclude<ExtArgs> | null
-    where?: UserWhereInput
-  }
-
-  /**
-   * Reel.childhood
-   */
-  export type Reel$childhoodArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the WheelTexture
-     */
-    select?: WheelTextureSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the WheelTexture
-     */
-    omit?: WheelTextureOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: WheelTextureInclude<ExtArgs> | null
-    where?: WheelTextureWhereInput
-    orderBy?: WheelTextureOrderByWithRelationInput | WheelTextureOrderByWithRelationInput[]
-    cursor?: WheelTextureWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: WheelTextureScalarFieldEnum | WheelTextureScalarFieldEnum[]
-  }
-
-  /**
    * Reel.memorys
    */
   export type Reel$memorysArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4087,6 +4044,25 @@ export namespace Prisma {
   }
 
   /**
+   * Reel.user
+   */
+  export type Reel$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
    * Reel.relationships
    */
   export type Reel$relationshipsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4108,6 +4084,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: RelationshipScalarFieldEnum | RelationshipScalarFieldEnum[]
+  }
+
+  /**
+   * Reel.childhood
+   */
+  export type Reel$childhoodArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WheelTexture
+     */
+    select?: WheelTextureSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WheelTexture
+     */
+    omit?: WheelTextureOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WheelTextureInclude<ExtArgs> | null
+    where?: WheelTextureWhereInput
+    orderBy?: WheelTextureOrderByWithRelationInput | WheelTextureOrderByWithRelationInput[]
+    cursor?: WheelTextureWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WheelTextureScalarFieldEnum | WheelTextureScalarFieldEnum[]
   }
 
   /**
@@ -5315,9 +5315,9 @@ export namespace Prisma {
     updatedAt: Date | null
     srcType: number | null
     srcUrl: string | null
-    caption: string | null
     memoryId: number | null
     relationshipId: number | null
+    caption: string | null
     reelId: number | null
   }
 
@@ -5327,9 +5327,9 @@ export namespace Prisma {
     updatedAt: Date | null
     srcType: number | null
     srcUrl: string | null
-    caption: string | null
     memoryId: number | null
     relationshipId: number | null
+    caption: string | null
     reelId: number | null
   }
 
@@ -5339,9 +5339,9 @@ export namespace Prisma {
     updatedAt: number
     srcType: number
     srcUrl: number
-    caption: number
     memoryId: number
     relationshipId: number
+    caption: number
     reelId: number
     _all: number
   }
@@ -5369,9 +5369,9 @@ export namespace Prisma {
     updatedAt?: true
     srcType?: true
     srcUrl?: true
-    caption?: true
     memoryId?: true
     relationshipId?: true
+    caption?: true
     reelId?: true
   }
 
@@ -5381,9 +5381,9 @@ export namespace Prisma {
     updatedAt?: true
     srcType?: true
     srcUrl?: true
-    caption?: true
     memoryId?: true
     relationshipId?: true
+    caption?: true
     reelId?: true
   }
 
@@ -5393,9 +5393,9 @@ export namespace Prisma {
     updatedAt?: true
     srcType?: true
     srcUrl?: true
-    caption?: true
     memoryId?: true
     relationshipId?: true
+    caption?: true
     reelId?: true
     _all?: true
   }
@@ -5492,9 +5492,9 @@ export namespace Prisma {
     updatedAt: Date
     srcType: number
     srcUrl: string
-    caption: string | null
     memoryId: number | null
     relationshipId: number | null
+    caption: string | null
     reelId: number | null
     _count: WheelTextureCountAggregateOutputType | null
     _avg: WheelTextureAvgAggregateOutputType | null
@@ -5523,13 +5523,13 @@ export namespace Prisma {
     updatedAt?: boolean
     srcType?: boolean
     srcUrl?: boolean
-    caption?: boolean
     memoryId?: boolean
     relationshipId?: boolean
+    caption?: boolean
     reelId?: boolean
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }, ExtArgs["result"]["wheelTexture"]>
 
   export type WheelTextureSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5538,13 +5538,13 @@ export namespace Prisma {
     updatedAt?: boolean
     srcType?: boolean
     srcUrl?: boolean
-    caption?: boolean
     memoryId?: boolean
     relationshipId?: boolean
+    caption?: boolean
     reelId?: boolean
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }, ExtArgs["result"]["wheelTexture"]>
 
   export type WheelTextureSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5553,13 +5553,13 @@ export namespace Prisma {
     updatedAt?: boolean
     srcType?: boolean
     srcUrl?: boolean
-    caption?: boolean
     memoryId?: boolean
     relationshipId?: boolean
+    caption?: boolean
     reelId?: boolean
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }, ExtArgs["result"]["wheelTexture"]>
 
   export type WheelTextureSelectScalar = {
@@ -5568,35 +5568,35 @@ export namespace Prisma {
     updatedAt?: boolean
     srcType?: boolean
     srcUrl?: boolean
-    caption?: boolean
     memoryId?: boolean
     relationshipId?: boolean
+    caption?: boolean
     reelId?: boolean
   }
 
-  export type WheelTextureOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "srcType" | "srcUrl" | "caption" | "memoryId" | "relationshipId" | "reelId", ExtArgs["result"]["wheelTexture"]>
+  export type WheelTextureOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "srcType" | "srcUrl" | "memoryId" | "relationshipId" | "caption" | "reelId", ExtArgs["result"]["wheelTexture"]>
   export type WheelTextureInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }
   export type WheelTextureIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }
   export type WheelTextureIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }
 
   export type $WheelTexturePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "WheelTexture"
     objects: {
       memory: Prisma.$MemoryPayload<ExtArgs> | null
-      relationship: Prisma.$RelationshipPayload<ExtArgs> | null
       reels: Prisma.$ReelPayload<ExtArgs> | null
+      relationship: Prisma.$RelationshipPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -5604,9 +5604,9 @@ export namespace Prisma {
       updatedAt: Date
       srcType: number
       srcUrl: string
-      caption: string | null
       memoryId: number | null
       relationshipId: number | null
+      caption: string | null
       reelId: number | null
     }, ExtArgs["result"]["wheelTexture"]>
     composites: {}
@@ -6003,8 +6003,8 @@ export namespace Prisma {
   export interface Prisma__WheelTextureClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     memory<T extends WheelTexture$memoryArgs<ExtArgs> = {}>(args?: Subset<T, WheelTexture$memoryArgs<ExtArgs>>): Prisma__MemoryClient<$Result.GetResult<Prisma.$MemoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    relationship<T extends WheelTexture$relationshipArgs<ExtArgs> = {}>(args?: Subset<T, WheelTexture$relationshipArgs<ExtArgs>>): Prisma__RelationshipClient<$Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     reels<T extends WheelTexture$reelsArgs<ExtArgs> = {}>(args?: Subset<T, WheelTexture$reelsArgs<ExtArgs>>): Prisma__ReelClient<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    relationship<T extends WheelTexture$relationshipArgs<ExtArgs> = {}>(args?: Subset<T, WheelTexture$relationshipArgs<ExtArgs>>): Prisma__RelationshipClient<$Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6039,9 +6039,9 @@ export namespace Prisma {
     readonly updatedAt: FieldRef<"WheelTexture", 'DateTime'>
     readonly srcType: FieldRef<"WheelTexture", 'Int'>
     readonly srcUrl: FieldRef<"WheelTexture", 'String'>
-    readonly caption: FieldRef<"WheelTexture", 'String'>
     readonly memoryId: FieldRef<"WheelTexture", 'Int'>
     readonly relationshipId: FieldRef<"WheelTexture", 'Int'>
+    readonly caption: FieldRef<"WheelTexture", 'String'>
     readonly reelId: FieldRef<"WheelTexture", 'Int'>
   }
     
@@ -6458,25 +6458,6 @@ export namespace Prisma {
   }
 
   /**
-   * WheelTexture.relationship
-   */
-  export type WheelTexture$relationshipArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Relationship
-     */
-    select?: RelationshipSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Relationship
-     */
-    omit?: RelationshipOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RelationshipInclude<ExtArgs> | null
-    where?: RelationshipWhereInput
-  }
-
-  /**
    * WheelTexture.reels
    */
   export type WheelTexture$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -6493,6 +6474,25 @@ export namespace Prisma {
      */
     include?: ReelInclude<ExtArgs> | null
     where?: ReelWhereInput
+  }
+
+  /**
+   * WheelTexture.relationship
+   */
+  export type WheelTexture$relationshipArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Relationship
+     */
+    select?: RelationshipSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Relationship
+     */
+    omit?: RelationshipOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RelationshipInclude<ExtArgs> | null
+    where?: RelationshipWhereInput
   }
 
   /**
@@ -6740,8 +6740,8 @@ export namespace Prisma {
     date?: boolean
     comment?: boolean
     reelId?: boolean
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
     wheelTextures?: boolean | Memory$wheelTexturesArgs<ExtArgs>
-    reel?: boolean | Memory$reelArgs<ExtArgs>
     _count?: boolean | MemoryCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["memory"]>
 
@@ -6754,7 +6754,7 @@ export namespace Prisma {
     date?: boolean
     comment?: boolean
     reelId?: boolean
-    reel?: boolean | Memory$reelArgs<ExtArgs>
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["memory"]>
 
   export type MemorySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -6766,7 +6766,7 @@ export namespace Prisma {
     date?: boolean
     comment?: boolean
     reelId?: boolean
-    reel?: boolean | Memory$reelArgs<ExtArgs>
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["memory"]>
 
   export type MemorySelectScalar = {
@@ -6782,22 +6782,22 @@ export namespace Prisma {
 
   export type MemoryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "subTitle" | "date" | "comment" | "reelId", ExtArgs["result"]["memory"]>
   export type MemoryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
     wheelTextures?: boolean | Memory$wheelTexturesArgs<ExtArgs>
-    reel?: boolean | Memory$reelArgs<ExtArgs>
     _count?: boolean | MemoryCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type MemoryIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    reel?: boolean | Memory$reelArgs<ExtArgs>
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
   }
   export type MemoryIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    reel?: boolean | Memory$reelArgs<ExtArgs>
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
   }
 
   export type $MemoryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Memory"
     objects: {
+      reel: Prisma.$ReelPayload<ExtArgs>
       wheelTextures: Prisma.$WheelTexturePayload<ExtArgs>[]
-      reel: Prisma.$ReelPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -7202,8 +7202,8 @@ export namespace Prisma {
    */
   export interface Prisma__MemoryClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    reel<T extends ReelDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ReelDefaultArgs<ExtArgs>>): Prisma__ReelClient<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     wheelTextures<T extends Memory$wheelTexturesArgs<ExtArgs> = {}>(args?: Subset<T, Memory$wheelTexturesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    reel<T extends Memory$reelArgs<ExtArgs> = {}>(args?: Subset<T, Memory$reelArgs<ExtArgs>>): Prisma__ReelClient<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -7661,25 +7661,6 @@ export namespace Prisma {
   }
 
   /**
-   * Memory.reel
-   */
-  export type Memory$reelArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Reel
-     */
-    select?: ReelSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Reel
-     */
-    omit?: ReelOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ReelInclude<ExtArgs> | null
-    where?: ReelWhereInput
-  }
-
-  /**
    * Memory without action
    */
   export type MemoryDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7916,8 +7897,8 @@ export namespace Prisma {
     relation?: boolean
     comment?: boolean
     reelId?: boolean
-    wheelTextures?: boolean | Relationship$wheelTexturesArgs<ExtArgs>
     reels?: boolean | Relationship$reelsArgs<ExtArgs>
+    wheelTextures?: boolean | Relationship$wheelTexturesArgs<ExtArgs>
     _count?: boolean | RelationshipCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["relationship"]>
 
@@ -7955,8 +7936,8 @@ export namespace Prisma {
 
   export type RelationshipOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "name" | "relation" | "comment" | "reelId", ExtArgs["result"]["relationship"]>
   export type RelationshipInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    wheelTextures?: boolean | Relationship$wheelTexturesArgs<ExtArgs>
     reels?: boolean | Relationship$reelsArgs<ExtArgs>
+    wheelTextures?: boolean | Relationship$wheelTexturesArgs<ExtArgs>
     _count?: boolean | RelationshipCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type RelationshipIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7969,8 +7950,8 @@ export namespace Prisma {
   export type $RelationshipPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Relationship"
     objects: {
-      wheelTextures: Prisma.$WheelTexturePayload<ExtArgs>[]
       reels: Prisma.$ReelPayload<ExtArgs> | null
+      wheelTextures: Prisma.$WheelTexturePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -8374,8 +8355,8 @@ export namespace Prisma {
    */
   export interface Prisma__RelationshipClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    wheelTextures<T extends Relationship$wheelTexturesArgs<ExtArgs> = {}>(args?: Subset<T, Relationship$wheelTexturesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     reels<T extends Relationship$reelsArgs<ExtArgs> = {}>(args?: Subset<T, Relationship$reelsArgs<ExtArgs>>): Prisma__ReelClient<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    wheelTextures<T extends Relationship$wheelTexturesArgs<ExtArgs> = {}>(args?: Subset<T, Relationship$wheelTexturesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8808,6 +8789,25 @@ export namespace Prisma {
   }
 
   /**
+   * Relationship.reels
+   */
+  export type Relationship$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Reel
+     */
+    select?: ReelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Reel
+     */
+    omit?: ReelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReelInclude<ExtArgs> | null
+    where?: ReelWhereInput
+  }
+
+  /**
    * Relationship.wheelTextures
    */
   export type Relationship$wheelTexturesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8829,25 +8829,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: WheelTextureScalarFieldEnum | WheelTextureScalarFieldEnum[]
-  }
-
-  /**
-   * Relationship.reels
-   */
-  export type Relationship$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Reel
-     */
-    select?: ReelSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Reel
-     */
-    omit?: ReelOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ReelInclude<ExtArgs> | null
-    where?: ReelWhereInput
   }
 
   /**
@@ -8896,7 +8877,6 @@ export namespace Prisma {
     createdAt: Date | null
     updatedAt: Date | null
     identifier: string | null
-    userName: string | null
     coverUrl: string | null
     name: string | null
     subName: string | null
@@ -8904,6 +8884,9 @@ export namespace Prisma {
     bgm: string | null
     color: string | null
     userId: number | null
+    userName: string | null
+    birthDate: string | null
+    displayMode: string | null
   }
 
   export type RecordMaxAggregateOutputType = {
@@ -8911,7 +8894,6 @@ export namespace Prisma {
     createdAt: Date | null
     updatedAt: Date | null
     identifier: string | null
-    userName: string | null
     coverUrl: string | null
     name: string | null
     subName: string | null
@@ -8919,6 +8901,9 @@ export namespace Prisma {
     bgm: string | null
     color: string | null
     userId: number | null
+    userName: string | null
+    birthDate: string | null
+    displayMode: string | null
   }
 
   export type RecordCountAggregateOutputType = {
@@ -8926,7 +8911,6 @@ export namespace Prisma {
     createdAt: number
     updatedAt: number
     identifier: number
-    userName: number
     coverUrl: number
     name: number
     subName: number
@@ -8934,6 +8918,9 @@ export namespace Prisma {
     bgm: number
     color: number
     userId: number
+    userName: number
+    birthDate: number
+    displayMode: number
     _all: number
   }
 
@@ -8953,7 +8940,6 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     identifier?: true
-    userName?: true
     coverUrl?: true
     name?: true
     subName?: true
@@ -8961,6 +8947,9 @@ export namespace Prisma {
     bgm?: true
     color?: true
     userId?: true
+    userName?: true
+    birthDate?: true
+    displayMode?: true
   }
 
   export type RecordMaxAggregateInputType = {
@@ -8968,7 +8957,6 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     identifier?: true
-    userName?: true
     coverUrl?: true
     name?: true
     subName?: true
@@ -8976,6 +8964,9 @@ export namespace Prisma {
     bgm?: true
     color?: true
     userId?: true
+    userName?: true
+    birthDate?: true
+    displayMode?: true
   }
 
   export type RecordCountAggregateInputType = {
@@ -8983,7 +8974,6 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     identifier?: true
-    userName?: true
     coverUrl?: true
     name?: true
     subName?: true
@@ -8991,6 +8981,9 @@ export namespace Prisma {
     bgm?: true
     color?: true
     userId?: true
+    userName?: true
+    birthDate?: true
+    displayMode?: true
     _all?: true
   }
 
@@ -9085,7 +9078,6 @@ export namespace Prisma {
     createdAt: Date
     updatedAt: Date
     identifier: string
-    userName: string | null
     coverUrl: string | null
     name: string | null
     subName: string | null
@@ -9093,6 +9085,9 @@ export namespace Prisma {
     bgm: string | null
     color: string | null
     userId: number | null
+    userName: string | null
+    birthDate: string | null
+    displayMode: string | null
     _count: RecordCountAggregateOutputType | null
     _avg: RecordAvgAggregateOutputType | null
     _sum: RecordSumAggregateOutputType | null
@@ -9119,7 +9114,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     identifier?: boolean
-    userName?: boolean
     coverUrl?: boolean
     name?: boolean
     subName?: boolean
@@ -9127,6 +9121,9 @@ export namespace Prisma {
     bgm?: boolean
     color?: boolean
     userId?: boolean
+    userName?: boolean
+    birthDate?: boolean
+    displayMode?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
     recordItems?: boolean | Record$recordItemsArgs<ExtArgs>
     _count?: boolean | RecordCountOutputTypeDefaultArgs<ExtArgs>
@@ -9137,7 +9134,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     identifier?: boolean
-    userName?: boolean
     coverUrl?: boolean
     name?: boolean
     subName?: boolean
@@ -9145,6 +9141,9 @@ export namespace Prisma {
     bgm?: boolean
     color?: boolean
     userId?: boolean
+    userName?: boolean
+    birthDate?: boolean
+    displayMode?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
   }, ExtArgs["result"]["record"]>
 
@@ -9153,7 +9152,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     identifier?: boolean
-    userName?: boolean
     coverUrl?: boolean
     name?: boolean
     subName?: boolean
@@ -9161,6 +9159,9 @@ export namespace Prisma {
     bgm?: boolean
     color?: boolean
     userId?: boolean
+    userName?: boolean
+    birthDate?: boolean
+    displayMode?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
   }, ExtArgs["result"]["record"]>
 
@@ -9169,7 +9170,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     identifier?: boolean
-    userName?: boolean
     coverUrl?: boolean
     name?: boolean
     subName?: boolean
@@ -9177,9 +9177,12 @@ export namespace Prisma {
     bgm?: boolean
     color?: boolean
     userId?: boolean
+    userName?: boolean
+    birthDate?: boolean
+    displayMode?: boolean
   }
 
-  export type RecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "userName" | "coverUrl" | "name" | "subName" | "description" | "bgm" | "color" | "userId", ExtArgs["result"]["record"]>
+  export type RecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "coverUrl" | "name" | "subName" | "description" | "bgm" | "color" | "userId" | "userName" | "birthDate" | "displayMode", ExtArgs["result"]["record"]>
   export type RecordInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | Record$userArgs<ExtArgs>
     recordItems?: boolean | Record$recordItemsArgs<ExtArgs>
@@ -9203,7 +9206,6 @@ export namespace Prisma {
       createdAt: Date
       updatedAt: Date
       identifier: string
-      userName: string | null
       coverUrl: string | null
       name: string | null
       subName: string | null
@@ -9211,6 +9213,9 @@ export namespace Prisma {
       bgm: string | null
       color: string | null
       userId: number | null
+      userName: string | null
+      birthDate: string | null
+      displayMode: string | null
     }, ExtArgs["result"]["record"]>
     composites: {}
   }
@@ -9640,7 +9645,6 @@ export namespace Prisma {
     readonly createdAt: FieldRef<"Record", 'DateTime'>
     readonly updatedAt: FieldRef<"Record", 'DateTime'>
     readonly identifier: FieldRef<"Record", 'String'>
-    readonly userName: FieldRef<"Record", 'String'>
     readonly coverUrl: FieldRef<"Record", 'String'>
     readonly name: FieldRef<"Record", 'String'>
     readonly subName: FieldRef<"Record", 'String'>
@@ -9648,6 +9652,9 @@ export namespace Prisma {
     readonly bgm: FieldRef<"Record", 'String'>
     readonly color: FieldRef<"Record", 'String'>
     readonly userId: FieldRef<"Record", 'Int'>
+    readonly userName: FieldRef<"Record", 'String'>
+    readonly birthDate: FieldRef<"Record", 'String'>
+    readonly displayMode: FieldRef<"Record", 'String'>
   }
     
 
@@ -10166,6 +10173,7 @@ export namespace Prisma {
     color: number
     isHighlight: number
     coverUrl: number
+    images: number
     recordId: number
     _all: number
   }
@@ -10220,6 +10228,7 @@ export namespace Prisma {
     color?: true
     isHighlight?: true
     coverUrl?: true
+    images?: true
     recordId?: true
     _all?: true
   }
@@ -10321,6 +10330,7 @@ export namespace Prisma {
     color: string | null
     isHighlight: boolean
     coverUrl: string | null
+    images: string[]
     recordId: number
     _count: RecordItemCountAggregateOutputType | null
     _avg: RecordItemAvgAggregateOutputType | null
@@ -10354,6 +10364,7 @@ export namespace Prisma {
     color?: boolean
     isHighlight?: boolean
     coverUrl?: boolean
+    images?: boolean
     recordId?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
@@ -10369,6 +10380,7 @@ export namespace Prisma {
     color?: boolean
     isHighlight?: boolean
     coverUrl?: boolean
+    images?: boolean
     recordId?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
@@ -10384,6 +10396,7 @@ export namespace Prisma {
     color?: boolean
     isHighlight?: boolean
     coverUrl?: boolean
+    images?: boolean
     recordId?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
@@ -10399,10 +10412,11 @@ export namespace Prisma {
     color?: boolean
     isHighlight?: boolean
     coverUrl?: boolean
+    images?: boolean
     recordId?: boolean
   }
 
-  export type RecordItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "date" | "location" | "description" | "color" | "isHighlight" | "coverUrl" | "recordId", ExtArgs["result"]["recordItem"]>
+  export type RecordItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "date" | "location" | "description" | "color" | "isHighlight" | "coverUrl" | "images" | "recordId", ExtArgs["result"]["recordItem"]>
   export type RecordItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }
@@ -10429,6 +10443,7 @@ export namespace Prisma {
       color: string | null
       isHighlight: boolean
       coverUrl: string | null
+      images: string[]
       recordId: number
     }, ExtArgs["result"]["recordItem"]>
     composites: {}
@@ -10864,6 +10879,7 @@ export namespace Prisma {
     readonly color: FieldRef<"RecordItem", 'String'>
     readonly isHighlight: FieldRef<"RecordItem", 'Boolean'>
     readonly coverUrl: FieldRef<"RecordItem", 'String'>
+    readonly images: FieldRef<"RecordItem", 'String[]'>
     readonly recordId: FieldRef<"RecordItem", 'Int'>
   }
     
@@ -11297,9 +11313,9 @@ export namespace Prisma {
     id: 'id',
     name: 'name',
     mobile: 'mobile',
+    plan: 'plan',
     birthDate: 'birthDate',
-    email: 'email',
-    plan: 'plan'
+    email: 'email'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -11343,9 +11359,9 @@ export namespace Prisma {
     updatedAt: 'updatedAt',
     srcType: 'srcType',
     srcUrl: 'srcUrl',
-    caption: 'caption',
     memoryId: 'memoryId',
     relationshipId: 'relationshipId',
+    caption: 'caption',
     reelId: 'reelId'
   };
 
@@ -11384,14 +11400,16 @@ export namespace Prisma {
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
     identifier: 'identifier',
-    userName: 'userName',
     coverUrl: 'coverUrl',
     name: 'name',
     subName: 'subName',
     description: 'description',
     bgm: 'bgm',
     color: 'color',
-    userId: 'userId'
+    userId: 'userId',
+    userName: 'userName',
+    birthDate: 'birthDate',
+    displayMode: 'displayMode'
   };
 
   export type RecordScalarFieldEnum = (typeof RecordScalarFieldEnum)[keyof typeof RecordScalarFieldEnum]
@@ -11408,6 +11426,7 @@ export namespace Prisma {
     color: 'color',
     isHighlight: 'isHighlight',
     coverUrl: 'coverUrl',
+    images: 'images',
     recordId: 'recordId'
   };
 
@@ -11547,22 +11566,22 @@ export namespace Prisma {
     id?: IntFilter<"User"> | number
     name?: StringFilter<"User"> | string
     mobile?: StringFilter<"User"> | string
+    plan?: StringFilter<"User"> | string
     birthDate?: StringFilter<"User"> | string
     email?: StringNullableFilter<"User"> | string | null
-    plan?: StringFilter<"User"> | string
-    reels?: ReelListRelationFilter
     records?: RecordListRelationFilter
+    reels?: ReelListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrderInput | SortOrder
-    plan?: SortOrder
-    reels?: ReelOrderByRelationAggregateInput
     records?: RecordOrderByRelationAggregateInput
+    reels?: ReelOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -11573,19 +11592,19 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     name?: StringFilter<"User"> | string
-    birthDate?: StringFilter<"User"> | string
     plan?: StringFilter<"User"> | string
-    reels?: ReelListRelationFilter
+    birthDate?: StringFilter<"User"> | string
     records?: RecordListRelationFilter
+    reels?: ReelListRelationFilter
   }, "id" | "mobile" | "email">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrderInput | SortOrder
-    plan?: SortOrder
     _count?: UserCountOrderByAggregateInput
     _avg?: UserAvgOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
@@ -11600,9 +11619,9 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"User"> | number
     name?: StringWithAggregatesFilter<"User"> | string
     mobile?: StringWithAggregatesFilter<"User"> | string
+    plan?: StringWithAggregatesFilter<"User"> | string
     birthDate?: StringWithAggregatesFilter<"User"> | string
     email?: StringNullableWithAggregatesFilter<"User"> | string | null
-    plan?: StringWithAggregatesFilter<"User"> | string
   }
 
   export type ReelWhereInput = {
@@ -11621,10 +11640,10 @@ export namespace Prisma {
     lifestoryId?: IntNullableFilter<"Reel"> | number | null
     userId?: IntNullableFilter<"Reel"> | number | null
     lifestory?: XOR<LifestoryNullableScalarRelationFilter, LifestoryWhereInput> | null
-    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
-    childhood?: WheelTextureListRelationFilter
     memorys?: MemoryListRelationFilter
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     relationships?: RelationshipListRelationFilter
+    childhood?: WheelTextureListRelationFilter
   }
 
   export type ReelOrderByWithRelationInput = {
@@ -11640,10 +11659,10 @@ export namespace Prisma {
     lifestoryId?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
     lifestory?: LifestoryOrderByWithRelationInput
-    user?: UserOrderByWithRelationInput
-    childhood?: WheelTextureOrderByRelationAggregateInput
     memorys?: MemoryOrderByRelationAggregateInput
+    user?: UserOrderByWithRelationInput
     relationships?: RelationshipOrderByRelationAggregateInput
+    childhood?: WheelTextureOrderByRelationAggregateInput
   }
 
   export type ReelWhereUniqueInput = Prisma.AtLeast<{
@@ -11662,10 +11681,10 @@ export namespace Prisma {
     lifestoryId?: IntNullableFilter<"Reel"> | number | null
     userId?: IntNullableFilter<"Reel"> | number | null
     lifestory?: XOR<LifestoryNullableScalarRelationFilter, LifestoryWhereInput> | null
-    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
-    childhood?: WheelTextureListRelationFilter
     memorys?: MemoryListRelationFilter
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     relationships?: RelationshipListRelationFilter
+    childhood?: WheelTextureListRelationFilter
   }, "id" | "identifier">
 
   export type ReelOrderByWithAggregationInput = {
@@ -11790,13 +11809,13 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"WheelTexture"> | Date | string
     srcType?: IntFilter<"WheelTexture"> | number
     srcUrl?: StringFilter<"WheelTexture"> | string
-    caption?: StringNullableFilter<"WheelTexture"> | string | null
     memoryId?: IntNullableFilter<"WheelTexture"> | number | null
     relationshipId?: IntNullableFilter<"WheelTexture"> | number | null
+    caption?: StringNullableFilter<"WheelTexture"> | string | null
     reelId?: IntNullableFilter<"WheelTexture"> | number | null
     memory?: XOR<MemoryNullableScalarRelationFilter, MemoryWhereInput> | null
-    relationship?: XOR<RelationshipNullableScalarRelationFilter, RelationshipWhereInput> | null
     reels?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
+    relationship?: XOR<RelationshipNullableScalarRelationFilter, RelationshipWhereInput> | null
   }
 
   export type WheelTextureOrderByWithRelationInput = {
@@ -11805,13 +11824,13 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrderInput | SortOrder
     memoryId?: SortOrderInput | SortOrder
     relationshipId?: SortOrderInput | SortOrder
+    caption?: SortOrderInput | SortOrder
     reelId?: SortOrderInput | SortOrder
     memory?: MemoryOrderByWithRelationInput
-    relationship?: RelationshipOrderByWithRelationInput
     reels?: ReelOrderByWithRelationInput
+    relationship?: RelationshipOrderByWithRelationInput
   }
 
   export type WheelTextureWhereUniqueInput = Prisma.AtLeast<{
@@ -11823,13 +11842,13 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"WheelTexture"> | Date | string
     srcType?: IntFilter<"WheelTexture"> | number
     srcUrl?: StringFilter<"WheelTexture"> | string
-    caption?: StringNullableFilter<"WheelTexture"> | string | null
     memoryId?: IntNullableFilter<"WheelTexture"> | number | null
     relationshipId?: IntNullableFilter<"WheelTexture"> | number | null
+    caption?: StringNullableFilter<"WheelTexture"> | string | null
     reelId?: IntNullableFilter<"WheelTexture"> | number | null
     memory?: XOR<MemoryNullableScalarRelationFilter, MemoryWhereInput> | null
-    relationship?: XOR<RelationshipNullableScalarRelationFilter, RelationshipWhereInput> | null
     reels?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
+    relationship?: XOR<RelationshipNullableScalarRelationFilter, RelationshipWhereInput> | null
   }, "id">
 
   export type WheelTextureOrderByWithAggregationInput = {
@@ -11838,9 +11857,9 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrderInput | SortOrder
     memoryId?: SortOrderInput | SortOrder
     relationshipId?: SortOrderInput | SortOrder
+    caption?: SortOrderInput | SortOrder
     reelId?: SortOrderInput | SortOrder
     _count?: WheelTextureCountOrderByAggregateInput
     _avg?: WheelTextureAvgOrderByAggregateInput
@@ -11858,9 +11877,9 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"WheelTexture"> | Date | string
     srcType?: IntWithAggregatesFilter<"WheelTexture"> | number
     srcUrl?: StringWithAggregatesFilter<"WheelTexture"> | string
-    caption?: StringNullableWithAggregatesFilter<"WheelTexture"> | string | null
     memoryId?: IntNullableWithAggregatesFilter<"WheelTexture"> | number | null
     relationshipId?: IntNullableWithAggregatesFilter<"WheelTexture"> | number | null
+    caption?: StringNullableWithAggregatesFilter<"WheelTexture"> | string | null
     reelId?: IntNullableWithAggregatesFilter<"WheelTexture"> | number | null
   }
 
@@ -11876,8 +11895,8 @@ export namespace Prisma {
     date?: DateTimeNullableFilter<"Memory"> | Date | string | null
     comment?: StringNullableFilter<"Memory"> | string | null
     reelId?: IntFilter<"Memory"> | number
+    reel?: XOR<ReelScalarRelationFilter, ReelWhereInput>
     wheelTextures?: WheelTextureListRelationFilter
-    reel?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
   }
 
   export type MemoryOrderByWithRelationInput = {
@@ -11889,8 +11908,8 @@ export namespace Prisma {
     date?: SortOrderInput | SortOrder
     comment?: SortOrderInput | SortOrder
     reelId?: SortOrder
-    wheelTextures?: WheelTextureOrderByRelationAggregateInput
     reel?: ReelOrderByWithRelationInput
+    wheelTextures?: WheelTextureOrderByRelationAggregateInput
   }
 
   export type MemoryWhereUniqueInput = Prisma.AtLeast<{
@@ -11905,8 +11924,8 @@ export namespace Prisma {
     date?: DateTimeNullableFilter<"Memory"> | Date | string | null
     comment?: StringNullableFilter<"Memory"> | string | null
     reelId?: IntFilter<"Memory"> | number
+    reel?: XOR<ReelScalarRelationFilter, ReelWhereInput>
     wheelTextures?: WheelTextureListRelationFilter
-    reel?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
   }, "id">
 
   export type MemoryOrderByWithAggregationInput = {
@@ -11950,8 +11969,8 @@ export namespace Prisma {
     relation?: StringFilter<"Relationship"> | string
     comment?: StringNullableFilter<"Relationship"> | string | null
     reelId?: IntNullableFilter<"Relationship"> | number | null
-    wheelTextures?: WheelTextureListRelationFilter
     reels?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
+    wheelTextures?: WheelTextureListRelationFilter
   }
 
   export type RelationshipOrderByWithRelationInput = {
@@ -11962,8 +11981,8 @@ export namespace Prisma {
     relation?: SortOrder
     comment?: SortOrderInput | SortOrder
     reelId?: SortOrderInput | SortOrder
-    wheelTextures?: WheelTextureOrderByRelationAggregateInput
     reels?: ReelOrderByWithRelationInput
+    wheelTextures?: WheelTextureOrderByRelationAggregateInput
   }
 
   export type RelationshipWhereUniqueInput = Prisma.AtLeast<{
@@ -11977,8 +11996,8 @@ export namespace Prisma {
     relation?: StringFilter<"Relationship"> | string
     comment?: StringNullableFilter<"Relationship"> | string | null
     reelId?: IntNullableFilter<"Relationship"> | number | null
-    wheelTextures?: WheelTextureListRelationFilter
     reels?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
+    wheelTextures?: WheelTextureListRelationFilter
   }, "id">
 
   export type RelationshipOrderByWithAggregationInput = {
@@ -12017,7 +12036,6 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Record"> | Date | string
     updatedAt?: DateTimeFilter<"Record"> | Date | string
     identifier?: StringFilter<"Record"> | string
-    userName?: StringNullableFilter<"Record"> | string | null
     coverUrl?: StringNullableFilter<"Record"> | string | null
     name?: StringNullableFilter<"Record"> | string | null
     subName?: StringNullableFilter<"Record"> | string | null
@@ -12025,6 +12043,9 @@ export namespace Prisma {
     bgm?: StringNullableFilter<"Record"> | string | null
     color?: StringNullableFilter<"Record"> | string | null
     userId?: IntNullableFilter<"Record"> | number | null
+    userName?: StringNullableFilter<"Record"> | string | null
+    birthDate?: StringNullableFilter<"Record"> | string | null
+    displayMode?: StringNullableFilter<"Record"> | string | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     recordItems?: RecordItemListRelationFilter
   }
@@ -12034,7 +12055,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrderInput | SortOrder
     coverUrl?: SortOrderInput | SortOrder
     name?: SortOrderInput | SortOrder
     subName?: SortOrderInput | SortOrder
@@ -12042,6 +12062,9 @@ export namespace Prisma {
     bgm?: SortOrderInput | SortOrder
     color?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
+    userName?: SortOrderInput | SortOrder
+    birthDate?: SortOrderInput | SortOrder
+    displayMode?: SortOrderInput | SortOrder
     user?: UserOrderByWithRelationInput
     recordItems?: RecordItemOrderByRelationAggregateInput
   }
@@ -12054,7 +12077,6 @@ export namespace Prisma {
     NOT?: RecordWhereInput | RecordWhereInput[]
     createdAt?: DateTimeFilter<"Record"> | Date | string
     updatedAt?: DateTimeFilter<"Record"> | Date | string
-    userName?: StringNullableFilter<"Record"> | string | null
     coverUrl?: StringNullableFilter<"Record"> | string | null
     name?: StringNullableFilter<"Record"> | string | null
     subName?: StringNullableFilter<"Record"> | string | null
@@ -12062,6 +12084,9 @@ export namespace Prisma {
     bgm?: StringNullableFilter<"Record"> | string | null
     color?: StringNullableFilter<"Record"> | string | null
     userId?: IntNullableFilter<"Record"> | number | null
+    userName?: StringNullableFilter<"Record"> | string | null
+    birthDate?: StringNullableFilter<"Record"> | string | null
+    displayMode?: StringNullableFilter<"Record"> | string | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     recordItems?: RecordItemListRelationFilter
   }, "id" | "identifier">
@@ -12071,7 +12096,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrderInput | SortOrder
     coverUrl?: SortOrderInput | SortOrder
     name?: SortOrderInput | SortOrder
     subName?: SortOrderInput | SortOrder
@@ -12079,6 +12103,9 @@ export namespace Prisma {
     bgm?: SortOrderInput | SortOrder
     color?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
+    userName?: SortOrderInput | SortOrder
+    birthDate?: SortOrderInput | SortOrder
+    displayMode?: SortOrderInput | SortOrder
     _count?: RecordCountOrderByAggregateInput
     _avg?: RecordAvgOrderByAggregateInput
     _max?: RecordMaxOrderByAggregateInput
@@ -12094,7 +12121,6 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Record"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Record"> | Date | string
     identifier?: StringWithAggregatesFilter<"Record"> | string
-    userName?: StringNullableWithAggregatesFilter<"Record"> | string | null
     coverUrl?: StringNullableWithAggregatesFilter<"Record"> | string | null
     name?: StringNullableWithAggregatesFilter<"Record"> | string | null
     subName?: StringNullableWithAggregatesFilter<"Record"> | string | null
@@ -12102,6 +12128,9 @@ export namespace Prisma {
     bgm?: StringNullableWithAggregatesFilter<"Record"> | string | null
     color?: StringNullableWithAggregatesFilter<"Record"> | string | null
     userId?: IntNullableWithAggregatesFilter<"Record"> | number | null
+    userName?: StringNullableWithAggregatesFilter<"Record"> | string | null
+    birthDate?: StringNullableWithAggregatesFilter<"Record"> | string | null
+    displayMode?: StringNullableWithAggregatesFilter<"Record"> | string | null
   }
 
   export type RecordItemWhereInput = {
@@ -12118,6 +12147,7 @@ export namespace Prisma {
     color?: StringNullableFilter<"RecordItem"> | string | null
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
+    images?: StringNullableListFilter<"RecordItem">
     recordId?: IntFilter<"RecordItem"> | number
     record?: XOR<RecordScalarRelationFilter, RecordWhereInput>
   }
@@ -12133,6 +12163,7 @@ export namespace Prisma {
     color?: SortOrderInput | SortOrder
     isHighlight?: SortOrder
     coverUrl?: SortOrderInput | SortOrder
+    images?: SortOrder
     recordId?: SortOrder
     record?: RecordOrderByWithRelationInput
   }
@@ -12151,6 +12182,7 @@ export namespace Prisma {
     color?: StringNullableFilter<"RecordItem"> | string | null
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
+    images?: StringNullableListFilter<"RecordItem">
     recordId?: IntFilter<"RecordItem"> | number
     record?: XOR<RecordScalarRelationFilter, RecordWhereInput>
   }, "id">
@@ -12166,6 +12198,7 @@ export namespace Prisma {
     color?: SortOrderInput | SortOrder
     isHighlight?: SortOrder
     coverUrl?: SortOrderInput | SortOrder
+    images?: SortOrder
     recordId?: SortOrder
     _count?: RecordItemCountOrderByAggregateInput
     _avg?: RecordItemAvgOrderByAggregateInput
@@ -12188,75 +12221,76 @@ export namespace Prisma {
     color?: StringNullableWithAggregatesFilter<"RecordItem"> | string | null
     isHighlight?: BoolWithAggregatesFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableWithAggregatesFilter<"RecordItem"> | string | null
+    images?: StringNullableListFilter<"RecordItem">
     recordId?: IntWithAggregatesFilter<"RecordItem"> | number
   }
 
   export type UserCreateInput = {
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
-    reels?: ReelCreateNestedManyWithoutUserInput
     records?: RecordCreateNestedManyWithoutUserInput
+    reels?: ReelCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
     id?: number
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
-    reels?: ReelUncheckedCreateNestedManyWithoutUserInput
     records?: RecordUncheckedCreateNestedManyWithoutUserInput
+    reels?: ReelUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
-    reels?: ReelUpdateManyWithoutUserNestedInput
     records?: RecordUpdateManyWithoutUserNestedInput
+    reels?: ReelUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
-    reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
     records?: RecordUncheckedUpdateManyWithoutUserNestedInput
+    reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
     id?: number
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
   }
 
   export type UserUpdateManyMutationInput = {
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
   }
 
   export type UserUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
   }
 
   export type ReelCreateInput = {
@@ -12270,10 +12304,10 @@ export namespace Prisma {
     motto?: string | null
     lifestoryId?: number | null
     lifestory?: LifestoryCreateNestedOneWithoutReelInput
-    user?: UserCreateNestedOneWithoutReelsInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
     memorys?: MemoryCreateNestedManyWithoutReelInput
+    user?: UserCreateNestedOneWithoutReelsInput
     relationships?: RelationshipCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUncheckedCreateInput = {
@@ -12289,9 +12323,9 @@ export namespace Prisma {
     lifestoryId?: number | null
     userId?: number | null
     lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
     memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
     relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUpdateInput = {
@@ -12305,10 +12339,10 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUpdateOneWithoutReelNestedInput
-    user?: UserUpdateOneWithoutReelsNestedInput
-    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUpdateManyWithoutReelNestedInput
+    user?: UserUpdateOneWithoutReelsNestedInput
     relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateInput = {
@@ -12324,9 +12358,9 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
     relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelCreateManyInput = {
@@ -12456,8 +12490,8 @@ export namespace Prisma {
     srcUrl: string
     caption?: string | null
     memory?: MemoryCreateNestedOneWithoutWheelTexturesInput
-    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
     reels?: ReelCreateNestedOneWithoutChildhoodInput
+    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
   }
 
   export type WheelTextureUncheckedCreateInput = {
@@ -12466,9 +12500,9 @@ export namespace Prisma {
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     memoryId?: number | null
     relationshipId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -12479,8 +12513,8 @@ export namespace Prisma {
     srcUrl?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     memory?: MemoryUpdateOneWithoutWheelTexturesNestedInput
-    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
     reels?: ReelUpdateOneWithoutChildhoodNestedInput
+    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
   }
 
   export type WheelTextureUncheckedUpdateInput = {
@@ -12489,9 +12523,9 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     memoryId?: NullableIntFieldUpdateOperationsInput | number | null
     relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -12501,9 +12535,9 @@ export namespace Prisma {
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     memoryId?: number | null
     relationshipId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -12521,9 +12555,9 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     memoryId?: NullableIntFieldUpdateOperationsInput | number | null
     relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -12534,8 +12568,8 @@ export namespace Prisma {
     subTitle?: string | null
     date?: Date | string | null
     comment?: string | null
+    reel: ReelCreateNestedOneWithoutMemorysInput
     wheelTextures?: WheelTextureCreateNestedManyWithoutMemoryInput
-    reel?: ReelCreateNestedOneWithoutMemorysInput
   }
 
   export type MemoryUncheckedCreateInput = {
@@ -12557,8 +12591,8 @@ export namespace Prisma {
     subTitle?: NullableStringFieldUpdateOperationsInput | string | null
     date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     comment?: NullableStringFieldUpdateOperationsInput | string | null
+    reel?: ReelUpdateOneRequiredWithoutMemorysNestedInput
     wheelTextures?: WheelTextureUpdateManyWithoutMemoryNestedInput
-    reel?: ReelUpdateOneWithoutMemorysNestedInput
   }
 
   export type MemoryUncheckedUpdateInput = {
@@ -12610,8 +12644,8 @@ export namespace Prisma {
     name: string
     relation: string
     comment?: string | null
-    wheelTextures?: WheelTextureCreateNestedManyWithoutRelationshipInput
     reels?: ReelCreateNestedOneWithoutRelationshipsInput
+    wheelTextures?: WheelTextureCreateNestedManyWithoutRelationshipInput
   }
 
   export type RelationshipUncheckedCreateInput = {
@@ -12631,8 +12665,8 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     relation?: StringFieldUpdateOperationsInput | string
     comment?: NullableStringFieldUpdateOperationsInput | string | null
-    wheelTextures?: WheelTextureUpdateManyWithoutRelationshipNestedInput
     reels?: ReelUpdateOneWithoutRelationshipsNestedInput
+    wheelTextures?: WheelTextureUpdateManyWithoutRelationshipNestedInput
   }
 
   export type RelationshipUncheckedUpdateInput = {
@@ -12678,13 +12712,15 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
     description?: string | null
     bgm?: string | null
     color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
     user?: UserCreateNestedOneWithoutRecordsInput
     recordItems?: RecordItemCreateNestedManyWithoutRecordInput
   }
@@ -12694,7 +12730,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
@@ -12702,6 +12737,9 @@ export namespace Prisma {
     bgm?: string | null
     color?: string | null
     userId?: number | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
     recordItems?: RecordItemUncheckedCreateNestedManyWithoutRecordInput
   }
 
@@ -12709,13 +12747,15 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
     user?: UserUpdateOneWithoutRecordsNestedInput
     recordItems?: RecordItemUpdateManyWithoutRecordNestedInput
   }
@@ -12725,7 +12765,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -12733,6 +12772,9 @@ export namespace Prisma {
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
     recordItems?: RecordItemUncheckedUpdateManyWithoutRecordNestedInput
   }
 
@@ -12741,7 +12783,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
@@ -12749,19 +12790,24 @@ export namespace Prisma {
     bgm?: string | null
     color?: string | null
     userId?: number | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
   }
 
   export type RecordUpdateManyMutationInput = {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type RecordUncheckedUpdateManyInput = {
@@ -12769,7 +12815,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -12777,6 +12822,9 @@ export namespace Prisma {
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type RecordItemCreateInput = {
@@ -12789,6 +12837,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
     record: RecordCreateNestedOneWithoutRecordItemsInput
   }
 
@@ -12803,6 +12852,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
     recordId: number
   }
 
@@ -12816,6 +12866,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
     record?: RecordUpdateOneRequiredWithoutRecordItemsNestedInput
   }
 
@@ -12830,6 +12881,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
     recordId?: IntFieldUpdateOperationsInput | number
   }
 
@@ -12844,6 +12896,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
     recordId: number
   }
 
@@ -12857,6 +12910,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateManyInput = {
@@ -12870,6 +12924,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
     recordId?: IntFieldUpdateOperationsInput | number
   }
 
@@ -12914,16 +12969,16 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
-  export type ReelListRelationFilter = {
-    every?: ReelWhereInput
-    some?: ReelWhereInput
-    none?: ReelWhereInput
-  }
-
   export type RecordListRelationFilter = {
     every?: RecordWhereInput
     some?: RecordWhereInput
     none?: RecordWhereInput
+  }
+
+  export type ReelListRelationFilter = {
+    every?: ReelWhereInput
+    some?: ReelWhereInput
+    none?: ReelWhereInput
   }
 
   export type SortOrderInput = {
@@ -12931,11 +12986,11 @@ export namespace Prisma {
     nulls?: NullsOrder
   }
 
-  export type ReelOrderByRelationAggregateInput = {
+  export type RecordOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
-  export type RecordOrderByRelationAggregateInput = {
+  export type ReelOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -12943,9 +12998,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrder
-    plan?: SortOrder
   }
 
   export type UserAvgOrderByAggregateInput = {
@@ -12956,18 +13011,18 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrder
-    plan?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrder
-    plan?: SortOrder
   }
 
   export type UserSumOrderByAggregateInput = {
@@ -13053,21 +13108,15 @@ export namespace Prisma {
     isNot?: LifestoryWhereInput | null
   }
 
-  export type UserNullableScalarRelationFilter = {
-    is?: UserWhereInput | null
-    isNot?: UserWhereInput | null
-  }
-
-  export type WheelTextureListRelationFilter = {
-    every?: WheelTextureWhereInput
-    some?: WheelTextureWhereInput
-    none?: WheelTextureWhereInput
-  }
-
   export type MemoryListRelationFilter = {
     every?: MemoryWhereInput
     some?: MemoryWhereInput
     none?: MemoryWhereInput
+  }
+
+  export type UserNullableScalarRelationFilter = {
+    is?: UserWhereInput | null
+    isNot?: UserWhereInput | null
   }
 
   export type RelationshipListRelationFilter = {
@@ -13076,8 +13125,10 @@ export namespace Prisma {
     none?: RelationshipWhereInput
   }
 
-  export type WheelTextureOrderByRelationAggregateInput = {
-    _count?: SortOrder
+  export type WheelTextureListRelationFilter = {
+    every?: WheelTextureWhereInput
+    some?: WheelTextureWhereInput
+    none?: WheelTextureWhereInput
   }
 
   export type MemoryOrderByRelationAggregateInput = {
@@ -13085,6 +13136,10 @@ export namespace Prisma {
   }
 
   export type RelationshipOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type WheelTextureOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -13279,14 +13334,14 @@ export namespace Prisma {
     isNot?: MemoryWhereInput | null
   }
 
-  export type RelationshipNullableScalarRelationFilter = {
-    is?: RelationshipWhereInput | null
-    isNot?: RelationshipWhereInput | null
-  }
-
   export type ReelNullableScalarRelationFilter = {
     is?: ReelWhereInput | null
     isNot?: ReelWhereInput | null
+  }
+
+  export type RelationshipNullableScalarRelationFilter = {
+    is?: RelationshipWhereInput | null
+    isNot?: RelationshipWhereInput | null
   }
 
   export type WheelTextureCountOrderByAggregateInput = {
@@ -13295,9 +13350,9 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrder
     memoryId?: SortOrder
     relationshipId?: SortOrder
+    caption?: SortOrder
     reelId?: SortOrder
   }
 
@@ -13315,9 +13370,9 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrder
     memoryId?: SortOrder
     relationshipId?: SortOrder
+    caption?: SortOrder
     reelId?: SortOrder
   }
 
@@ -13327,9 +13382,9 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrder
     memoryId?: SortOrder
     relationshipId?: SortOrder
+    caption?: SortOrder
     reelId?: SortOrder
   }
 
@@ -13464,7 +13519,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrder
     coverUrl?: SortOrder
     name?: SortOrder
     subName?: SortOrder
@@ -13472,6 +13526,9 @@ export namespace Prisma {
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
+    userName?: SortOrder
+    birthDate?: SortOrder
+    displayMode?: SortOrder
   }
 
   export type RecordAvgOrderByAggregateInput = {
@@ -13484,7 +13541,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrder
     coverUrl?: SortOrder
     name?: SortOrder
     subName?: SortOrder
@@ -13492,6 +13548,9 @@ export namespace Prisma {
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
+    userName?: SortOrder
+    birthDate?: SortOrder
+    displayMode?: SortOrder
   }
 
   export type RecordMinOrderByAggregateInput = {
@@ -13499,7 +13558,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrder
     coverUrl?: SortOrder
     name?: SortOrder
     subName?: SortOrder
@@ -13507,6 +13565,9 @@ export namespace Prisma {
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
+    userName?: SortOrder
+    birthDate?: SortOrder
+    displayMode?: SortOrder
   }
 
   export type RecordSumOrderByAggregateInput = {
@@ -13517,6 +13578,14 @@ export namespace Prisma {
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type StringNullableListFilter<$PrismaModel = never> = {
+    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    has?: string | StringFieldRefInput<$PrismaModel> | null
+    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
+    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
   }
 
   export type RecordScalarRelationFilter = {
@@ -13535,6 +13604,7 @@ export namespace Prisma {
     color?: SortOrder
     isHighlight?: SortOrder
     coverUrl?: SortOrder
+    images?: SortOrder
     recordId?: SortOrder
   }
 
@@ -13584,13 +13654,6 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
-  export type ReelCreateNestedManyWithoutUserInput = {
-    create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
-    createMany?: ReelCreateManyUserInputEnvelope
-    connect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-  }
-
   export type RecordCreateNestedManyWithoutUserInput = {
     create?: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput> | RecordCreateWithoutUserInput[] | RecordUncheckedCreateWithoutUserInput[]
     connectOrCreate?: RecordCreateOrConnectWithoutUserInput | RecordCreateOrConnectWithoutUserInput[]
@@ -13598,7 +13661,7 @@ export namespace Prisma {
     connect?: RecordWhereUniqueInput | RecordWhereUniqueInput[]
   }
 
-  export type ReelUncheckedCreateNestedManyWithoutUserInput = {
+  export type ReelCreateNestedManyWithoutUserInput = {
     create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
     createMany?: ReelCreateManyUserInputEnvelope
@@ -13612,26 +13675,19 @@ export namespace Prisma {
     connect?: RecordWhereUniqueInput | RecordWhereUniqueInput[]
   }
 
+  export type ReelUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
+    createMany?: ReelCreateManyUserInputEnvelope
+    connect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
-  }
-
-  export type ReelUpdateManyWithoutUserNestedInput = {
-    create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
-    upsert?: ReelUpsertWithWhereUniqueWithoutUserInput | ReelUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: ReelCreateManyUserInputEnvelope
-    set?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-    disconnect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-    delete?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-    connect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-    update?: ReelUpdateWithWhereUniqueWithoutUserInput | ReelUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: ReelUpdateManyWithWhereWithoutUserInput | ReelUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: ReelScalarWhereInput | ReelScalarWhereInput[]
   }
 
   export type RecordUpdateManyWithoutUserNestedInput = {
@@ -13648,15 +13704,7 @@ export namespace Prisma {
     deleteMany?: RecordScalarWhereInput | RecordScalarWhereInput[]
   }
 
-  export type IntFieldUpdateOperationsInput = {
-    set?: number
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
-  }
-
-  export type ReelUncheckedUpdateManyWithoutUserNestedInput = {
+  export type ReelUpdateManyWithoutUserNestedInput = {
     create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
     upsert?: ReelUpsertWithWhereUniqueWithoutUserInput | ReelUpsertWithWhereUniqueWithoutUserInput[]
@@ -13668,6 +13716,14 @@ export namespace Prisma {
     update?: ReelUpdateWithWhereUniqueWithoutUserInput | ReelUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: ReelUpdateManyWithWhereWithoutUserInput | ReelUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: ReelScalarWhereInput | ReelScalarWhereInput[]
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type RecordUncheckedUpdateManyWithoutUserNestedInput = {
@@ -13684,23 +13740,24 @@ export namespace Prisma {
     deleteMany?: RecordScalarWhereInput | RecordScalarWhereInput[]
   }
 
+  export type ReelUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
+    upsert?: ReelUpsertWithWhereUniqueWithoutUserInput | ReelUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: ReelCreateManyUserInputEnvelope
+    set?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+    disconnect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+    delete?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+    connect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+    update?: ReelUpdateWithWhereUniqueWithoutUserInput | ReelUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: ReelUpdateManyWithWhereWithoutUserInput | ReelUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: ReelScalarWhereInput | ReelScalarWhereInput[]
+  }
+
   export type LifestoryCreateNestedOneWithoutReelInput = {
     create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
     connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
     connect?: LifestoryWhereUniqueInput
-  }
-
-  export type UserCreateNestedOneWithoutReelsInput = {
-    create?: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutReelsInput
-    connect?: UserWhereUniqueInput
-  }
-
-  export type WheelTextureCreateNestedManyWithoutReelsInput = {
-    create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
-    connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
-    createMany?: WheelTextureCreateManyReelsInputEnvelope
-    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
   }
 
   export type MemoryCreateNestedManyWithoutReelInput = {
@@ -13710,6 +13767,12 @@ export namespace Prisma {
     connect?: MemoryWhereUniqueInput | MemoryWhereUniqueInput[]
   }
 
+  export type UserCreateNestedOneWithoutReelsInput = {
+    create?: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReelsInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type RelationshipCreateNestedManyWithoutReelsInput = {
     create?: XOR<RelationshipCreateWithoutReelsInput, RelationshipUncheckedCreateWithoutReelsInput> | RelationshipCreateWithoutReelsInput[] | RelationshipUncheckedCreateWithoutReelsInput[]
     connectOrCreate?: RelationshipCreateOrConnectWithoutReelsInput | RelationshipCreateOrConnectWithoutReelsInput[]
@@ -13717,17 +13780,17 @@ export namespace Prisma {
     connect?: RelationshipWhereUniqueInput | RelationshipWhereUniqueInput[]
   }
 
-  export type LifestoryUncheckedCreateNestedOneWithoutReelInput = {
-    create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
-    connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
-    connect?: LifestoryWhereUniqueInput
-  }
-
-  export type WheelTextureUncheckedCreateNestedManyWithoutReelsInput = {
+  export type WheelTextureCreateNestedManyWithoutReelsInput = {
     create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
     createMany?: WheelTextureCreateManyReelsInputEnvelope
     connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+  }
+
+  export type LifestoryUncheckedCreateNestedOneWithoutReelInput = {
+    create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
+    connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
+    connect?: LifestoryWhereUniqueInput
   }
 
   export type MemoryUncheckedCreateNestedManyWithoutReelInput = {
@@ -13742,6 +13805,13 @@ export namespace Prisma {
     connectOrCreate?: RelationshipCreateOrConnectWithoutReelsInput | RelationshipCreateOrConnectWithoutReelsInput[]
     createMany?: RelationshipCreateManyReelsInputEnvelope
     connect?: RelationshipWhereUniqueInput | RelationshipWhereUniqueInput[]
+  }
+
+  export type WheelTextureUncheckedCreateNestedManyWithoutReelsInput = {
+    create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
+    connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
+    createMany?: WheelTextureCreateManyReelsInputEnvelope
+    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
   }
 
   export type DateTimeFieldUpdateOperationsInput = {
@@ -13766,30 +13836,6 @@ export namespace Prisma {
     update?: XOR<XOR<LifestoryUpdateToOneWithWhereWithoutReelInput, LifestoryUpdateWithoutReelInput>, LifestoryUncheckedUpdateWithoutReelInput>
   }
 
-  export type UserUpdateOneWithoutReelsNestedInput = {
-    create?: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutReelsInput
-    upsert?: UserUpsertWithoutReelsInput
-    disconnect?: UserWhereInput | boolean
-    delete?: UserWhereInput | boolean
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutReelsInput, UserUpdateWithoutReelsInput>, UserUncheckedUpdateWithoutReelsInput>
-  }
-
-  export type WheelTextureUpdateManyWithoutReelsNestedInput = {
-    create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
-    connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
-    upsert?: WheelTextureUpsertWithWhereUniqueWithoutReelsInput | WheelTextureUpsertWithWhereUniqueWithoutReelsInput[]
-    createMany?: WheelTextureCreateManyReelsInputEnvelope
-    set?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
-    disconnect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
-    delete?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
-    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
-    update?: WheelTextureUpdateWithWhereUniqueWithoutReelsInput | WheelTextureUpdateWithWhereUniqueWithoutReelsInput[]
-    updateMany?: WheelTextureUpdateManyWithWhereWithoutReelsInput | WheelTextureUpdateManyWithWhereWithoutReelsInput[]
-    deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
-  }
-
   export type MemoryUpdateManyWithoutReelNestedInput = {
     create?: XOR<MemoryCreateWithoutReelInput, MemoryUncheckedCreateWithoutReelInput> | MemoryCreateWithoutReelInput[] | MemoryUncheckedCreateWithoutReelInput[]
     connectOrCreate?: MemoryCreateOrConnectWithoutReelInput | MemoryCreateOrConnectWithoutReelInput[]
@@ -13802,6 +13848,16 @@ export namespace Prisma {
     update?: MemoryUpdateWithWhereUniqueWithoutReelInput | MemoryUpdateWithWhereUniqueWithoutReelInput[]
     updateMany?: MemoryUpdateManyWithWhereWithoutReelInput | MemoryUpdateManyWithWhereWithoutReelInput[]
     deleteMany?: MemoryScalarWhereInput | MemoryScalarWhereInput[]
+  }
+
+  export type UserUpdateOneWithoutReelsNestedInput = {
+    create?: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReelsInput
+    upsert?: UserUpsertWithoutReelsInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutReelsInput, UserUpdateWithoutReelsInput>, UserUncheckedUpdateWithoutReelsInput>
   }
 
   export type RelationshipUpdateManyWithoutReelsNestedInput = {
@@ -13818,17 +13874,7 @@ export namespace Prisma {
     deleteMany?: RelationshipScalarWhereInput | RelationshipScalarWhereInput[]
   }
 
-  export type LifestoryUncheckedUpdateOneWithoutReelNestedInput = {
-    create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
-    connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
-    upsert?: LifestoryUpsertWithoutReelInput
-    disconnect?: LifestoryWhereInput | boolean
-    delete?: LifestoryWhereInput | boolean
-    connect?: LifestoryWhereUniqueInput
-    update?: XOR<XOR<LifestoryUpdateToOneWithWhereWithoutReelInput, LifestoryUpdateWithoutReelInput>, LifestoryUncheckedUpdateWithoutReelInput>
-  }
-
-  export type WheelTextureUncheckedUpdateManyWithoutReelsNestedInput = {
+  export type WheelTextureUpdateManyWithoutReelsNestedInput = {
     create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
     upsert?: WheelTextureUpsertWithWhereUniqueWithoutReelsInput | WheelTextureUpsertWithWhereUniqueWithoutReelsInput[]
@@ -13840,6 +13886,16 @@ export namespace Prisma {
     update?: WheelTextureUpdateWithWhereUniqueWithoutReelsInput | WheelTextureUpdateWithWhereUniqueWithoutReelsInput[]
     updateMany?: WheelTextureUpdateManyWithWhereWithoutReelsInput | WheelTextureUpdateManyWithWhereWithoutReelsInput[]
     deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
+  }
+
+  export type LifestoryUncheckedUpdateOneWithoutReelNestedInput = {
+    create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
+    connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
+    upsert?: LifestoryUpsertWithoutReelInput
+    disconnect?: LifestoryWhereInput | boolean
+    delete?: LifestoryWhereInput | boolean
+    connect?: LifestoryWhereUniqueInput
+    update?: XOR<XOR<LifestoryUpdateToOneWithWhereWithoutReelInput, LifestoryUpdateWithoutReelInput>, LifestoryUncheckedUpdateWithoutReelInput>
   }
 
   export type MemoryUncheckedUpdateManyWithoutReelNestedInput = {
@@ -13870,6 +13926,20 @@ export namespace Prisma {
     deleteMany?: RelationshipScalarWhereInput | RelationshipScalarWhereInput[]
   }
 
+  export type WheelTextureUncheckedUpdateManyWithoutReelsNestedInput = {
+    create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
+    connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
+    upsert?: WheelTextureUpsertWithWhereUniqueWithoutReelsInput | WheelTextureUpsertWithWhereUniqueWithoutReelsInput[]
+    createMany?: WheelTextureCreateManyReelsInputEnvelope
+    set?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+    disconnect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+    delete?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+    update?: WheelTextureUpdateWithWhereUniqueWithoutReelsInput | WheelTextureUpdateWithWhereUniqueWithoutReelsInput[]
+    updateMany?: WheelTextureUpdateManyWithWhereWithoutReelsInput | WheelTextureUpdateManyWithWhereWithoutReelsInput[]
+    deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
+  }
+
   export type ReelCreateNestedOneWithoutLifestoryInput = {
     create?: XOR<ReelCreateWithoutLifestoryInput, ReelUncheckedCreateWithoutLifestoryInput>
     connectOrCreate?: ReelCreateOrConnectWithoutLifestoryInput
@@ -13890,16 +13960,16 @@ export namespace Prisma {
     connect?: MemoryWhereUniqueInput
   }
 
-  export type RelationshipCreateNestedOneWithoutWheelTexturesInput = {
-    create?: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
-    connectOrCreate?: RelationshipCreateOrConnectWithoutWheelTexturesInput
-    connect?: RelationshipWhereUniqueInput
-  }
-
   export type ReelCreateNestedOneWithoutChildhoodInput = {
     create?: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
     connectOrCreate?: ReelCreateOrConnectWithoutChildhoodInput
     connect?: ReelWhereUniqueInput
+  }
+
+  export type RelationshipCreateNestedOneWithoutWheelTexturesInput = {
+    create?: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
+    connectOrCreate?: RelationshipCreateOrConnectWithoutWheelTexturesInput
+    connect?: RelationshipWhereUniqueInput
   }
 
   export type MemoryUpdateOneWithoutWheelTexturesNestedInput = {
@@ -13912,16 +13982,6 @@ export namespace Prisma {
     update?: XOR<XOR<MemoryUpdateToOneWithWhereWithoutWheelTexturesInput, MemoryUpdateWithoutWheelTexturesInput>, MemoryUncheckedUpdateWithoutWheelTexturesInput>
   }
 
-  export type RelationshipUpdateOneWithoutWheelTexturesNestedInput = {
-    create?: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
-    connectOrCreate?: RelationshipCreateOrConnectWithoutWheelTexturesInput
-    upsert?: RelationshipUpsertWithoutWheelTexturesInput
-    disconnect?: RelationshipWhereInput | boolean
-    delete?: RelationshipWhereInput | boolean
-    connect?: RelationshipWhereUniqueInput
-    update?: XOR<XOR<RelationshipUpdateToOneWithWhereWithoutWheelTexturesInput, RelationshipUpdateWithoutWheelTexturesInput>, RelationshipUncheckedUpdateWithoutWheelTexturesInput>
-  }
-
   export type ReelUpdateOneWithoutChildhoodNestedInput = {
     create?: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
     connectOrCreate?: ReelCreateOrConnectWithoutChildhoodInput
@@ -13932,17 +13992,27 @@ export namespace Prisma {
     update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutChildhoodInput, ReelUpdateWithoutChildhoodInput>, ReelUncheckedUpdateWithoutChildhoodInput>
   }
 
-  export type WheelTextureCreateNestedManyWithoutMemoryInput = {
-    create?: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput> | WheelTextureCreateWithoutMemoryInput[] | WheelTextureUncheckedCreateWithoutMemoryInput[]
-    connectOrCreate?: WheelTextureCreateOrConnectWithoutMemoryInput | WheelTextureCreateOrConnectWithoutMemoryInput[]
-    createMany?: WheelTextureCreateManyMemoryInputEnvelope
-    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+  export type RelationshipUpdateOneWithoutWheelTexturesNestedInput = {
+    create?: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
+    connectOrCreate?: RelationshipCreateOrConnectWithoutWheelTexturesInput
+    upsert?: RelationshipUpsertWithoutWheelTexturesInput
+    disconnect?: RelationshipWhereInput | boolean
+    delete?: RelationshipWhereInput | boolean
+    connect?: RelationshipWhereUniqueInput
+    update?: XOR<XOR<RelationshipUpdateToOneWithWhereWithoutWheelTexturesInput, RelationshipUpdateWithoutWheelTexturesInput>, RelationshipUncheckedUpdateWithoutWheelTexturesInput>
   }
 
   export type ReelCreateNestedOneWithoutMemorysInput = {
     create?: XOR<ReelCreateWithoutMemorysInput, ReelUncheckedCreateWithoutMemorysInput>
     connectOrCreate?: ReelCreateOrConnectWithoutMemorysInput
     connect?: ReelWhereUniqueInput
+  }
+
+  export type WheelTextureCreateNestedManyWithoutMemoryInput = {
+    create?: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput> | WheelTextureCreateWithoutMemoryInput[] | WheelTextureUncheckedCreateWithoutMemoryInput[]
+    connectOrCreate?: WheelTextureCreateOrConnectWithoutMemoryInput | WheelTextureCreateOrConnectWithoutMemoryInput[]
+    createMany?: WheelTextureCreateManyMemoryInputEnvelope
+    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
   }
 
   export type WheelTextureUncheckedCreateNestedManyWithoutMemoryInput = {
@@ -13954,6 +14024,14 @@ export namespace Prisma {
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
+  }
+
+  export type ReelUpdateOneRequiredWithoutMemorysNestedInput = {
+    create?: XOR<ReelCreateWithoutMemorysInput, ReelUncheckedCreateWithoutMemorysInput>
+    connectOrCreate?: ReelCreateOrConnectWithoutMemorysInput
+    upsert?: ReelUpsertWithoutMemorysInput
+    connect?: ReelWhereUniqueInput
+    update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutMemorysInput, ReelUpdateWithoutMemorysInput>, ReelUncheckedUpdateWithoutMemorysInput>
   }
 
   export type WheelTextureUpdateManyWithoutMemoryNestedInput = {
@@ -13970,16 +14048,6 @@ export namespace Prisma {
     deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
   }
 
-  export type ReelUpdateOneWithoutMemorysNestedInput = {
-    create?: XOR<ReelCreateWithoutMemorysInput, ReelUncheckedCreateWithoutMemorysInput>
-    connectOrCreate?: ReelCreateOrConnectWithoutMemorysInput
-    upsert?: ReelUpsertWithoutMemorysInput
-    disconnect?: ReelWhereInput | boolean
-    delete?: ReelWhereInput | boolean
-    connect?: ReelWhereUniqueInput
-    update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutMemorysInput, ReelUpdateWithoutMemorysInput>, ReelUncheckedUpdateWithoutMemorysInput>
-  }
-
   export type WheelTextureUncheckedUpdateManyWithoutMemoryNestedInput = {
     create?: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput> | WheelTextureCreateWithoutMemoryInput[] | WheelTextureUncheckedCreateWithoutMemoryInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutMemoryInput | WheelTextureCreateOrConnectWithoutMemoryInput[]
@@ -13994,6 +14062,12 @@ export namespace Prisma {
     deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
   }
 
+  export type ReelCreateNestedOneWithoutRelationshipsInput = {
+    create?: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
+    connectOrCreate?: ReelCreateOrConnectWithoutRelationshipsInput
+    connect?: ReelWhereUniqueInput
+  }
+
   export type WheelTextureCreateNestedManyWithoutRelationshipInput = {
     create?: XOR<WheelTextureCreateWithoutRelationshipInput, WheelTextureUncheckedCreateWithoutRelationshipInput> | WheelTextureCreateWithoutRelationshipInput[] | WheelTextureUncheckedCreateWithoutRelationshipInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutRelationshipInput | WheelTextureCreateOrConnectWithoutRelationshipInput[]
@@ -14001,17 +14075,21 @@ export namespace Prisma {
     connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
   }
 
-  export type ReelCreateNestedOneWithoutRelationshipsInput = {
-    create?: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
-    connectOrCreate?: ReelCreateOrConnectWithoutRelationshipsInput
-    connect?: ReelWhereUniqueInput
-  }
-
   export type WheelTextureUncheckedCreateNestedManyWithoutRelationshipInput = {
     create?: XOR<WheelTextureCreateWithoutRelationshipInput, WheelTextureUncheckedCreateWithoutRelationshipInput> | WheelTextureCreateWithoutRelationshipInput[] | WheelTextureUncheckedCreateWithoutRelationshipInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutRelationshipInput | WheelTextureCreateOrConnectWithoutRelationshipInput[]
     createMany?: WheelTextureCreateManyRelationshipInputEnvelope
     connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+  }
+
+  export type ReelUpdateOneWithoutRelationshipsNestedInput = {
+    create?: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
+    connectOrCreate?: ReelCreateOrConnectWithoutRelationshipsInput
+    upsert?: ReelUpsertWithoutRelationshipsInput
+    disconnect?: ReelWhereInput | boolean
+    delete?: ReelWhereInput | boolean
+    connect?: ReelWhereUniqueInput
+    update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutRelationshipsInput, ReelUpdateWithoutRelationshipsInput>, ReelUncheckedUpdateWithoutRelationshipsInput>
   }
 
   export type WheelTextureUpdateManyWithoutRelationshipNestedInput = {
@@ -14026,16 +14104,6 @@ export namespace Prisma {
     update?: WheelTextureUpdateWithWhereUniqueWithoutRelationshipInput | WheelTextureUpdateWithWhereUniqueWithoutRelationshipInput[]
     updateMany?: WheelTextureUpdateManyWithWhereWithoutRelationshipInput | WheelTextureUpdateManyWithWhereWithoutRelationshipInput[]
     deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
-  }
-
-  export type ReelUpdateOneWithoutRelationshipsNestedInput = {
-    create?: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
-    connectOrCreate?: ReelCreateOrConnectWithoutRelationshipsInput
-    upsert?: ReelUpsertWithoutRelationshipsInput
-    disconnect?: ReelWhereInput | boolean
-    delete?: ReelWhereInput | boolean
-    connect?: ReelWhereUniqueInput
-    update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutRelationshipsInput, ReelUpdateWithoutRelationshipsInput>, ReelUncheckedUpdateWithoutRelationshipsInput>
   }
 
   export type WheelTextureUncheckedUpdateManyWithoutRelationshipNestedInput = {
@@ -14110,6 +14178,10 @@ export namespace Prisma {
     deleteMany?: RecordItemScalarWhereInput | RecordItemScalarWhereInput[]
   }
 
+  export type RecordItemCreateimagesInput = {
+    set: string[]
+  }
+
   export type RecordCreateNestedOneWithoutRecordItemsInput = {
     create?: XOR<RecordCreateWithoutRecordItemsInput, RecordUncheckedCreateWithoutRecordItemsInput>
     connectOrCreate?: RecordCreateOrConnectWithoutRecordItemsInput
@@ -14118,6 +14190,11 @@ export namespace Prisma {
 
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
+  }
+
+  export type RecordItemUpdateimagesInput = {
+    set?: string[]
+    push?: string | string[]
   }
 
   export type RecordUpdateOneRequiredWithoutRecordItemsNestedInput = {
@@ -14352,6 +14429,49 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
+  export type RecordCreateWithoutUserInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    coverUrl?: string | null
+    name?: string | null
+    subName?: string | null
+    description?: string | null
+    bgm?: string | null
+    color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
+    recordItems?: RecordItemCreateNestedManyWithoutRecordInput
+  }
+
+  export type RecordUncheckedCreateWithoutUserInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    coverUrl?: string | null
+    name?: string | null
+    subName?: string | null
+    description?: string | null
+    bgm?: string | null
+    color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
+    recordItems?: RecordItemUncheckedCreateNestedManyWithoutRecordInput
+  }
+
+  export type RecordCreateOrConnectWithoutUserInput = {
+    where: RecordWhereUniqueInput
+    create: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput>
+  }
+
+  export type RecordCreateManyUserInputEnvelope = {
+    data: RecordCreateManyUserInput | RecordCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type ReelCreateWithoutUserInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -14363,9 +14483,9 @@ export namespace Prisma {
     motto?: string | null
     lifestoryId?: number | null
     lifestory?: LifestoryCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
     memorys?: MemoryCreateNestedManyWithoutReelInput
     relationships?: RelationshipCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUncheckedCreateWithoutUserInput = {
@@ -14380,9 +14500,9 @@ export namespace Prisma {
     motto?: string | null
     lifestoryId?: number | null
     lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
     memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
     relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
   }
 
   export type ReelCreateOrConnectWithoutUserInput = {
@@ -14395,43 +14515,40 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type RecordCreateWithoutUserInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    userName?: string | null
-    coverUrl?: string | null
-    name?: string | null
-    subName?: string | null
-    description?: string | null
-    bgm?: string | null
-    color?: string | null
-    recordItems?: RecordItemCreateNestedManyWithoutRecordInput
-  }
-
-  export type RecordUncheckedCreateWithoutUserInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    userName?: string | null
-    coverUrl?: string | null
-    name?: string | null
-    subName?: string | null
-    description?: string | null
-    bgm?: string | null
-    color?: string | null
-    recordItems?: RecordItemUncheckedCreateNestedManyWithoutRecordInput
-  }
-
-  export type RecordCreateOrConnectWithoutUserInput = {
+  export type RecordUpsertWithWhereUniqueWithoutUserInput = {
     where: RecordWhereUniqueInput
+    update: XOR<RecordUpdateWithoutUserInput, RecordUncheckedUpdateWithoutUserInput>
     create: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput>
   }
 
-  export type RecordCreateManyUserInputEnvelope = {
-    data: RecordCreateManyUserInput | RecordCreateManyUserInput[]
-    skipDuplicates?: boolean
+  export type RecordUpdateWithWhereUniqueWithoutUserInput = {
+    where: RecordWhereUniqueInput
+    data: XOR<RecordUpdateWithoutUserInput, RecordUncheckedUpdateWithoutUserInput>
+  }
+
+  export type RecordUpdateManyWithWhereWithoutUserInput = {
+    where: RecordScalarWhereInput
+    data: XOR<RecordUpdateManyMutationInput, RecordUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type RecordScalarWhereInput = {
+    AND?: RecordScalarWhereInput | RecordScalarWhereInput[]
+    OR?: RecordScalarWhereInput[]
+    NOT?: RecordScalarWhereInput | RecordScalarWhereInput[]
+    id?: IntFilter<"Record"> | number
+    createdAt?: DateTimeFilter<"Record"> | Date | string
+    updatedAt?: DateTimeFilter<"Record"> | Date | string
+    identifier?: StringFilter<"Record"> | string
+    coverUrl?: StringNullableFilter<"Record"> | string | null
+    name?: StringNullableFilter<"Record"> | string | null
+    subName?: StringNullableFilter<"Record"> | string | null
+    description?: StringNullableFilter<"Record"> | string | null
+    bgm?: StringNullableFilter<"Record"> | string | null
+    color?: StringNullableFilter<"Record"> | string | null
+    userId?: IntNullableFilter<"Record"> | number | null
+    userName?: StringNullableFilter<"Record"> | string | null
+    birthDate?: StringNullableFilter<"Record"> | string | null
+    displayMode?: StringNullableFilter<"Record"> | string | null
   }
 
   export type ReelUpsertWithWhereUniqueWithoutUserInput = {
@@ -14467,40 +14584,6 @@ export namespace Prisma {
     userId?: IntNullableFilter<"Reel"> | number | null
   }
 
-  export type RecordUpsertWithWhereUniqueWithoutUserInput = {
-    where: RecordWhereUniqueInput
-    update: XOR<RecordUpdateWithoutUserInput, RecordUncheckedUpdateWithoutUserInput>
-    create: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput>
-  }
-
-  export type RecordUpdateWithWhereUniqueWithoutUserInput = {
-    where: RecordWhereUniqueInput
-    data: XOR<RecordUpdateWithoutUserInput, RecordUncheckedUpdateWithoutUserInput>
-  }
-
-  export type RecordUpdateManyWithWhereWithoutUserInput = {
-    where: RecordScalarWhereInput
-    data: XOR<RecordUpdateManyMutationInput, RecordUncheckedUpdateManyWithoutUserInput>
-  }
-
-  export type RecordScalarWhereInput = {
-    AND?: RecordScalarWhereInput | RecordScalarWhereInput[]
-    OR?: RecordScalarWhereInput[]
-    NOT?: RecordScalarWhereInput | RecordScalarWhereInput[]
-    id?: IntFilter<"Record"> | number
-    createdAt?: DateTimeFilter<"Record"> | Date | string
-    updatedAt?: DateTimeFilter<"Record"> | Date | string
-    identifier?: StringFilter<"Record"> | string
-    userName?: StringNullableFilter<"Record"> | string | null
-    coverUrl?: StringNullableFilter<"Record"> | string | null
-    name?: StringNullableFilter<"Record"> | string | null
-    subName?: StringNullableFilter<"Record"> | string | null
-    description?: StringNullableFilter<"Record"> | string | null
-    bgm?: StringNullableFilter<"Record"> | string | null
-    color?: StringNullableFilter<"Record"> | string | null
-    userId?: IntNullableFilter<"Record"> | number | null
-  }
-
   export type LifestoryCreateWithoutReelInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -14525,61 +14608,6 @@ export namespace Prisma {
   export type LifestoryCreateOrConnectWithoutReelInput = {
     where: LifestoryWhereUniqueInput
     create: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
-  }
-
-  export type UserCreateWithoutReelsInput = {
-    name: string
-    mobile: string
-    birthDate: string
-    email?: string | null
-    plan?: string
-    records?: RecordCreateNestedManyWithoutUserInput
-  }
-
-  export type UserUncheckedCreateWithoutReelsInput = {
-    id?: number
-    name: string
-    mobile: string
-    birthDate: string
-    email?: string | null
-    plan?: string
-    records?: RecordUncheckedCreateNestedManyWithoutUserInput
-  }
-
-  export type UserCreateOrConnectWithoutReelsInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
-  }
-
-  export type WheelTextureCreateWithoutReelsInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    memory?: MemoryCreateNestedOneWithoutWheelTexturesInput
-    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
-  }
-
-  export type WheelTextureUncheckedCreateWithoutReelsInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    memoryId?: number | null
-    relationshipId?: number | null
-  }
-
-  export type WheelTextureCreateOrConnectWithoutReelsInput = {
-    where: WheelTextureWhereUniqueInput
-    create: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput>
-  }
-
-  export type WheelTextureCreateManyReelsInputEnvelope = {
-    data: WheelTextureCreateManyReelsInput | WheelTextureCreateManyReelsInput[]
-    skipDuplicates?: boolean
   }
 
   export type MemoryCreateWithoutReelInput = {
@@ -14613,6 +14641,30 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type UserCreateWithoutReelsInput = {
+    name: string
+    mobile: string
+    plan?: string
+    birthDate: string
+    email?: string | null
+    records?: RecordCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutReelsInput = {
+    id?: number
+    name: string
+    mobile: string
+    plan?: string
+    birthDate: string
+    email?: string | null
+    records?: RecordUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutReelsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
+  }
+
   export type RelationshipCreateWithoutReelsInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -14639,6 +14691,37 @@ export namespace Prisma {
 
   export type RelationshipCreateManyReelsInputEnvelope = {
     data: RelationshipCreateManyReelsInput | RelationshipCreateManyReelsInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type WheelTextureCreateWithoutReelsInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    caption?: string | null
+    memory?: MemoryCreateNestedOneWithoutWheelTexturesInput
+    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
+  }
+
+  export type WheelTextureUncheckedCreateWithoutReelsInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    memoryId?: number | null
+    relationshipId?: number | null
+    caption?: string | null
+  }
+
+  export type WheelTextureCreateOrConnectWithoutReelsInput = {
+    where: WheelTextureWhereUniqueInput
+    create: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput>
+  }
+
+  export type WheelTextureCreateManyReelsInputEnvelope = {
+    data: WheelTextureCreateManyReelsInput | WheelTextureCreateManyReelsInput[]
     skipDuplicates?: boolean
   }
 
@@ -14674,67 +14757,6 @@ export namespace Prisma {
     result?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type UserUpsertWithoutReelsInput = {
-    update: XOR<UserUpdateWithoutReelsInput, UserUncheckedUpdateWithoutReelsInput>
-    create: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutReelsInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutReelsInput, UserUncheckedUpdateWithoutReelsInput>
-  }
-
-  export type UserUpdateWithoutReelsInput = {
-    name?: StringFieldUpdateOperationsInput | string
-    mobile?: StringFieldUpdateOperationsInput | string
-    birthDate?: StringFieldUpdateOperationsInput | string
-    email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
-    records?: RecordUpdateManyWithoutUserNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutReelsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
-    mobile?: StringFieldUpdateOperationsInput | string
-    birthDate?: StringFieldUpdateOperationsInput | string
-    email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
-    records?: RecordUncheckedUpdateManyWithoutUserNestedInput
-  }
-
-  export type WheelTextureUpsertWithWhereUniqueWithoutReelsInput = {
-    where: WheelTextureWhereUniqueInput
-    update: XOR<WheelTextureUpdateWithoutReelsInput, WheelTextureUncheckedUpdateWithoutReelsInput>
-    create: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput>
-  }
-
-  export type WheelTextureUpdateWithWhereUniqueWithoutReelsInput = {
-    where: WheelTextureWhereUniqueInput
-    data: XOR<WheelTextureUpdateWithoutReelsInput, WheelTextureUncheckedUpdateWithoutReelsInput>
-  }
-
-  export type WheelTextureUpdateManyWithWhereWithoutReelsInput = {
-    where: WheelTextureScalarWhereInput
-    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutReelsInput>
-  }
-
-  export type WheelTextureScalarWhereInput = {
-    AND?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
-    OR?: WheelTextureScalarWhereInput[]
-    NOT?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
-    id?: IntFilter<"WheelTexture"> | number
-    createdAt?: DateTimeFilter<"WheelTexture"> | Date | string
-    updatedAt?: DateTimeFilter<"WheelTexture"> | Date | string
-    srcType?: IntFilter<"WheelTexture"> | number
-    srcUrl?: StringFilter<"WheelTexture"> | string
-    caption?: StringNullableFilter<"WheelTexture"> | string | null
-    memoryId?: IntNullableFilter<"WheelTexture"> | number | null
-    relationshipId?: IntNullableFilter<"WheelTexture"> | number | null
-    reelId?: IntNullableFilter<"WheelTexture"> | number | null
-  }
-
   export type MemoryUpsertWithWhereUniqueWithoutReelInput = {
     where: MemoryWhereUniqueInput
     update: XOR<MemoryUpdateWithoutReelInput, MemoryUncheckedUpdateWithoutReelInput>
@@ -14763,6 +14785,36 @@ export namespace Prisma {
     date?: DateTimeNullableFilter<"Memory"> | Date | string | null
     comment?: StringNullableFilter<"Memory"> | string | null
     reelId?: IntFilter<"Memory"> | number
+  }
+
+  export type UserUpsertWithoutReelsInput = {
+    update: XOR<UserUpdateWithoutReelsInput, UserUncheckedUpdateWithoutReelsInput>
+    create: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutReelsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutReelsInput, UserUncheckedUpdateWithoutReelsInput>
+  }
+
+  export type UserUpdateWithoutReelsInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    records?: RecordUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutReelsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    records?: RecordUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type RelationshipUpsertWithWhereUniqueWithoutReelsInput = {
@@ -14794,6 +14846,37 @@ export namespace Prisma {
     reelId?: IntNullableFilter<"Relationship"> | number | null
   }
 
+  export type WheelTextureUpsertWithWhereUniqueWithoutReelsInput = {
+    where: WheelTextureWhereUniqueInput
+    update: XOR<WheelTextureUpdateWithoutReelsInput, WheelTextureUncheckedUpdateWithoutReelsInput>
+    create: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput>
+  }
+
+  export type WheelTextureUpdateWithWhereUniqueWithoutReelsInput = {
+    where: WheelTextureWhereUniqueInput
+    data: XOR<WheelTextureUpdateWithoutReelsInput, WheelTextureUncheckedUpdateWithoutReelsInput>
+  }
+
+  export type WheelTextureUpdateManyWithWhereWithoutReelsInput = {
+    where: WheelTextureScalarWhereInput
+    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutReelsInput>
+  }
+
+  export type WheelTextureScalarWhereInput = {
+    AND?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
+    OR?: WheelTextureScalarWhereInput[]
+    NOT?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
+    id?: IntFilter<"WheelTexture"> | number
+    createdAt?: DateTimeFilter<"WheelTexture"> | Date | string
+    updatedAt?: DateTimeFilter<"WheelTexture"> | Date | string
+    srcType?: IntFilter<"WheelTexture"> | number
+    srcUrl?: StringFilter<"WheelTexture"> | string
+    memoryId?: IntNullableFilter<"WheelTexture"> | number | null
+    relationshipId?: IntNullableFilter<"WheelTexture"> | number | null
+    caption?: StringNullableFilter<"WheelTexture"> | string | null
+    reelId?: IntNullableFilter<"WheelTexture"> | number | null
+  }
+
   export type ReelCreateWithoutLifestoryInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -14804,10 +14887,10 @@ export namespace Prisma {
     birthPlace?: string | null
     motto?: string | null
     lifestoryId?: number | null
-    user?: UserCreateNestedOneWithoutReelsInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
     memorys?: MemoryCreateNestedManyWithoutReelInput
+    user?: UserCreateNestedOneWithoutReelsInput
     relationships?: RelationshipCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUncheckedCreateWithoutLifestoryInput = {
@@ -14822,9 +14905,9 @@ export namespace Prisma {
     motto?: string | null
     lifestoryId?: number | null
     userId?: number | null
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
     memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
     relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
   }
 
   export type ReelCreateOrConnectWithoutLifestoryInput = {
@@ -14853,10 +14936,10 @@ export namespace Prisma {
     birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    user?: UserUpdateOneWithoutReelsNestedInput
-    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUpdateManyWithoutReelNestedInput
+    user?: UserUpdateOneWithoutReelsNestedInput
     relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateWithoutLifestoryInput = {
@@ -14871,9 +14954,9 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
     relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
   }
 
   export type MemoryCreateWithoutWheelTexturesInput = {
@@ -14883,7 +14966,7 @@ export namespace Prisma {
     subTitle?: string | null
     date?: Date | string | null
     comment?: string | null
-    reel?: ReelCreateNestedOneWithoutMemorysInput
+    reel: ReelCreateNestedOneWithoutMemorysInput
   }
 
   export type MemoryUncheckedCreateWithoutWheelTexturesInput = {
@@ -14900,6 +14983,44 @@ export namespace Prisma {
   export type MemoryCreateOrConnectWithoutWheelTexturesInput = {
     where: MemoryWhereUniqueInput
     create: XOR<MemoryCreateWithoutWheelTexturesInput, MemoryUncheckedCreateWithoutWheelTexturesInput>
+  }
+
+  export type ReelCreateWithoutChildhoodInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    name: string
+    birthDate: string
+    profileImg?: string | null
+    birthPlace?: string | null
+    motto?: string | null
+    lifestoryId?: number | null
+    lifestory?: LifestoryCreateNestedOneWithoutReelInput
+    memorys?: MemoryCreateNestedManyWithoutReelInput
+    user?: UserCreateNestedOneWithoutReelsInput
+    relationships?: RelationshipCreateNestedManyWithoutReelsInput
+  }
+
+  export type ReelUncheckedCreateWithoutChildhoodInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    name: string
+    birthDate: string
+    profileImg?: string | null
+    birthPlace?: string | null
+    motto?: string | null
+    lifestoryId?: number | null
+    userId?: number | null
+    lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
+    memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
+    relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+  }
+
+  export type ReelCreateOrConnectWithoutChildhoodInput = {
+    where: ReelWhereUniqueInput
+    create: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
   }
 
   export type RelationshipCreateWithoutWheelTexturesInput = {
@@ -14926,44 +15047,6 @@ export namespace Prisma {
     create: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
   }
 
-  export type ReelCreateWithoutChildhoodInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    name: string
-    birthDate: string
-    profileImg?: string | null
-    birthPlace?: string | null
-    motto?: string | null
-    lifestoryId?: number | null
-    lifestory?: LifestoryCreateNestedOneWithoutReelInput
-    user?: UserCreateNestedOneWithoutReelsInput
-    memorys?: MemoryCreateNestedManyWithoutReelInput
-    relationships?: RelationshipCreateNestedManyWithoutReelsInput
-  }
-
-  export type ReelUncheckedCreateWithoutChildhoodInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    name: string
-    birthDate: string
-    profileImg?: string | null
-    birthPlace?: string | null
-    motto?: string | null
-    lifestoryId?: number | null
-    userId?: number | null
-    lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
-    relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
-  }
-
-  export type ReelCreateOrConnectWithoutChildhoodInput = {
-    where: ReelWhereUniqueInput
-    create: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
-  }
-
   export type MemoryUpsertWithoutWheelTexturesInput = {
     update: XOR<MemoryUpdateWithoutWheelTexturesInput, MemoryUncheckedUpdateWithoutWheelTexturesInput>
     create: XOR<MemoryCreateWithoutWheelTexturesInput, MemoryUncheckedCreateWithoutWheelTexturesInput>
@@ -14982,7 +15065,7 @@ export namespace Prisma {
     subTitle?: NullableStringFieldUpdateOperationsInput | string | null
     date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     comment?: NullableStringFieldUpdateOperationsInput | string | null
-    reel?: ReelUpdateOneWithoutMemorysNestedInput
+    reel?: ReelUpdateOneRequiredWithoutMemorysNestedInput
   }
 
   export type MemoryUncheckedUpdateWithoutWheelTexturesInput = {
@@ -14994,6 +15077,50 @@ export namespace Prisma {
     date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     comment?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type ReelUpsertWithoutChildhoodInput = {
+    update: XOR<ReelUpdateWithoutChildhoodInput, ReelUncheckedUpdateWithoutChildhoodInput>
+    create: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
+    where?: ReelWhereInput
+  }
+
+  export type ReelUpdateToOneWithWhereWithoutChildhoodInput = {
+    where?: ReelWhereInput
+    data: XOR<ReelUpdateWithoutChildhoodInput, ReelUncheckedUpdateWithoutChildhoodInput>
+  }
+
+  export type ReelUpdateWithoutChildhoodInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    profileImg?: NullableStringFieldUpdateOperationsInput | string | null
+    birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    motto?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    lifestory?: LifestoryUpdateOneWithoutReelNestedInput
+    memorys?: MemoryUpdateManyWithoutReelNestedInput
+    user?: UserUpdateOneWithoutReelsNestedInput
+    relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+  }
+
+  export type ReelUncheckedUpdateWithoutChildhoodInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    profileImg?: NullableStringFieldUpdateOperationsInput | string | null
+    birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    motto?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
+    memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
+    relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
   }
 
   export type RelationshipUpsertWithoutWheelTexturesInput = {
@@ -15026,81 +15153,6 @@ export namespace Prisma {
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
-  export type ReelUpsertWithoutChildhoodInput = {
-    update: XOR<ReelUpdateWithoutChildhoodInput, ReelUncheckedUpdateWithoutChildhoodInput>
-    create: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
-    where?: ReelWhereInput
-  }
-
-  export type ReelUpdateToOneWithWhereWithoutChildhoodInput = {
-    where?: ReelWhereInput
-    data: XOR<ReelUpdateWithoutChildhoodInput, ReelUncheckedUpdateWithoutChildhoodInput>
-  }
-
-  export type ReelUpdateWithoutChildhoodInput = {
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    identifier?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    birthDate?: StringFieldUpdateOperationsInput | string
-    profileImg?: NullableStringFieldUpdateOperationsInput | string | null
-    birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
-    motto?: NullableStringFieldUpdateOperationsInput | string | null
-    lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    lifestory?: LifestoryUpdateOneWithoutReelNestedInput
-    user?: UserUpdateOneWithoutReelsNestedInput
-    memorys?: MemoryUpdateManyWithoutReelNestedInput
-    relationships?: RelationshipUpdateManyWithoutReelsNestedInput
-  }
-
-  export type ReelUncheckedUpdateWithoutChildhoodInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    identifier?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    birthDate?: StringFieldUpdateOperationsInput | string
-    profileImg?: NullableStringFieldUpdateOperationsInput | string | null
-    birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
-    motto?: NullableStringFieldUpdateOperationsInput | string | null
-    lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    userId?: NullableIntFieldUpdateOperationsInput | number | null
-    lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
-    relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
-  }
-
-  export type WheelTextureCreateWithoutMemoryInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
-    reels?: ReelCreateNestedOneWithoutChildhoodInput
-  }
-
-  export type WheelTextureUncheckedCreateWithoutMemoryInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    relationshipId?: number | null
-    reelId?: number | null
-  }
-
-  export type WheelTextureCreateOrConnectWithoutMemoryInput = {
-    where: WheelTextureWhereUniqueInput
-    create: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput>
-  }
-
-  export type WheelTextureCreateManyMemoryInputEnvelope = {
-    data: WheelTextureCreateManyMemoryInput | WheelTextureCreateManyMemoryInput[]
-    skipDuplicates?: boolean
-  }
-
   export type ReelCreateWithoutMemorysInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -15113,8 +15165,8 @@ export namespace Prisma {
     lifestoryId?: number | null
     lifestory?: LifestoryCreateNestedOneWithoutReelInput
     user?: UserCreateNestedOneWithoutReelsInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
     relationships?: RelationshipCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUncheckedCreateWithoutMemorysInput = {
@@ -15130,8 +15182,8 @@ export namespace Prisma {
     lifestoryId?: number | null
     userId?: number | null
     lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
     relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
   }
 
   export type ReelCreateOrConnectWithoutMemorysInput = {
@@ -15139,20 +15191,35 @@ export namespace Prisma {
     create: XOR<ReelCreateWithoutMemorysInput, ReelUncheckedCreateWithoutMemorysInput>
   }
 
-  export type WheelTextureUpsertWithWhereUniqueWithoutMemoryInput = {
+  export type WheelTextureCreateWithoutMemoryInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    caption?: string | null
+    reels?: ReelCreateNestedOneWithoutChildhoodInput
+    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
+  }
+
+  export type WheelTextureUncheckedCreateWithoutMemoryInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    relationshipId?: number | null
+    caption?: string | null
+    reelId?: number | null
+  }
+
+  export type WheelTextureCreateOrConnectWithoutMemoryInput = {
     where: WheelTextureWhereUniqueInput
-    update: XOR<WheelTextureUpdateWithoutMemoryInput, WheelTextureUncheckedUpdateWithoutMemoryInput>
     create: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput>
   }
 
-  export type WheelTextureUpdateWithWhereUniqueWithoutMemoryInput = {
-    where: WheelTextureWhereUniqueInput
-    data: XOR<WheelTextureUpdateWithoutMemoryInput, WheelTextureUncheckedUpdateWithoutMemoryInput>
-  }
-
-  export type WheelTextureUpdateManyWithWhereWithoutMemoryInput = {
-    where: WheelTextureScalarWhereInput
-    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutMemoryInput>
+  export type WheelTextureCreateManyMemoryInputEnvelope = {
+    data: WheelTextureCreateManyMemoryInput | WheelTextureCreateManyMemoryInput[]
+    skipDuplicates?: boolean
   }
 
   export type ReelUpsertWithoutMemorysInput = {
@@ -15178,8 +15245,8 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUpdateOneWithoutReelNestedInput
     user?: UserUpdateOneWithoutReelsNestedInput
-    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
     relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateWithoutMemorysInput = {
@@ -15195,8 +15262,62 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
+  }
+
+  export type WheelTextureUpsertWithWhereUniqueWithoutMemoryInput = {
+    where: WheelTextureWhereUniqueInput
+    update: XOR<WheelTextureUpdateWithoutMemoryInput, WheelTextureUncheckedUpdateWithoutMemoryInput>
+    create: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput>
+  }
+
+  export type WheelTextureUpdateWithWhereUniqueWithoutMemoryInput = {
+    where: WheelTextureWhereUniqueInput
+    data: XOR<WheelTextureUpdateWithoutMemoryInput, WheelTextureUncheckedUpdateWithoutMemoryInput>
+  }
+
+  export type WheelTextureUpdateManyWithWhereWithoutMemoryInput = {
+    where: WheelTextureScalarWhereInput
+    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutMemoryInput>
+  }
+
+  export type ReelCreateWithoutRelationshipsInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    name: string
+    birthDate: string
+    profileImg?: string | null
+    birthPlace?: string | null
+    motto?: string | null
+    lifestoryId?: number | null
+    lifestory?: LifestoryCreateNestedOneWithoutReelInput
+    memorys?: MemoryCreateNestedManyWithoutReelInput
+    user?: UserCreateNestedOneWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
+  }
+
+  export type ReelUncheckedCreateWithoutRelationshipsInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    name: string
+    birthDate: string
+    profileImg?: string | null
+    birthPlace?: string | null
+    motto?: string | null
+    lifestoryId?: number | null
+    userId?: number | null
+    lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
+    memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
+  }
+
+  export type ReelCreateOrConnectWithoutRelationshipsInput = {
+    where: ReelWhereUniqueInput
+    create: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
   }
 
   export type WheelTextureCreateWithoutRelationshipInput = {
@@ -15215,8 +15336,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     memoryId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -15228,60 +15349,6 @@ export namespace Prisma {
   export type WheelTextureCreateManyRelationshipInputEnvelope = {
     data: WheelTextureCreateManyRelationshipInput | WheelTextureCreateManyRelationshipInput[]
     skipDuplicates?: boolean
-  }
-
-  export type ReelCreateWithoutRelationshipsInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    name: string
-    birthDate: string
-    profileImg?: string | null
-    birthPlace?: string | null
-    motto?: string | null
-    lifestoryId?: number | null
-    lifestory?: LifestoryCreateNestedOneWithoutReelInput
-    user?: UserCreateNestedOneWithoutReelsInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
-    memorys?: MemoryCreateNestedManyWithoutReelInput
-  }
-
-  export type ReelUncheckedCreateWithoutRelationshipsInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    name: string
-    birthDate: string
-    profileImg?: string | null
-    birthPlace?: string | null
-    motto?: string | null
-    lifestoryId?: number | null
-    userId?: number | null
-    lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
-    memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
-  }
-
-  export type ReelCreateOrConnectWithoutRelationshipsInput = {
-    where: ReelWhereUniqueInput
-    create: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
-  }
-
-  export type WheelTextureUpsertWithWhereUniqueWithoutRelationshipInput = {
-    where: WheelTextureWhereUniqueInput
-    update: XOR<WheelTextureUpdateWithoutRelationshipInput, WheelTextureUncheckedUpdateWithoutRelationshipInput>
-    create: XOR<WheelTextureCreateWithoutRelationshipInput, WheelTextureUncheckedCreateWithoutRelationshipInput>
-  }
-
-  export type WheelTextureUpdateWithWhereUniqueWithoutRelationshipInput = {
-    where: WheelTextureWhereUniqueInput
-    data: XOR<WheelTextureUpdateWithoutRelationshipInput, WheelTextureUncheckedUpdateWithoutRelationshipInput>
-  }
-
-  export type WheelTextureUpdateManyWithWhereWithoutRelationshipInput = {
-    where: WheelTextureScalarWhereInput
-    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutRelationshipInput>
   }
 
   export type ReelUpsertWithoutRelationshipsInput = {
@@ -15306,9 +15373,9 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUpdateOneWithoutReelNestedInput
+    memorys?: MemoryUpdateManyWithoutReelNestedInput
     user?: UserUpdateOneWithoutReelsNestedInput
     childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
-    memorys?: MemoryUpdateManyWithoutReelNestedInput
   }
 
   export type ReelUncheckedUpdateWithoutRelationshipsInput = {
@@ -15324,16 +15391,32 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
+  }
+
+  export type WheelTextureUpsertWithWhereUniqueWithoutRelationshipInput = {
+    where: WheelTextureWhereUniqueInput
+    update: XOR<WheelTextureUpdateWithoutRelationshipInput, WheelTextureUncheckedUpdateWithoutRelationshipInput>
+    create: XOR<WheelTextureCreateWithoutRelationshipInput, WheelTextureUncheckedCreateWithoutRelationshipInput>
+  }
+
+  export type WheelTextureUpdateWithWhereUniqueWithoutRelationshipInput = {
+    where: WheelTextureWhereUniqueInput
+    data: XOR<WheelTextureUpdateWithoutRelationshipInput, WheelTextureUncheckedUpdateWithoutRelationshipInput>
+  }
+
+  export type WheelTextureUpdateManyWithWhereWithoutRelationshipInput = {
+    where: WheelTextureScalarWhereInput
+    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutRelationshipInput>
   }
 
   export type UserCreateWithoutRecordsInput = {
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
     reels?: ReelCreateNestedManyWithoutUserInput
   }
 
@@ -15341,9 +15424,9 @@ export namespace Prisma {
     id?: number
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
     reels?: ReelUncheckedCreateNestedManyWithoutUserInput
   }
 
@@ -15362,6 +15445,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemUncheckedCreateWithoutRecordInput = {
@@ -15375,6 +15459,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemCreateOrConnectWithoutRecordInput = {
@@ -15401,9 +15486,9 @@ export namespace Prisma {
   export type UserUpdateWithoutRecordsInput = {
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
     reels?: ReelUpdateManyWithoutUserNestedInput
   }
 
@@ -15411,9 +15496,9 @@ export namespace Prisma {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
     reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
   }
 
@@ -15447,6 +15532,7 @@ export namespace Prisma {
     color?: StringNullableFilter<"RecordItem"> | string | null
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
+    images?: StringNullableListFilter<"RecordItem">
     recordId?: IntFilter<"RecordItem"> | number
   }
 
@@ -15454,13 +15540,15 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
     description?: string | null
     bgm?: string | null
     color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
     user?: UserCreateNestedOneWithoutRecordsInput
   }
 
@@ -15469,7 +15557,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
@@ -15477,6 +15564,9 @@ export namespace Prisma {
     bgm?: string | null
     color?: string | null
     userId?: number | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
   }
 
   export type RecordCreateOrConnectWithoutRecordItemsInput = {
@@ -15499,13 +15589,15 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
     user?: UserUpdateOneWithoutRecordsNestedInput
   }
 
@@ -15514,7 +15606,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15522,6 +15613,25 @@ export namespace Prisma {
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type RecordCreateManyUserInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    coverUrl?: string | null
+    name?: string | null
+    subName?: string | null
+    description?: string | null
+    bgm?: string | null
+    color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
   }
 
   export type ReelCreateManyUserInput = {
@@ -15537,18 +15647,53 @@ export namespace Prisma {
     lifestoryId?: number | null
   }
 
-  export type RecordCreateManyUserInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    userName?: string | null
-    coverUrl?: string | null
-    name?: string | null
-    subName?: string | null
-    description?: string | null
-    bgm?: string | null
-    color?: string | null
+  export type RecordUpdateWithoutUserInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    subName?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    bgm?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
+    recordItems?: RecordItemUpdateManyWithoutRecordNestedInput
+  }
+
+  export type RecordUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    subName?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    bgm?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
+    recordItems?: RecordItemUncheckedUpdateManyWithoutRecordNestedInput
+  }
+
+  export type RecordUncheckedUpdateManyWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    subName?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    bgm?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ReelUpdateWithoutUserInput = {
@@ -15562,9 +15707,9 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUpdateManyWithoutReelNestedInput
     relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateWithoutUserInput = {
@@ -15579,9 +15724,9 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
     relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateManyWithoutUserInput = {
@@ -15595,60 +15740,6 @@ export namespace Prisma {
     birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
-  }
-
-  export type RecordUpdateWithoutUserInput = {
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
-    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    subName?: NullableStringFieldUpdateOperationsInput | string | null
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    bgm?: NullableStringFieldUpdateOperationsInput | string | null
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-    recordItems?: RecordItemUpdateManyWithoutRecordNestedInput
-  }
-
-  export type RecordUncheckedUpdateWithoutUserInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
-    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    subName?: NullableStringFieldUpdateOperationsInput | string | null
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    bgm?: NullableStringFieldUpdateOperationsInput | string | null
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-    recordItems?: RecordItemUncheckedUpdateManyWithoutRecordNestedInput
-  }
-
-  export type RecordUncheckedUpdateManyWithoutUserInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
-    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    subName?: NullableStringFieldUpdateOperationsInput | string | null
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    bgm?: NullableStringFieldUpdateOperationsInput | string | null
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-  }
-
-  export type WheelTextureCreateManyReelsInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    memoryId?: number | null
-    relationshipId?: number | null
   }
 
   export type MemoryCreateManyReelInput = {
@@ -15670,36 +15761,15 @@ export namespace Prisma {
     comment?: string | null
   }
 
-  export type WheelTextureUpdateWithoutReelsInput = {
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    srcType?: IntFieldUpdateOperationsInput | number
-    srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
-    memory?: MemoryUpdateOneWithoutWheelTexturesNestedInput
-    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
-  }
-
-  export type WheelTextureUncheckedUpdateWithoutReelsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    srcType?: IntFieldUpdateOperationsInput | number
-    srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
-    memoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
-  }
-
-  export type WheelTextureUncheckedUpdateManyWithoutReelsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    srcType?: IntFieldUpdateOperationsInput | number
-    srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
-    memoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+  export type WheelTextureCreateManyReelsInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    memoryId?: number | null
+    relationshipId?: number | null
+    caption?: string | null
   }
 
   export type MemoryUpdateWithoutReelInput = {
@@ -15761,14 +15831,46 @@ export namespace Prisma {
     comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
+  export type WheelTextureUpdateWithoutReelsInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    srcType?: IntFieldUpdateOperationsInput | number
+    srcUrl?: StringFieldUpdateOperationsInput | string
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
+    memory?: MemoryUpdateOneWithoutWheelTexturesNestedInput
+    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
+  }
+
+  export type WheelTextureUncheckedUpdateWithoutReelsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    srcType?: IntFieldUpdateOperationsInput | number
+    srcUrl?: StringFieldUpdateOperationsInput | string
+    memoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type WheelTextureUncheckedUpdateManyWithoutReelsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    srcType?: IntFieldUpdateOperationsInput | number
+    srcUrl?: StringFieldUpdateOperationsInput | string
+    memoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
   export type WheelTextureCreateManyMemoryInput = {
     id?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     relationshipId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -15778,8 +15880,8 @@ export namespace Prisma {
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
-    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
     reels?: ReelUpdateOneWithoutChildhoodNestedInput
+    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
   }
 
   export type WheelTextureUncheckedUpdateWithoutMemoryInput = {
@@ -15788,8 +15890,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -15799,8 +15901,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -15810,8 +15912,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     memoryId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -15831,8 +15933,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     memoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -15842,8 +15944,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     memoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -15858,6 +15960,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemUpdateWithoutRecordInput = {
@@ -15870,6 +15973,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateWithoutRecordInput = {
@@ -15883,6 +15987,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateManyWithoutRecordInput = {
@@ -15896,6 +16001,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
 

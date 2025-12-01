@@ -123,6 +123,54 @@ body,
 .lr-image-change-badge {
   position: absolute;
   right: 10px;
+  bottom: 48px;
+  padding: 6px 12px;
+  height: auto;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
+  z-index: 10;
+  font-size: 0.75rem;
+  font-family: "Pretendard Variable";
+  white-space: nowrap;
+}
+
+.lr-image-change-badge:hover:not(:disabled) {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.lr-image-change-badge:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.lr-image-change-badge svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.lr-image-change-badge span {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.lr-image-delete-badge {
+  position: absolute;
+  right: 10px;
   bottom: 10px;
   padding: 6px 12px;
   height: auto;
@@ -146,18 +194,24 @@ body,
   white-space: nowrap;
 }
 
-.lr-image-change-badge:hover {
+.lr-image-delete-badge:hover:not(:disabled) {
   opacity: 1;
   background: rgba(0, 0, 0, 0.6);
 }
 
-.lr-image-change-badge svg {
+.lr-image-delete-badge:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.lr-image-delete-badge svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
 }
 
-.lr-image-change-badge span {
+.lr-image-delete-badge span {
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -202,6 +256,11 @@ body,
   flex-direction: column;
   align-items: flex-end;
   gap: 4px;
+}
+
+.lr-meta--mainTop {
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .lr-meta--mainTop p {
@@ -510,24 +569,28 @@ body,
   justify-content: space-between;
   width: 100%;
   padding: 0rem 3rem;
+  background: var(--bg);
 }
 
 .footer-logo {
   font-size: 0.7rem;
   font-weight: 300;
   font-family: "Pretendard Variable";
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
 }
 
 .footer-copyright {
   font-size: 0.7rem;
   font-weight: 300;
   font-family: "Pretendard Variable";
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
 }
 
 .login-btn-fixed {
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
   font-size: 0.7rem;
   font-family: "Pretendard Variable";
   cursor: pointer;
@@ -710,14 +773,6 @@ body,
   transform: scale(1.02);
 }
 
-.lr-highlight-item::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 10px;
-}
-
 .lr-highlight-title {
   width: 100%;
   position: absolute;
@@ -738,9 +793,12 @@ body,
   font-family: "Pretendard Variable";
   font-size: 0.75rem;
   font-style: normal;
-  font-weight: 300;
-  line-height: 130%;
-  letter-spacing: -0.0375rem;
+  font-weight: 600;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.9),
+    0 2px 6px rgba(0, 0, 0, 0.8),
+    0 0 12px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 @media (min-width: 601px) {
@@ -918,6 +976,44 @@ input.lr-name {
   border-radius: 4px;
   padding: 10px 8px;
 }
+
+input.lr-name::placeholder,
+textarea.lr-name::placeholder {
+  color: var(--text);
+  opacity: 0.5;
+}
+
+.lr-subtitle {
+  font-family: "Pretendard Variable";
+  font-size: 1.2rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.05rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+input.lr-subtitle {
+  background: transparent;
+  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  padding: 8px;
+  color: inherit;
+  width: 100%;
+  font-size: 1.2rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.05rem;
+  opacity: 1;
+}
+
+input.lr-subtitle::placeholder {
+  color: var(--text);
+  opacity: 0.5;
+}
+
 .lr-date-input,
 .lr-location-input {
   background: transparent;
@@ -955,28 +1051,36 @@ input.lr-name {
   font-family: "Pretendard Variable";
   font-size: 0.85rem;
   font-weight: 400;
-  color: rgba(0, 0, 0, 0.6);
+  color: var(--text);
+  opacity: 0.7;
 }
 
 .lr-mode-switch {
   position: relative;
   width: 44px;
   height: 24px;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 12px;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 2px;
+  opacity: 0.4;
+  flex-shrink: 0;
 }
 
 .lr-mode-switch:hover {
-  border-color: rgba(0, 0, 0, 0.6);
+  opacity: 0.6;
 }
 
 .lr-mode-switch.active {
-  background: rgba(0, 0, 0, 0.1);
-  border-color: rgba(0, 0, 0, 0.6);
+  background: none;
+  opacity: 0.8;
+  border-color: var(--text);
+}
+
+.lr-mode-switch.active:hover {
+  opacity: 1;
 }
 
 .lr-mode-switch-slider {
@@ -985,35 +1089,43 @@ input.lr-name {
   left: 2px;
   width: 18px;
   height: 18px;
-  background: rgba(0, 0, 0, 0.3);
+  background: var(--text);
   border-radius: 50%;
   transition: all 0.2s ease;
+  opacity: 0.5;
 }
 
 .lr-mode-switch.active .lr-mode-switch-slider {
   left: 22px;
-  background: rgba(0, 0, 0, 0.6);
+  opacity: 1;
 }
 
 .lr-birthdate-input-inline {
   flex: 1;
   min-width: 200px;
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 6px 10px;
-  color: inherit;
+  color: var(--text);
   font-family: "Pretendard Variable";
   font-size: 0.9rem;
   font-weight: 400;
   transition:
     opacity 0.2s ease,
     visibility 0.2s ease;
+  opacity: 0.7;
 }
 
 .lr-birthdate-input-inline:focus {
   outline: none;
-  border-color: rgba(0, 0, 0, 0.6);
+  border-color: var(--text);
+  opacity: 1;
+}
+
+.lr-birthdate-input-inline::placeholder {
+  color: var(--text);
+  opacity: 0.5;
 }
 
 .lr-birthdate-input-hidden {

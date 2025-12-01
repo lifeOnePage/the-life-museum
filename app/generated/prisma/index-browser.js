@@ -124,9 +124,9 @@ exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
   mobile: 'mobile',
+  plan: 'plan',
   birthDate: 'birthDate',
-  email: 'email',
-  plan: 'plan'
+  email: 'email'
 };
 
 exports.Prisma.ReelScalarFieldEnum = {
@@ -161,9 +161,9 @@ exports.Prisma.WheelTextureScalarFieldEnum = {
   updatedAt: 'updatedAt',
   srcType: 'srcType',
   srcUrl: 'srcUrl',
-  caption: 'caption',
   memoryId: 'memoryId',
   relationshipId: 'relationshipId',
+  caption: 'caption',
   reelId: 'reelId'
 };
 
@@ -193,14 +193,16 @@ exports.Prisma.RecordScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   identifier: 'identifier',
-  userName: 'userName',
   coverUrl: 'coverUrl',
   name: 'name',
   subName: 'subName',
   description: 'description',
   bgm: 'bgm',
   color: 'color',
-  userId: 'userId'
+  userId: 'userId',
+  userName: 'userName',
+  birthDate: 'birthDate',
+  displayMode: 'displayMode'
 };
 
 exports.Prisma.RecordItemScalarFieldEnum = {
@@ -214,6 +216,7 @@ exports.Prisma.RecordItemScalarFieldEnum = {
   color: 'color',
   isHighlight: 'isHighlight',
   coverUrl: 'coverUrl',
+  images: 'images',
   recordId: 'recordId'
 };
 

@@ -11,6 +11,8 @@ const ALLOWED_RECORD_FIELDS = [
   "description",
   "bgm",
   "color",
+  "birthDate",
+  "displayMode",
 ];
 
 const ALLOWED_ITEM_FIELDS = [
@@ -21,6 +23,7 @@ const ALLOWED_ITEM_FIELDS = [
   "color",
   "isHighlight",
   "coverUrl",
+  "images",
 ];
 
 const pick = (obj, keys) =>
@@ -36,6 +39,21 @@ async function getAuthedUser(req) {
 
 function toRecordResponse(rec) {
   if (!rec) return null;
+  const recordItems = (rec.recordItems || []).map((it) => {
+    console.log("[API GET] Item:", it.id, "images from DB:", it.images);
+    return {
+      id: it.id,
+      title: it.title,
+      date: it.date,
+      location: it.location,
+      description: it.description,
+      color: it.color,
+      isHighlight: it.isHighlight,
+      coverUrl: it.coverUrl,
+      images: it.images || [],
+    };
+  });
+  console.log("[API GET] Total recordItems:", recordItems.length);
   return {
     identifier: rec.identifier,
     coverUrl: rec.coverUrl,
@@ -44,14 +62,9 @@ function toRecordResponse(rec) {
     description: rec.description,
     bgm: rec.bgm,
     color: rec.color,
-    recordItems: (rec.recordItems || []).map((it) => ({
-      title: it.title,
-      location: it.location,
-      description: it.description,
-      color: it.color,
-      isHighlight: it.isHighlight,
-      coverUrl: it.coverUrl,
-    })),
+    birthDate: rec.birthDate || null,
+    displayMode: rec.displayMode || "year",
+    recordItems,
   };
 }
 
@@ -77,6 +90,8 @@ export async function GET(req, { params }) {
         description: true,
         bgm: true,
         color: true,
+        birthDate: true,
+        displayMode: true,
         recordItems: {
           select: {
             id: true,
@@ -87,6 +102,7 @@ export async function GET(req, { params }) {
             color: true,
             isHighlight: true,
             coverUrl: true,
+            images: true,
             createdAt: true,
           },
           orderBy: { createdAt: "asc" },
@@ -149,6 +165,22 @@ export async function POST(req, { params }) {
 
     const body = await req.json().catch(() => ({}));
     const data = pick(body, ALLOWED_ITEM_FIELDS);
+
+    // images 배열이 있으면 빈 문자열만 필터링하고 최대 5개로 제한 (null은 유지)
+    if (data.images && Array.isArray(data.images)) {
+      // 빈 문자열만 필터링하고 최대 5개로 제한 (null은 유지하여 슬롯 구조 유지)
+      data.images = data.images
+        .map((img) => (img === "" ? null : img))
+        .slice(0, 5);
+      // 최대 5개로 맞추기 위해 null로 채움
+      while (data.images.length < 5) {
+        data.images.push(null);
+      }
+      data.images = data.images.slice(0, 5);
+    } else if (!data.images) {
+      // images가 없으면 null로 채운 5개 배열로 설정
+      data.images = [null, null, null, null, null];
+    }
 
     // 소유권 체크
     const owned = await client.record.findFirst({ where: { id, userId: user.userId }, select: { id: true } });

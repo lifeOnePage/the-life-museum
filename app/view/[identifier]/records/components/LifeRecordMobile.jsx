@@ -1,6 +1,15 @@
 "use client";
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import {
+  HiHome,
+  HiPlay,
+  HiStop,
+  HiStar,
+  HiOutlineStar,
+  HiTrash,
+} from "react-icons/hi";
+import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import "../styles/cardPage-mobile.css";
 
 const MONTHS = [
@@ -73,9 +82,11 @@ export default function LifeRecordMobile({
   onDataChange,
   onDeleteItem,
   onImageChange,
+  onImageDelete,
   onActiveItemChange,
   isUploadingImage = false,
   onNavigateToItem,
+  cropState = { isActive: false, imageFile: null, type: null, itemId: null },
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -87,11 +98,22 @@ export default function LifeRecordMobile({
 
   // data가 변경될 때 displayMode와 birthDate 동기화 (입력 중이 아닐 때만)
   useEffect(() => {
-    if (data.record?.displayMode !== undefined) {
+    if (
+      data.record?.displayMode !== undefined &&
+      data.record?.displayMode !== null
+    ) {
       setDisplayMode(data.record.displayMode);
+    } else {
+      setDisplayMode("year"); // 기본값
     }
-    if (data.record?.birthDate !== undefined && !isEditingBirthDate) {
+    if (
+      data.record?.birthDate !== undefined &&
+      data.record?.birthDate !== null &&
+      !isEditingBirthDate
+    ) {
       setBirthDate(data.record.birthDate);
+    } else if (data.record?.birthDate === null && !isEditingBirthDate) {
+      setBirthDate(""); // null이면 빈 문자열로
     }
   }, [data.record?.displayMode, data.record?.birthDate, isEditingBirthDate]);
 
@@ -107,11 +129,13 @@ export default function LifeRecordMobile({
         kind: "main",
         label: "home",
         title: data.record.name || "사용자의 이야기",
+        subtitle: data.record.subName || "",
         date: "",
         location: "",
         desc: data.record.description || "",
         cover: isVideo ? null : coverUrl,
         video: isVideo ? coverUrl : null,
+        images: null, // main은 images 배열 사용하지 않음
         isHighlight: data.record?.isHighlight || false,
       });
     }
@@ -125,11 +149,40 @@ export default function LifeRecordMobile({
 
       // displayMode에 따라 label 결정 (입력 중이 아닐 때만 나이 계산)
       let label = y || item.id.toString();
-      if (displayMode === "age" && !isEditingBirthDate && data.record?.birthDate && item.date) {
+      if (
+        displayMode === "age" &&
+        !isEditingBirthDate &&
+        data.record?.birthDate &&
+        item.date
+      ) {
         const age = calculateAge(data.record.birthDate, item.date);
         if (age !== null) {
           label = `${age}세`;
         }
+      }
+
+      // images 배열이 있으면 사용, 없으면 coverUrl 사용 (하위 호환성)
+      // 최대 5개 슬롯을 유지 (빈 슬롯은 null)
+      let images = [];
+      if (item.images && item.images.length > 0) {
+        // 비디오 제외하고 이미지만 필터링
+        images = item.images.filter(
+          (img) => img && !img.match(/\.(mp4|mov|webm|m4v|avi)$/i),
+        );
+        // 최대 5개까지 채우기 (빈 슬롯은 null로)
+        while (images.length < 5) {
+          images.push(null);
+        }
+        images = images.slice(0, 5);
+      } else if (coverUrl && !isVideo) {
+        images = [coverUrl];
+        // 나머지 슬롯을 null로 채우기
+        while (images.length < 5) {
+          images.push(null);
+        }
+      } else {
+        // 이미지가 없으면 빈 슬롯 5개
+        images = Array(5).fill(null);
       }
 
       return {
@@ -139,7 +192,8 @@ export default function LifeRecordMobile({
         event: item.title || "",
         date: item.date || "",
         location: item.location || "",
-        cover: isVideo ? null : coverUrl,
+        cover: images.find((img) => img) || "/images/records/No image.png", // 첫 번째 유효한 이미지를 기본으로
+        images: images, // 전체 이미지 배열 (최대 5개, 빈 슬롯은 null)
         video: isVideo ? coverUrl : null,
         desc: item.description || "",
         isHighlight: item.isHighlight || false,
@@ -168,6 +222,9 @@ export default function LifeRecordMobile({
   const [activeIdx, setActiveIdx] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
+  const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
   const DEFAULT_THEME = BG_THEME_PALETTE[0];
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
@@ -175,8 +232,26 @@ export default function LifeRecordMobile({
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
+  const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
+
+  // activeIdx가 변경될 때 ref 업데이트
+  useEffect(() => {
+    activeIdxRef.current = activeIdx;
+  }, [activeIdx]);
 
   const activeItem = timeline[activeIdx] || {};
+
+  // activeItem이 변경될 때 이미지 인덱스 리셋
+  useEffect(() => {
+    if (isEditing) {
+      // Edit 모드: 항상 0으로 리셋
+      setCurrentImageIndex(0);
+    } else {
+      // View 모드: 유효한 이미지만 고려
+      const validImages = (activeItem.images || []).filter((img) => img);
+      setCurrentImageIndex(0);
+    }
+  }, [activeItem.id, isEditing]);
 
   // activeItem.id가 변경될 때 ref 업데이트
   useEffect(() => {
@@ -349,6 +424,29 @@ export default function LifeRecordMobile({
     }, 150);
   };
 
+  // 자동 슬라이드 기능 (view 모드일 때만)
+  useEffect(() => {
+    if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
+
+    const autoSlideInterval = setInterval(() => {
+      const currentIdx = activeIdxRef.current;
+      let newIdx;
+      if (currentIdx >= timeline.length - 1) {
+        newIdx = 0;
+      } else {
+        newIdx = currentIdx + 1;
+      }
+
+      setIsTransitioning(true);
+      setTimeout(() => {
+        setActiveIdx(newIdx);
+        setIsTransitioning(false);
+      }, 150);
+    }, 5000); // 5초마다 자동으로 넘어감
+
+    return () => clearInterval(autoSlideInterval);
+  }, [isEditing, autoSlideEnabled, timeline.length]);
+
   const handleMenuClick = () => {
     setShowMenu(!showMenu);
   };
@@ -367,45 +465,68 @@ export default function LifeRecordMobile({
       className="lr-mobile-root"
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
-      {/* BGM 재생 버튼 (우측 상단 고정) */}
-      {!isEditing && data.record?.bgm && (
-        <button
-          onClick={handleBgmToggle}
+      {/* BGM 재생 버튼 및 자동 슬라이드 토글 버튼 (우측 상단 고정) */}
+      {!isEditing && (
+        <div
           style={{
             position: "fixed",
             top: "16px",
             right: "16px",
             zIndex: 10000,
-            width: "44px",
-            height: "44px",
-            borderRadius: "50%",
-            background: isBgmPlaying
-              ? "rgba(255, 255, 255, 0.2)"
-              : "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            color: theme.text,
-            cursor: "pointer",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: "all 0.2s",
+            gap: "8px",
+            flexDirection: "column",
           }}
-          title={isBgmPlaying ? "음악 정지" : "음악 재생"}
         >
-          {isBgmPlaying ? (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zM7 8a1 1 0 012 0v4a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-          ) : (
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-              <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-            </svg>
+          {data.record?.bgm && (
+            <button
+              onClick={handleBgmToggle}
+              style={{
+                width: "44px",
+                height: "44px",
+                borderRadius: "50%",
+                background: isBgmPlaying
+                  ? "rgba(255, 255, 255, 0.2)"
+                  : "rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                color: theme.text,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                transition: "all 0.2s",
+              }}
+              title={isBgmPlaying ? "음악 정지" : "음악 재생"}
+            >
+              {isBgmPlaying ? (
+                <HiVolumeUp size={20} />
+              ) : (
+                <HiVolumeOff size={20} />
+              )}
+            </button>
           )}
-        </button>
+          <button
+            onClick={() => setAutoSlideEnabled(!autoSlideEnabled)}
+            style={{
+              width: "44px",
+              height: "44px",
+              borderRadius: "50%",
+              background: autoSlideEnabled
+                ? "rgba(255, 255, 255, 0.2)"
+                : "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              color: theme.text,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              transition: "all 0.2s",
+            }}
+            title={autoSlideEnabled ? "자동재생 끄기" : "자동재생 켜기"}
+          >
+            {autoSlideEnabled ? <HiStop size={20} /> : <HiPlay size={20} />}
+          </button>
+        </div>
       )}
 
       <header className="lr-mobile-header">
@@ -417,7 +538,7 @@ export default function LifeRecordMobile({
         </div>
       </header>
 
-      <div className="lr-mobile-cover-wrap" style={{ position: "relative" }}>
+      <div className="lr-mobile-cover-wrap">
         {isEditing && (
           <input
             ref={
@@ -425,14 +546,43 @@ export default function LifeRecordMobile({
             }
             type="file"
             accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
+            multiple={activeItem.kind !== "main"} // main이 아닌 경우에만 multiple 허용
             style={{ display: "none" }}
             onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file && onImageChange) {
+              const files = Array.from(e.target.files || []);
+              if (files.length > 0 && onImageChange) {
                 if (activeItem.kind === "main") {
-                  onImageChange("main", null, file);
+                  // main은 단일 이미지만
+                  onImageChange("main", null, files[0]);
                 } else {
-                  onImageChange("item", activeItem.id, file);
+                  // targetImageSlotIndex가 설정되어 있으면 해당 슬롯에 추가
+                  if (targetImageSlotIndex !== null) {
+                    // 특정 슬롯에 이미지 추가
+                    onImageChange(
+                      "item",
+                      activeItem.id,
+                      files[0],
+                      targetImageSlotIndex,
+                    );
+                    setTargetImageSlotIndex(null); // 리셋
+                  } else {
+                    // 여러 파일 선택 시: 현재 이미지 배열에서 null이 아닌 것만 카운트
+                    const currentImages = activeItem.images || [];
+                    const validImages = currentImages.filter((img) => img);
+                    const remainingSlots = 5 - validImages.length;
+                    const filesToUpload = files.slice(0, remainingSlots);
+
+                    if (files.length > remainingSlots) {
+                      alert(
+                        `최대 5개까지만 업로드할 수 있습니다. ${remainingSlots}개만 업로드됩니다.`,
+                      );
+                    }
+
+                    // 각 파일을 순차적으로 업로드
+                    filesToUpload.forEach((file) => {
+                      onImageChange("item", activeItem.id, file);
+                    });
+                  }
                 }
               }
               // Reset input
@@ -454,17 +604,289 @@ export default function LifeRecordMobile({
           />
         ) : (
           <>
-            <img
-              className={`lr-mobile-cover ${
-                isTransitioning ? "fade-out" : "fade-in"
-              }`}
-              src={activeItem.cover || "/images/records/No image.png"}
-              alt="앨범 커버"
-              key={activeIdx}
-              onError={(e) => {
-                e.target.src = "/images/records/No image.png";
-              }}
-            />
+            {activeItem.kind === "main" ? (
+              // Main 항목: 단일 이미지만 표시
+              <img
+                className={`lr-mobile-cover ${
+                  isTransitioning ? "fade-out" : "fade-in"
+                }`}
+                src={activeItem.cover || "/images/records/No image.png"}
+                alt="앨범 커버"
+                key={activeIdx}
+                onError={(e) => {
+                  e.target.src = "/images/records/No image.png";
+                }}
+              />
+            ) : isEditing ? (
+              // Edit 모드: 최대 5개 슬롯 모두 표시 (빈 슬롯은 이미지 추가 버튼)
+              <div className="lr-mobile-image-slider">
+                <div
+                  style={{
+                    display: "flex",
+                    width: `${(activeItem.images?.length || 5) * 100}%`,
+                    height: "100%",
+                    transform: `translateX(-${currentImageIndex * (100 / (activeItem.images?.length || 5))}%)`,
+                    transition: "transform 0.3s ease",
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                  }}
+                >
+                  {(activeItem.images || Array(5).fill(null)).map(
+                    (img, idx) => (
+                      <div
+                        key={idx}
+                        style={{
+                          width: `${100 / (activeItem.images?.length || 5)}%`,
+                          height: "100%",
+                          position: "relative",
+                        }}
+                      >
+                        {img ? (
+                          <img
+                            className={`lr-mobile-cover ${
+                              isTransitioning ? "fade-out" : "fade-in"
+                            }`}
+                            src={img}
+                            alt={`앨범 커버 ${idx + 1}`}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              objectFit: "cover",
+                              display: "block",
+                            }}
+                            onError={(e) => {
+                              e.target.src = "/images/records/No image.png";
+                            }}
+                          />
+                        ) : (
+                          <div
+                            onClick={() => {
+                              if (!cropState.isActive) {
+                                setTargetImageSlotIndex(idx);
+                                itemImageInputRef.current?.click();
+                              }
+                            }}
+                            style={{
+                              width: "100%",
+                              height: "100%",
+                              background: "rgba(0, 0, 0, 0.1)",
+                              border: "2px dashed rgba(255, 255, 255, 0.3)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              cursor: cropState.isActive
+                                ? "not-allowed"
+                                : "pointer",
+                              color: "#000000",
+                              fontSize: "12px",
+                              fontWeight: "500",
+                              opacity: cropState.isActive ? 0.5 : 1,
+                            }}
+                          >
+                            + 이미지 추가
+                          </div>
+                        )}
+                      </div>
+                    ),
+                  )}
+                </div>
+                {/* 좌우 화살표 */}
+                {currentImageIndex > 0 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(currentImageIndex - 1);
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "rgba(0, 0, 0, 0.5)",
+                      border: "none",
+                      color: "white",
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 2,
+                      fontSize: "18px",
+                    }}
+                    aria-label="이전 이미지"
+                  >
+                    ←
+                  </button>
+                )}
+                {currentImageIndex < (activeItem.images?.length || 5) - 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCurrentImageIndex(currentImageIndex + 1);
+                    }}
+                    style={{
+                      position: "absolute",
+                      right: "10px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      background: "rgba(0, 0, 0, 0.5)",
+                      border: "none",
+                      color: "white",
+                      width: "36px",
+                      height: "36px",
+                      borderRadius: "50%",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      zIndex: 2,
+                      fontSize: "18px",
+                    }}
+                    aria-label="다음 이미지"
+                  >
+                    →
+                  </button>
+                )}
+                {/* 인디케이터 */}
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: "10px",
+                    left: "50%",
+                    transform: "translateX(-50%)",
+                    display: "flex",
+                    gap: "6px",
+                    zIndex: 2,
+                  }}
+                >
+                  {(activeItem.images || Array(5).fill(null)).map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setCurrentImageIndex(idx);
+                      }}
+                      style={{
+                        width: "6px",
+                        height: "6px",
+                        borderRadius: "50%",
+                        border: "none",
+                        background:
+                          idx === currentImageIndex
+                            ? `color-mix(in srgb, var(--text) 90%, transparent)`
+                            : _ === null
+                              ? `color-mix(in srgb, var(--text) 20%, transparent)`
+                              : `color-mix(in srgb, var(--text) 40%, transparent)`,
+                        cursor: "pointer",
+                        padding: 0,
+                      }}
+                      aria-label={`이미지 ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // View 모드: 이미지가 있는 것만 슬라이드로 표시
+              (() => {
+                const validImages = (activeItem.images || []).filter(
+                  (img) => img,
+                );
+                if (validImages.length > 1) {
+                  return (
+                    <div className="lr-mobile-image-slider">
+                      <div
+                        style={{
+                          display: "flex",
+                          width: `${validImages.length * 100}%`,
+                          height: "100%",
+                          transform: `translateX(-${currentImageIndex * (100 / validImages.length)}%)`,
+                          transition: "transform 0.3s ease",
+                          position: "absolute",
+                          top: 0,
+                          left: 0,
+                        }}
+                      >
+                        {validImages.map((img, idx) => (
+                          <img
+                            key={idx}
+                            className={`lr-mobile-cover ${
+                              isTransitioning ? "fade-out" : "fade-in"
+                            }`}
+                            src={img}
+                            alt={`앨범 커버 ${idx + 1}`}
+                            style={{
+                              width: `${100 / validImages.length}%`,
+                              height: "100%",
+                              objectFit: "cover",
+                              display: "block",
+                            }}
+                            onError={(e) => {
+                              e.target.src = "/images/records/No image.png";
+                            }}
+                          />
+                        ))}
+                      </div>
+                      {/* 인디케이터 */}
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: "12px",
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          display: "flex",
+                          gap: "6px",
+                          zIndex: 10,
+                          pointerEvents: "auto",
+                        }}
+                      >
+                        {validImages.map((_, idx) => (
+                          <button
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCurrentImageIndex(idx);
+                            }}
+                            style={{
+                              width: "8px",
+                              height: "8px",
+                              borderRadius: "50%",
+                              border: "none",
+                              background:
+                                idx === currentImageIndex
+                                  ? `color-mix(in srgb, var(--text) 90%, transparent)`
+                                  : `color-mix(in srgb, var(--text) 50%, transparent)`,
+                              cursor: "pointer",
+                              padding: 0,
+                              transition: "background 0.2s ease",
+                            }}
+                            aria-label={`이미지 ${idx + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                } else if (validImages.length === 1) {
+                  return (
+                    <img
+                      className={`lr-mobile-cover ${
+                        isTransitioning ? "fade-out" : "fade-in"
+                      }`}
+                      src={validImages[0]}
+                      alt="앨범 커버"
+                      key={activeIdx}
+                      onError={(e) => {
+                        e.target.src = "/images/records/No image.png";
+                      }}
+                    />
+                  );
+                } else {
+                  return null; // 이미지가 없으면 아무것도 표시하지 않음
+                }
+              })()
+            )}
           </>
         )}
         {isUploadingImage && (
@@ -512,17 +934,7 @@ export default function LifeRecordMobile({
           activeItem?.isHighlight &&
           activeItem.kind !== "main" && (
             <div className="lr-mobile-fav-badge" aria-label="즐겨찾기">
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                aria-hidden="true"
-              >
-                <path
-                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                  fill="currentColor"
-                />
-              </svg>
+              <HiStar size={18} />
             </div>
           )}
         {isEditing && (
@@ -546,17 +958,11 @@ export default function LifeRecordMobile({
                     opacity: activeItem?.isHighlight ? 1 : 0.5,
                   }}
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    width="18"
-                    height="18"
-                    aria-hidden="true"
-                  >
-                    <path
-                      d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
-                      fill="currentColor"
-                    />
-                  </svg>
+                  {activeItem?.isHighlight ? (
+                    <HiStar size={18} />
+                  ) : (
+                    <HiOutlineStar size={18} />
+                  )}
                 </button>
                 <button
                   className="lr-mobile-delete-badge"
@@ -569,6 +975,30 @@ export default function LifeRecordMobile({
                     cursor: "pointer",
                   }}
                 >
+                  <HiTrash size={18} />
+                </button>
+              </>
+            )}
+            {/* 이미지가 있을 때만 이미지 변경/삭제 버튼 표시 */}
+            {((activeItem.kind === "main" && activeItem.cover) ||
+              (activeItem.kind !== "main" &&
+                activeItem.images &&
+                activeItem.images[currentImageIndex])) && (
+              <>
+                <button
+                  className="lr-mobile-image-change-badge"
+                  aria-label="이미지 변경"
+                  onClick={() => {
+                    if (!cropState.isActive) {
+                      if (activeItem.kind === "main") {
+                        mainImageInputRef.current?.click();
+                      } else {
+                        itemImageInputRef.current?.click();
+                      }
+                    }
+                  }}
+                  disabled={cropState.isActive}
+                >
                   <svg
                     viewBox="0 0 24 24"
                     width="18"
@@ -578,41 +1008,52 @@ export default function LifeRecordMobile({
                     stroke="currentColor"
                     strokeWidth="2"
                   >
-                    <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
+                  <span>이미지 변경</span>
                 </button>
+                {activeItem.kind !== "main" &&
+                  onImageDelete &&
+                  activeItem.images &&
+                  activeItem.images[currentImageIndex] && (
+                    <button
+                      className="lr-mobile-image-delete-badge"
+                      aria-label="이미지 삭제"
+                      onClick={() => {
+                        if (!cropState.isActive) {
+                          onImageDelete(activeItem.id, currentImageIndex);
+                          // 삭제 후 인덱스 조정
+                          const validImages = (activeItem.images || []).filter(
+                            (img) => img,
+                          );
+                          if (currentImageIndex >= validImages.length - 1) {
+                            setCurrentImageIndex(
+                              Math.max(0, validImages.length - 2),
+                            );
+                          }
+                        }
+                      }}
+                      disabled={cropState.isActive}
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        width="18"
+                        height="18"
+                        aria-hidden="true"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      </svg>
+                      <span>이미지 삭제</span>
+                    </button>
+                  )}
               </>
             )}
-            <button
-              className="lr-mobile-image-change-badge"
-              aria-label="이미지 변경"
-              onClick={() => {
-                if (activeItem.kind === "main") {
-                  mainImageInputRef.current?.click();
-                } else {
-                  itemImageInputRef.current?.click();
-                }
-              }}
-              style={{
-                pointerEvents: "auto",
-                cursor: "pointer",
-              }}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="18"
-                height="18"
-                aria-hidden="true"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="17 8 12 3 7 8" />
-                <line x1="12" y1="3" x2="12" y2="15" />
-              </svg>
-              <span>이미지 변경</span>
-            </button>
           </>
         )}
       </div>
@@ -636,6 +1077,19 @@ export default function LifeRecordMobile({
                   }}
                   className="lr-mobile-meta-title lr-mobile-edit-input"
                   placeholder="레코드의 제목을 입력하세요"
+                />
+                <input
+                  type="text"
+                  value={data.record?.subName || ""}
+                  onChange={(e) => {
+                    const newData = {
+                      ...data,
+                      record: { ...data.record, subName: e.target.value },
+                    };
+                    onDataChange?.(newData);
+                  }}
+                  className="lr-mobile-meta-subtitle lr-mobile-edit-input"
+                  placeholder="레코드의 상세 설명을 입력하세요"
                 />
                 <textarea
                   value={data.record?.description || ""}
@@ -738,6 +1192,11 @@ export default function LifeRecordMobile({
             ) : (
               <>
                 <div className="lr-mobile-meta-title">{mainTitle}</div>
+                {activeItem.subtitle && (
+                  <div className="lr-mobile-meta-subtitle">
+                    {activeItem.subtitle}
+                  </div>
+                )}
                 <div
                   className="lr-mobile-meta-desc"
                   style={{ marginBottom: "16px" }}
@@ -952,9 +1411,12 @@ export default function LifeRecordMobile({
             cursor: activeIdx === 0 ? "default" : "pointer",
             opacity: activeIdx === 0 ? 0 : 1,
             pointerEvents: activeIdx === 0 ? "none" : "auto",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          home
+          <HiHome size={30} />
         </span>
         <div className="lr-mobile-nav-timeline">
           <span
@@ -963,6 +1425,7 @@ export default function LifeRecordMobile({
               cursor: activeIdx === 0 ? "default" : "pointer",
               opacity: activeIdx === 0 ? 0 : 1,
               pointerEvents: activeIdx === 0 ? "none" : "auto",
+              fontSize: "1.8rem",
             }}
           >
             &lt;
@@ -975,18 +1438,29 @@ export default function LifeRecordMobile({
               opacity: activeIdx === timeline.length - 1 ? 0 : 1,
               pointerEvents:
                 activeIdx === timeline.length - 1 ? "none" : "auto",
+              fontSize: "1.8rem",
             }}
           >
             &gt;
           </span>
         </div>
-        <span onClick={handleMenuClick} style={{ cursor: "pointer" }}>
+        <span
+          onClick={handleMenuClick}
+          style={{
+            cursor: "pointer",
+            fontSize: "1.8rem",
+            fontWeight: "400",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
           ≡
         </span>
       </nav>
 
       <footer className="lr-mobile-footer">
-        <div className="lr-mobile-footer-logo">The Life Gallery</div>
+        <div className="lr-mobile-footer-logo">The Life Museum</div>
         <div className="lr-mobile-footer-copyright">
           Copyright 2025. Creative Computing Group.
           <br />

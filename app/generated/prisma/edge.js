@@ -237,7 +237,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/ihyeonseo/Desktop/2025/TheLifeMuseum/the-life-museum/app/generated/prisma",
+      "value": "/Users/ihyeonseo/Desktop/2025/tlm/the-life-museum/app/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -255,12 +255,11 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/ihyeonseo/Desktop/2025/TheLifeMuseum/the-life-museum/prisma/schema.prisma",
+    "sourceFilePath": "/Users/ihyeonseo/Desktop/2025/tlm/the-life-museum/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": null,
-    "schemaEnvPath": "../../../.env"
+    "rootEnvPath": null
   },
   "relativePath": "../../../prisma",
   "clientVersion": "6.17.1",
@@ -269,7 +268,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
+  "postinstall": true,
   "inlineDatasources": {
     "db": {
       "url": {

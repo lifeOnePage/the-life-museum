@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import ImageCropOverlay from "@/app/edit/[username]/records/components/ImageCropOverlay";
-import { HiPlay, HiStop, HiStar, HiOutlineStar, HiTrash } from "react-icons/hi";
+import { HiPlay, HiStop, HiStar, HiOutlineStar, HiTrash, HiHome } from "react-icons/hi";
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import "../styles/cardPage.css";
 import "../styles/cardPage-mobile.css";
@@ -1571,7 +1571,11 @@ export default function LifeRecordDesktop({
                     }}
                     onClick={() => snapToIndex(i)}
                   >
-                    {item.label}
+                    {item.kind === "main" || item.label === "Home" ? (
+                      <HiHome size={20} />
+                    ) : (
+                      item.label
+                    )}
                     {item.kind === "main" ? (
                       <span className="year-event">{item.title}</span>
                     ) : (

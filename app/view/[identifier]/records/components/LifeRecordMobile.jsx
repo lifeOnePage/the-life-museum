@@ -1430,7 +1430,11 @@ export default function LifeRecordMobile({
           >
             &lt;
           </span>
-          <span>{activeItem.label || "home"}</span>
+          {activeItem.kind === "main" || activeItem.label === "home" ? (
+            <HiHome size={20} />
+          ) : (
+            <span>{activeItem.label}</span>
+          )}
           <span
             onClick={handleNext}
             style={{
@@ -1505,7 +1509,11 @@ export default function LifeRecordMobile({
                   </div>
                   <div className="lr-mobile-menu-item-info">
                     <div className="lr-mobile-menu-item-label">
-                      {item.label}
+                      {item.kind === "main" || item.label === "home" ? (
+                        <HiHome size={18} />
+                      ) : (
+                        item.label
+                      )}
                     </div>
                     <div className="lr-mobile-menu-item-title">
                       {item.kind === "main"

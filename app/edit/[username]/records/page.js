@@ -43,6 +43,7 @@ export default function EditRecords() {
   const [error, setError] = useState(null);
 
   const [data, setData] = useState(null);
+  const [originalData, setOriginalData] = useState(null); // 원본 데이터 저장
   const [recordId, setRecordId] = useState(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [activeItem, setActiveItem] = useState(null);
@@ -130,10 +131,12 @@ export default function EditRecords() {
             ];
           }
 
-          setData({
+          const initialData = {
             record,
             items,
-          });
+          };
+          setData(initialData);
+          setOriginalData(JSON.parse(JSON.stringify(initialData)));
           setIsSaved(true);
         } else {
           throw new Error("데이터를 불러올 수 없습니다.");
@@ -166,7 +169,7 @@ export default function EditRecords() {
       return;
     }
 
-    if (!token || !recordId || !data) {
+    if (!token || !recordId || !data || !originalData) {
       alert("저장할 데이터가 없습니다.");
       return;
     }
@@ -175,22 +178,35 @@ export default function EditRecords() {
       setIsSaving(true);
       setError(null);
 
-      // 1. Record 업데이트
-      await updateRecordDetails({
-        token,
-        id: recordId,
-        data: {
-          identifier: data.record.identifier,
-          coverUrl: data.record.coverUrl,
-          name: data.record.name,
-          subName: data.record.subName,
-          description: data.record.description,
-          bgm: data.record.bgm,
-          color: data.record.color,
-          birthDate: data.record.birthDate,
-          displayMode: data.record.displayMode,
-        },
+      // 1. Record 업데이트 - 변경된 필드만 추출
+      const recordFields = [
+        "coverUrl",
+        "name",
+        "subName",
+        "description",
+        "bgm",
+        "color",
+        "birthDate",
+        "displayMode",
+      ];
+      const changedRecordFields = {};
+      recordFields.forEach((field) => {
+        const currentValue = data.record[field];
+        const originalValue = originalData.record[field];
+        // 배열이나 객체인 경우 깊은 비교
+        if (JSON.stringify(currentValue) !== JSON.stringify(originalValue)) {
+          changedRecordFields[field] = currentValue;
+        }
       });
+
+      // 변경된 필드가 있을 때만 업데이트
+      if (Object.keys(changedRecordFields).length > 0) {
+        await updateRecordDetails({
+          token,
+          id: recordId,
+          data: changedRecordFields,
+        });
+      }
 
       // 2. RecordItems 업데이트 (기존 items와 새 items 비교)
       // 임시 ID는 문자열로 시작하므로 숫자 ID만 기존 항목으로 간주
@@ -203,28 +219,76 @@ export default function EditRecords() {
           (typeof item.id === "string" && item.id.startsWith("temp-")),
       );
 
-      // 기존 items 업데이트
+      // 기존 items 업데이트 - 변경된 필드만 추출
       for (const item of existingItems) {
-        console.log("[SAVE] Updating item:", item.id, {
-          title: item.title,
-          images: item.images,
-          imagesLength: item.images?.length,
+        const originalItem = originalData.items.find(
+          (orig) => orig.id === item.id,
+        );
+        if (!originalItem) {
+          // 원본에 없는 항목은 전체 업데이트
+          console.log("[SAVE] Updating item (new):", item.id);
+          await updateRecordItem({
+            token,
+            itemId: item.id,
+            data: {
+              title: item.title,
+              date: item.date,
+              location: item.location,
+              description: item.description,
+              color: item.color,
+              isHighlight: item.isHighlight,
+              coverUrl: item.coverUrl,
+              images: item.images || [],
+            },
+          });
+          continue;
+        }
+
+        // 변경된 필드만 추출
+        const itemFields = [
+          "title",
+          "date",
+          "location",
+          "description",
+          "color",
+          "isHighlight",
+          "coverUrl",
+          "images",
+        ];
+        const changedItemFields = {};
+        itemFields.forEach((field) => {
+          const currentValue = item[field];
+          const originalValue = originalItem[field];
+          // 배열인 경우 깊은 비교
+          if (Array.isArray(currentValue) || Array.isArray(originalValue)) {
+            if (
+              JSON.stringify(currentValue || []) !==
+              JSON.stringify(originalValue || [])
+            ) {
+              changedItemFields[field] = currentValue || [];
+            }
+          } else if (currentValue !== originalValue) {
+            changedItemFields[field] = currentValue;
+          }
         });
-        await updateRecordItem({
-          token,
-          itemId: item.id,
-          data: {
+
+        // 변경된 필드가 있을 때만 업데이트
+        if (Object.keys(changedItemFields).length > 0) {
+          console.log("[SAVE] Updating item:", item.id, {
+            changedFields: Object.keys(changedItemFields),
             title: item.title,
-            date: item.date,
-            location: item.location,
-            description: item.description,
-            color: item.color,
-            isHighlight: item.isHighlight,
-            coverUrl: item.coverUrl,
-            images: item.images || [], // images 배열 추가
-          },
-        });
-        console.log("[SAVE] Item updated successfully:", item.id);
+            images: item.images,
+            imagesLength: item.images?.length,
+          });
+          await updateRecordItem({
+            token,
+            itemId: item.id,
+            data: changedItemFields,
+          });
+          console.log("[SAVE] Item updated successfully:", item.id);
+        } else {
+          console.log("[SAVE] Item unchanged, skipping:", item.id);
+        }
       }
 
       // 새 items 생성 및 임시 ID를 실제 ID로 교체
@@ -258,10 +322,12 @@ export default function EditRecords() {
       }
 
       // 업데이트된 items로 상태 갱신
-      setData({
+      const newData = {
         ...data,
         items: updatedItems,
-      });
+      };
+      setData(newData);
+      setOriginalData(JSON.parse(JSON.stringify(newData))); // 원본 데이터도 업데이트
 
       // 삭제된 items 제거 (필요시 구현)
       // 삭제는 별도로 처리하거나, handleDataChange에서 관리

@@ -241,6 +241,7 @@ body,
   display: flex;
   align-items: baseline;
   gap: 10px;
+  padding-top: 15px;
 }
 
 .lr-meta .lr-name {
@@ -255,7 +256,18 @@ body,
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 4px;
+  justify-content: flex-start;
+  gap: 0.05rem;
+  align-self: baseline;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.lr-meta .lr-date-location > .lr-date:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  line-height: 1 !important;
+  margin-bottom: 0;
 }
 
 .lr-meta--mainTop {
@@ -281,11 +293,12 @@ body,
 .lr-date-location {
   text-align: right;
   font-family: "Helvetica Neue LT Std";
+  justify-content: space-between;
   font-size: 2rem;
   font-style: normal;
   font-weight: 300;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.05rem;
 }
 
 .lr-date {
@@ -295,10 +308,11 @@ body,
   font-style: normal;
   font-weight: 300;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.1rem;
   white-space: nowrap;
   display: block;
-  width: 100%;
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .lr-location {
@@ -945,8 +959,6 @@ body,
   line-height: 110%;
   letter-spacing: -0.25rem;
   white-space: pre-line;
-
-  margin-top: 1rem;
 }
 
 textarea.lr-name {

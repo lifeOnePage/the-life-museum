@@ -4,7 +4,6 @@ import client from "@/app/client";
 import { verifyJwt } from "@/app/lib/auth";
 
 const ALLOWED_RECORD_FIELDS = [
-  "identifier",
   "coverUrl",
   "name",
   "subName",

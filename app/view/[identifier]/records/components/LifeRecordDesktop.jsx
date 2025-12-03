@@ -2,8 +2,19 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import ImageCropOverlay from "@/app/edit/[username]/records/components/ImageCropOverlay";
-import { HiPlay, HiStop, HiStar, HiOutlineStar, HiTrash } from "react-icons/hi";
+import {
+  HiPlay,
+  HiStop,
+  HiStar,
+  HiOutlineStar,
+  HiTrash,
+  HiHome,
+} from "react-icons/hi";
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
+import {
+  IoIosArrowDropleftCircle,
+  IoIosArrowDroprightCircle,
+} from "react-icons/io";
 import "../styles/cardPage.css";
 import "../styles/cardPage-mobile.css";
 
@@ -320,7 +331,7 @@ export default function LifeRecordDesktop({
       setIsBgmPlaying(false);
     } else {
       bgmAudioRef.current.play().catch((err) => {
-        console.error("BGM 재생 실패:", err);
+        console.error("BG 재생 실패:", err);
       });
       setIsBgmPlaying(true);
     }
@@ -635,7 +646,11 @@ export default function LifeRecordDesktop({
               activeItem?.kind === "main" ? "lr-card--main" : ""
             }`}
           >
-            <div key={activeIdx} className="card-fade">
+            <div
+              key={activeIdx}
+              className="card-fade"
+              style={{ position: "relative" }}
+            >
               <div className="lr-card-media" style={{ position: "relative" }}>
                 {isEditing && (
                   <input
@@ -658,7 +673,6 @@ export default function LifeRecordDesktop({
                           // item은 최대 5개까지
                           // targetImageSlotIndex가 설정되어 있으면 해당 슬롯에 추가
                           if (targetImageSlotIndex !== null) {
-                            // 특정 슬롯에 이미지 추가
                             onImageChange(
                               "item",
                               activeItem.id,
@@ -827,7 +841,7 @@ export default function LifeRecordDesktop({
                               left: "10px",
                               top: "50%",
                               transform: "translateY(-50%)",
-                              background: "rgba(0, 0, 0, 0.5)",
+                              background: "transparent",
                               border: "none",
                               color: "white",
                               width: "40px",
@@ -838,10 +852,12 @@ export default function LifeRecordDesktop({
                               alignItems: "center",
                               justifyContent: "center",
                               zIndex: 2,
+                              filter:
+                                "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))",
                             }}
                             aria-label="이전 이미지"
                           >
-                            ←
+                            <IoIosArrowDropleftCircle size={30} />
                           </button>
                         )}
                         {currentImageIndex <
@@ -856,7 +872,7 @@ export default function LifeRecordDesktop({
                               right: "10px",
                               top: "50%",
                               transform: "translateY(-50%)",
-                              background: "rgba(0, 0, 0, 0.5)",
+                              background: "transparent",
                               border: "none",
                               color: "white",
                               width: "40px",
@@ -867,10 +883,12 @@ export default function LifeRecordDesktop({
                               alignItems: "center",
                               justifyContent: "center",
                               zIndex: 2,
+                              filter:
+                                "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))",
                             }}
                             aria-label="다음 이미지"
                           >
-                            →
+                            <IoIosArrowDroprightCircle size={30} />
                           </button>
                         )}
                         {/* 인디케이터 */}
@@ -921,80 +939,151 @@ export default function LifeRecordDesktop({
                         );
                         if (validImages.length > 1) {
                           return (
-                            <div
-                              className="lr-image-slider"
-                              style={{
-                                position: "relative",
-                                width: "100%",
-                                height: "100%",
-                                overflow: "hidden",
-                              }}
-                            >
+                            <>
                               <div
+                                className="lr-image-slider"
                                 style={{
-                                  display: "flex",
-                                  width: `${validImages.length * 100}%`,
+                                  position: "relative",
+                                  width: "100%",
                                   height: "100%",
-                                  transform: `translateX(-${currentImageIndex * (100 / validImages.length)}%)`,
-                                  transition: "transform 0.3s ease",
+                                  overflow: "hidden",
                                 }}
                               >
-                                {validImages.map((img, idx) => (
-                                  <img
-                                    key={idx}
-                                    src={img}
-                                    alt={`cover ${idx + 1}`}
-                                    className="lr-cover"
-                                    style={{
-                                      width: `${100 / validImages.length}%`,
-                                      height: "100%",
-                                      objectFit: "cover",
-                                    }}
-                                    onError={(e) => {
-                                      e.target.src =
-                                        "/images/records/No image.png";
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                              {/* 인디케이터 */}
-                              <div
-                                style={{
-                                  position: "absolute",
-                                  bottom: "16px",
-                                  left: "50%",
-                                  transform: "translateX(-50%)",
-                                  display: "flex",
-                                  gap: "8px",
-                                  zIndex: 10,
-                                  pointerEvents: "auto",
-                                }}
-                              >
-                                {validImages.map((_, idx) => (
+                                <div
+                                  style={{
+                                    display: "flex",
+                                    width: `${validImages.length * 100}%`,
+                                    height: "100%",
+                                    transform: `translateX(-${currentImageIndex * (100 / validImages.length)}%)`,
+                                    transition: "transform 0.3s ease",
+                                  }}
+                                >
+                                  {validImages.map((img, idx) => (
+                                    <img
+                                      key={idx}
+                                      src={img}
+                                      alt={`cover ${idx + 1}`}
+                                      className="lr-cover"
+                                      style={{
+                                        width: `${100 / validImages.length}%`,
+                                        height: "100%",
+                                        objectFit: "cover",
+                                      }}
+                                      onError={(e) => {
+                                        e.target.src =
+                                          "/images/records/No image.png";
+                                      }}
+                                    />
+                                  ))}
+                                </div>
+                                {/* 좌우 화살표 */}
+                                {currentImageIndex > 0 && (
                                   <button
-                                    key={idx}
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      setCurrentImageIndex(idx);
+                                      setCurrentImageIndex(
+                                        currentImageIndex - 1,
+                                      );
                                     }}
                                     style={{
-                                      width: "10px",
-                                      height: "10px",
-                                      borderRadius: "50%",
+                                      position: "absolute",
+                                      left: "10px",
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      background: "transparent",
                                       border: "none",
-                                      background:
-                                        idx === currentImageIndex
-                                          ? "rgba(255, 255, 255, 0.9)"
-                                          : "rgba(255, 255, 255, 0.5)",
+                                      color: "white",
+                                      width: "auto",
+                                      height: "auto",
                                       cursor: "pointer",
-                                      padding: 0,
-                                      transition: "background 0.2s ease",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      zIndex: 2,
+                                      filter:
+                                        "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))",
                                     }}
-                                    aria-label={`이미지 ${idx + 1}`}
-                                  />
-                                ))}
+                                    aria-label="이전 이미지"
+                                  >
+                                    <IoIosArrowDropleftCircle
+                                      size={30}
+                                      color="white"
+                                    />
+                                  </button>
+                                )}
+                                {currentImageIndex < validImages.length - 1 && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setCurrentImageIndex(
+                                        currentImageIndex + 1,
+                                      );
+                                    }}
+                                    style={{
+                                      position: "absolute",
+                                      right: "10px",
+                                      top: "50%",
+                                      transform: "translateY(-50%)",
+                                      background: "transparent",
+                                      border: "none",
+                                      color: "white",
+                                      width: "auto",
+                                      height: "auto",
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      zIndex: 2,
+                                      filter:
+                                        "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))",
+                                    }}
+                                    aria-label="다음 이미지"
+                                  >
+                                    <IoIosArrowDroprightCircle
+                                      size={30}
+                                      color="white"
+                                    />
+                                  </button>
+                                )}
+                                {/* 인디케이터 */}
+                                <div
+                                  style={{
+                                    position: "absolute",
+                                    bottom: "16px",
+                                    left: "50%",
+                                    transform: "translateX(-50%)",
+                                    display: "flex",
+                                    gap: "8px",
+                                    zIndex: 10,
+                                    pointerEvents: "auto",
+                                  }}
+                                >
+                                  {validImages.map((_, idx) => (
+                                    <button
+                                      key={idx}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCurrentImageIndex(idx);
+                                      }}
+                                      style={{
+                                        width: "10px",
+                                        height: "10px",
+                                        borderRadius: "50%",
+                                        border: "none",
+                                        background:
+                                          idx === currentImageIndex
+                                            ? "rgba(255, 255, 255, 0.9)"
+                                            : "rgba(255, 255, 255, 0.5)",
+                                        cursor: "pointer",
+                                        padding: 0,
+                                        transition: "background 0.2s ease",
+                                      }}
+                                      aria-label={`이미지 ${idx + 1}`}
+                                    />
+                                  ))}
+                                </div>
                               </div>
-                            </div>
+                            </>
                           );
                         } else if (validImages.length === 1) {
                           return (
@@ -1055,7 +1144,6 @@ export default function LifeRecordDesktop({
                     </div>
                   </div>
                 )}
-
                 {!isEditing && activeItem?.isHighlight && (
                   <div className="lr-fav-badge" aria-label="즐겨찾기">
                     <HiStar size={18} />
@@ -1459,7 +1547,6 @@ export default function LifeRecordDesktop({
                               placeholder="예: 2024.01.15"
                               className="lr-date-input"
                               style={{
-                                width: "100%",
                                 marginBottom: "4px",
                               }}
                             />
@@ -1480,9 +1567,6 @@ export default function LifeRecordDesktop({
                               }}
                               placeholder="예: 서울, 파리, 제주도"
                               className="lr-location-input"
-                              style={{
-                                width: "100%",
-                              }}
                             />
                           </>
                         ) : (
@@ -1571,7 +1655,11 @@ export default function LifeRecordDesktop({
                     }}
                     onClick={() => snapToIndex(i)}
                   >
-                    {item.label}
+                    {item.kind === "main" || item.label === "Home" ? (
+                      <HiHome size={20} />
+                    ) : (
+                      item.label
+                    )}
                     {item.kind === "main" ? (
                       <span className="year-event">{item.title}</span>
                     ) : (

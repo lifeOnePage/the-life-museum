@@ -239,13 +239,15 @@ body,
 .lr-meta {
   border-top: 1.2px solid #121212;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 10px;
+  padding-top: 15px;
 }
 
 .lr-meta .lr-name {
   flex: 6;
   min-width: 0;
+  align-items: flex-start;
 }
 
 .lr-meta .lr-date-location {
@@ -254,8 +256,16 @@ body,
   text-align: right;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  justify-content: space-between;
+  padding-top: 0;
+  width: 100%;
+}
+
+.lr-meta .lr-date-location > .lr-date:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  line-height: 1 !important;
+  margin-bottom: 0;
 }
 
 .lr-meta--mainTop {
@@ -281,11 +291,12 @@ body,
 .lr-date-location {
   text-align: right;
   font-family: "Helvetica Neue LT Std";
+  justify-content: space-between;
   font-size: 2rem;
   font-style: normal;
   font-weight: 300;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.05rem;
 }
 
 .lr-date {
@@ -295,10 +306,11 @@ body,
   font-style: normal;
   font-weight: 300;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.1rem;
   white-space: nowrap;
   display: block;
-  width: 100%;
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .lr-location {
@@ -362,6 +374,8 @@ body,
   font-weight: 100;
   line-height: 130%;
   text-align: center;
+  display: flex;
+  align-items: center;
 }
 
 .year-item.active {
@@ -943,8 +957,6 @@ body,
   line-height: 110%;
   letter-spacing: -0.25rem;
   white-space: pre-line;
-
-  margin-top: 1rem;
 }
 
 textarea.lr-name {
@@ -1020,14 +1032,18 @@ input.lr-subtitle::placeholder {
   text-align: right;
   border: 1px dashed rgba(0, 0, 0, 0.4);
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 6px 8px 6px 8px;
   color: inherit;
   font-family: "Helvetica Neue LT Std";
   font-size: 1.5rem;
   font-style: normal;
   font-weight: 300;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.05rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .lr-display-mode-control {

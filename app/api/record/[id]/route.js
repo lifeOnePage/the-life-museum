@@ -26,7 +26,9 @@ const ALLOWED_ITEM_FIELDS = [
 ];
 
 const pick = (obj, keys) =>
-  Object.fromEntries(Object.entries(obj || {}).filter(([k]) => keys.includes(k)));
+  Object.fromEntries(
+    Object.entries(obj || {}).filter(([k]) => keys.includes(k)),
+  );
 
 async function getAuthedUser(req) {
   const auth = req.headers.get("authorization") || "";
@@ -70,11 +72,18 @@ function toRecordResponse(rec) {
 export async function GET(req, { params }) {
   try {
     const user = await getAuthedUser(req);
-    if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    if (!user)
+      return NextResponse.json(
+        { ok: false, error: "unauthorized" },
+        { status: 401 },
+      );
 
     const id = Number(params?.id);
     if (!Number.isInteger(id)) {
-      return NextResponse.json({ ok: false, error: "invalid id" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "invalid id" },
+        { status: 400 },
+      );
     }
 
     // 본인 소유만 허용
@@ -110,36 +119,58 @@ export async function GET(req, { params }) {
     });
 
     if (!rec) {
-      return NextResponse.json({ ok: false, error: "record not found" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "record not found" },
+        { status: 404 },
+      );
     }
 
     return NextResponse.json({ status: 200, record: toRecordResponse(rec) });
   } catch (e) {
     console.error("[record:GET]", e);
-    return NextResponse.json({ ok: false, error: "server error" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "server error" },
+      { status: 500 },
+    );
   }
 }
 
 export async function PATCH(req, { params }) {
   try {
     const user = await getAuthedUser(req);
-    if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    if (!user)
+      return NextResponse.json(
+        { ok: false, error: "unauthorized" },
+        { status: 401 },
+      );
 
     const id = Number(params?.id);
     if (!Number.isInteger(id)) {
-      return NextResponse.json({ ok: false, error: "invalid id" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "invalid id" },
+        { status: 400 },
+      );
     }
 
     const body = await req.json().catch(() => ({}));
     const data = pick(body, ALLOWED_RECORD_FIELDS);
     if (Object.keys(data).length === 0) {
-      return NextResponse.json({ ok: false, error: "no updatable fields" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "no updatable fields" },
+        { status: 400 },
+      );
     }
 
     // 소유권 체크
-    const owned = await client.record.findFirst({ where: { id, userId: user.userId }, select: { id: true } });
+    const owned = await client.record.findFirst({
+      where: { id, userId: user.userId },
+      select: { id: true },
+    });
     if (!owned) {
-      return NextResponse.json({ ok: false, error: "record not found" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "record not found" },
+        { status: 404 },
+      );
     }
 
     await client.record.update({ where: { id }, data });
@@ -147,7 +178,10 @@ export async function PATCH(req, { params }) {
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[record:PATCH]", e);
-    return NextResponse.json({ ok: false, error: "server error" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "server error" },
+      { status: 500 },
+    );
   }
 }
 
@@ -155,11 +189,18 @@ export async function PATCH(req, { params }) {
 export async function POST(req, { params }) {
   try {
     const user = await getAuthedUser(req);
-    if (!user) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+    if (!user)
+      return NextResponse.json(
+        { ok: false, error: "unauthorized" },
+        { status: 401 },
+      );
 
     const id = Number(params?.id);
     if (!Number.isInteger(id)) {
-      return NextResponse.json({ ok: false, error: "invalid id" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "invalid id" },
+        { status: 400 },
+      );
     }
 
     const body = await req.json().catch(() => ({}));
@@ -182,9 +223,15 @@ export async function POST(req, { params }) {
     }
 
     // 소유권 체크
-    const owned = await client.record.findFirst({ where: { id, userId: user.userId }, select: { id: true } });
+    const owned = await client.record.findFirst({
+      where: { id, userId: user.userId },
+      select: { id: true },
+    });
     if (!owned) {
-      return NextResponse.json({ ok: false, error: "record not found" }, { status: 404 });
+      return NextResponse.json(
+        { ok: false, error: "record not found" },
+        { status: 404 },
+      );
     }
 
     const created = await client.recordItem.create({
@@ -195,6 +242,9 @@ export async function POST(req, { params }) {
     return NextResponse.json({ ok: true, id: created.id });
   } catch (e) {
     console.error("[recordItem:POST]", e);
-    return NextResponse.json({ ok: false, error: "server error" }, { status: 500 });
+    return NextResponse.json(
+      { ok: false, error: "server error" },
+      { status: 500 },
+    );
   }
 }

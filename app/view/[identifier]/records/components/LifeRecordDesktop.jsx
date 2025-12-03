@@ -345,17 +345,16 @@ export default function LifeRecordDesktop({
   const getAnchor = () => CFG.ANCHOR;
 
   const angleForIndex = (i) => {
-    const n = timeline.length;
-    if (n <= 0) return CFG.START;
-    const step = CFG.SWEEP / n;
-    return CFG.START + step * (i + 0.5);
+    // 타임라인 항목 수와 관계없이 고정된 각도 간격 사용하기
+    const FIXED_STEP = 15;
+    return CFG.START + FIXED_STEP * i;
   };
 
   const getOpacityForAngle = (angle, anchor = getAnchor()) => {
     let diff = Math.abs(norm360(angle) - norm360(anchor));
     if (diff > 180) diff = 360 - diff;
 
-    const normalizedDiff = Math.min(diff / 90, 1);
+    const normalizedDiff = Math.min(diff / 60, 1);
     const opacity = 1 - normalizedDiff * normalizedDiff * 1;
     return Math.max(opacity, 0);
   };

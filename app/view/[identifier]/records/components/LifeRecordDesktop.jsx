@@ -331,7 +331,7 @@ export default function LifeRecordDesktop({
       setIsBgmPlaying(false);
     } else {
       bgmAudioRef.current.play().catch((err) => {
-        console.error("BGM 재생 실패:", err);
+        console.error("BG 재생 실패:", err);
       });
       setIsBgmPlaying(true);
     }
@@ -1547,7 +1547,6 @@ export default function LifeRecordDesktop({
                               placeholder="예: 2024.01.15"
                               className="lr-date-input"
                               style={{
-                                width: "100%",
                                 marginBottom: "4px",
                               }}
                             />
@@ -1568,9 +1567,6 @@ export default function LifeRecordDesktop({
                               }}
                               placeholder="예: 서울, 파리, 제주도"
                               className="lr-location-input"
-                              style={{
-                                width: "100%",
-                              }}
                             />
                           </>
                         ) : (

@@ -239,7 +239,7 @@ body,
 .lr-meta {
   border-top: 1.2px solid #121212;
   display: flex;
-  align-items: baseline;
+  align-items: flex-start;
   gap: 10px;
   padding-top: 15px;
 }
@@ -247,6 +247,7 @@ body,
 .lr-meta .lr-name {
   flex: 6;
   min-width: 0;
+  align-items: flex-start;
 }
 
 .lr-meta .lr-date-location {
@@ -255,12 +256,9 @@ body,
   text-align: right;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  justify-content: flex-start;
-  gap: 0.05rem;
-  align-self: baseline;
+  justify-content: space-between;
   padding-top: 0;
-  margin-top: 0;
+  width: 100%;
 }
 
 .lr-meta .lr-date-location > .lr-date:first-child {
@@ -1034,14 +1032,18 @@ input.lr-subtitle::placeholder {
   text-align: right;
   border: 1px dashed rgba(0, 0, 0, 0.4);
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 6px 8px 6px 8px;
   color: inherit;
   font-family: "Helvetica Neue LT Std";
   font-size: 1.5rem;
   font-style: normal;
   font-weight: 300;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.05rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 1;
 }
 
 .lr-display-mode-control {

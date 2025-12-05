@@ -225,6 +225,7 @@ export default function LifeRecordMobile({
   const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
   const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
+  const targetImageSlotIndexRef = useRef(null); // ref로도 저장하여 동기적으로 접근 가능하도록
   const [touchStartX, setTouchStartX] = useState(null); // 스와이프 시작 X 좌표
   const [touchStartY, setTouchStartY] = useState(null); // 스와이프 시작 Y 좌표
   const DEFAULT_THEME = BG_THEME_PALETTE[0];
@@ -557,17 +558,57 @@ export default function LifeRecordMobile({
                   // main은 단일 이미지만
                   onImageChange("main", null, files[0]);
                 } else {
-                  // targetImageSlotIndex가 설정되어 있으면 해당 슬롯에 추가
-                  if (targetImageSlotIndex !== null) {
-                    // 특정 슬롯에 이미지 추가
-                    onImageChange(
-                      "item",
-                      activeItem.id,
-                      files[0],
-                      targetImageSlotIndex,
+                  // targetImageSlotIndex가 설정되어 있으면 해당 슬롯에 교체
+                  // 여러 소스에서 값을 확인 (data attribute > ref > state)
+                  const dataSlot = e.target.getAttribute("data-target-slot");
+                  const slotIdx =
+                    dataSlot !== null && dataSlot !== ""
+                      ? parseInt(dataSlot, 10)
+                      : targetImageSlotIndexRef.current !== null &&
+                          targetImageSlotIndexRef.current !== undefined
+                        ? targetImageSlotIndexRef.current
+                        : targetImageSlotIndex !== null &&
+                            targetImageSlotIndex !== undefined
+                          ? targetImageSlotIndex
+                          : null;
+                  console.log("[ONCHANGE] === FILE SELECTED ===");
+                  console.log(
+                    "[ONCHANGE] targetImageSlotIndex (state):",
+                    targetImageSlotIndex,
+                  );
+                  console.log(
+                    "[ONCHANGE] targetImageSlotIndex (ref):",
+                    targetImageSlotIndexRef.current,
+                  );
+                  console.log("[ONCHANGE] data-target-slot:", dataSlot);
+                  console.log(
+                    "[ONCHANGE] Using slotIdx:",
+                    slotIdx,
+                    "type:",
+                    typeof slotIdx,
+                  );
+                  if (
+                    slotIdx !== null &&
+                    slotIdx !== undefined &&
+                    !isNaN(slotIdx) &&
+                    slotIdx >= 0 &&
+                    slotIdx < 5
+                  ) {
+                    console.log(
+                      "[ONCHANGE] ✓ Calling onImageChange with targetSlotIndex:",
+                      slotIdx,
                     );
-                    setTargetImageSlotIndex(null); // 리셋
+                    onImageChange("item", activeItem.id, files[0], slotIdx);
+                    // 리셋은 파일 처리 완료 후에만
+                    setTimeout(() => {
+                      setTargetImageSlotIndex(null);
+                      targetImageSlotIndexRef.current = null;
+                      e.target.removeAttribute("data-target-slot");
+                    }, 100);
                   } else {
+                    console.log(
+                      "[ONCHANGE] ✗ No targetSlotIndex, adding to empty slot",
+                    );
                     // 여러 파일 선택 시: 현재 이미지 배열에서 null이 아닌 것만 카운트
                     const currentImages = activeItem.images || [];
                     const validImages = currentImages.filter((img) => img);
@@ -621,7 +662,7 @@ export default function LifeRecordMobile({
               />
             ) : isEditing ? (
               // Edit 모드: 최대 5개 슬롯 모두 표시 (빈 슬롯은 이미지 추가 버튼)
-              <div 
+              <div
                 className="lr-mobile-image-slider"
                 onTouchStart={(e) => {
                   const touch = e.touches[0];
@@ -633,19 +674,24 @@ export default function LifeRecordMobile({
                 }}
                 onTouchEnd={(e) => {
                   if (touchStartX === null || touchStartY === null) return;
-                  
+
                   const touch = e.changedTouches[0];
                   const touchEndX = touch.clientX;
                   const touchEndY = touch.clientY;
-                  
+
                   const deltaX = touchStartX - touchEndX;
                   const deltaY = touchStartY - touchEndY;
-                  
+
                   // 수평 스와이프가 수직 스와이프보다 크고, 최소 거리 이상일 때만 처리
-                  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
-                    const validImages = (activeItem.images || []).filter((img) => img);
+                  if (
+                    Math.abs(deltaX) > Math.abs(deltaY) &&
+                    Math.abs(deltaX) > 50
+                  ) {
+                    const validImages = (activeItem.images || []).filter(
+                      (img) => img,
+                    );
                     const maxIndex = Math.max(0, validImages.length - 1);
-                    
+
                     if (deltaX > 0) {
                       // 왼쪽으로 스와이프 (다음 이미지)
                       if (currentImageIndex < maxIndex) {
@@ -658,7 +704,7 @@ export default function LifeRecordMobile({
                       }
                     }
                   }
-                  
+
                   setTouchStartX(null);
                   setTouchStartY(null);
                 }}
@@ -687,19 +733,57 @@ export default function LifeRecordMobile({
                       >
                         {img ? (
                           <div
-                            onClick={() => {
+                            onClick={(e) => {
                               if (!cropState.isActive && isEditing) {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                console.log(
+                                  "[CLICK] === IMAGE CHANGE CLICKED ===",
+                                );
+                                console.log(
+                                  "[CLICK] Setting targetImageSlotIndex to:",
+                                  idx,
+                                  "type:",
+                                  typeof idx,
+                                );
+
+                                targetImageSlotIndexRef.current = idx;
                                 setTargetImageSlotIndex(idx);
-                                itemImageInputRef.current?.click();
+
+                                if (itemImageInputRef.current) {
+                                  itemImageInputRef.current.setAttribute(
+                                    "data-target-slot",
+                                    String(idx),
+                                  );
+                                  console.log(
+                                    "[CLICK] Set data-target-slot to:",
+                                    itemImageInputRef.current.getAttribute(
+                                      "data-target-slot",
+                                    ),
+                                  );
+                                } else {
+                                  console.log(
+                                    "[CLICK] ERROR: itemImageInputRef.current is null!",
+                                  );
+                                }
+
+                                requestAnimationFrame(() => {
+                                  console.log(
+                                    "[CLICK] Opening file dialog, ref value:",
+                                    targetImageSlotIndexRef.current,
+                                  );
+                                  itemImageInputRef.current?.click();
+                                });
                               }
                             }}
                             style={{
                               width: "100%",
                               height: "100%",
                               position: "relative",
-                              cursor: cropState.isActive || !isEditing
-                                ? "default"
-                                : "pointer",
+                              cursor:
+                                cropState.isActive || !isEditing
+                                  ? "default"
+                                  : "pointer",
                             }}
                           >
                             <img
@@ -754,10 +838,28 @@ export default function LifeRecordMobile({
                           </div>
                         ) : (
                           <div
-                            onClick={() => {
+                            onClick={(e) => {
                               if (!cropState.isActive) {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                console.log(
+                                  "[CLICK] === EMPTY SLOT CLICKED ===",
+                                );
+                                console.log(
+                                  "[CLICK] Setting targetImageSlotIndex to:",
+                                  idx,
+                                );
+                                targetImageSlotIndexRef.current = idx;
                                 setTargetImageSlotIndex(idx);
-                                itemImageInputRef.current?.click();
+                                if (itemImageInputRef.current) {
+                                  itemImageInputRef.current.setAttribute(
+                                    "data-target-slot",
+                                    String(idx),
+                                  );
+                                }
+                                requestAnimationFrame(() => {
+                                  itemImageInputRef.current?.click();
+                                });
                               }
                             }}
                             style={{
@@ -1086,6 +1188,19 @@ export default function LifeRecordMobile({
                       if (activeItem.kind === "main") {
                         mainImageInputRef.current?.click();
                       } else {
+                        // 현재 보이는 이미지 인덱스를 targetSlotIndex로 설정
+                        console.log(
+                          "[BUTTON CLICK] Setting targetSlotIndex to currentImageIndex:",
+                          currentImageIndex,
+                        );
+                        targetImageSlotIndexRef.current = currentImageIndex;
+                        setTargetImageSlotIndex(currentImageIndex);
+                        if (itemImageInputRef.current) {
+                          itemImageInputRef.current.setAttribute(
+                            "data-target-slot",
+                            String(currentImageIndex),
+                          );
+                        }
                         itemImageInputRef.current?.click();
                       }
                     }

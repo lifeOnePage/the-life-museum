@@ -629,6 +629,10 @@ export default function EditRecords() {
       return;
     }
 
+    console.log(
+      "[handleImageChange] Received targetSlotIndex:",
+      targetSlotIndex,
+    );
     // 크롭 없이 바로 업로드
     await uploadImageFile(type, itemId, file, targetSlotIndex);
   };
@@ -657,6 +661,20 @@ export default function EditRecords() {
             coverUrl: uploadUrl,
           },
         });
+
+        // UI가 업데이트되고 이미지가 화면에 표시될 때까지 기다림
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              // 이미지가 실제로 DOM에 렌더링되고 로드될 때까지 추가 대기
+              setTimeout(() => {
+                resolve();
+              }, 200);
+            });
+          });
+        });
+
+        setIsSaved(false);
       } else if (type === "item" && itemId) {
         uploadUrl = await uploadRecordFile({
           token,
@@ -665,9 +683,12 @@ export default function EditRecords() {
         });
         const newItems = data.items.map((item) => {
           if (item.id === itemId) {
-            // 기존 images 배열이 있으면 사용, 없으면 coverUrl로 초기화
-            let currentImages = item.images || [];
+            // 기존 images 배열을 깊은 복사 (원본 배열 수정 방지)
+            let currentImages = Array.isArray(item.images)
+              ? [...item.images]
+              : [];
             console.log("[UPLOAD] Before update - itemId:", itemId, {
+              originalImages: item.images,
               currentImages,
               currentImagesLength: currentImages.length,
               targetSlotIndex,
@@ -679,17 +700,47 @@ export default function EditRecords() {
               currentImages = [item.coverUrl];
             }
 
-            // targetSlotIndex가 지정되어 있으면 해당 슬롯에 추가
+            // 배열을 항상 5개로 확장 (null로 채움)
+            while (currentImages.length < 5) {
+              currentImages.push(null);
+            }
+            // 5개를 초과하면 자르기
+            if (currentImages.length > 5) {
+              currentImages = currentImages.slice(0, 5);
+            }
+
+            // targetSlotIndex가 지정되어 있으면 해당 슬롯에 교체
+            const slotIdx =
+              targetSlotIndex !== null && targetSlotIndex !== undefined
+                ? typeof targetSlotIndex === "string"
+                  ? parseInt(targetSlotIndex, 10)
+                  : targetSlotIndex
+                : null;
+
+            console.log("[UPLOAD] targetSlotIndex check:", {
+              targetSlotIndex,
+              slotIdx,
+              type: typeof targetSlotIndex,
+              condition1: targetSlotIndex !== null,
+              condition2: slotIdx !== null,
+              condition3: slotIdx >= 0,
+              condition4: slotIdx < 5,
+            });
+
             if (
-              targetSlotIndex !== null &&
-              targetSlotIndex >= 0 &&
-              targetSlotIndex < 5
+              slotIdx !== null &&
+              !isNaN(slotIdx) &&
+              slotIdx >= 0 &&
+              slotIdx < 5
             ) {
-              // 배열이 충분히 길지 않으면 확장
-              while (currentImages.length <= targetSlotIndex) {
-                currentImages.push(null);
-              }
-              currentImages[targetSlotIndex] = uploadUrl;
+              console.log(
+                "[UPLOAD] Replacing image at index:",
+                slotIdx,
+                "Before:",
+                currentImages[slotIdx],
+              );
+              currentImages[slotIdx] = uploadUrl;
+              console.log("[UPLOAD] After replacement:", currentImages);
             } else {
               // targetSlotIndex가 없으면 첫 번째 빈 슬롯에 추가
               const firstNullIndex = currentImages.findIndex((img) => !img);
@@ -709,12 +760,6 @@ export default function EditRecords() {
                 currentImages.push(uploadUrl);
               }
             }
-
-            // 최대 5개로 제한
-            while (currentImages.length < 5) {
-              currentImages.push(null);
-            }
-            currentImages = currentImages.slice(0, 5);
 
             // 첫 번째 유효한 이미지를 coverUrl로도 유지 (하위 호환성)
             const firstValidImage =
@@ -739,14 +784,24 @@ export default function EditRecords() {
           items: newItems,
         });
         console.log("[UPLOAD] Data updated, newItems:", newItems);
+        await new Promise((resolve) => {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              setTimeout(() => {
+                resolve();
+              }, 200);
+            });
+          });
+        });
       }
       setIsSaved(false);
     } catch (e) {
       console.error("[image upload] error:", e);
       alert(`이미지 업로드 실패: ${e.message || "알 수 없는 오류"}`);
-    } finally {
       setIsUploadingImage(false);
+      return;
     }
+    setIsUploadingImage(false);
   };
 
   const handleCropComplete = async (croppedFile) => {

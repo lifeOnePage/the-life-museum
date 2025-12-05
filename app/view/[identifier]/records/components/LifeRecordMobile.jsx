@@ -225,6 +225,8 @@ export default function LifeRecordMobile({
   const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
   const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
+  const [touchStartX, setTouchStartX] = useState(null); // 스와이프 시작 X 좌표
+  const [touchStartY, setTouchStartY] = useState(null); // 스와이프 시작 Y 좌표
   const DEFAULT_THEME = BG_THEME_PALETTE[0];
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
@@ -619,7 +621,48 @@ export default function LifeRecordMobile({
               />
             ) : isEditing ? (
               // Edit 모드: 최대 5개 슬롯 모두 표시 (빈 슬롯은 이미지 추가 버튼)
-              <div className="lr-mobile-image-slider">
+              <div 
+                className="lr-mobile-image-slider"
+                onTouchStart={(e) => {
+                  const touch = e.touches[0];
+                  setTouchStartX(touch.clientX);
+                  setTouchStartY(touch.clientY);
+                }}
+                onTouchMove={(e) => {
+                  // 스크롤과 스와이프 구분을 위해 기본 동작은 막지 않음
+                }}
+                onTouchEnd={(e) => {
+                  if (touchStartX === null || touchStartY === null) return;
+                  
+                  const touch = e.changedTouches[0];
+                  const touchEndX = touch.clientX;
+                  const touchEndY = touch.clientY;
+                  
+                  const deltaX = touchStartX - touchEndX;
+                  const deltaY = touchStartY - touchEndY;
+                  
+                  // 수평 스와이프가 수직 스와이프보다 크고, 최소 거리 이상일 때만 처리
+                  if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50) {
+                    const validImages = (activeItem.images || []).filter((img) => img);
+                    const maxIndex = Math.max(0, validImages.length - 1);
+                    
+                    if (deltaX > 0) {
+                      // 왼쪽으로 스와이프 (다음 이미지)
+                      if (currentImageIndex < maxIndex) {
+                        setCurrentImageIndex(currentImageIndex + 1);
+                      }
+                    } else {
+                      // 오른쪽으로 스와이프 (이전 이미지)
+                      if (currentImageIndex > 0) {
+                        setCurrentImageIndex(currentImageIndex - 1);
+                      }
+                    }
+                  }
+                  
+                  setTouchStartX(null);
+                  setTouchStartY(null);
+                }}
+              >
                 <div
                   style={{
                     display: "flex",
@@ -643,22 +686,72 @@ export default function LifeRecordMobile({
                         }}
                       >
                         {img ? (
-                          <img
-                            className={`lr-mobile-cover ${
-                              isTransitioning ? "fade-out" : "fade-in"
-                            }`}
-                            src={img}
-                            alt={`앨범 커버 ${idx + 1}`}
+                          <div
+                            onClick={() => {
+                              if (!cropState.isActive && isEditing) {
+                                setTargetImageSlotIndex(idx);
+                                itemImageInputRef.current?.click();
+                              }
+                            }}
                             style={{
                               width: "100%",
                               height: "100%",
-                              objectFit: "cover",
-                              display: "block",
+                              position: "relative",
+                              cursor: cropState.isActive || !isEditing
+                                ? "default"
+                                : "pointer",
                             }}
-                            onError={(e) => {
-                              e.target.src = "/images/records/No image.png";
-                            }}
-                          />
+                          >
+                            <img
+                              className={`lr-mobile-cover ${
+                                isTransitioning ? "fade-out" : "fade-in"
+                              }`}
+                              src={img}
+                              alt={`앨범 커버 ${idx + 1}`}
+                              style={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "cover",
+                                display: "block",
+                              }}
+                              onError={(e) => {
+                                e.target.src = "/images/records/No image.png";
+                              }}
+                            />
+                            {isEditing && !cropState.isActive && (
+                              <div
+                                style={{
+                                  position: "absolute",
+                                  inset: 0,
+                                  background: "rgba(0, 0, 0, 0)",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  transition: "background 0.2s",
+                                }}
+                                onTouchStart={(e) => {
+                                  e.currentTarget.style.background =
+                                    "rgba(0, 0, 0, 0.5)";
+                                }}
+                                onTouchEnd={(e) => {
+                                  e.currentTarget.style.background =
+                                    "rgba(0, 0, 0, 0)";
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    opacity: 0,
+                                    color: "#fff",
+                                    fontSize: "11px",
+                                    fontWeight: "500",
+                                    transition: "opacity 0.2s",
+                                  }}
+                                >
+                                  이미지 변경
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <div
                             onClick={() => {

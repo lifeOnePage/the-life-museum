@@ -38,6 +38,7 @@ export async function GET(req, { params }) {
         color: true,
         birthDate: true,
         displayMode: true,
+        userName: true,
         recordItems: {
           select: {
             id: true,
@@ -77,6 +78,7 @@ export async function GET(req, { params }) {
           color: record.color,
           birthDate: record.birthDate || null,
           displayMode: record.displayMode || "year",
+          userName: record.userName || null,
         },
         recordItems: (record.recordItems || []).map((item) => {
           console.log("[API GET /records/[id]] Item:", item.id, "images from DB:", item.images);

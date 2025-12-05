@@ -250,6 +250,7 @@ export default function LifeRecordDesktop({
   const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
   const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
+  const targetImageSlotIndexRef = useRef(null);
   const DEFAULT_THEME = BG_THEME_PALETTE[0];
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
@@ -670,16 +671,69 @@ export default function LifeRecordDesktop({
                           onImageChange("main", null, files[0]);
                         } else {
                           // item은 최대 5개까지
-                          // targetImageSlotIndex가 설정되어 있으면 해당 슬롯에 추가
-                          if (targetImageSlotIndex !== null) {
+                          // targetImageSlotIndex가 설정되어 있으면 해당 슬롯에 교체
+                          // 여러 소스에서 값을 확인 (data attribute > ref > state)
+                          const dataSlot =
+                            e.target.getAttribute("data-target-slot");
+                          const slotIdx =
+                            dataSlot !== null && dataSlot !== ""
+                              ? parseInt(dataSlot, 10)
+                              : targetImageSlotIndexRef.current !== null &&
+                                  targetImageSlotIndexRef.current !== undefined
+                                ? targetImageSlotIndexRef.current
+                                : targetImageSlotIndex !== null &&
+                                    targetImageSlotIndex !== undefined
+                                  ? targetImageSlotIndex
+                                  : null;
+                          console.log("[ONCHANGE] === FILE SELECTED ===");
+                          console.log(
+                            "[ONCHANGE] targetImageSlotIndex (state):",
+                            targetImageSlotIndex,
+                          );
+                          console.log(
+                            "[ONCHANGE] targetImageSlotIndex (ref):",
+                            targetImageSlotIndexRef.current,
+                          );
+                          console.log("[ONCHANGE] data-target-slot:", dataSlot);
+                          console.log(
+                            "[ONCHANGE] Using slotIdx:",
+                            slotIdx,
+                            "type:",
+                            typeof slotIdx,
+                          );
+                          console.log(
+                            "[ONCHANGE] slotIdx check:",
+                            slotIdx !== null,
+                            slotIdx !== undefined,
+                            !isNaN(slotIdx),
+                          );
+                          if (
+                            slotIdx !== null &&
+                            slotIdx !== undefined &&
+                            !isNaN(slotIdx) &&
+                            slotIdx >= 0 &&
+                            slotIdx < 5
+                          ) {
+                            console.log(
+                              "[ONCHANGE] ✓ Calling onImageChange with targetSlotIndex:",
+                              slotIdx,
+                            );
                             onImageChange(
                               "item",
                               activeItem.id,
                               files[0],
-                              targetImageSlotIndex,
+                              slotIdx,
                             );
-                            setTargetImageSlotIndex(null); // 리셋
+                            // 리셋은 파일 처리 완료 후에만
+                            setTimeout(() => {
+                              setTargetImageSlotIndex(null);
+                              targetImageSlotIndexRef.current = null;
+                              e.target.removeAttribute("data-target-slot");
+                            }, 100);
                           } else {
+                            console.log(
+                              "[ONCHANGE] ✗ No targetSlotIndex, adding to empty slot",
+                            );
                             // 여러 파일 선택 시: 현재 이미지 배열에서 null이 아닌 것만 카운트
                             const currentImages = activeItem.images || [];
                             const validImages = currentImages.filter(
@@ -782,10 +836,47 @@ export default function LifeRecordDesktop({
                               >
                                 {img ? (
                                   <div
-                                    onClick={() => {
+                                    onClick={(e) => {
                                       if (!cropState.isActive && isEditing) {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        console.log(
+                                          "[CLICK] === IMAGE CHANGE CLICKED ===",
+                                        );
+                                        console.log(
+                                          "[CLICK] Setting targetImageSlotIndex to:",
+                                          idx,
+                                          "type:",
+                                          typeof idx,
+                                        );
+                                        // ref에 먼저 저장 (동기적)
+                                        targetImageSlotIndexRef.current = idx;
                                         setTargetImageSlotIndex(idx);
-                                        itemImageInputRef.current?.click();
+                                        // 파일 입력에 data attribute로도 저장
+                                        if (itemImageInputRef.current) {
+                                          itemImageInputRef.current.setAttribute(
+                                            "data-target-slot",
+                                            String(idx),
+                                          );
+                                          console.log(
+                                            "[CLICK] Set data-target-slot to:",
+                                            itemImageInputRef.current.getAttribute(
+                                              "data-target-slot",
+                                            ),
+                                          );
+                                        } else {
+                                          console.log(
+                                            "[CLICK] ERROR: itemImageInputRef.current is null!",
+                                          );
+                                        }
+                                        // 약간의 지연 후 클릭 (상태 업데이트 보장)
+                                        requestAnimationFrame(() => {
+                                          console.log(
+                                            "[CLICK] Opening file dialog, ref value:",
+                                            targetImageSlotIndexRef.current,
+                                          );
+                                          itemImageInputRef.current?.click();
+                                        });
                                       }
                                     }}
                                     style={{
@@ -854,10 +945,28 @@ export default function LifeRecordDesktop({
                                   </div>
                                 ) : (
                                   <div
-                                    onClick={() => {
+                                    onClick={(e) => {
                                       if (!cropState.isActive) {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        console.log(
+                                          "[CLICK] === EMPTY SLOT CLICKED ===",
+                                        );
+                                        console.log(
+                                          "[CLICK] Setting targetImageSlotIndex to:",
+                                          idx,
+                                        );
+                                        targetImageSlotIndexRef.current = idx;
                                         setTargetImageSlotIndex(idx);
-                                        itemImageInputRef.current?.click();
+                                        if (itemImageInputRef.current) {
+                                          itemImageInputRef.current.setAttribute(
+                                            "data-target-slot",
+                                            String(idx),
+                                          );
+                                        }
+                                        requestAnimationFrame(() => {
+                                          itemImageInputRef.current?.click();
+                                        });
                                       }
                                     }}
                                     style={{
@@ -1263,6 +1372,20 @@ export default function LifeRecordDesktop({
                               if (activeItem.kind === "main") {
                                 mainImageInputRef.current?.click();
                               } else {
+                                // 현재 보이는 이미지 인덱스를 targetSlotIndex로 설정
+                                console.log(
+                                  "[BUTTON CLICK] Setting targetSlotIndex to currentImageIndex:",
+                                  currentImageIndex,
+                                );
+                                targetImageSlotIndexRef.current =
+                                  currentImageIndex;
+                                setTargetImageSlotIndex(currentImageIndex);
+                                if (itemImageInputRef.current) {
+                                  itemImageInputRef.current.setAttribute(
+                                    "data-target-slot",
+                                    String(currentImageIndex),
+                                  );
+                                }
                                 itemImageInputRef.current?.click();
                               }
                             }

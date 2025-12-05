@@ -206,20 +206,16 @@ export async function POST(req, { params }) {
     const body = await req.json().catch(() => ({}));
     const data = pick(body, ALLOWED_ITEM_FIELDS);
 
-    // images 배열이 있으면 빈 문자열만 필터링하고 최대 5개로 제한 (null은 유지)
+    // images 배열 처리: String[] 타입이므로 null을 포함할 수 없음
     if (data.images && Array.isArray(data.images)) {
-      // 빈 문자열만 필터링하고 최대 5개로 제한 (null은 유지하여 슬롯 구조 유지)
+      // 빈 문자열, null, undefined를 필터링하고 최대 5개로 제한
       data.images = data.images
-        .map((img) => (img === "" ? null : img))
+        .filter((img) => img !== null && img !== undefined && img !== "")
         .slice(0, 5);
-      // 최대 5개로 맞추기 위해 null로 채움
-      while (data.images.length < 5) {
-        data.images.push(null);
-      }
-      data.images = data.images.slice(0, 5);
-    } else if (!data.images) {
-      // images가 없으면 null로 채운 5개 배열로 설정
-      data.images = [null, null, null, null, null];
+      // 빈 배열이면 그대로 유지 (Prisma String[] 타입은 빈 배열 처리 가능)
+    } else {
+      // images가 없거나 배열이 아니면 빈 배열로 설정
+      data.images = [];
     }
 
     // 소유권 체크

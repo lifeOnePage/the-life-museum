@@ -200,14 +200,15 @@ export default function LifeRecordDesktop({
           images.push(null);
         }
         images = images.slice(0, 5);
-      } else if (item.coverUrl) {
+      } else if (
+        item.coverUrl &&
+        item.coverUrl !== "/images/records/No image.png"
+      ) {
         images = [item.coverUrl];
-        // 나머지 슬롯을 null로 채우기
         while (images.length < 5) {
           images.push(null);
         }
       } else {
-        // 이미지가 없으면 빈 슬롯 5개
         images = Array(5).fill(null);
       }
 
@@ -478,7 +479,6 @@ export default function LifeRecordDesktop({
         console.error("Scroll sound 재생 실패:", err);
       });
     }
-    // reverse가 true면 반대 방향으로 회전
     setRotation(norm360(currentRotation + (reverse ? -delta : delta)));
     setActiveIdx(i);
   };
@@ -781,20 +781,77 @@ export default function LifeRecordDesktop({
                                 }}
                               >
                                 {img ? (
-                                  <img
-                                    src={img}
-                                    alt={`cover ${idx + 1}`}
-                                    className="lr-cover"
+                                  <div
+                                    onClick={() => {
+                                      if (!cropState.isActive && isEditing) {
+                                        setTargetImageSlotIndex(idx);
+                                        itemImageInputRef.current?.click();
+                                      }
+                                    }}
                                     style={{
                                       width: "100%",
                                       height: "100%",
-                                      objectFit: "cover",
+                                      position: "relative",
+                                      cursor:
+                                        cropState.isActive || !isEditing
+                                          ? "default"
+                                          : "pointer",
                                     }}
-                                    onError={(e) => {
-                                      e.target.src =
-                                        "/images/records/No image.png";
-                                    }}
-                                  />
+                                  >
+                                    <img
+                                      src={img}
+                                      alt={`cover ${idx + 1}`}
+                                      className="lr-cover"
+                                      style={{
+                                        width: "100%",
+                                        height: "100%",
+                                        objectFit: "cover",
+                                      }}
+                                      onError={(e) => {
+                                        e.target.src =
+                                          "/images/records/No image.png";
+                                      }}
+                                    />
+                                    {isEditing && !cropState.isActive && (
+                                      <div
+                                        style={{
+                                          position: "absolute",
+                                          inset: 0,
+                                          background: "rgba(0, 0, 0, 0)",
+                                          display: "flex",
+                                          alignItems: "center",
+                                          justifyContent: "center",
+                                          transition: "background 0.2s",
+                                        }}
+                                        onMouseEnter={(e) => {
+                                          e.currentTarget.style.background =
+                                            "rgba(0, 0, 0, 0.5)";
+                                        }}
+                                        onMouseLeave={(e) => {
+                                          e.currentTarget.style.background =
+                                            "rgba(0, 0, 0, 0)";
+                                        }}
+                                      >
+                                        <span
+                                          style={{
+                                            opacity: 0,
+                                            color: "#fff",
+                                            fontSize: "12px",
+                                            fontWeight: "500",
+                                            transition: "opacity 0.2s",
+                                          }}
+                                          onMouseEnter={(e) => {
+                                            e.currentTarget.style.opacity = "1";
+                                          }}
+                                          onMouseLeave={(e) => {
+                                            e.currentTarget.style.opacity = "0";
+                                          }}
+                                        >
+                                          이미지 변경
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
                                 ) : (
                                   <div
                                     onClick={() => {

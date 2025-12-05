@@ -126,7 +126,8 @@ export default function EditRecords() {
                   "기록할 만한 일들이 있나요? 작은 일들도 좋아요.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브해보세요.",
                 color: "",
                 isHighlight: false,
-                coverUrl: "/images/records/No image.png",
+                coverUrl: null, // 더미 아이템은 coverUrl을 null로 설정
+                images: [], // 더미 아이템은 images 배열도 빈 배열로 설정
               },
             ];
           }
@@ -193,9 +194,13 @@ export default function EditRecords() {
       recordFields.forEach((field) => {
         const currentValue = data.record[field];
         const originalValue = originalData.record[field];
+        // null과 undefined를 동일하게 처리
+        const current = currentValue === undefined ? null : currentValue;
+        const original = originalValue === undefined ? null : originalValue;
         // 배열이나 객체인 경우 깊은 비교
-        if (JSON.stringify(currentValue) !== JSON.stringify(originalValue)) {
-          changedRecordFields[field] = currentValue;
+        if (JSON.stringify(current) !== JSON.stringify(original)) {
+          // null 값도 명시적으로 포함 (Prisma가 null을 처리할 수 있도록)
+          changedRecordFields[field] = current;
         }
       });
 
@@ -259,16 +264,31 @@ export default function EditRecords() {
         itemFields.forEach((field) => {
           const currentValue = item[field];
           const originalValue = originalItem[field];
+          // null과 undefined를 동일하게 처리
+          const current = currentValue === undefined ? null : currentValue;
+          const original = originalValue === undefined ? null : originalValue;
           // 배열인 경우 깊은 비교
-          if (Array.isArray(currentValue) || Array.isArray(originalValue)) {
-            if (
-              JSON.stringify(currentValue || []) !==
-              JSON.stringify(originalValue || [])
-            ) {
-              changedItemFields[field] = currentValue || [];
+          if (Array.isArray(current) || Array.isArray(original)) {
+            // images 배열의 경우 null, undefined, 빈 문자열 제거 후 비교
+            let normalizedCurrent = current || [];
+            let normalizedOriginal = original || [];
+            if (field === "images") {
+              normalizedCurrent = normalizedCurrent.filter(
+                (img) => img !== null && img !== undefined && img !== "",
+              );
+              normalizedOriginal = normalizedOriginal.filter(
+                (img) => img !== null && img !== undefined && img !== "",
+              );
             }
-          } else if (currentValue !== originalValue) {
-            changedItemFields[field] = currentValue;
+            if (
+              JSON.stringify(normalizedCurrent) !==
+              JSON.stringify(normalizedOriginal)
+            ) {
+              changedItemFields[field] = normalizedCurrent;
+            }
+          } else if (current !== original) {
+            // null 값도 명시적으로 포함
+            changedItemFields[field] = current;
           }
         });
 
@@ -294,28 +314,38 @@ export default function EditRecords() {
       // 새 items 생성 및 임시 ID를 실제 ID로 교체
       const updatedItems = [...data.items];
       for (const item of newItems) {
+        // images 배열에서 null, undefined, 빈 문자열 제거 (서버 형식에 맞춤)
+        let images = [];
+        if (item.images && Array.isArray(item.images)) {
+          images = item.images
+            .filter((img) => img !== null && img !== undefined && img !== "")
+            .slice(0, 5);
+        }
+
         const result = await createRecordItem({
           token,
           recordId,
           data: {
-            title: item.title,
-            date: item.date,
-            location: item.location,
-            description: item.description,
-            color: item.color,
-            isHighlight: item.isHighlight,
-            coverUrl: item.coverUrl,
-            images: item.images || [], // images 배열 추가
+            title: item.title || null,
+            date: item.date || null,
+            location: item.location || null,
+            description: item.description || null,
+            color: item.color || null,
+            isHighlight: item.isHighlight || false,
+            coverUrl: item.coverUrl || null,
+            images: images,
           },
         });
 
-        // 생성된 항목의 실제 ID로 교체
+        // 생성된 항목의 실제 ID로 교체하고 서버에서 처리된 images 배열로 업데이트
         if (result?.ok && result?.id) {
           const tempIdIndex = updatedItems.findIndex((i) => i.id === item.id);
           if (tempIdIndex !== -1) {
+            // 서버에서 저장된 형식에 맞춰 images 배열 정리 (null 제거된 빈 배열)
             updatedItems[tempIdIndex] = {
               ...updatedItems[tempIdIndex],
               id: result.id,
+              images: images, // 서버에 전송한 정리된 images 배열 사용
             };
           }
         }
@@ -327,7 +357,8 @@ export default function EditRecords() {
         items: updatedItems,
       };
       setData(newData);
-      setOriginalData(JSON.parse(JSON.stringify(newData))); // 원본 데이터도 업데이트
+      // 원본 데이터도 업데이트 (서버에서 처리된 형식으로 저장)
+      setOriginalData(JSON.parse(JSON.stringify(newData)));
 
       // 삭제된 items 제거 (필요시 구현)
       // 삭제는 별도로 처리하거나, handleDataChange에서 관리
@@ -470,7 +501,8 @@ export default function EditRecords() {
                   "기록할 만한 일들이 있나요? 작은 일들도 좋아요.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브해보세요.",
                 color: "",
                 isHighlight: false,
-                coverUrl: "/images/records/No image.png",
+                coverUrl: null, // 더미 아이템은 coverUrl을 null로 설정
+                images: [], // 더미 아이템은 images 배열도 빈 배열로 설정
               },
             ];
           }

@@ -44,7 +44,7 @@ export async function POST(req) {
     }
 
     const body = await req.json().catch(() => ({}));
-    const { name, identifier } = body || {};
+    const { name, identifier, userName } = body || {};
 
     if (!identifier) {
       return NextResponse.json(
@@ -53,24 +53,21 @@ export async function POST(req) {
       );
     }
 
-    // 사용자 이름 가져오기
     const userId = Number(payload.sub);
-    const user = await client.user.findUnique({
-      where: { id: userId },
-      select: { name: true },
-    });
 
     const created = await client.record.create({
       data: {
         identifier,
         name: name ?? null,
-        userName: user?.name || null,
+        // userName은 제작할 대상의 성함 (입력받은 값 또는 null)
+        userName: userName || null,
         userId: userId,
       },
       select: {
         id: true,
         identifier: true,
         name: true,
+        userName: true,
         createdAt: true,
         updatedAt: true,
       },

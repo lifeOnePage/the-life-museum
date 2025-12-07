@@ -39,7 +39,7 @@ const BG_THEME_PALETTE = [
   { name: "Olive", bg: "#7B7341", text: "#f2f2f2ff" },
   { name: "Warm Gray", bg: "#746F6F", text: "#F2F2F2" },
   { name: "Blue", bg: "#6C8E98", text: "#F2F2F2" },
-  { name: "BlackPink", bg: "#12121268", text: "#aa747dff" },
+  { name: "BlackPink", bg: "#212121", text: "#AA747D" },
   { name: "Parchment", bg: "#F5F1E6", text: "#111111" },
   { name: "Cloud", bg: "#ECECEC", text: "#111111" },
 ];
@@ -120,6 +120,8 @@ export default function LifeRecordDesktop({
   onCropComplete,
   onCropCancel,
   aspectRatio = 1,
+  autoSlideEnabled: propAutoSlideEnabled,
+  onAutoSlideEnabledChange,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -247,7 +249,21 @@ export default function LifeRecordDesktop({
 
   const [rotation, setRotation] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
-  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
+  // 자동재생 기본값: edit 미리보기 off, desktop view on
+  // 부모에서 prop으로 전달되면 그것을 사용, 없으면 내부 상태 사용
+  const [internalAutoSlideEnabled, setInternalAutoSlideEnabled] =
+    useState(!isEditing);
+  const autoSlideEnabled =
+    propAutoSlideEnabled !== undefined
+      ? propAutoSlideEnabled
+      : internalAutoSlideEnabled;
+  const setAutoSlideEnabled = (value) => {
+    if (onAutoSlideEnabledChange) {
+      onAutoSlideEnabledChange(value);
+    } else {
+      setInternalAutoSlideEnabled(value);
+    }
+  };
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
   const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
   const targetImageSlotIndexRef = useRef(null);
@@ -340,15 +356,23 @@ export default function LifeRecordDesktop({
   };
 
   const isMobile = useIsMobile();
-  const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 280, ANCHOR: 0 };
+  const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 200, ANCHOR: 0 };
   const MOBILE = { START: 110, SWEEP: 180, RADIUS: 140, ANCHOR: 110 };
   const CFG = isMobile ? MOBILE : DESKTOP;
   const RADIUS = CFG.RADIUS;
   const getAnchor = () => CFG.ANCHOR;
 
+  // isEditing이 변경될 때 autoSlideEnabled 업데이트 (edit 모드에서는 항상 off)
+  useEffect(() => {
+    if (isEditing) {
+      setAutoSlideEnabled(false);
+    }
+    // view 모드에서는 사용자가 변경한 상태를 유지하므로 여기서는 변경하지 않음
+  }, [isEditing]);
+
   const angleForIndex = (i) => {
     // 타임라인 항목 수와 관계없이 고정된 각도 간격 사용하기
-    const FIXED_STEP = 15;
+    const FIXED_STEP = 25;
     return CFG.START + FIXED_STEP * i;
   };
 
@@ -356,29 +380,24 @@ export default function LifeRecordDesktop({
     let diff = Math.abs(norm360(angle) - norm360(anchor));
     if (diff > 180) diff = 360 - diff;
 
-    const normalizedDiff = Math.min(diff / 60, 1);
+    const normalizedDiff = Math.min(diff / 90, 1);
     const opacity = 1 - normalizedDiff * normalizedDiff * 1;
     return Math.max(opacity, 0);
   };
 
-  // activeItem.id가 변경될 때 ref 업데이트
   useEffect(() => {
     if (activeItem?.id) {
       activeItemIdRef.current = activeItem.id;
     }
   }, [activeItem?.id]);
 
-  // timeline이 변경될 때 현재 활성화된 항목의 ID를 유지
   useEffect(() => {
-    // 외부에서 명시적으로 이동을 요청한 경우가 아니고, 추적 중인 항목 ID가 있는 경우
     if (!isNavigatingRef.current && activeItemIdRef.current) {
       const newIdx = timeline.findIndex(
         (item) => item.id === activeItemIdRef.current,
       );
       if (newIdx !== -1 && newIdx !== activeIdx) {
-        // 같은 ID를 가진 항목의 새 인덱스로 이동
         setActiveIdx(newIdx);
-        // 회전도 함께 업데이트
         const targetAngle = angleForIndex(newIdx);
         setRotation(targetAngle - getAnchor());
       }
@@ -466,7 +485,10 @@ export default function LifeRecordDesktop({
     const base = angleForIndex(i);
     const currentRotation = rotationRef.current || rotation;
     const cur = norm360(base + currentRotation);
-    const delta = wrapTo180(anchor - cur);
+    let delta = wrapTo180(anchor - cur);
+
+    if (reverse) delta = -delta;
+    const newRotation = currentRotation + delta;
 
     if (scrollSound.current) {
       scrollSound.current.currentTime = 0;
@@ -480,7 +502,7 @@ export default function LifeRecordDesktop({
         console.error("Scroll sound 재생 실패:", err);
       });
     }
-    setRotation(norm360(currentRotation + (reverse ? -delta : delta)));
+    setRotation(newRotation);
     setActiveIdx(i);
   };
 
@@ -518,26 +540,41 @@ export default function LifeRecordDesktop({
     scrollSound.current = new Audio("/sounds/scroll.m4a");
   }, []);
 
-  // 자동 슬라이드 기능 (view 모드일 때만)
   useEffect(() => {
     if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
 
     const autoSlideInterval = setInterval(() => {
       const currentIdx = activeIdxRef.current;
-      let newIdx;
-      if (currentIdx >= timeline.length - 1) {
-        newIdx = 0;
-      } else {
-        newIdx = currentIdx + 1;
-      }
+      const currentItem = timeline[currentIdx];
 
-      // snapToIndex를 사용하여 정확한 위치로 이동 (정상 방향)
-      // isAutoSlide=true로 설정하여 볼륨을 절반으로 낮춤
-      snapToIndex(newIdx, getAnchor(), false, true);
-    }, 5000); // 5초마다 자동으로 넘어감
+      const validImages = (currentItem?.images || []).filter((img) => img);
+
+      if (validImages.length > 1) {
+        const currentImgIdx = currentImageIndex;
+        if (currentImgIdx < validImages.length - 1) {
+          setCurrentImageIndex(currentImgIdx + 1);
+        } else {
+          let newIdx;
+          if (currentIdx >= timeline.length - 1) {
+            newIdx = 0;
+          } else {
+            newIdx = currentIdx + 1;
+          }
+          snapToIndex(newIdx, getAnchor(), false, true);
+        }
+      } else {
+        let newIdx;
+        if (currentIdx >= timeline.length - 1) {
+          newIdx = 0;
+        } else {
+          newIdx = currentIdx + 1;
+        }
+        snapToIndex(newIdx, getAnchor(), false, true);
+      }
+    }, 5000);
 
     return () => clearInterval(autoSlideInterval);
-  }, [isEditing, autoSlideEnabled, timeline.length]);
+  }, [isEditing, autoSlideEnabled, timeline.length, currentImageIndex]);
 
   const safeIdx = Math.min(activeIdx, Math.max(0, (timeline?.length || 1) - 1));
   const mainTitle = useMemo(() => {
@@ -550,7 +587,6 @@ export default function LifeRecordDesktop({
       className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
-      {/* BGM 재생 버튼 및 자동 슬라이드 토글 버튼 (우측 상단 고정) */}
       {!isEditing && (
         <div
           style={{
@@ -632,7 +668,10 @@ export default function LifeRecordDesktop({
 
       <div className="lr-grid">
         <section className="lr-left">
-          <h1 className="lr-title">Life- Records</h1>
+          <h1 className="lr-title">
+            Life- <br />
+            Records
+          </h1>
           <p className="lr-sub">
             <b>{data.record?.userName || "사용자"}</b>님의 라이프 레코드입니다.
             <br />
@@ -661,18 +700,14 @@ export default function LifeRecordDesktop({
                     }
                     type="file"
                     accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
-                    multiple={activeItem.kind !== "main"} // main이 아닌 경우에만 multiple 허용
+                    multiple={activeItem.kind !== "main"}
                     style={{ display: "none" }}
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
                       if (files.length > 0 && onImageChange) {
                         if (activeItem.kind === "main") {
-                          // main은 단일 이미지만
                           onImageChange("main", null, files[0]);
                         } else {
-                          // item은 최대 5개까지
-                          // targetImageSlotIndex가 설정되어 있으면 해당 슬롯에 교체
-                          // 여러 소스에서 값을 확인 (data attribute > ref > state)
                           const dataSlot =
                             e.target.getAttribute("data-target-slot");
                           const slotIdx =
@@ -724,7 +759,6 @@ export default function LifeRecordDesktop({
                               files[0],
                               slotIdx,
                             );
-                            // 리셋은 파일 처리 완료 후에만
                             setTimeout(() => {
                               setTargetImageSlotIndex(null);
                               targetImageSlotIndexRef.current = null;
@@ -795,7 +829,6 @@ export default function LifeRecordDesktop({
                 ) : (
                   <>
                     {activeItem.kind === "main" ? (
-                      // Main 항목: 단일 이미지만 표시
                       <img
                         src={activeItem.cover || "/images/records/No image.png"}
                         alt="cover"
@@ -805,7 +838,6 @@ export default function LifeRecordDesktop({
                         }}
                       />
                     ) : isEditing ? (
-                      // Edit 모드: 최대 5개 슬롯 모두 표시 (빈 슬롯은 이미지 추가 버튼)
                       <div
                         className="lr-image-slider"
                         style={{
@@ -1810,7 +1842,7 @@ export default function LifeRecordDesktop({
               className="lp-disc"
               src="/images/records/LP-image.png"
               alt="LP"
-              style={{ transform: `rotate(${rotation}deg)` }}
+              style={{ transform: `rotate(${norm360(rotation)}deg)` }}
             />
             <div className="year-circle">
               {timeline.map((item, i) => {

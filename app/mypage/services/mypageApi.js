@@ -20,7 +20,7 @@ export async function fetchMyRecords(token) {
 }
 
 export async function fetchMyDatas({ token }) {
-  console.log(token)
+  console.log(token);
   const res = await fetch("/api/data", {
     method: "GET",
     headers: { Authorization: `Bearer ${token}` },
@@ -68,7 +68,7 @@ export async function createRecord(token, identifier, name) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ identifier, name }),
+    body: JSON.stringify({ identifier, userName: name }),
   });
   if (res.status === 409) throw new Error("409");
   if (!res.ok) {
@@ -102,7 +102,12 @@ export async function updateRecordIdentifier(token, id, identifier, userName) {
   if (userName !== undefined) {
     data.userName = userName;
   }
-  console.log("[updateRecordIdentifier] request:", { id, identifier, userName, data });
+  console.log("[updateRecordIdentifier] request:", {
+    id,
+    identifier,
+    userName,
+    data,
+  });
   const res = await fetch(`/api/records/${id}`, {
     method: "PATCH",
     headers: {

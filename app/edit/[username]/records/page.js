@@ -71,7 +71,9 @@ export default function EditRecords() {
         if (result?.ok && result?.item) {
           setRecordId(result.item.record.id);
 
-          const userName = user?.userName || "사용자";
+          // 레코드의 userName을 사용 (제작할 대상의 성함)
+          const userName =
+            result.item.record.userName || user?.userName || "사용자";
 
           // 메인 레코드가 비어있으면 가이드라인 표시
           const isNewRecord =
@@ -96,7 +98,7 @@ export default function EditRecords() {
             color: result.item.record.color || "#121212",
           };
 
-          // 타임라인 아이템이 없으면 기본 아이템 1개 생성
+          // 타임라인 아이템이 없으면 기본 아이템 1개 생성 (새 레코드인 경우에만)
           let items = result.item.recordItems || [];
           console.log(
             "[LOAD] Fetched items:",
@@ -107,7 +109,40 @@ export default function EditRecords() {
               imagesLength: it.images?.length,
             })),
           );
-          if (items.length === 0) {
+          const originalName = result.item.record.name?.trim();
+          const originalDescription = result.item.record.description?.trim();
+          const originalCoverUrl = result.item.record.coverUrl;
+          const createdAt = result.item.record.createdAt;
+          const updatedAt = result.item.record.updatedAt;
+
+          const timeDiff =
+            createdAt && updatedAt
+              ? new Date(updatedAt).getTime() - new Date(createdAt).getTime()
+              : Infinity;
+          const isNewlyCreated = timeDiff < 30000;
+
+          const hasBeenSaved = !!(
+            originalName ||
+            originalDescription ||
+            originalCoverUrl
+          );
+
+          // 새 레코드인 경우:
+          // 1. name, description, coverUrl이 모두 비어있고
+          // 2. 아이템도 없고
+          // 3. 생성 후 거의 수정되지 않았고
+          // 4. 한 번도 저장된 적이 없어야 함
+          const isActuallyNewRecord =
+            !originalName &&
+            !originalDescription &&
+            !originalCoverUrl &&
+            items.length === 0 &&
+            isNewlyCreated &&
+            !hasBeenSaved;
+
+          // 새 레코드인 경우에만 기본 아이템 생성
+          // 사용자가 저장 후 모든 항목을 삭제한 경우에는 기본 아이템을 생성하지 않음
+          if (isActuallyNewRecord) {
             const today = new Date();
             const year = today.getFullYear();
             const month = String(today.getMonth() + 1).padStart(2, "0");
@@ -311,10 +346,8 @@ export default function EditRecords() {
         }
       }
 
-      // 새 items 생성 및 임시 ID를 실제 ID로 교체
       const updatedItems = [...data.items];
       for (const item of newItems) {
-        // images 배열에서 null, undefined, 빈 문자열 제거 (서버 형식에 맞춤)
         let images = [];
         if (item.images && Array.isArray(item.images)) {
           images = item.images
@@ -460,7 +493,9 @@ export default function EditRecords() {
           identifier: username,
         });
         if (result?.ok && result?.item) {
-          const userName = user?.userName || "사용자";
+          // 레코드의 userName을 사용 (제작할 대상의 성함)
+          const userName =
+            result.item.record.userName || user?.userName || "사용자";
 
           // 메인 레코드가 비어있으면 가이드라인 표시
           const isNewRecord =
@@ -482,34 +517,16 @@ export default function EditRecords() {
               result.item.record.coverUrl || "/images/records/No image.png",
             color: result.item.record.color || "#121212",
           };
+          // 삭제 후에는 서버에서 반환된 그대로의 데이터를 사용
+          // (삭제 후 기본 아이템을 자동 생성하지 않음)
           let items = result.item.recordItems || [];
-          if (items.length === 0) {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, "0");
-            const day = String(today.getDate()).padStart(2, "0");
-            const dateStr = `${year}.${month}.${day}`;
-            // 초기 항목에도 임시 ID 부여 (key 중복 방지)
-            const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            items = [
-              {
-                id: tempId, // 임시 ID 부여
-                title: "첫 번째 기록(예: 출생)",
-                date: dateStr,
-                location: "",
-                description:
-                  "기록할 만한 일들이 있나요? 작은 일들도 좋아요.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브해보세요.",
-                color: "",
-                isHighlight: false,
-                coverUrl: null, // 더미 아이템은 coverUrl을 null로 설정
-                images: [], // 더미 아이템은 images 배열도 빈 배열로 설정
-              },
-            ];
-          }
-          setData({
+          const newData = {
             record,
             items,
-          });
+          };
+          setData(newData);
+
+          setOriginalData(JSON.parse(JSON.stringify(newData)));
 
           // 삭제된 항목이 마지막이 아니면 직전 항목으로 이동 (인덱스는 main 포함이므로 -1)
           // main이 첫 번째이므로, 타임라인 항목의 인덱스는 currentIndex - 1
@@ -524,14 +541,12 @@ export default function EditRecords() {
         // 임시 ID를 가진 항목은 로컬에서만 제거
         const deletedIndex = data.items.findIndex((item) => item.id === itemId);
         const newItems = data.items.filter((item) => item.id !== itemId);
-        setData({
+        const newData = {
           ...data,
           items: newItems,
-        });
-
-        // 삭제된 항목이 마지막이 아니면 직전 항목으로 이동
-        // main이 첫 번째이므로, 타임라인 항목의 인덱스는 deletedIndex + 1 (main 포함)
-        // 삭제 후에는 deletedIndex + 1이 되므로, Math.max(0, deletedIndex)로 설정
+        };
+        setData(newData);
+        setOriginalData(JSON.parse(JSON.stringify(newData)));
         const targetIndex = Math.max(0, deletedIndex);
         setTimeout(() => {
           setNavigateToItem(targetIndex);
@@ -818,11 +833,14 @@ export default function EditRecords() {
     const newItems = data.items.map((item) => {
       if (item.id === itemId) {
         const currentImages = item.images || [];
-        // 해당 인덱스의 이미지를 null로 변경
-        const updatedImages = [...currentImages];
-        updatedImages[imageIndex] = null;
 
-        // 첫 번째 유효한 이미지를 coverUrl로도 유지 (하위 호환성)
+        const updatedImages = currentImages.filter(
+          (_, idx) => idx !== imageIndex,
+        );
+        while (updatedImages.length < 5) {
+          updatedImages.push(null);
+        }
+
         const firstValidImage = updatedImages.find((img) => img) || null;
 
         return {

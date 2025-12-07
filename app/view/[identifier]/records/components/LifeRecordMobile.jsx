@@ -10,6 +10,9 @@ import {
   HiTrash,
 } from "react-icons/hi";
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
+import { IoMenu } from "react-icons/io5";
+
 import "../styles/cardPage-mobile.css";
 
 const MONTHS = [
@@ -33,7 +36,7 @@ const BG_THEME_PALETTE = [
   { name: "Olive", bg: "#7B7341", text: "#f2f2f2ff" },
   { name: "Warm Gray", bg: "#746F6F", text: "#F2F2F2" },
   { name: "Blue", bg: "#6C8E98", text: "#F2F2F2" },
-  { name: "BlackPink", bg: "#12121268", text: "#aa747dff" },
+  { name: "BlackPink", bg: "#212121", text: "#AA747D" },
   { name: "Parchment", bg: "#F5F1E6", text: "#111111" },
   { name: "Cloud", bg: "#ECECEC", text: "#111111" },
 ];
@@ -87,6 +90,8 @@ export default function LifeRecordMobile({
   isUploadingImage = false,
   onNavigateToItem,
   cropState = { isActive: false, imageFile: null, type: null, itemId: null },
+  autoSlideEnabled: propAutoSlideEnabled,
+  onAutoSlideEnabledChange,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -113,11 +118,10 @@ export default function LifeRecordMobile({
     ) {
       setBirthDate(data.record.birthDate);
     } else if (data.record?.birthDate === null && !isEditingBirthDate) {
-      setBirthDate(""); // null이면 빈 문자열로
+      setBirthDate("");
     }
   }, [data.record?.displayMode, data.record?.birthDate, isEditingBirthDate]);
 
-  // API 데이터를 timeline 형식으로 변환
   const timeline = useMemo(() => {
     const result = [];
 
@@ -192,8 +196,8 @@ export default function LifeRecordMobile({
         event: item.title || "",
         date: item.date || "",
         location: item.location || "",
-        cover: images.find((img) => img) || "/images/records/No image.png", // 첫 번째 유효한 이미지를 기본으로
-        images: images, // 전체 이미지 배열 (최대 5개, 빈 슬롯은 null)
+        cover: images.find((img) => img) || "/images/records/No image.png",
+        images: images,
         video: isVideo ? coverUrl : null,
         desc: item.description || "",
         isHighlight: item.isHighlight || false,
@@ -202,11 +206,8 @@ export default function LifeRecordMobile({
       };
     });
 
-    // 날짜 입력 중이 아닐 때만 정렬
     if (!editingDateItemId) {
-      // 연도 순서대로 정렬 (오름차순: 오래된 것부터)
       items.sort((a, b) => {
-        // 연도가 없는 경우 뒤로
         if (!a.year && !b.year) return 0;
         if (!a.year) return 1;
         if (!b.year) return -1;
@@ -222,7 +223,21 @@ export default function LifeRecordMobile({
   const [activeIdx, setActiveIdx] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
+  // 자동재생 기본값: edit 미리보기 off, mobile view off
+  // 부모에서 prop으로 전달되면 그것을 사용, 없으면 내부 상태 사용
+  const [internalAutoSlideEnabled, setInternalAutoSlideEnabled] =
+    useState(false);
+  const autoSlideEnabled =
+    propAutoSlideEnabled !== undefined
+      ? propAutoSlideEnabled
+      : internalAutoSlideEnabled;
+  const setAutoSlideEnabled = (value) => {
+    if (onAutoSlideEnabledChange) {
+      onAutoSlideEnabledChange(value);
+    } else {
+      setInternalAutoSlideEnabled(value);
+    }
+  };
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
   const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
   const targetImageSlotIndexRef = useRef(null); // ref로도 저장하여 동기적으로 접근 가능하도록
@@ -241,6 +256,13 @@ export default function LifeRecordMobile({
   useEffect(() => {
     activeIdxRef.current = activeIdx;
   }, [activeIdx]);
+
+  // isEditing이 변경될 때 autoSlideEnabled 업데이트 (edit 모드에서는 항상 off)
+  useEffect(() => {
+    if (isEditing) {
+      setAutoSlideEnabled(false);
+    }
+  }, [isEditing]);
 
   const activeItem = timeline[activeIdx] || {};
 
@@ -427,28 +449,60 @@ export default function LifeRecordMobile({
     }, 150);
   };
 
-  // 자동 슬라이드 기능 (view 모드일 때만)
   useEffect(() => {
     if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
 
     const autoSlideInterval = setInterval(() => {
       const currentIdx = activeIdxRef.current;
-      let newIdx;
-      if (currentIdx >= timeline.length - 1) {
-        newIdx = 0;
-      } else {
-        newIdx = currentIdx + 1;
-      }
+      const currentItem = timeline[currentIdx];
 
-      setIsTransitioning(true);
-      setTimeout(() => {
-        setActiveIdx(newIdx);
-        setIsTransitioning(false);
-      }, 150);
-    }, 5000); // 5초마다 자동으로 넘어감
+      // 현재 이벤트의 유효한 이미지 개수 확인
+      const validImages = (currentItem?.images || []).filter((img) => img);
+
+      if (validImages.length > 1) {
+        // 이미지가 여러 장이면 다음 이미지로 이동
+        const currentImgIdx = currentImageIndex;
+        if (currentImgIdx < validImages.length - 1) {
+          // 아직 더 볼 이미지가 있으면 다음 이미지로
+          setCurrentImageIndex(currentImgIdx + 1);
+        } else {
+          // 모든 이미지를 봤으면 다음 이벤트로
+          let newIdx;
+          if (currentIdx >= timeline.length - 1) {
+            newIdx = 0;
+          } else {
+            newIdx = currentIdx + 1;
+          }
+          setIsTransitioning(true);
+          setTimeout(() => {
+            setActiveIdx(newIdx);
+            setIsTransitioning(false);
+          }, 150);
+        }
+      } else {
+        // 이미지가 1장 이하면 바로 다음 이벤트로
+        let newIdx;
+        if (currentIdx >= timeline.length - 1) {
+          newIdx = 0;
+        } else {
+          newIdx = currentIdx + 1;
+        }
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setActiveIdx(newIdx);
+          setIsTransitioning(false);
+        }, 150);
+      }
+    }, 5000);
 
     return () => clearInterval(autoSlideInterval);
-  }, [isEditing, autoSlideEnabled, timeline.length]);
+  }, [
+    isEditing,
+    autoSlideEnabled,
+    timeline.length,
+    currentImageIndex,
+    timeline,
+  ]);
 
   const handleMenuClick = () => {
     setShowMenu(!showMenu);
@@ -991,7 +1045,45 @@ export default function LifeRecordMobile({
                 );
                 if (validImages.length > 1) {
                   return (
-                    <div className="lr-mobile-image-slider">
+                    <div
+                      className="lr-mobile-image-slider"
+                      onTouchStart={(e) => {
+                        const touch = e.touches[0];
+                        setTouchStartX(touch.clientX);
+                        setTouchStartY(touch.clientY);
+                      }}
+                      onTouchMove={(e) => {}}
+                      onTouchEnd={(e) => {
+                        if (touchStartX === null || touchStartY === null)
+                          return;
+
+                        const touch = e.changedTouches[0];
+                        const touchEndX = touch.clientX;
+                        const touchEndY = touch.clientY;
+
+                        const deltaX = touchStartX - touchEndX;
+                        const deltaY = touchStartY - touchEndY;
+                        if (
+                          Math.abs(deltaX) > Math.abs(deltaY) &&
+                          Math.abs(deltaX) > 50
+                        ) {
+                          const maxIndex = Math.max(0, validImages.length - 1);
+
+                          if (deltaX > 0) {
+                            if (currentImageIndex < maxIndex) {
+                              setCurrentImageIndex(currentImageIndex + 1);
+                            }
+                          } else {
+                            if (currentImageIndex > 0) {
+                              setCurrentImageIndex(currentImageIndex - 1);
+                            }
+                          }
+                        }
+
+                        setTouchStartX(null);
+                        setTouchStartY(null);
+                      }}
+                    >
                       <div
                         style={{
                           display: "flex",
@@ -1624,7 +1716,7 @@ export default function LifeRecordMobile({
             justifyContent: "center",
           }}
         >
-          <HiHome size={30} />
+          <HiHome size={25} />
         </span>
         <div className="lr-mobile-nav-timeline">
           <span
@@ -1633,16 +1725,23 @@ export default function LifeRecordMobile({
               cursor: activeIdx === 0 ? "default" : "pointer",
               opacity: activeIdx === 0 ? 0 : 1,
               pointerEvents: activeIdx === 0 ? "none" : "auto",
-              fontSize: "1.8rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            &lt;
+            <FaAngleLeft size={20} />
           </span>
-          {activeItem.kind === "main" || activeItem.label === "home" ? (
-            <HiHome size={20} />
-          ) : (
-            <span>{activeItem.label}</span>
-          )}
+          <span className="lr-mobile-nav-label">
+            {activeItem.kind === "main" ||
+            activeItem.label === "home" ||
+            activeItem.label === "Home" ||
+            activeItem.id === "home" ? (
+              <HiHome size={20} />
+            ) : (
+              activeItem.label
+            )}
+          </span>
           <span
             onClick={handleNext}
             style={{
@@ -1650,32 +1749,31 @@ export default function LifeRecordMobile({
               opacity: activeIdx === timeline.length - 1 ? 0 : 1,
               pointerEvents:
                 activeIdx === timeline.length - 1 ? "none" : "auto",
-              fontSize: "1.8rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            &gt;
+            <FaAngleRight size={20} />
           </span>
         </div>
         <span
           onClick={handleMenuClick}
           style={{
             cursor: "pointer",
-            fontSize: "1.8rem",
-            fontWeight: "400",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          ≡
+          <IoMenu size={28} />
         </span>
       </nav>
 
       <footer className="lr-mobile-footer">
         <div className="lr-mobile-footer-logo">The Life Museum</div>
         <div className="lr-mobile-footer-copyright">
-          Copyright 2025. Creative Computing Group.
-          <br />
+          Copyright 2025. Creative Computing Group. <br />
           All rights reserved.
         </div>
         {!isEditing && (
@@ -1683,7 +1781,7 @@ export default function LifeRecordMobile({
             className="lr-mobile-login-btn"
             onClick={() => router.push("/login")}
           >
-            Login
+            로그인
           </button>
         )}
       </footer>
@@ -1717,7 +1815,14 @@ export default function LifeRecordMobile({
                   </div>
                   <div className="lr-mobile-menu-item-info">
                     <div className="lr-mobile-menu-item-label">
-                      {item.label}
+                      {item.kind === "main" ||
+                      item.label === "home" ||
+                      item.label === "Home" ||
+                      item.id === "home" ? (
+                        <HiHome size={16} />
+                      ) : (
+                        item.label
+                      )}
                     </div>
                     <div className="lr-mobile-menu-item-title">
                       {item.kind === "main"

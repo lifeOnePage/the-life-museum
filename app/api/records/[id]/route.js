@@ -39,6 +39,8 @@ export async function GET(req, { params }) {
         birthDate: true,
         displayMode: true,
         userName: true,
+        createdAt: true,
+        updatedAt: true,
         recordItems: {
           select: {
             id: true,
@@ -79,6 +81,8 @@ export async function GET(req, { params }) {
           birthDate: record.birthDate || null,
           displayMode: record.displayMode || "year",
           userName: record.userName || null,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
         },
         recordItems: (record.recordItems || []).map((item) => {
           console.log(

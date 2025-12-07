@@ -130,11 +130,13 @@ export default function Mypage() {
         if (createModal.type === "reels") {
           const res = await createReel(token, identifier, name);
           setReels((arr) => [res.item, ...arr]);
+          closeCreate();
         } else {
           const res = await createRecord(token, identifier, name);
           setRecords((arr) => [res.item, ...arr]);
+          closeCreate();
+          router.push(`/edit/${identifier}/records`);
         }
-        closeCreate();
       } catch (e) {
         console.error(e);
         setError(
@@ -245,7 +247,7 @@ export default function Mypage() {
   };
   const main = () => {
     router.push(`/`);
-  }
+  };
 
   return (
     <>

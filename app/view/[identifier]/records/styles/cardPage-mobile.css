@@ -865,11 +865,29 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10vw;
+  gap: 8vw;
+  min-width: 120px;
+  position: relative;
 }
 
 .lr-mobile-nav-timeline span {
   font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.lr-mobile-nav-label {
+  min-width: 70px;
+  max-width: 70px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* 년도 라벨 클릭 시 작아지는 효과 제거 */
+.lr-mobile-nav-label:active {
+  transform: scale(1) !important;
 }
 
 /* Footer */

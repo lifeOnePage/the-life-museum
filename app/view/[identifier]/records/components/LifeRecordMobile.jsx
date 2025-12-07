@@ -10,6 +10,9 @@ import {
   HiTrash,
 } from "react-icons/hi";
 import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
+import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
+import { IoMenu } from "react-icons/io5";
+
 import "../styles/cardPage-mobile.css";
 
 const MONTHS = [
@@ -87,6 +90,8 @@ export default function LifeRecordMobile({
   isUploadingImage = false,
   onNavigateToItem,
   cropState = { isActive: false, imageFile: null, type: null, itemId: null },
+  autoSlideEnabled: propAutoSlideEnabled,
+  onAutoSlideEnabledChange,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -222,7 +227,21 @@ export default function LifeRecordMobile({
   const [activeIdx, setActiveIdx] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
+  // 자동재생 기본값: edit 미리보기 off, mobile view off
+  // 부모에서 prop으로 전달되면 그것을 사용, 없으면 내부 상태 사용
+  const [internalAutoSlideEnabled, setInternalAutoSlideEnabled] =
+    useState(false);
+  const autoSlideEnabled =
+    propAutoSlideEnabled !== undefined
+      ? propAutoSlideEnabled
+      : internalAutoSlideEnabled;
+  const setAutoSlideEnabled = (value) => {
+    if (onAutoSlideEnabledChange) {
+      onAutoSlideEnabledChange(value);
+    } else {
+      setInternalAutoSlideEnabled(value);
+    }
+  };
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
   const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
   const targetImageSlotIndexRef = useRef(null); // ref로도 저장하여 동기적으로 접근 가능하도록
@@ -241,6 +260,13 @@ export default function LifeRecordMobile({
   useEffect(() => {
     activeIdxRef.current = activeIdx;
   }, [activeIdx]);
+
+  // isEditing이 변경될 때 autoSlideEnabled 업데이트 (edit 모드에서는 항상 off)
+  useEffect(() => {
+    if (isEditing) {
+      setAutoSlideEnabled(false);
+    }
+  }, [isEditing]);
 
   const activeItem = timeline[activeIdx] || {};
 
@@ -1624,7 +1650,7 @@ export default function LifeRecordMobile({
             justifyContent: "center",
           }}
         >
-          <HiHome size={30} />
+          <HiHome size={25} />
         </span>
         <div className="lr-mobile-nav-timeline">
           <span
@@ -1633,16 +1659,23 @@ export default function LifeRecordMobile({
               cursor: activeIdx === 0 ? "default" : "pointer",
               opacity: activeIdx === 0 ? 0 : 1,
               pointerEvents: activeIdx === 0 ? "none" : "auto",
-              fontSize: "1.8rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            &lt;
+            <FaAngleLeft size={20} />
           </span>
-          {activeItem.kind === "main" || activeItem.label === "home" ? (
-            <HiHome size={20} />
-          ) : (
-            <span>{activeItem.label}</span>
-          )}
+          <span className="lr-mobile-nav-label">
+            {activeItem.kind === "main" ||
+            activeItem.label === "home" ||
+            activeItem.label === "Home" ||
+            activeItem.id === "home" ? (
+              <HiHome size={20} />
+            ) : (
+              activeItem.label
+            )}
+          </span>
           <span
             onClick={handleNext}
             style={{
@@ -1650,24 +1683,24 @@ export default function LifeRecordMobile({
               opacity: activeIdx === timeline.length - 1 ? 0 : 1,
               pointerEvents:
                 activeIdx === timeline.length - 1 ? "none" : "auto",
-              fontSize: "1.8rem",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
             }}
           >
-            &gt;
+            <FaAngleRight size={20} />
           </span>
         </div>
         <span
           onClick={handleMenuClick}
           style={{
             cursor: "pointer",
-            fontSize: "1.8rem",
-            fontWeight: "400",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
           }}
         >
-          ≡
+          <IoMenu size={28} />
         </span>
       </nav>
 
@@ -1717,7 +1750,14 @@ export default function LifeRecordMobile({
                   </div>
                   <div className="lr-mobile-menu-item-info">
                     <div className="lr-mobile-menu-item-label">
-                      {item.label}
+                      {item.kind === "main" ||
+                      item.label === "home" ||
+                      item.label === "Home" ||
+                      item.id === "home" ? (
+                        <HiHome size={16} />
+                      ) : (
+                        item.label
+                      )}
                     </div>
                     <div className="lr-mobile-menu-item-title">
                       {item.kind === "main"

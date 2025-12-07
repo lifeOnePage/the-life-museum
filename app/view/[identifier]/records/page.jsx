@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import LifeRecordDesktop from "./components/LifeRecordDesktop";
 import LifeRecordMobile from "./components/LifeRecordMobile";
@@ -25,6 +25,17 @@ export default function ViewRecordsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // 데스크탑/모바일 전환 시 autoSlideEnabled 상태 유지를 위한 공유 상태
+  // 데스크탑 view: true (default), 모바일 view: false (default)
+  const [autoSlideEnabled, setAutoSlideEnabled] = useState(() => {
+    // 초기 마운트 시 window 객체가 있으면 실제 width 사용
+    if (typeof window !== "undefined") {
+      return window.innerWidth > 768 ? true : false;
+    }
+    return false; // SSR fallback
+  });
+  const isInitializedRef = useRef(false);
+  const prevWidthRef = useRef(width);
 
   useEffect(() => {
     if (!identifier) return;
@@ -74,12 +85,29 @@ export default function ViewRecordsPage() {
     );
   }
 
+  useEffect(() => {
+    if (!isInitializedRef.current && width > 0) {
+      isInitializedRef.current = true;
+      const initialValue = width > 768 ? true : false;
+      setAutoSlideEnabled(initialValue);
+      prevWidthRef.current = width;
+    }
+  }, [width]);
+
   return (
     <>
       {width <= 768 ? (
-        <LifeRecordMobile data={data} />
+        <LifeRecordMobile
+          data={data}
+          autoSlideEnabled={autoSlideEnabled}
+          onAutoSlideEnabledChange={setAutoSlideEnabled}
+        />
       ) : (
-        <LifeRecordDesktop data={data} />
+        <LifeRecordDesktop
+          data={data}
+          autoSlideEnabled={autoSlideEnabled}
+          onAutoSlideEnabledChange={setAutoSlideEnabled}
+        />
       )}
     </>
   );

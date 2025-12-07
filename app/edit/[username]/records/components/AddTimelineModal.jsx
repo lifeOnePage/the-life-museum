@@ -173,21 +173,14 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
 
   const handleImageDelete = (index) => {
     if (!confirm("이 이미지를 삭제하시겠습니까?")) return;
-    const newImages = [...images];
-    newImages[index] = null;
+    const newImages = images.filter((_, idx) => idx !== index);
+    while (newImages.length < 5) {
+      newImages.push(null);
+    }
     setImages(newImages);
     if (currentImageIndex >= index) {
-      const nextValidIndex = newImages.findIndex(
-        (img, idx) => img && idx > index,
-      );
-      if (nextValidIndex !== -1) {
-        setCurrentImageIndex(nextValidIndex);
-      } else {
-        const prevValidIndex = newImages.findLastIndex(
-          (img, idx) => img && idx < index,
-        );
-        setCurrentImageIndex(prevValidIndex !== -1 ? prevValidIndex : 0);
-      }
+      const newIndex = Math.max(0, currentImageIndex - 1);
+      setCurrentImageIndex(newIndex);
     }
   };
 

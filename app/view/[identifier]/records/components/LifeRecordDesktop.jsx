@@ -39,7 +39,7 @@ const BG_THEME_PALETTE = [
   { name: "Olive", bg: "#7B7341", text: "#f2f2f2ff" },
   { name: "Warm Gray", bg: "#746F6F", text: "#F2F2F2" },
   { name: "Blue", bg: "#6C8E98", text: "#F2F2F2" },
-  { name: "BlackPink", bg: "#12121268", text: "#aa747dff" },
+  { name: "BlackPink", bg: "#212121", text: "#AA747D" },
   { name: "Parchment", bg: "#F5F1E6", text: "#111111" },
   { name: "Cloud", bg: "#ECECEC", text: "#111111" },
 ];
@@ -545,17 +545,36 @@ export default function LifeRecordDesktop({
 
     const autoSlideInterval = setInterval(() => {
       const currentIdx = activeIdxRef.current;
-      let newIdx;
-      if (currentIdx >= timeline.length - 1) {
-        newIdx = 0;
+      const currentItem = timeline[currentIdx];
+
+      const validImages = (currentItem?.images || []).filter((img) => img);
+
+      if (validImages.length > 1) {
+        const currentImgIdx = currentImageIndex;
+        if (currentImgIdx < validImages.length - 1) {
+          setCurrentImageIndex(currentImgIdx + 1);
+        } else {
+          let newIdx;
+          if (currentIdx >= timeline.length - 1) {
+            newIdx = 0;
+          } else {
+            newIdx = currentIdx + 1;
+          }
+          snapToIndex(newIdx, getAnchor(), false, true);
+        }
       } else {
-        newIdx = currentIdx + 1;
+        let newIdx;
+        if (currentIdx >= timeline.length - 1) {
+          newIdx = 0;
+        } else {
+          newIdx = currentIdx + 1;
+        }
+        snapToIndex(newIdx, getAnchor(), false, true);
       }
-      snapToIndex(newIdx, getAnchor(), false, true);
     }, 5000);
 
     return () => clearInterval(autoSlideInterval);
-  }, [isEditing, autoSlideEnabled, timeline.length]);
+  }, [isEditing, autoSlideEnabled, timeline.length, currentImageIndex]);
 
   const safeIdx = Math.min(activeIdx, Math.max(0, (timeline?.length || 1) - 1));
   const mainTitle = useMemo(() => {

@@ -83,7 +83,9 @@ body,
 
 .lr-card {
   background: #f2f2f2;
+  /* background: color-mix(in srgb, var(--bg) 85%, white);  */
   color: var(--ink);
+  /* border: 1px solid var(--text); */
   border-radius: 14px;
   overflow: hidden;
   padding: 1.5rem;

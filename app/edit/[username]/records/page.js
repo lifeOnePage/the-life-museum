@@ -833,11 +833,14 @@ export default function EditRecords() {
     const newItems = data.items.map((item) => {
       if (item.id === itemId) {
         const currentImages = item.images || [];
-        // 해당 인덱스의 이미지를 null로 변경
-        const updatedImages = [...currentImages];
-        updatedImages[imageIndex] = null;
 
-        // 첫 번째 유효한 이미지를 coverUrl로도 유지 (하위 호환성)
+        const updatedImages = currentImages.filter(
+          (_, idx) => idx !== imageIndex,
+        );
+        while (updatedImages.length < 5) {
+          updatedImages.push(null);
+        }
+
         const firstValidImage = updatedImages.find((img) => img) || null;
 
         return {

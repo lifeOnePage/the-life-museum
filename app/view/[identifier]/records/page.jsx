@@ -8,7 +8,6 @@ import "./styles/cardPage-mobile.css";
 
 function useWindowSize() {
   const [size, setSize] = useState(() => {
-    // 초기값을 실제 window 크기로 설정
     if (typeof window !== "undefined") {
       return { width: window.innerWidth, height: window.innerHeight };
     }

@@ -46,10 +46,15 @@ body,
 
 .lr-left {
   align-self: center;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: left;
 }
 
 .lr-title {
-  font-size: clamp(40px, 6vw, 96px);
+  font-size: 96px;
   font-weight: 700;
   font-style: italic;
   letter-spacing: 0.5px;
@@ -62,7 +67,7 @@ body,
 .lr-sub {
   margin: 0;
   line-height: 1.7;
-  font-size: clamp(14px, 1.6vw, 18px);
+  font-size: 18px;
   font-family: "Pretendard Variable";
   font-style: normal;
   font-weight: 300;
@@ -225,7 +230,7 @@ body,
   font-family: "Pretendard Variable";
   font-size: 1rem;
   font-style: normal;
-  font-weight: 300;
+  font-weight: 200;
   line-height: 130%;
   letter-spacing: -0.05rem;
   height: 7rem;
@@ -239,7 +244,6 @@ body,
   border-top: 1.2px solid #121212;
   display: flex;
   align-items: flex-start;
-  gap: 10px;
   padding-top: 15px;
 }
 
@@ -293,7 +297,7 @@ body,
   justify-content: space-between;
   font-size: 2rem;
   font-style: normal;
-  font-weight: 300;
+  font-weight: 200;
   line-height: 110%;
   letter-spacing: -0.05rem;
 }
@@ -303,7 +307,7 @@ body,
   font-family: "Helvetica Neue LT Std";
   font-size: 1.9rem;
   font-style: normal;
-  font-weight: 300;
+  font-weight: 200;
   line-height: 110%;
   letter-spacing: -0.1rem;
   white-space: nowrap;
@@ -394,6 +398,7 @@ body,
 .lp-disc {
   transition: transform 160ms ease-out;
   width: 70%;
+  min-width: 400px; /* 최소 너비 설정으로 창 크기가 줄어들어도 작아지지 않음 */
   display: block;
   will-change: transform;
   pointer-events: none;
@@ -820,7 +825,7 @@ body,
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 24px;
+    bottom: 20px;
   }
 }
 

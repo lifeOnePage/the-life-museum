@@ -1707,8 +1707,7 @@ export default function LifeRecordMobile({
       <footer className="lr-mobile-footer">
         <div className="lr-mobile-footer-logo">The Life Museum</div>
         <div className="lr-mobile-footer-copyright">
-          Copyright 2025. Creative Computing Group.
-          <br />
+          Copyright 2025. Creative Computing Group. <br />
           All rights reserved.
         </div>
         {!isEditing && (
@@ -1716,7 +1715,7 @@ export default function LifeRecordMobile({
             className="lr-mobile-login-btn"
             onClick={() => router.push("/login")}
           >
-            Login
+            로그인
           </button>
         )}
       </footer>

@@ -7,7 +7,13 @@ import "./styles/cardPage.css";
 import "./styles/cardPage-mobile.css";
 
 function useWindowSize() {
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [size, setSize] = useState(() => {
+    // 초기값을 실제 window 크기로 설정
+    if (typeof window !== "undefined") {
+      return { width: window.innerWidth, height: window.innerHeight };
+    }
+    return { width: 0, height: 0 };
+  });
   useEffect(() => {
     const updateSize = () => {
       setSize({ width: window.innerWidth, height: window.innerHeight });
@@ -25,12 +31,10 @@ export default function ViewRecordsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // 데스크탑/모바일 전환 시 autoSlideEnabled 상태 유지를 위한 공유 상태
-  // 데스크탑 view: true (default), 모바일 view: false (default)
+
   const [autoSlideEnabled, setAutoSlideEnabled] = useState(() => {
-    // 초기 마운트 시 window 객체가 있으면 실제 width 사용
     if (typeof window !== "undefined") {
-      return window.innerWidth > 768 ? true : false;
+      return window.innerWidth > 1000 ? true : false;
     }
     return false; // SSR fallback
   });
@@ -88,7 +92,7 @@ export default function ViewRecordsPage() {
   useEffect(() => {
     if (!isInitializedRef.current && width > 0) {
       isInitializedRef.current = true;
-      const initialValue = width > 768 ? true : false;
+      const initialValue = width > 1000 ? true : false;
       setAutoSlideEnabled(initialValue);
       prevWidthRef.current = width;
     }
@@ -96,7 +100,7 @@ export default function ViewRecordsPage() {
 
   return (
     <>
-      {width <= 768 ? (
+      {width <= 1000 ? (
         <LifeRecordMobile
           data={data}
           autoSlideEnabled={autoSlideEnabled}

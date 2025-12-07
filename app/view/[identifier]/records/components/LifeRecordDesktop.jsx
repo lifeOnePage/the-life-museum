@@ -120,6 +120,8 @@ export default function LifeRecordDesktop({
   onCropComplete,
   onCropCancel,
   aspectRatio = 1,
+  autoSlideEnabled: propAutoSlideEnabled,
+  onAutoSlideEnabledChange,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -247,7 +249,21 @@ export default function LifeRecordDesktop({
 
   const [rotation, setRotation] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
-  const [autoSlideEnabled, setAutoSlideEnabled] = useState(true);
+  // 자동재생 기본값: edit 미리보기 off, desktop view on
+  // 부모에서 prop으로 전달되면 그것을 사용, 없으면 내부 상태 사용
+  const [internalAutoSlideEnabled, setInternalAutoSlideEnabled] =
+    useState(!isEditing);
+  const autoSlideEnabled =
+    propAutoSlideEnabled !== undefined
+      ? propAutoSlideEnabled
+      : internalAutoSlideEnabled;
+  const setAutoSlideEnabled = (value) => {
+    if (onAutoSlideEnabledChange) {
+      onAutoSlideEnabledChange(value);
+    } else {
+      setInternalAutoSlideEnabled(value);
+    }
+  };
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
   const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
   const targetImageSlotIndexRef = useRef(null);
@@ -345,6 +361,14 @@ export default function LifeRecordDesktop({
   const CFG = isMobile ? MOBILE : DESKTOP;
   const RADIUS = CFG.RADIUS;
   const getAnchor = () => CFG.ANCHOR;
+
+  // isEditing이 변경될 때 autoSlideEnabled 업데이트 (edit 모드에서는 항상 off)
+  useEffect(() => {
+    if (isEditing) {
+      setAutoSlideEnabled(false);
+    }
+    // view 모드에서는 사용자가 변경한 상태를 유지하므로 여기서는 변경하지 않음
+  }, [isEditing]);
 
   const angleForIndex = (i) => {
     // 타임라인 항목 수와 관계없이 고정된 각도 간격 사용하기
@@ -461,7 +485,10 @@ export default function LifeRecordDesktop({
     const base = angleForIndex(i);
     const currentRotation = rotationRef.current || rotation;
     const cur = norm360(base + currentRotation);
-    const delta = wrapTo180(anchor - cur);
+    let delta = wrapTo180(anchor - cur);
+
+    if (reverse) delta = -delta;
+    const newRotation = currentRotation + delta;
 
     if (scrollSound.current) {
       scrollSound.current.currentTime = 0;
@@ -475,7 +502,7 @@ export default function LifeRecordDesktop({
         console.error("Scroll sound 재생 실패:", err);
       });
     }
-    setRotation(norm360(currentRotation + (reverse ? -delta : delta)));
+    setRotation(newRotation);
     setActiveIdx(i);
   };
 
@@ -513,7 +540,6 @@ export default function LifeRecordDesktop({
     scrollSound.current = new Audio("/sounds/scroll.m4a");
   }, []);
 
-  // 자동 슬라이드 기능 (view 모드일 때만)
   useEffect(() => {
     if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
 
@@ -525,11 +551,8 @@ export default function LifeRecordDesktop({
       } else {
         newIdx = currentIdx + 1;
       }
-
-      // snapToIndex를 사용하여 정확한 위치로 이동 (정상 방향)
-      // isAutoSlide=true로 설정하여 볼륨을 절반으로 낮춤
       snapToIndex(newIdx, getAnchor(), false, true);
-    }, 5000); // 5초마다 자동으로 넘어감
+    }, 5000);
 
     return () => clearInterval(autoSlideInterval);
   }, [isEditing, autoSlideEnabled, timeline.length]);
@@ -545,7 +568,6 @@ export default function LifeRecordDesktop({
       className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
-      {/* BGM 재생 버튼 및 자동 슬라이드 토글 버튼 (우측 상단 고정) */}
       {!isEditing && (
         <div
           style={{
@@ -1801,7 +1823,7 @@ export default function LifeRecordDesktop({
               className="lp-disc"
               src="/images/records/LP-image.png"
               alt="LP"
-              style={{ transform: `rotate(${rotation}deg)` }}
+              style={{ transform: `rotate(${norm360(rotation)}deg)` }}
             />
             <div className="year-circle">
               {timeline.map((item, i) => {

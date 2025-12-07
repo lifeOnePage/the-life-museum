@@ -77,11 +77,10 @@ body,
 }
 
 .lr-card {
-  background: var(--card);
+  background: #f2f2f2;
   color: var(--ink);
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid #ddd;
   padding: 1.5rem;
   height: 100%;
 }
@@ -345,7 +344,7 @@ body,
 .lp-wrap {
   position: absolute;
   top: 50%;
-  left: -120%;
+  left: -70%;
   transform: translateY(-50%);
   z-index: 1;
   cursor: pointer;
@@ -357,7 +356,7 @@ body,
   left: 50%;
   width: 0;
   height: 0;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) translateX(-60px);
 }
 
 .year-item {
@@ -394,6 +393,7 @@ body,
 
 .lp-disc {
   transition: transform 160ms ease-out;
+  width: 70%;
   display: block;
   will-change: transform;
   pointer-events: none;

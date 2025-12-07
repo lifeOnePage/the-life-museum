@@ -346,10 +346,8 @@ export default function EditRecords() {
         }
       }
 
-      // 새 items 생성 및 임시 ID를 실제 ID로 교체
       const updatedItems = [...data.items];
       for (const item of newItems) {
-        // images 배열에서 null, undefined, 빈 문자열 제거 (서버 형식에 맞춤)
         let images = [];
         if (item.images && Array.isArray(item.images)) {
           images = item.images

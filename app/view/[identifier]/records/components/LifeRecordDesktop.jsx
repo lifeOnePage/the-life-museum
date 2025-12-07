@@ -340,7 +340,7 @@ export default function LifeRecordDesktop({
   };
 
   const isMobile = useIsMobile();
-  const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 280, ANCHOR: 0 };
+  const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 200, ANCHOR: 0 };
   const MOBILE = { START: 110, SWEEP: 180, RADIUS: 140, ANCHOR: 110 };
   const CFG = isMobile ? MOBILE : DESKTOP;
   const RADIUS = CFG.RADIUS;
@@ -348,7 +348,7 @@ export default function LifeRecordDesktop({
 
   const angleForIndex = (i) => {
     // 타임라인 항목 수와 관계없이 고정된 각도 간격 사용하기
-    const FIXED_STEP = 15;
+    const FIXED_STEP = 25;
     return CFG.START + FIXED_STEP * i;
   };
 
@@ -356,29 +356,24 @@ export default function LifeRecordDesktop({
     let diff = Math.abs(norm360(angle) - norm360(anchor));
     if (diff > 180) diff = 360 - diff;
 
-    const normalizedDiff = Math.min(diff / 60, 1);
+    const normalizedDiff = Math.min(diff / 90, 1);
     const opacity = 1 - normalizedDiff * normalizedDiff * 1;
     return Math.max(opacity, 0);
   };
 
-  // activeItem.id가 변경될 때 ref 업데이트
   useEffect(() => {
     if (activeItem?.id) {
       activeItemIdRef.current = activeItem.id;
     }
   }, [activeItem?.id]);
 
-  // timeline이 변경될 때 현재 활성화된 항목의 ID를 유지
   useEffect(() => {
-    // 외부에서 명시적으로 이동을 요청한 경우가 아니고, 추적 중인 항목 ID가 있는 경우
     if (!isNavigatingRef.current && activeItemIdRef.current) {
       const newIdx = timeline.findIndex(
         (item) => item.id === activeItemIdRef.current,
       );
       if (newIdx !== -1 && newIdx !== activeIdx) {
-        // 같은 ID를 가진 항목의 새 인덱스로 이동
         setActiveIdx(newIdx);
-        // 회전도 함께 업데이트
         const targetAngle = angleForIndex(newIdx);
         setRotation(targetAngle - getAnchor());
       }
@@ -632,7 +627,10 @@ export default function LifeRecordDesktop({
 
       <div className="lr-grid">
         <section className="lr-left">
-          <h1 className="lr-title">Life- Records</h1>
+          <h1 className="lr-title">
+            Life- <br />
+            Records
+          </h1>
           <p className="lr-sub">
             <b>{data.record?.userName || "사용자"}</b>님의 라이프 레코드입니다.
             <br />
@@ -661,18 +659,14 @@ export default function LifeRecordDesktop({
                     }
                     type="file"
                     accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
-                    multiple={activeItem.kind !== "main"} // main이 아닌 경우에만 multiple 허용
+                    multiple={activeItem.kind !== "main"}
                     style={{ display: "none" }}
                     onChange={(e) => {
                       const files = Array.from(e.target.files || []);
                       if (files.length > 0 && onImageChange) {
                         if (activeItem.kind === "main") {
-                          // main은 단일 이미지만
                           onImageChange("main", null, files[0]);
                         } else {
-                          // item은 최대 5개까지
-                          // targetImageSlotIndex가 설정되어 있으면 해당 슬롯에 교체
-                          // 여러 소스에서 값을 확인 (data attribute > ref > state)
                           const dataSlot =
                             e.target.getAttribute("data-target-slot");
                           const slotIdx =
@@ -724,7 +718,6 @@ export default function LifeRecordDesktop({
                               files[0],
                               slotIdx,
                             );
-                            // 리셋은 파일 처리 완료 후에만
                             setTimeout(() => {
                               setTargetImageSlotIndex(null);
                               targetImageSlotIndexRef.current = null;
@@ -795,7 +788,6 @@ export default function LifeRecordDesktop({
                 ) : (
                   <>
                     {activeItem.kind === "main" ? (
-                      // Main 항목: 단일 이미지만 표시
                       <img
                         src={activeItem.cover || "/images/records/No image.png"}
                         alt="cover"
@@ -805,7 +797,6 @@ export default function LifeRecordDesktop({
                         }}
                       />
                     ) : isEditing ? (
-                      // Edit 모드: 최대 5개 슬롯 모두 표시 (빈 슬롯은 이미지 추가 버튼)
                       <div
                         className="lr-image-slider"
                         style={{

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   DndContext,
   closestCenter,
@@ -34,11 +34,13 @@ export default function Pannel({
   setProfile,
   onItemClick,
   onToggleMode,
-  sceneId
+  sceneId,
+  currentItem
 }) {
   const [savedItems, setSavedItems] = useState(items);
   const [selectedItem, setSelectedItem] = useState(null);
   const [editedData, setEditedData] = useState(null);
+  const [originalData, setOriginalData] = useState(null); // 원본 데이터 저장
   const [hasChanges, setHasChanges] = useState(false);
   const [listHasChanges, setListHasChanges] = useState(false);
   const [unsavedItemIds, setUnsavedItemIds] = useState(new Set());
@@ -91,12 +93,15 @@ export default function Pannel({
       setIsProfileView(true);
       setSelectedItem(null);
       setEditedData(null);
+      setOriginalData(null);
       setHasChanges(false);
       return;
     }
 
     setSelectedItem(item);
     setEditedData(item);
+    // 원본 데이터 저장 (비교용)
+    setOriginalData(JSON.parse(JSON.stringify(item)));
     setHasChanges(false);
     // 아이템 클릭 시 해당 아이템의 시작 미디어 인덱스로 이동
     if (onItemClick) {
@@ -128,25 +133,42 @@ export default function Pannel({
     };
     setSelectedItem(newItem);
     setEditedData(newItem);
+    setOriginalData(JSON.parse(JSON.stringify(newItem)));
     setHasChanges(false);
     setIsProfileView(false);
   };
 
   const handleBack = () => {
-    if (hasChanges) {
-      if (isProfileView) {
-        // 프로필은 자동 저장하지 않음
-      } else if (selectedItem?.isNew) {
-        // 새 아이템은 저장하지 않으면 버림
-      } else if (selectedItem) {
-        setUnsavedItemIds(prev => new Set([...prev, selectedItem.id]));
-      }
-    }
+    // hasChanges는 handleChange에서 이미 정확하게 계산되었으므로
+    // 여기서는 추가로 unsavedItemIds를 설정하지 않음
+    // (handleChange에서 이미 처리함)
     setSelectedItem(null);
     setEditedData(null);
+    setOriginalData(null);
     setHasChanges(false);
     setIsProfileView(false);
   };
+
+  // 슬라이더로 이벤트가 변경될 때 자동으로 패널 업데이트 (보기 모드 + 상세보기 중일 때만)
+  useEffect(() => {
+    // 편집 모드이거나, 상세보기가 아니거나, currentItem이 없으면 무시
+    if (mode === "edit" || !selectedItem || !currentItem || isProfileView) {
+      return;
+    }
+
+    // 프로필 아이템은 무시
+    if (currentItem.isProfile) {
+      return;
+    }
+
+    // 현재 선택된 아이템과 슬라이더의 currentItem이 다르면 자동 전환
+    if (selectedItem.id !== currentItem.id) {
+      setSelectedItem(currentItem);
+      setEditedData(currentItem);
+      setOriginalData(JSON.parse(JSON.stringify(currentItem)));
+      setHasChanges(false);
+    }
+  }, [currentItem, selectedItem, mode, isProfileView]);
 
   const handleProfileChange = (newData) => {
     setProfile(newData);
@@ -164,12 +186,15 @@ export default function Pannel({
 
       // 먼저 이미지 업로드
       let finalEditedData = editedData;
+      let uploadedUrls = [];
+
       if (detailEditRef.current?.uploadPendingImages) {
         try {
           const uploadedImages = await detailEditRef.current.uploadPendingImages();
+          uploadedUrls = uploadedImages.map(img => img.url);
           finalEditedData = {
             ...editedData,
-            img: uploadedImages.map(img => img.url)
+            img: uploadedUrls
           };
         } catch (uploadError) {
           console.error("Image upload failed:", uploadError);
@@ -177,6 +202,14 @@ export default function Pannel({
           setIsUploading(false);
           return;
         }
+      } else {
+        // detailEditRef가 없거나 uploadPendingImages가 없는 경우, editedData._uploadedUrls 사용
+        uploadedUrls = editedData._uploadedUrls ||
+          (Array.isArray(editedData.img) ? editedData.img.filter(i => typeof i === 'string') : []);
+        finalEditedData = {
+          ...editedData,
+          img: uploadedUrls
+        };
       }
 
       let updatedItems;
@@ -185,8 +218,10 @@ export default function Pannel({
         // 새 아이템 추가
         const newItem = {
           ...finalEditedData,
+          id: finalEditedData.id || selectedItem.id, // id 유지
           isNew: false,
-          // img 필드 유지 (DetailEdit과 일관성 유지)
+          // _uploadedUrls 명시적으로 설정
+          _uploadedUrls: uploadedUrls
         };
         updatedItems = items.map(item =>
           item.isProfile ? item : item
@@ -201,7 +236,8 @@ export default function Pannel({
           item.id === selectedItem.id ? {
             ...item,
             ...finalEditedData,
-            // img 필드 유지 (DetailEdit과 일관성 유지)
+            // _uploadedUrls 명시적으로 설정
+            _uploadedUrls: uploadedUrls
           } : item
         );
         setItems(updatedItems);
@@ -210,14 +246,15 @@ export default function Pannel({
       console.log("[Pannel.handleSaveItem] finalEditedData:", finalEditedData);
       console.log("[Pannel.handleSaveItem] updatedItems:", updatedItems);
 
-      // DB에 저장
+      // DB에 저장 - 업로드된 URL만 사용
       const itemsToSave = updatedItems
         .filter(item => !item.isProfile)
         .map(item => ({
           title: item.title || "",
           date: item.date || "",
           desc: item.desc || "",
-          img: item.img || []
+          // _uploadedUrls가 있으면 사용, 없으면 img 사용 (하위 호환성)
+          img: item._uploadedUrls || (Array.isArray(item.img) ? item.img.filter(i => typeof i === 'string') : [])
         }));
 
       console.log("[Pannel.handleSaveItem] Items to save:", JSON.stringify(itemsToSave, null, 2));
@@ -243,7 +280,11 @@ export default function Pannel({
       setHasChanges(false);
       setSelectedItem(null);
       setEditedData(null);
+      setOriginalData(null);
       setIsUploading(false);
+
+      console.log("[Pannel.handleSaveItem] Items after save:", updatedItems.map(i => ({ id: i.id, title: i.title, isProfile: i.isProfile })));
+
       alert("저장되었습니다.");
     } catch (error) {
       console.error("Failed to save item:", error);
@@ -266,7 +307,7 @@ export default function Pannel({
           title: item.title || "",
           date: item.date || "",
           desc: item.desc || "",
-          img: item.img || []
+          img: item._uploadedUrls || (Array.isArray(item.img) ? item.img.filter(i => typeof i === 'string') : [])
         }));
 
       await updateScene(sceneId, {
@@ -293,7 +334,47 @@ export default function Pannel({
 
   const handleChange = (newData) => {
     setEditedData(newData);
-    setHasChanges(true);
+
+    // 원본과 비교하여 실제 변경이 있는지 확인
+    if (originalData) {
+      // _uploadedUrls와 _hasPendingImages는 비교에서 제외
+      const originalForCompare = {
+        title: originalData.title || "",
+        date: originalData.date || "",
+        desc: originalData.desc || "",
+        img: Array.isArray(originalData.img)
+          ? originalData.img.filter(i => typeof i === 'string' || i.isUploaded).map(i => typeof i === 'string' ? i : i.url)
+          : []
+      };
+
+      const newForCompare = {
+        title: newData.title || "",
+        date: newData.date || "",
+        desc: newData.desc || "",
+        img: newData._uploadedUrls ||
+          (Array.isArray(newData.img)
+            ? newData.img.filter(i => typeof i === 'string' || i?.isUploaded).map(i => typeof i === 'string' ? i : i?.url || i)
+            : [])
+      };
+
+      const hasActualChanges = JSON.stringify(originalForCompare) !== JSON.stringify(newForCompare) || newData._hasPendingImages;
+      setHasChanges(hasActualChanges);
+
+      // unsavedItemIds 업데이트
+      if (selectedItem && !selectedItem.isNew) {
+        if (hasActualChanges) {
+          setUnsavedItemIds(prev => new Set([...prev, selectedItem.id]));
+        } else {
+          setUnsavedItemIds(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(selectedItem.id);
+            return newSet;
+          });
+        }
+      }
+    } else {
+      setHasChanges(true);
+    }
   };
 
   const handleStartLifestoryGuide = () => {
@@ -354,7 +435,7 @@ export default function Pannel({
                   title: item.title || "",
                   date: item.date || "",
                   desc: item.desc || "",
-                  img: item.img || []
+                  img: item._uploadedUrls || (Array.isArray(item.img) ? item.img.filter(i => typeof i === 'string') : [])
                 }));
 
               await updateScene(sceneId, {
@@ -441,7 +522,7 @@ export default function Pannel({
 
   if (type === "list"&& (mode === "view")) {
     return (
-      <div className="w-full max-h-[400px] rounded-[20px] overflow-hidden flex flex-col">
+      <div className="w-full max-h-[240px] rounded-[20px] overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}
@@ -477,7 +558,10 @@ export default function Pannel({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={items.map((item) => item.id)}
+              items={items.map((item) => {
+                console.log("[Pannel View Mode] Item ID:", item.id, "isProfile:", item.isProfile, "title:", item.title);
+                return item.id;
+              })}
               strategy={verticalListSortingStrategy}
             >
               <div className="flex flex-col">
@@ -540,7 +624,10 @@ export default function Pannel({
             onDragEnd={handleDragEnd}
           >
             <SortableContext
-              items={items.map((item) => item.id)}
+              items={items.map((item) => {
+                console.log("[Pannel Edit Mode] Item ID:", item.id, "isProfile:", item.isProfile, "title:", item.title);
+                return item.id;
+              })}
               strategy={verticalListSortingStrategy}
             >
               <div className="flex flex-col">

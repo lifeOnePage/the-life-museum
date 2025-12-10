@@ -27,6 +27,7 @@ export default function RingSlider({
   const isDraggingRef = useRef(false);
   const startXRef = useRef(0);
   const dragOffsetRef = useRef(0);
+  const wheelAccumulatorRef = useRef(0); // 휠 스크롤 누적값
 
   // 현재 leftIndex가 속한 아이템 찾기
   const currentItem = items.find((item) => {
@@ -100,6 +101,42 @@ export default function RingSlider({
     isDraggingRef.current = false;
   };
 
+  // 휠 스크롤 핸들러 (데스크탑용)
+  const handleWheel = (e) => {
+    if (!isDesktop) return;
+
+    e.preventDefault();
+
+    // 가로 스크롤 우선 (트랙패드 두 손가락 좌우)
+    const deltaX = e.deltaX;
+    const deltaY = e.deltaY;
+
+    // 가로 스크롤이 세로보다 크면 가로 스크롤로 처리
+    const isHorizontalScroll = Math.abs(deltaX) > Math.abs(deltaY);
+    const scrollAmount = isHorizontalScroll ? deltaX : deltaY;
+
+    // 스크롤 값을 누적
+    wheelAccumulatorRef.current += scrollAmount;
+
+    // 임계값 설정 (이 값을 넘으면 한 프레임 이동)
+    const threshold = 40; // 값이 작을수록 민감, 클수록 둔감
+
+    // 누적값이 임계값을 넘으면 이동
+    if (Math.abs(wheelAccumulatorRef.current) >= threshold) {
+      const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
+      const newIndex = leftIndex + direction;
+
+      if (newIndex >= minIndex && newIndex <= maxIndex) {
+        onChangeLeftIndex?.(newIndex);
+        // 이동 후 누적값에서 임계값만큼 빼기 (나머지 유지)
+        wheelAccumulatorRef.current -= direction * threshold;
+      } else {
+        // 범위를 벗어나면 누적값 초기화
+        wheelAccumulatorRef.current = 0;
+      }
+    }
+  };
+
   useEffect(() => {
     const handleGlobalMove = (e) => handleMove(e);
     const handleGlobalEnd = () => handleEnd();
@@ -119,8 +156,22 @@ export default function RingSlider({
     };
   }, [leftIndex, minIndex, maxIndex]);
 
+  // 휠 이벤트 리스너 등록 (passive: false로 설정하여 preventDefault 활성화)
+  useEffect(() => {
+    if (!isDesktop) return;
+
+    const sliderElement = containerRef.current?.parentElement;
+    if (!sliderElement) return;
+
+    sliderElement.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      sliderElement.removeEventListener("wheel", handleWheel);
+    };
+  }, [isDesktop, leftIndex, minIndex, maxIndex]);
+
   return (
-    <div className="w-full bg-black/30 backdrop-blur-md border-t border-white/10">
+    <div className="w-full  border-white/10">
       {/* 데스크탑 - 프로필 버튼만 표시 */}
       {isDesktop && (
         <div className="flex justify-end items-center px-4 py-2 border-b border-white/10">
@@ -240,38 +291,40 @@ export default function RingSlider({
       )}
 
       {/* 첫 번째 단: 아이템 네비게이션 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10" style={{ perspective: "1000px" }}>
-        {/* 이전 아이템 */}
+      <div className="relative bg-black/30 backdrop-blur-md py-3 border-b border-white/10" style={{ perspective: "1000px" }}>
+        {/* 이전 아이템 - 왼쪽 */}
         <button
           onClick={() => handleItemClick(prevItem, "prev")}
-          className="text-[10px] text-white/50 hover:text-white/80 transition-all truncate max-w-[30%]"
+          className="absolute left-4 top-1/2 text-[14px] text-white/50 hover:text-white/80 transition-all truncate max-w-[25%]"
           style={{
-            transform: "rotateY(15deg) scale(0.9)",
+            transform: "translateY(-50%) rotateY(15deg) scale(0.9)",
             transformOrigin: "right center",
           }}
         >
           {prevItem?.title || ""}
         </button>
 
-        {/* 현재 아이템 (잠금 토글) */}
-        <button
-          onClick={handleLockToggle}
-          className="flex items-center gap-2 text-sm font-bold text-white truncate max-w-[40%] transition-all"
-          style={{
-            transform: "scale(1)",
-            zIndex: 10,
-          }}
-        >
-          {isLocked && <Lock className="w-4 h-4" />}
-          {currentItem?.title || ""}
-        </button>
+        {/* 현재 아이템 (잠금 토글) - 중앙 */}
+        <div className="flex justify-center">
+          <button
+            onClick={handleLockToggle}
+            className="flex items-center gap-2 text-sm font-bold text-white truncate max-w-[40%] transition-all"
+            style={{
+              transform: "scale(1)",
+              zIndex: 10,
+            }}
+          >
+            {isLocked && <Lock className="w-4 h-4" />}
+            {currentItem?.title || ""}
+          </button>
+        </div>
 
-        {/* 다음 아이템 */}
+        {/* 다음 아이템 - 오른쪽 */}
         <button
           onClick={() => handleItemClick(nextItem, "next")}
-          className="text-[10px] text-white/50 hover:text-white/80 transition-all truncate max-w-[30%]"
+          className="absolute right-4 top-1/2  text-[14px] text-white/50 hover:text-white/80 transition-all truncate max-w-[25%]"
           style={{
-            transform: "rotateY(-15deg) scale(0.9)",
+            transform: "translateY(-50%) rotateY(-15deg) scale(0.9)",
             transformOrigin: "left center",
           }}
         >
@@ -310,7 +363,7 @@ export default function RingSlider({
 
       {/* 세 번째 단: 필름 스트립 슬라이더 */}
       <div
-        className="relative px-4 py-4 overflow-hidden"
+        className="relative bg-black/30 backdrop-blur-md px-4 py-4 overflow-hidden"
         style={{
           maskImage: "radial-gradient(ellipse 100% 120% at 50% 50%, black 40%, transparent 70%)",
           WebkitMaskImage: "radial-gradient(ellipse 100% 120% at 50% 50%, black 40%, transparent 70%)",
@@ -326,7 +379,9 @@ export default function RingSlider({
           <div
             className="flex items-center gap-1"
             style={{
-              transform: `translateX(calc(50% - ${leftIndex * filmFrameWidth}px - ${leftIndex * 4}px - ${filmFrameWidth / 2}px))`,
+              // 잠금 상태일 때: minIndex를 기준으로 오프셋 계산
+              // 잠금 해제 상태일 때: 0을 기준으로 오프셋 계산
+              transform: `translateX(calc(50% - ${(leftIndex - minIndex) * filmFrameWidth}px - ${(leftIndex - minIndex) * 4}px - ${filmFrameWidth / 2}px))`,
               transition: isDraggingRef.current ? "none" : "transform 0.2s ease-out",
             }}
           >

@@ -108,6 +108,15 @@ export default function ViewPage() {
     return { textures: paddedTextures, itemRanges };
   }, [items, profile]);
 
+  // leftIndex에 해당하는 현재 아이템 찾기
+  const currentItem = useMemo(() => {
+    return items.find((item) => {
+      const range = textureData.itemRanges[item.id];
+      if (!range) return false;
+      return leftIndex >= range.start && leftIndex <= range.end;
+    });
+  }, [leftIndex, items, textureData]);
+
   // 아이템 클릭 시 해당 아이템의 시작 미디어 인덱스로 이동
   const handleItemClick = (item) => {
     const itemRange = textureData.itemRanges[item.id];
@@ -148,6 +157,7 @@ export default function ViewPage() {
             popMode="band"
             popSpanSlots={1.2}
             bulge={1.2}
+            isDesktop={false}
           />
         </div>
 
@@ -183,6 +193,7 @@ export default function ViewPage() {
             onItemClick={handleItemClick}
             onToggleMode={isOwner ? () => setMode(mode === "view" ? "edit" : "view") : null}
             sceneId={id}
+            currentItem={currentItem}
           />
         </div>
       </div>
@@ -204,6 +215,7 @@ export default function ViewPage() {
                 onItemClick={handleItemClick}
                 onToggleMode={isOwner ? () => setMode(mode === "view" ? "edit" : "view") : null}
                 sceneId={id}
+                currentItem={currentItem}
               />
             </div>
 
@@ -212,7 +224,7 @@ export default function ViewPage() {
               className="absolute bottom-0 z-10 overflow-hidden"
               style={{
                 // right: 'calc((100vw - 700px) / 2)',
-                top:200,
+                top:100,
                 width: "200%",
                 height: "100%",
               }}
@@ -225,6 +237,7 @@ export default function ViewPage() {
                 popMode="band"
                 popSpanSlots={1.2}
                 bulge={1.2}
+                isDesktop={true}
               />
             </div>
           </div>

@@ -25,6 +25,7 @@ const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStat
     img: (item?.img || []).map((url, idx) => ({ id: `img-${Date.now()}-${idx}`, url, isUploaded: true })),
   });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadingImageIds, setUploadingImageIds] = useState(new Set());
 
   const lastSentDataRef = useRef(null);
   const prevItemIdRef = useRef(null);
@@ -57,19 +58,27 @@ const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStat
   // 업로드 상태 변경 시 부모에게 알림
   useEffect(() => {
     if (onUploadStateChange) {
-      const hasUnuploadedImages = formData.img.some(img => !img.isUploaded);
-      onUploadStateChange(hasUnuploadedImages || isProcessing);
+      // 실제 업로드 중일 때만 true (pending 이미지가 있다고 해서 업로드 중인 것은 아님)
+      onUploadStateChange(isProcessing);
     }
-  }, [formData.img, isProcessing, onUploadStateChange]);
+  }, [isProcessing, onUploadStateChange]);
 
   // formData 변경 시 부모에게 알림
   useEffect(() => {
     if (onChange && prevItemIdRef.current !== null) {
+      const uploadedImages = formData.img.filter(img => img.isUploaded);
+      const pendingImages = formData.img.filter(img => !img.isUploaded);
+
       const dataToSend = {
         title: formData.title,
         date: formData.date,
         desc: formData.desc,
-        img: formData.img.map(img => img.url),
+        // 전체 img 배열 전달 (내부 상태 유지를 위해)
+        img: formData.img,
+        // 업로드된 URL만 별도로 전달
+        _uploadedUrls: uploadedImages.map(img => img.url),
+        // pending 이미지 개수도 전달
+        _hasPendingImages: pendingImages.length > 0,
       };
 
       // 이전에 보낸 데이터와 비교하여 실제로 변경된 경우에만 onChange 호출
@@ -106,17 +115,25 @@ const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStat
   };
 
   const handleDeleteImage = (id) => {
-    setFormData(prev => ({
-      ...prev,
-      img: prev.img.filter((img) => img.id !== id)
-    }));
+    setFormData(prev => {
+      // 삭제할 이미지 찾기
+      const imgToDelete = prev.img.find(img => img.id === id);
+
+      // Blob URL이면 메모리에서 해제
+      if (imgToDelete && !imgToDelete.isUploaded && imgToDelete.url.startsWith('blob:')) {
+        URL.revokeObjectURL(imgToDelete.url);
+      }
+
+      return {
+        ...prev,
+        img: prev.img.filter((img) => img.id !== id)
+      };
+    });
   };
 
   const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
-
-    setIsProcessing(true);
 
     // Blob URL 생성 (즉시 표시용) + File 객체 보관 (나중에 업로드용)
     const newImages = files.map((file, idx) => ({
@@ -130,8 +147,6 @@ const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStat
       ...prev,
       img: [...prev.img, ...newImages]
     }));
-
-    setIsProcessing(false);
   };
 
   // 저장 시 호출될 업로드 함수 (외부에서 사용 가능하도록 useImperativeHandle 대신 직접 노출)
@@ -140,6 +155,8 @@ const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStat
     if (pendingImages.length === 0) return formData.img;
 
     setIsProcessing(true);
+    // 업로드 중인 이미지 ID 추적
+    setUploadingImageIds(new Set(pendingImages.map(img => img.id)));
 
     try {
       const uploadPromises = pendingImages.map(async (img) => {
@@ -185,10 +202,12 @@ const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStat
       }));
 
       setIsProcessing(false);
+      setUploadingImageIds(new Set());
       return updatedImages;
     } catch (error) {
       console.error("Failed to upload images:", error);
       setIsProcessing(false);
+      setUploadingImageIds(new Set());
       throw error;
     }
   };
@@ -269,7 +288,7 @@ const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStat
                     id={img.id}
                     imgUrl={img.url}
                     onDelete={() => handleDeleteImage(img.id)}
-                    isUploading={!img.isUploaded}
+                    isUploading={uploadingImageIds.has(img.id)}
                   />
                 ))}
               </div>

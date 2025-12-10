@@ -115,14 +115,17 @@ function EmptyMat({ opacity = 0.08 }) {
 }
 
 // ===== Leftmost Sprite =====
-function LeftmostSprite({ slot, spritePosition }) {
+function LeftmostSprite({ slot, spritePosition, isDesktop = false }) {
   const spriteRef = useRef();
   const kind = slot?.kind ?? slot?.type ?? "empty";
   const url = slot?.url ?? null;
 
-  // 스프라이트 최대 크기 제한
-  const MAX_WIDTH = 3;
-  const MAX_HEIGHT = 4.0;
+  // 스프라이트 최대 크기 제한 (데스크탑은 모바일의 2배로 줄임)
+  const BASE_WIDTH = 3;
+  const BASE_HEIGHT = 4.0;
+  const scale = isDesktop ? 2 : 1;  // 3배에서 2배로 변경
+  const MAX_WIDTH = BASE_WIDTH * scale;
+  const MAX_HEIGHT = BASE_HEIGHT * scale;
 
   // 항상 카메라를 향하도록 (billboard)
   useFrame(({ camera }) => {
@@ -137,11 +140,11 @@ function LeftmostSprite({ slot, spritePosition }) {
     <sprite ref={spriteRef} position={spritePosition} scale={[MAX_WIDTH, MAX_HEIGHT, 1]}>
       {kind === "image" ? (
         <Suspense fallback={<spriteMaterial transparent opacity={0.3} />}>
-          <SpriteImageMat url={url} />
+          <SpriteImageMat url={url} isDesktop={isDesktop} />
         </Suspense>
       ) : kind === "video" ? (
         <Suspense fallback={<spriteMaterial transparent opacity={0.3} />}>
-          <SpriteVideoMat url={url} />
+          <SpriteVideoMat url={url} isDesktop={isDesktop} />
         </Suspense>
       ) : (
         <spriteMaterial transparent opacity={0.3} />
@@ -151,7 +154,7 @@ function LeftmostSprite({ slot, spritePosition }) {
 }
 
 // ===== Sprite용 텍스처 머티리얼 =====
-function SpriteImageMat({ url }) {
+function SpriteImageMat({ url, isDesktop = false }) {
   const effUrl = useMemo(() => proxify(url), [url]);
   const tex = useLoader(THREE.TextureLoader, effUrl, (loader) => {
     loader.setCrossOrigin("anonymous");
@@ -164,9 +167,12 @@ function SpriteImageMat({ url }) {
     tex.anisotropy = 4;
 
     // Cover 효과: 스프라이트 비율에 맞춰 이미지 crop
-    const MAX_WIDTH = 3;
-    const MAX_HEIGHT = 4.0;
-    const spriteAspect = MAX_WIDTH / MAX_HEIGHT; // 1.25
+    const BASE_WIDTH = 3;
+    const BASE_HEIGHT = 4.0;
+    const scale = isDesktop ? 2 : 1;  // 3배에서 2배로 변경
+    const MAX_WIDTH = BASE_WIDTH * scale;
+    const MAX_HEIGHT = BASE_HEIGHT * scale;
+    const spriteAspect = MAX_WIDTH / MAX_HEIGHT;
     const imageAspect = tex.image.width / tex.image.height;
 
     if (imageAspect > spriteAspect) {
@@ -182,12 +188,12 @@ function SpriteImageMat({ url }) {
     }
 
     tex.needsUpdate = true;
-  }, [tex, url]);
+  }, [tex, url, isDesktop]);
 
   return <spriteMaterial map={tex} transparent opacity={0.95} />;
 }
 
-function SpriteVideoMat({ url }) {
+function SpriteVideoMat({ url, isDesktop = false }) {
   const effUrl = useMemo(() => proxify(url), [url]);
   const vtex = useVideoTexture(effUrl, {
     crossOrigin: "anonymous",
@@ -204,9 +210,12 @@ function SpriteVideoMat({ url }) {
     vtex.colorSpace = THREE.SRGBColorSpace;
 
     // Cover 효과: 스프라이트 비율에 맞춰 비디오 crop
-    const MAX_WIDTH = 3;
-    const MAX_HEIGHT = 4.0;
-    const spriteAspect = MAX_WIDTH / MAX_HEIGHT; // 1.25
+    const BASE_WIDTH = 3;
+    const BASE_HEIGHT = 4.0;
+    const scale = isDesktop ? 2 : 1;  // 3배에서 2배로 변경
+    const MAX_WIDTH = BASE_WIDTH * scale;
+    const MAX_HEIGHT = BASE_HEIGHT * scale;
+    const spriteAspect = MAX_WIDTH / MAX_HEIGHT;
     const videoAspect = vtex.image.videoWidth / vtex.image.videoHeight;
 
     if (videoAspect > spriteAspect) {
@@ -222,13 +231,13 @@ function SpriteVideoMat({ url }) {
     }
 
     vtex.needsUpdate = true;
-  }, [vtex, url]);
+  }, [vtex, url, isDesktop]);
 
   return <spriteMaterial map={vtex} transparent opacity={0.95} />;
 }
 
 // ===== 투영선 =====
-function ProjectionLines({ planePosition, planeRotation, spritePosition }) {
+function ProjectionLines({ planePosition, planeRotation, spritePosition, isDesktop = false }) {
   // 플레인의 상단 좌우 꼭짓점 계산
   const planeCorners = useMemo(() => {
     if (!planePosition || !planeRotation) return null;
@@ -252,23 +261,27 @@ function ProjectionLines({ planePosition, planeRotation, spritePosition }) {
   const spriteCorners = useMemo(() => {
     if (!spritePosition) return null;
 
-    const MAX_WIDTH = 3;
-    const MAX_HEIGHT = 4.0;
+    const BASE_WIDTH = 3;
+    const BASE_HEIGHT = 4.0;
+    const scale = isDesktop ? 2 : 1;  // 3배에서 2배로 변경
+    const MAX_WIDTH = BASE_WIDTH * scale;
+    const MAX_HEIGHT = BASE_HEIGHT * scale;
 
-    // 스프라이트는 항상 카메라를 향하므로 x축으로만 오프셋
+    // 스프라이트는 billboard이므로 카메라 방향을 고려한 오프셋 필요
+    // 스프라이트의 z 위치를 고려하여 정확한 하단 모서리 계산
     const bottomLeft = new THREE.Vector3(
-      spritePosition[0] - MAX_WIDTH / 2-0.4,
+      spritePosition[0] - MAX_WIDTH / 2,
       spritePosition[1] - MAX_HEIGHT / 2,
       spritePosition[2]
     );
     const bottomRight = new THREE.Vector3(
-      spritePosition[0] + MAX_WIDTH / 2-0.2,
+      spritePosition[0] + MAX_WIDTH / 2,
       spritePosition[1] - MAX_HEIGHT / 2,
       spritePosition[2]
     );
 
     return { bottomLeft, bottomRight };
-  }, [spritePosition]);
+  }, [spritePosition, isDesktop]);
 
   if (!planeCorners || !spriteCorners) return null;
 
@@ -324,6 +337,7 @@ function RingInner({
   popMode = "single",
   popSpanSlots = 1.2,
   bulge = 10,
+  isDesktop = false,
 }) {
   const N = Math.max(1, slots.length);
   const step = useMemo(() => (Math.PI * 2) / N, [N]);
@@ -424,6 +438,9 @@ function RingInner({
       weightsRef.current[i] = lerpExp(prev, next, Math.min(1, wSpeed * dt));
     }
 
+    // 플레인 회전 각도 (데스크탑과 모바일에서 다르게 설정)
+    const planeRotationX = isDesktop ? -0 : -0.3;  // X축 회전 (위아래 기울기)
+
     for (let i = 0; i < N; i++) {
       const a = newBaseAngles[i] + ringAngle.current;
       const w = weightsRef.current[i] ?? 0;
@@ -436,7 +453,7 @@ function RingInner({
       const m = planeRefs.current[i];
       if (!m) continue;
       m.position.set(x, y, z);
-      m.rotation.set(-0.3, 0, 0);
+      m.rotation.set(planeRotationX, 0, 0);
     }
 
     // 좌측 인덱스 스냅 콜백(회전이 거의 완료되었을 때만)
@@ -463,18 +480,26 @@ function RingInner({
   // leftIndex에 해당하는 아이템의 itemId 계산
   const selectedItemId = slots[leftIndex]?.itemId;
 
-  // Sprite 위치 계산
+  // Sprite 위치 계산 (데스크탑일 때 링과 겹치지 않도록 위로 올림)
   const spritePosition = useMemo(() => {
     if (!leftmostPlaneInfo.position) return [0, 4, 0];
+
+    // 데스크탑일 때는 스프라이트를 링 위로 충분히 올림
+    const verticalOffset = isDesktop ? 6 : 4;  // 데스크탑: 위로 6, 모바일: 4
+    const horizontalOffset = isDesktop ? 0 : 0;
+
     return [
-      leftmostPlaneInfo.position[0],
-      leftmostPlaneInfo.position[1] +4,
+      leftmostPlaneInfo.position[0] + horizontalOffset,
+      leftmostPlaneInfo.position[1] + verticalOffset,
       leftmostPlaneInfo.position[2],
     ];
-  }, [leftmostPlaneInfo.position]);
+  }, [leftmostPlaneInfo.position, isDesktop]);
+
+  // 데스크탑일 때 전체 그래픽을 Y축 아래로 이동하여 캔버스 하단에 배치
+  const groupPositionY = isDesktop ? -3 : 0;
 
   return (
-    <group position={[0, 0, 0]} rotation={[0, 0, 0]}>
+    <group position={[0, groupPositionY, 0]} rotation={[0, 0, 0]}>
       {slots.map((slot, i) => {
         const isSelected = slot?.itemId === selectedItemId;
         return (
@@ -491,6 +516,7 @@ function RingInner({
       <LeftmostSprite
         slot={slots[leftIndex]}
         spritePosition={spritePosition}
+        isDesktop={isDesktop}
       />
 
       {/* Projection Lines */}
@@ -498,6 +524,7 @@ function RingInner({
         planePosition={leftmostPlaneInfo.position}
         planeRotation={leftmostPlaneInfo.rotation}
         spritePosition={spritePosition}
+        isDesktop={isDesktop}
       />
     </group>
   );
@@ -511,6 +538,7 @@ export default function SceneRing({
   popMode = "single",
   popSpanSlots = 1.2,
   bulge = 10.0,
+  isDesktop = false,
 }) {
   useEffect(() => {
     const LM = THREE.DefaultLoadingManager;
@@ -546,6 +574,7 @@ export default function SceneRing({
           popMode={popMode}
           popSpanSlots={popSpanSlots}
           bulge={bulge}
+          isDesktop={isDesktop}
         />
       </Suspense>
     </Canvas>

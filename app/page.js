@@ -4,6 +4,7 @@ import Image from "next/image";
 import AboutDetail from "@/app/components/main/AboutDetail";
 import AboutInfo from "@/app/components/main/AboutInfo";
 import Header from "@/app/components/main/Header";
+import Landing from "@/app/components/main/Landing";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./contexts/AuthContext";
 export default function Home() {
@@ -30,7 +31,7 @@ export default function Home() {
       }}
     >
       <Header page="main" mypage={mypage} login={login} logout={logout} />
-      {/* <Landing /> */}
+      <Landing />
       <AboutInfo />
       <AboutDetail />
     </div>

@@ -240,7 +240,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "./app/generated/prisma",
+      "value": "/vercel/sandbox/primary/app/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -249,7 +249,7 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "darwin-arm64",
+        "value": "rhel-openssl-3.0.x",
         "native": true
       },
       {
@@ -258,7 +258,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "./prisma/schema.prisma",
+    "sourceFilePath": "/vercel/sandbox/primary/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

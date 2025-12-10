@@ -20,7 +20,10 @@ import Header from "./Header";
 import DetailView from "./DetailView";
 import DetailEdit from "./DetailEdit";
 import ProfileEdit from "./ProfileEdit";
+import LifestoryGuide from "./LifestoryGuide";
 import { dummy } from "../dummy";
+
+import { updateScene } from "../services/sceneService";
 
 export default function Pannel({
   type = "list",
@@ -29,7 +32,9 @@ export default function Pannel({
   setItems,
   profile,
   setProfile,
-  onItemClick
+  onItemClick,
+  onToggleMode,
+  sceneId
 }) {
   const [savedItems, setSavedItems] = useState(items);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -38,6 +43,8 @@ export default function Pannel({
   const [listHasChanges, setListHasChanges] = useState(false);
   const [unsavedItemIds, setUnsavedItemIds] = useState(new Set());
   const [isProfileView, setIsProfileView] = useState(false);
+  const [isLifestoryGuideMode, setIsLifestoryGuideMode] = useState(false);
+  const [lifestoryProgressData, setLifestoryProgressData] = useState(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -54,13 +61,37 @@ export default function Pannel({
         const oldIndex = items.findIndex((item) => item.id === active.id);
         const newIndex = items.findIndex((item) => item.id === over.id);
 
-        return arrayMove(items, oldIndex, newIndex);
+        // 프로필 아이템이 관련된 경우 드래그 방지
+        if (items[oldIndex]?.isProfile || items[newIndex]?.isProfile) {
+          return items;
+        }
+
+        const newItems = arrayMove(items, oldIndex, newIndex);
+
+        // 프로필 아이템이 항상 첫 번째에 있도록 보장
+        const profileIndex = newItems.findIndex(item => item.isProfile);
+        if (profileIndex > 0) {
+          const profile = newItems[profileIndex];
+          newItems.splice(profileIndex, 1);
+          newItems.unshift(profile);
+        }
+
+        return newItems;
       });
       setListHasChanges(true);
     }
   };
 
   const handleItemClick = (item) => {
+    // 프로필 아이템 클릭 시 프로필 뷰로 이동
+    if (item.isProfile) {
+      setIsProfileView(true);
+      setSelectedItem(null);
+      setEditedData(null);
+      setHasChanges(false);
+      return;
+    }
+
     setSelectedItem(item);
     setEditedData(item);
     setHasChanges(false);
@@ -71,6 +102,9 @@ export default function Pannel({
   };
 
   const handleDeleteItem = (itemId) => {
+    // 프로필 아이템은 삭제 불가
+    if (itemId === "profile") return;
+
     setItems(prev => prev.filter(item => item.id !== itemId));
     setListHasChanges(true);
     setUnsavedItemIds(prev => {
@@ -95,13 +129,6 @@ export default function Pannel({
     setIsProfileView(false);
   };
 
-  const handleProfileClick = () => {
-    setIsProfileView(true);
-    setSelectedItem(null);
-    setEditedData(null);
-    setHasChanges(false);
-  };
-
   const handleBack = () => {
     if (hasChanges) {
       if (isProfileView) {
@@ -123,36 +150,121 @@ export default function Pannel({
     setHasChanges(true);
   };
 
-  const handleSaveItem = () => {
-    if (editedData) {
+  const handleSaveItem = async () => {
+    if (!editedData || !sceneId) {
+      console.error("No editedData or sceneId");
+      return;
+    }
+
+    try {
+      let updatedItems;
+
       if (selectedItem?.isNew) {
         // 새 아이템 추가
-        const newItem = { ...editedData, isNew: false };
-        setItems(prev => [newItem, ...prev]);
-        setListHasChanges(true);
+        const newItem = {
+          ...editedData,
+          isNew: false,
+          // img 필드 유지 (DetailEdit과 일관성 유지)
+        };
+        updatedItems = items.map(item =>
+          item.isProfile ? item : item
+        );
+        // 프로필 다음에 새 아이템 추가
+        const profileIndex = updatedItems.findIndex(item => item.isProfile);
+        updatedItems.splice(profileIndex + 1, 0, newItem);
+        setItems(updatedItems);
       } else if (selectedItem) {
         // 기존 아이템 업데이트
-        const updatedItems = items.map((item) =>
-          item.id === selectedItem.id ? { ...item, ...editedData } : item
+        updatedItems = items.map((item) =>
+          item.id === selectedItem.id ? {
+            ...item,
+            ...editedData,
+            // img 필드 유지 (DetailEdit과 일관성 유지)
+          } : item
         );
         setItems(updatedItems);
-        setSavedItems(updatedItems);
-        setUnsavedItemIds(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(selectedItem.id);
-          return newSet;
-        });
       }
+
+      console.log("[Pannel.handleSaveItem] editedData:", editedData);
+      console.log("[Pannel.handleSaveItem] updatedItems:", updatedItems);
+
+      // DB에 저장
+      const itemsToSave = updatedItems
+        .filter(item => !item.isProfile)
+        .map(item => ({
+          title: item.title || "",
+          date: item.date || "",
+          desc: item.desc || "",
+          img: item.img || []
+        }));
+
+      console.log("[Pannel.handleSaveItem] Items to save:", JSON.stringify(itemsToSave, null, 2));
+
+      await updateScene(sceneId, {
+        profile: {
+          photo: profile.photo || "",
+          name: profile.name || "",
+          birthDate: profile.birthDate || "",
+          birthPlace: profile.birthPlace || "",
+          biography: profile.biography || ""
+        },
+        items: itemsToSave,
+        lifestoryProgress: lifestoryProgressData
+      });
+
+      setSavedItems(updatedItems);
+      setUnsavedItemIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(selectedItem.id);
+        return newSet;
+      });
       setHasChanges(false);
       setSelectedItem(null);
       setEditedData(null);
+      alert("저장되었습니다.");
+    } catch (error) {
+      console.error("Failed to save item:", error);
+      alert("저장 중 오류가 발생했습니다.");
     }
   };
 
-  const handleSaveAll = () => {
-    setSavedItems(items);
-    setListHasChanges(false);
-    setUnsavedItemIds(new Set());
+  const handleSaveAll = async () => {
+    if (!sceneId) {
+      console.error("No sceneId provided");
+      return;
+    }
+
+    try {
+      // items에서 프로필 제외하고 전송
+      const itemsToSave = items
+        .filter(item => !item.isProfile)
+        .map(item => ({
+          title: item.title || "",
+          date: item.date || "",
+          desc: item.desc || "",
+          img: item.img || []
+        }));
+
+      await updateScene(sceneId, {
+        profile: {
+          photo: profile.photo || "",
+          name: profile.name || "",
+          birthDate: profile.birthDate || "",
+          birthPlace: profile.birthPlace || "",
+          biography: profile.biography || ""
+        },
+        items: itemsToSave,
+        lifestoryProgress: lifestoryProgressData
+      });
+
+      setSavedItems(items);
+      setListHasChanges(false);
+      setUnsavedItemIds(new Set());
+      alert("저장되었습니다.");
+    } catch (error) {
+      console.error("Failed to save:", error);
+      alert("저장 중 오류가 발생했습니다.");
+    }
   };
 
   const handleChange = (newData) => {
@@ -160,20 +272,96 @@ export default function Pannel({
     setHasChanges(true);
   };
 
+  const handleStartLifestoryGuide = () => {
+    setIsLifestoryGuideMode(true);
+  };
+
+  const handleExitLifestoryGuide = (progressData) => {
+    // 진행 상황 저장
+    if (progressData) {
+      setLifestoryProgressData(progressData);
+    }
+    setIsLifestoryGuideMode(false);
+  };
+
+  const handleApplyLifestory = (generatedStory, progressData) => {
+    // 생성된 생애문을 profile의 biography에 적용
+    setProfile(prev => ({ ...prev, biography: generatedStory }));
+    // 진행 상황 저장
+    if (progressData) {
+      setLifestoryProgressData(progressData);
+    }
+    setIsLifestoryGuideMode(false);
+    setHasChanges(true);
+  };
+
   if (isProfileView) {
+    // 생애문 가이드 모드
+    if (isLifestoryGuideMode) {
+      return (
+        <div className="w-full max-h-[540px] bg-black-100/20 backdrop-blur-2xl rounded-tl-[20px] rounded-tr-[20px] overflow-y-auto flex flex-col">
+          <LifestoryGuide
+            userName={profile?.name || "사용자"}
+            onBack={handleExitLifestoryGuide}
+            onApply={handleApplyLifestory}
+            initialData={lifestoryProgressData}
+          />
+        </div>
+      );
+    }
+
+    // 일반 프로필 뷰
     return (
-      <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[240px] bg-black/20 backdrop-blur-md rounded-tl-[20px] rounded-tr-[20px] border border-white overflow-hidden flex flex-col">
+      <div className="w-full max-h-[540px] bg-black-100/20 backdrop-blur-2xl  rounded-tl-[20px] rounded-tr-[20px]  overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
-          onSave={() => {
-            setListHasChanges(true);
-            setHasChanges(false);
+          onSave={async () => {
+            if (!sceneId) {
+              console.error("No sceneId provided");
+              return;
+            }
+
+            try {
+              // 프로필만 저장
+              const itemsToSave = items
+                .filter(item => !item.isProfile)
+                .map(item => ({
+                  title: item.title || "",
+                  date: item.date || "",
+                  desc: item.desc || "",
+                  img: item.img || []
+                }));
+
+              await updateScene(sceneId, {
+                profile: {
+                  photo: profile.photo || "",
+                  name: profile.name || "",
+                  birthDate: profile.birthDate || "",
+                  birthPlace: profile.birthPlace || "",
+                  biography: profile.biography || ""
+                },
+                items: itemsToSave,
+                lifestoryProgress: lifestoryProgressData
+              });
+
+              setHasChanges(false);
+              alert("프로필이 저장되었습니다.");
+            } catch (error) {
+              console.error("Failed to save profile:", error);
+              alert("저장 중 오류가 발생했습니다.");
+            }
           }}
           onBack={handleBack}
+          onToggleMode={onToggleMode}
         />
         <div className="flex-1 overflow-y-auto">
-          <ProfileEdit profile={profile} onChange={handleProfileChange} mode={mode} />
+          <ProfileEdit
+            profile={profile}
+            onChange={handleProfileChange}
+            mode={mode}
+            onStartLifestoryGuide={handleStartLifestoryGuide}
+          />
         </div>
       </div>
     );
@@ -181,12 +369,13 @@ export default function Pannel({
 
   if (selectedItem && (mode === "view")) {
     return (
-      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[240px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white overflow-hidden flex flex-col">
+      <div className="w-full rounded-[20px] overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
           onSave={handleSaveItem}
           onBack={handleBack}
+          onToggleMode={onToggleMode}
         />
         <div className="flex-1 overflow-y-auto">
           {mode === "view" ? (
@@ -201,12 +390,13 @@ export default function Pannel({
 
   if (selectedItem && (mode !== "view")) {
     return (
-      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[640px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white overflow-hidden flex flex-col">
+      <div className="w-full max-h-[600px] bg-black-100/20 backdrop-blur-2xl rounded-[20px] overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
           onSave={handleSaveItem}
           onBack={handleBack}
+          onToggleMode={onToggleMode}
         />
         <div className="flex-1 overflow-y-auto">
           {mode === "view" ? (
@@ -221,11 +411,12 @@ export default function Pannel({
 
   if (type === "list"&& (mode === "view")) {
     return (
-      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[200px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white-100 overflow-hidden flex flex-col">
+      <div className="w-full max-h-[400px] rounded-[20px] overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}
           onSave={handleSaveAll}
+          onToggleMode={onToggleMode}
         />
         <div className="flex flex-col flex-1 overflow-y-auto">
           {mode === "edit" && (
@@ -250,12 +441,6 @@ export default function Pannel({
               <span className="text-white text-base">새로 만들기</span>
             </button>
           )}
-          <button
-            onClick={handleProfileClick}
-            className="flex items-center justify-between py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10"
-          >
-            <span className="text-white text-sm">프로필</span>
-          </button>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -276,6 +461,7 @@ export default function Pannel({
                     hasUnsavedChanges={unsavedItemIds.has(item.id)}
                     onClick={() => handleItemClick(item)}
                     onDelete={() => handleDeleteItem(item.id)}
+                    isProfile={item.isProfile}
                   />
                 ))}
               </div>
@@ -288,11 +474,12 @@ export default function Pannel({
 
     if (type === "list"&& (mode !== "view")) {
     return (
-      <div className="fixed bottom-40 left-1/2 -translate-x-1/2 w-[92%] max-w-[450px] max-h-[400px] bg-black/20 backdrop-blur-md rounded-[20px] border border-white overflow-hidden flex flex-col">
+      <div className="w-full max-h-[400px] bg-black-100/20 backdrop-blur-2xl rounded-[20px] overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}
           onSave={handleSaveAll}
+          onToggleMode={onToggleMode}
         />
         <div className="flex flex-col flex-1 overflow-y-auto">
           {mode === "edit" && (
@@ -317,12 +504,6 @@ export default function Pannel({
               <span className="text-white text-base">새로 만들기</span>
             </button>
           )}
-          <button
-            onClick={handleProfileClick}
-            className="flex items-center justify-between py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10"
-          >
-            <span className="text-white text-sm">프로필</span>
-          </button>
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -343,6 +524,7 @@ export default function Pannel({
                     hasUnsavedChanges={unsavedItemIds.has(item.id)}
                     onClick={() => handleItemClick(item)}
                     onDelete={() => handleDeleteItem(item.id)}
+                    isProfile={item.isProfile}
                   />
                 ))}
               </div>

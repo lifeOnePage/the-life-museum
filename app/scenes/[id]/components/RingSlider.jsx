@@ -17,6 +17,10 @@ export default function RingSlider({
   leftIndex = 0,
   onChangeLeftIndex,
   onItemClick,
+  isPanelOpen = false,
+  onTogglePanel,
+  isDesktop = false,
+  onOpenProfileCurtain,
 }) {
   const [isLocked, setIsLocked] = useState(false);
   const containerRef = useRef(null);
@@ -55,7 +59,9 @@ export default function RingSlider({
     setIsLocked((prev) => !prev);
   };
 
-  const tickWidth = 20; // 각 눈금의 너비 (px)
+  const tickWidth = 20; // 각 눈금의 너비 (px) - 구 버전용
+  const filmFrameWidth = 40; // 필름 프레임 너비 (px)
+  const filmFrameHeight = 30; // 필름 프레임 높이 (px) - 4:3 비율
 
   // clientX 좌표 가져오기 (마우스/터치 통합)
   const getClientX = (e) => {
@@ -80,10 +86,10 @@ export default function RingSlider({
     e.preventDefault();
 
     const deltaX = getClientX(e) - startXRef.current;
-    const ticksDelta = Math.round(deltaX / tickWidth);
+    const framesDelta = Math.round(deltaX / filmFrameWidth);
 
     // 드래그한 거리만큼 인덱스 변경
-    const newIndex = leftIndex - ticksDelta;
+    const newIndex = leftIndex - framesDelta;
     if (newIndex >= minIndex && newIndex <= maxIndex && newIndex !== leftIndex) {
       onChangeLeftIndex?.(newIndex);
       startXRef.current = getClientX(e);
@@ -114,13 +120,135 @@ export default function RingSlider({
   }, [leftIndex, minIndex, maxIndex]);
 
   return (
-    <div className="w-full bg-black/60 backdrop-blur-md border-t border-white/10">
+    <div className="w-full bg-black/30 backdrop-blur-md border-t border-white/10">
+      {/* 데스크탑 - 프로필 버튼만 표시 */}
+      {isDesktop && (
+        <div className="flex justify-end items-center px-4 py-2 border-b border-white/10">
+          <button
+            onClick={onOpenProfileCurtain}
+            className="flex flex-row items-center gap-2 text-white/70 hover:text-white transition-colors"
+          >
+            <span className="text-xs">프로필 보기</span>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="8"
+                cy="6"
+                r="2.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+              />
+              <path
+                d="M3 13c0-2.5 2-4 5-4s5 1.5 5 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
+
+      {/* 모바일 - 토글 버튼 양쪽 표시 */}
+      {!isDesktop && (
+        <div className="flex justify-between items-center px-4 py-2 border-b border-white/10">
+          {/* 전체 보기 / 닫기 버튼 - 왼쪽 */}
+          <button
+            onClick={onTogglePanel}
+            className="flex flex-row items-center gap-2 text-white/70 hover:text-white transition-colors"
+          >
+            {isPanelOpen ? (
+              <>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M4 6L8 10L12 6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="text-xs">닫기</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="transform rotate-180"
+                >
+                  <path
+                    d="M4 6L8 10L12 6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="text-xs">전체 보기</span>
+              </>
+            )}
+          </button>
+
+          {/* 프로필 보기 버튼 - 오른쪽 */}
+          <button
+            onClick={onOpenProfileCurtain}
+            className="flex flex-row items-center gap-2 text-white/70 hover:text-white transition-colors"
+          >
+            <span className="text-xs">프로필 보기</span>
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <circle
+                cx="8"
+                cy="6"
+                r="2.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+              />
+              <path
+                d="M3 13c0-2.5 2-4 5-4s5 1.5 5 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+            </svg>
+          </button>
+        </div>
+      )}
+
       {/* 첫 번째 단: 아이템 네비게이션 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-white/10" style={{ perspective: "1000px" }}>
         {/* 이전 아이템 */}
         <button
           onClick={() => handleItemClick(prevItem, "prev")}
-          className="text-[10px] text-white/50 hover:text-white/80 transition-colors truncate max-w-[30%]"
+          className="text-[10px] text-white/50 hover:text-white/80 transition-all truncate max-w-[30%]"
+          style={{
+            transform: "rotateY(15deg) scale(0.9)",
+            transformOrigin: "right center",
+          }}
         >
           {prevItem?.title || ""}
         </button>
@@ -128,7 +256,11 @@ export default function RingSlider({
         {/* 현재 아이템 (잠금 토글) */}
         <button
           onClick={handleLockToggle}
-          className="flex items-center gap-2 text-sm font-bold text-white truncate max-w-[40%]"
+          className="flex items-center gap-2 text-sm font-bold text-white truncate max-w-[40%] transition-all"
+          style={{
+            transform: "scale(1)",
+            zIndex: 10,
+          }}
         >
           {isLocked && <Lock className="w-4 h-4" />}
           {currentItem?.title || ""}
@@ -137,14 +269,18 @@ export default function RingSlider({
         {/* 다음 아이템 */}
         <button
           onClick={() => handleItemClick(nextItem, "next")}
-          className="text-[10px] text-white/50 hover:text-white/80 transition-colors truncate max-w-[30%]"
+          className="text-[10px] text-white/50 hover:text-white/80 transition-all truncate max-w-[30%]"
+          style={{
+            transform: "rotateY(-15deg) scale(0.9)",
+            transformOrigin: "left center",
+          }}
         >
           {nextItem?.title || ""}
         </button>
       </div>
 
       {/* 두 번째 단: 네비게이션 버튼 */}
-      <div className="flex items-center justify-center gap-6 px-4 py-2 border-b border-white/10">
+      {/* <div className="flex items-center justify-center gap-6 px-4 py-2 border-b border-white/10">
         <button
           onClick={() => {
             const newIndex = leftIndex - 1;
@@ -170,14 +306,111 @@ export default function RingSlider({
         >
           <ChevronRight className="w-5 h-5" />
         </button>
+      </div> */}
+
+      {/* 세 번째 단: 필름 스트립 슬라이더 */}
+      <div
+        className="relative px-4 py-4 overflow-hidden"
+        style={{
+          maskImage: "radial-gradient(ellipse 100% 120% at 50% 50%, black 40%, transparent 70%)",
+          WebkitMaskImage: "radial-gradient(ellipse 100% 120% at 50% 50%, black 40%, transparent 70%)",
+        }}
+      >
+        {/* 필름 스트립 */}
+        <div
+          ref={containerRef}
+          onMouseDown={handleStart}
+          onTouchStart={handleStart}
+          className="cursor-grab active:cursor-grabbing select-none relative z-10"
+        >
+          <div
+            className="flex items-center gap-1"
+            style={{
+              transform: `translateX(calc(50% - ${leftIndex * filmFrameWidth}px - ${leftIndex * 4}px - ${filmFrameWidth / 2}px))`,
+              transition: isDraggingRef.current ? "none" : "transform 0.2s ease-out",
+            }}
+          >
+            {Array.from({ length: maxIndex - minIndex + 1 }, (_, i) => {
+              const index = minIndex + i;
+              const isCurrent = index === leftIndex;
+              const texture = textureData?.textures?.[index];
+              const imageUrl = texture?.url || null;
+              const kind = texture?.kind || texture?.type || "empty";
+
+              // 중앙으로부터의 거리 계산 (왜곡 효과용)
+              const distanceFromCenter = index - leftIndex;
+              const absDistance = Math.abs(distanceFromCenter);
+
+              // 볼록한 곡선을 따라 Y축 이동 (중앙이 위로 올라감)
+              const curveY = -Math.pow(absDistance, 1.5) * 2;
+
+              // 거리에 따른 스케일 (중앙이 크고 양쪽이 작아짐)
+              const scale = isCurrent ? 1.2 : Math.max(0.75, 1 - absDistance * 0.12);
+
+              // 거리에 따른 밝기
+              const brightness = isCurrent ? 100 : Math.max(60, 100 - absDistance * 8);
+
+              // 거리에 따른 투명도
+              const opacity = Math.max(0.5, 1 - absDistance * 0.12);
+
+              return (
+                <div
+                  key={index}
+                  className="flex-shrink-0 transition-all duration-200"
+                  style={{
+                    width: `${filmFrameWidth}px`,
+                    height: `${filmFrameHeight}px`,
+                    transform: `translateY(${curveY}px) scale(${scale})`,
+                    filter: `brightness(${brightness}%)`,
+                    opacity: opacity,
+                  }}
+                >
+                  <div className="relative w-full h-full bg-black/80 border border-white/30 overflow-hidden">
+                    {/* 상단 필름 구멍 */}
+                    <div className="absolute top-0.5 left-0 right-0 h-1 flex justify-around px-0.5">
+                      {Array.from({ length: 3 }).map((_, holeIdx) => (
+                        <div key={`hole-top-${holeIdx}`} className="w-1 h-1 bg-white/20 rounded-[2px]" />
+                      ))}
+                    </div>
+                    {/* 하단 필름 구멍 */}
+                    <div className="absolute bottom-0.5 left-0 right-0 h-1 flex justify-around px-0.5">
+                      {Array.from({ length: 3 }).map((_, holeIdx) => (
+                        <div key={`hole-bottom-${holeIdx}`} className="w-1 h-1 bg-white/20 rounded-[2px]" />
+                      ))}
+                    </div>
+                    {imageUrl && kind !== "empty" ? (
+                      kind === "video" ? (
+                        <video
+                          src={imageUrl}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        <img
+                          src={imageUrl}
+                          alt={`Frame ${index}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+                        {index}
+                      </div>
+                    )}
+                    {isCurrent && (
+                      <div className="absolute inset-0 border-2 border-white/60 pointer-events-none" />
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* 세 번째 단: 인덱스 슬라이더 */}
-      <div className="relative px-4 py-4 overflow-hidden">
-        {/* 중앙 기준선 */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-white/80 z-10 pointer-events-none" />
-
-        {/* 눈금 슬라이더 */}
+      {/* 구 버전: 눈금 슬라이더 (주석처리) */}
+      {/* <div className="relative px-4 py-4 overflow-hidden">
         <div
           ref={containerRef}
           onMouseDown={handleStart}
@@ -215,13 +448,7 @@ export default function RingSlider({
             })}
           </div>
         </div>
-
-        {/* 인덱스 표시 */}
-        {/* <div className="text-center text-xs text-white/70 mt-2">
-          {leftIndex} / {maxIndex}
-          {isLocked && ` (${currentItem?.title || ""})`}
-        </div> */}
-      </div>
+      </div> */}
     </div>
   );
 }

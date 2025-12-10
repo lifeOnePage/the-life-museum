@@ -59,7 +59,7 @@ function Thumb({ item, onClick }) {
           whiteSpace: "nowrap",
         }}
       >
-        {item.name ?? "새로운 Reels"}
+        {item.name || item.profileName || item.userName || "새로운 항목"}
       </div>
       <div
         style={{

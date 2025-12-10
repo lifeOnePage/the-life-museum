@@ -23,8 +23,13 @@ export function buildTextureData(profile, items) {
     itemRanges['profile'] = { start: startIndex, end: startIndex };
   }
 
-  // 2. 각 아이템의 이미지들 추가
+  // 2. 각 아이템의 이미지들 추가 (프로필 아이템 제외)
   items.forEach((item, itemIdx) => {
+    // 프로필 아이템은 건너뛰기 (이미 위에서 처리됨)
+    if (item.isProfile) {
+      return;
+    }
+
     const startIndex = currentIndex;
 
     // 빈 이미지 배열인 경우 empty 텍스쳐 1개 추가

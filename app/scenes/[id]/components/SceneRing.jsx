@@ -10,8 +10,8 @@ import { useVideoTexture, Line } from "@react-three/drei";
 const RADIUS = 4;
 const PLANE_W = 1.2;
 const PLANE_H = 0.8;
-const CAM_Y = 8;
-const CAM_Z = 10;
+const CAM_Y = 6;
+const CAM_Z = 15;
 
 // 프록시 함수
 function proxify(u) {
@@ -358,7 +358,7 @@ function RingInner({
     const otherCount = N - selectedCount;
 
     // 선택된 아이템의 각 이미지에 할당할 각도 (기본 + 200% 가중치)
-    const selectedStepMultiplier = 4.0;  // 3배 간격으로 증가
+    const selectedStepMultiplier = 1.0;  // 3배 간격으로 증가
     const selectedStep = step * selectedStepMultiplier;
     const selectedTotalAngle = selectedCount * selectedStep;
 
@@ -436,7 +436,7 @@ function RingInner({
       const m = planeRefs.current[i];
       if (!m) continue;
       m.position.set(x, y, z);
-      m.rotation.set(-0.6, 0, 0);
+      m.rotation.set(-0.3, 0, 0);
     }
 
     // 좌측 인덱스 스냅 콜백(회전이 거의 완료되었을 때만)

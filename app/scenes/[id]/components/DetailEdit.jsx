@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -25,18 +25,52 @@ export default function DetailEdit({ item, onChange }) {
     img: (item?.img || []).map((url, idx) => ({ id: `img-${Date.now()}-${idx}`, url })),
   });
 
-  const [shouldNotifyChange, setShouldNotifyChange] = useState(false);
+  const lastSentDataRef = useRef(null);
+  const prevItemIdRef = useRef(null);
 
+  // item이 변경되면 formData 업데이트 (새로고침 시 데이터 로드 또는 다른 아이템 선택)
   useEffect(() => {
-    if (shouldNotifyChange && onChange) {
+    if (item && item.id !== prevItemIdRef.current) {
+      prevItemIdRef.current = item.id;
+      setFormData({
+        title: item.title || "",
+        date: item.date || "",
+        desc: item.desc || "",
+        img: (item.img || item.images || []).map((url, idx) => {
+          const imgUrl = typeof url === 'string' ? url : url.url;
+          return { id: `img-${Date.now()}-${idx}`, url: imgUrl };
+        }),
+      });
+      // 초기화 시에는 onChange 호출하지 않도록 lastSentDataRef 업데이트
+      lastSentDataRef.current = JSON.stringify({
+        title: item.title || "",
+        date: item.date || "",
+        desc: item.desc || "",
+        img: (item.img || item.images || []).map((url) => {
+          return typeof url === 'string' ? url : url.url;
+        }),
+      });
+    }
+  }, [item]);
+
+  // formData 변경 시 부모에게 알림
+  useEffect(() => {
+    if (onChange && prevItemIdRef.current !== null) {
       const dataToSend = {
-        ...formData,
+        title: formData.title,
+        date: formData.date,
+        desc: formData.desc,
         img: formData.img.map(img => img.url),
       };
-      onChange(dataToSend);
-      setShouldNotifyChange(false);
+
+      // 이전에 보낸 데이터와 비교하여 실제로 변경된 경우에만 onChange 호출
+      const dataString = JSON.stringify(dataToSend);
+      if (lastSentDataRef.current !== dataString) {
+        lastSentDataRef.current = dataString;
+        onChange(dataToSend);
+      }
     }
-  }, [shouldNotifyChange]);
+  }, [formData, onChange]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -47,7 +81,6 @@ export default function DetailEdit({ item, onChange }) {
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setShouldNotifyChange(true);
   };
 
   const handleDragEnd = (event) => {
@@ -60,7 +93,6 @@ export default function DetailEdit({ item, onChange }) {
         const newImg = arrayMove(prev.img, oldIndex, newIndex);
         return { ...prev, img: newImg };
       });
-      setShouldNotifyChange(true);
     }
   };
 
@@ -69,23 +101,69 @@ export default function DetailEdit({ item, onChange }) {
       ...prev,
       img: prev.img.filter((img) => img.id !== id)
     }));
-    setShouldNotifyChange(true);
   };
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const files = Array.from(e.target.files);
-    // TODO: 실제 업로드 로직 구현
-    // 지금은 임시로 URL을 추가
-    const newImages = files.map((file, idx) => ({
-      id: `img-${Date.now()}-${formData.img.length + idx}`,
-      url: URL.createObjectURL(file)
+    if (files.length === 0) return;
+
+    // 업로드 중 표시를 위한 임시 이미지 추가
+    const tempImages = files.map((file, idx) => ({
+      id: `temp-${Date.now()}-${idx}`,
+      url: URL.createObjectURL(file),
+      isUploading: true
     }));
 
     setFormData(prev => ({
       ...prev,
-      img: [...prev.img, ...newImages]
+      img: [...prev.img, ...tempImages]
     }));
-    setShouldNotifyChange(true);
+
+    // 실제 업로드
+    try {
+      const uploadedImages = [];
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const formDataToSend = new FormData();
+        formDataToSend.append("file", file);
+        formDataToSend.append("prefix", "scenes");
+
+        const res = await fetch("/api/storage/upload", {
+          method: "POST",
+          body: formDataToSend,
+        });
+
+        const data = await res.json();
+
+        if (data.ok && data.publicUrl) {
+          uploadedImages.push({
+            id: `img-${Date.now()}-${i}`,
+            url: data.publicUrl
+          });
+        } else {
+          console.error("Upload failed:", data.error);
+        }
+      }
+
+      // 임시 이미지를 실제 업로드된 이미지로 교체
+      setFormData(prev => ({
+        ...prev,
+        img: [
+          ...prev.img.filter(img => !img.isUploading),
+          ...uploadedImages
+        ]
+      }));
+    } catch (error) {
+      console.error("Failed to upload images:", error);
+      alert("이미지 업로드 중 오류가 발생했습니다.");
+
+      // 실패한 경우 임시 이미지 제거
+      setFormData(prev => ({
+        ...prev,
+        img: prev.img.filter(img => !img.isUploading)
+      }));
+    }
   };
 
   return (
@@ -148,6 +226,7 @@ export default function DetailEdit({ item, onChange }) {
                     id={img.id}
                     imgUrl={img.url}
                     onDelete={() => handleDeleteImage(img.id)}
+                    isUploading={img.isUploading}
                   />
                 ))}
               </div>

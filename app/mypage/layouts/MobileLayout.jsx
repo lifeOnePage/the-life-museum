@@ -18,6 +18,7 @@ export default function MobileLayout({
   onSaveProfile,
   reels,
   records,
+  scenes,
   activeTab,
   setActiveTab,
   onOpenCreate,
@@ -103,6 +104,36 @@ export default function MobileLayout({
           </motion.div>
         )}
 
+        {activeTab === "scenes" && (
+          <motion.div
+            key="tab-scenes"
+            initial={{ opacity: 0, x: 12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={{ duration: 0.18 }}
+            style={{ marginTop: 12 }}
+          >
+            {/* <RingPictogram /> */}
+            <div className="gap-3 my-4">
+              <div className=" text-white text-sm/loose font">
+                Life-Scenes는 삶의 풍경을 입체적으로 담아내는 몰입형 공간입니다.
+                3D 링 위에서 시간의 흐름을 따라 이동하며,
+                한 사람의 인생 여정을 생생하게 펼쳐냅니다.
+              </div>
+              <div className="mt-4 text-white-100 text-sm/loose">
+                원하는 대상의 Life-Scenes를 새로 제작하거나, 기존 Life-Scenes를 클릭하여
+                [편집하기]를 눌러 내용을 수정할 수 있어요.
+              </div>
+            </div>
+            <HorizontalThumbs
+              items={scenes}
+              label="Life-Scenes"
+              onOpenCreate={() => onOpenCreate("scenes")}
+              onOpenAction={(item) => onOpenAction("scenes", item)}
+            />
+          </motion.div>
+        )}
+
         {activeTab === "plan" && (
           <motion.div
             key="tab-plan"
@@ -125,9 +156,11 @@ export default function MobileLayout({
             ? "새 Life-Reels"
             : createModal.type === "records"
               ? "새 Life-Records"
-              : ""
+              : createModal.type === "scenes"
+                ? "새 Life-Scenes"
+                : ""
         }
-        contentType={createModal.type === "records" ? "records" : "reels"}
+        contentType={createModal.type === "records" ? "records" : createModal.type === "scenes" ? "scenes" : "reels"}
         onClose={closeCreate}
         onConfirm={onConfirmCreate}
       />

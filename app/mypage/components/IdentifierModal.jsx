@@ -34,6 +34,7 @@ export default function IdentifierModal({
         nameLabel: "Records를 제작할 대상의 성함을 적어주세요.",
         namePlaceholder: "예: 홍길동",
         nameHelp: "이름은 나중에도 수정할 수 있어요.",
+        idLabel: "LifeRecords의 ID를 만들어주세요.",
         idHeader: "ID에 대하여",
         idLines: [
           "ID는 LifeRecords의 고유한 주소를 만드는 값이에요.",
@@ -41,6 +42,22 @@ export default function IdentifierModal({
           "마이페이지에서 언제든 다시 변경할 수 있어요.",
         ],
         idPlaceholder: "예: my-first-records",
+      };
+    }
+    if (contentType === "scenes") {
+      return {
+        titleDefault: "새로운 Life-Scenes 만들기",
+        nameLabel: "Life-Scenes를 제작할 대상의 성함을 적어주세요.",
+        namePlaceholder: "예: 홍길동",
+        nameHelp: "이름은 나중에도 수정할 수 있어요.",
+        idLabel: "Life-Scenes의 ID를 만들어주세요.",
+        idHeader: "ID에 대하여",
+        idLines: [
+          "ID는 Life-Scenes의 고유한 주소를 만드는 값이에요.",
+          "다른 Scenes와 중복될 수 없고, 영문/숫자/언더스코어(_)/하이픈(-)만 가능해요.",
+          "마이페이지에서 언제든 다시 변경할 수 있어요.",
+        ],
+        idPlaceholder: "예: my-first-scene",
       };
     }
     return {

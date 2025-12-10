@@ -124,9 +124,9 @@ exports.Prisma.UserScalarFieldEnum = {
   id: 'id',
   name: 'name',
   mobile: 'mobile',
+  plan: 'plan',
   birthDate: 'birthDate',
-  email: 'email',
-  plan: 'plan'
+  email: 'email'
 };
 
 exports.Prisma.ReelScalarFieldEnum = {
@@ -161,9 +161,9 @@ exports.Prisma.WheelTextureScalarFieldEnum = {
   updatedAt: 'updatedAt',
   srcType: 'srcType',
   srcUrl: 'srcUrl',
-  caption: 'caption',
   memoryId: 'memoryId',
   relationshipId: 'relationshipId',
+  caption: 'caption',
   reelId: 'reelId'
 };
 
@@ -193,14 +193,16 @@ exports.Prisma.RecordScalarFieldEnum = {
   createdAt: 'createdAt',
   updatedAt: 'updatedAt',
   identifier: 'identifier',
-  userName: 'userName',
   coverUrl: 'coverUrl',
   name: 'name',
   subName: 'subName',
   description: 'description',
   bgm: 'bgm',
   color: 'color',
-  userId: 'userId'
+  userId: 'userId',
+  userName: 'userName',
+  birthDate: 'birthDate',
+  displayMode: 'displayMode'
 };
 
 exports.Prisma.RecordItemScalarFieldEnum = {
@@ -214,7 +216,42 @@ exports.Prisma.RecordItemScalarFieldEnum = {
   color: 'color',
   isHighlight: 'isHighlight',
   coverUrl: 'coverUrl',
-  recordId: 'recordId'
+  recordId: 'recordId',
+  images: 'images'
+};
+
+exports.Prisma.SceneScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  identifier: 'identifier',
+  profilePhoto: 'profilePhoto',
+  profileName: 'profileName',
+  profileBirthDate: 'profileBirthDate',
+  profileBirthPlace: 'profileBirthPlace',
+  profileBiography: 'profileBiography',
+  lifestoryProgress: 'lifestoryProgress',
+  userId: 'userId'
+};
+
+exports.Prisma.SceneItemScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  title: 'title',
+  date: 'date',
+  desc: 'desc',
+  order: 'order',
+  sceneId: 'sceneId'
+};
+
+exports.Prisma.SceneImageScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  url: 'url',
+  order: 'order',
+  itemId: 'itemId'
 };
 
 exports.Prisma.SortOrder = {
@@ -252,7 +289,10 @@ exports.Prisma.ModelName = {
   Memory: 'Memory',
   Relationship: 'Relationship',
   Record: 'Record',
-  RecordItem: 'RecordItem'
+  RecordItem: 'RecordItem',
+  Scene: 'Scene',
+  SceneItem: 'SceneItem',
+  SceneImage: 'SceneImage'
 };
 
 /**

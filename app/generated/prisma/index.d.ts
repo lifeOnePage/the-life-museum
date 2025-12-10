@@ -53,6 +53,21 @@ export type Record = $Result.DefaultSelection<Prisma.$RecordPayload>
  * 
  */
 export type RecordItem = $Result.DefaultSelection<Prisma.$RecordItemPayload>
+/**
+ * Model Scene
+ * 
+ */
+export type Scene = $Result.DefaultSelection<Prisma.$ScenePayload>
+/**
+ * Model SceneItem
+ * 
+ */
+export type SceneItem = $Result.DefaultSelection<Prisma.$SceneItemPayload>
+/**
+ * Model SceneImage
+ * 
+ */
+export type SceneImage = $Result.DefaultSelection<Prisma.$SceneImagePayload>
 
 /**
  * ##  Prisma Client ʲˢ
@@ -251,6 +266,36 @@ export class PrismaClient<
     * ```
     */
   get recordItem(): Prisma.RecordItemDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.scene`: Exposes CRUD operations for the **Scene** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Scenes
+    * const scenes = await prisma.scene.findMany()
+    * ```
+    */
+  get scene(): Prisma.SceneDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.sceneItem`: Exposes CRUD operations for the **SceneItem** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SceneItems
+    * const sceneItems = await prisma.sceneItem.findMany()
+    * ```
+    */
+  get sceneItem(): Prisma.SceneItemDelegate<ExtArgs, ClientOptions>;
+
+  /**
+   * `prisma.sceneImage`: Exposes CRUD operations for the **SceneImage** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more SceneImages
+    * const sceneImages = await prisma.sceneImage.findMany()
+    * ```
+    */
+  get sceneImage(): Prisma.SceneImageDelegate<ExtArgs, ClientOptions>;
 }
 
 export namespace Prisma {
@@ -698,7 +743,10 @@ export namespace Prisma {
     Memory: 'Memory',
     Relationship: 'Relationship',
     Record: 'Record',
-    RecordItem: 'RecordItem'
+    RecordItem: 'RecordItem',
+    Scene: 'Scene',
+    SceneItem: 'SceneItem',
+    SceneImage: 'SceneImage'
   };
 
   export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -717,7 +765,7 @@ export namespace Prisma {
       omit: GlobalOmitOptions
     }
     meta: {
-      modelProps: "user" | "reel" | "lifestory" | "wheelTexture" | "memory" | "relationship" | "record" | "recordItem"
+      modelProps: "user" | "reel" | "lifestory" | "wheelTexture" | "memory" | "relationship" | "record" | "recordItem" | "scene" | "sceneItem" | "sceneImage"
       txIsolationLevel: Prisma.TransactionIsolationLevel
     }
     model: {
@@ -1313,6 +1361,228 @@ export namespace Prisma {
           }
         }
       }
+      Scene: {
+        payload: Prisma.$ScenePayload<ExtArgs>
+        fields: Prisma.SceneFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SceneFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SceneFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>
+          }
+          findFirst: {
+            args: Prisma.SceneFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SceneFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>
+          }
+          findMany: {
+            args: Prisma.SceneFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>[]
+          }
+          create: {
+            args: Prisma.SceneCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>
+          }
+          createMany: {
+            args: Prisma.SceneCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SceneCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>[]
+          }
+          delete: {
+            args: Prisma.SceneDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>
+          }
+          update: {
+            args: Prisma.SceneUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>
+          }
+          deleteMany: {
+            args: Prisma.SceneDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SceneUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SceneUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>[]
+          }
+          upsert: {
+            args: Prisma.SceneUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$ScenePayload>
+          }
+          aggregate: {
+            args: Prisma.SceneAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateScene>
+          }
+          groupBy: {
+            args: Prisma.SceneGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SceneGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SceneCountArgs<ExtArgs>
+            result: $Utils.Optional<SceneCountAggregateOutputType> | number
+          }
+        }
+      }
+      SceneItem: {
+        payload: Prisma.$SceneItemPayload<ExtArgs>
+        fields: Prisma.SceneItemFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SceneItemFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SceneItemFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>
+          }
+          findFirst: {
+            args: Prisma.SceneItemFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SceneItemFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>
+          }
+          findMany: {
+            args: Prisma.SceneItemFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>[]
+          }
+          create: {
+            args: Prisma.SceneItemCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>
+          }
+          createMany: {
+            args: Prisma.SceneItemCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SceneItemCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>[]
+          }
+          delete: {
+            args: Prisma.SceneItemDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>
+          }
+          update: {
+            args: Prisma.SceneItemUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>
+          }
+          deleteMany: {
+            args: Prisma.SceneItemDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SceneItemUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SceneItemUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>[]
+          }
+          upsert: {
+            args: Prisma.SceneItemUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneItemPayload>
+          }
+          aggregate: {
+            args: Prisma.SceneItemAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSceneItem>
+          }
+          groupBy: {
+            args: Prisma.SceneItemGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SceneItemGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SceneItemCountArgs<ExtArgs>
+            result: $Utils.Optional<SceneItemCountAggregateOutputType> | number
+          }
+        }
+      }
+      SceneImage: {
+        payload: Prisma.$SceneImagePayload<ExtArgs>
+        fields: Prisma.SceneImageFieldRefs
+        operations: {
+          findUnique: {
+            args: Prisma.SceneImageFindUniqueArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload> | null
+          }
+          findUniqueOrThrow: {
+            args: Prisma.SceneImageFindUniqueOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>
+          }
+          findFirst: {
+            args: Prisma.SceneImageFindFirstArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload> | null
+          }
+          findFirstOrThrow: {
+            args: Prisma.SceneImageFindFirstOrThrowArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>
+          }
+          findMany: {
+            args: Prisma.SceneImageFindManyArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>[]
+          }
+          create: {
+            args: Prisma.SceneImageCreateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>
+          }
+          createMany: {
+            args: Prisma.SceneImageCreateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          createManyAndReturn: {
+            args: Prisma.SceneImageCreateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>[]
+          }
+          delete: {
+            args: Prisma.SceneImageDeleteArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>
+          }
+          update: {
+            args: Prisma.SceneImageUpdateArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>
+          }
+          deleteMany: {
+            args: Prisma.SceneImageDeleteManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateMany: {
+            args: Prisma.SceneImageUpdateManyArgs<ExtArgs>
+            result: BatchPayload
+          }
+          updateManyAndReturn: {
+            args: Prisma.SceneImageUpdateManyAndReturnArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>[]
+          }
+          upsert: {
+            args: Prisma.SceneImageUpsertArgs<ExtArgs>
+            result: $Utils.PayloadToResult<Prisma.$SceneImagePayload>
+          }
+          aggregate: {
+            args: Prisma.SceneImageAggregateArgs<ExtArgs>
+            result: $Utils.Optional<AggregateSceneImage>
+          }
+          groupBy: {
+            args: Prisma.SceneImageGroupByArgs<ExtArgs>
+            result: $Utils.Optional<SceneImageGroupByOutputType>[]
+          }
+          count: {
+            args: Prisma.SceneImageCountArgs<ExtArgs>
+            result: $Utils.Optional<SceneImageCountAggregateOutputType> | number
+          }
+        }
+      }
     }
   } & {
     other: {
@@ -1417,6 +1687,9 @@ export namespace Prisma {
     relationship?: RelationshipOmit
     record?: RecordOmit
     recordItem?: RecordItemOmit
+    scene?: SceneOmit
+    sceneItem?: SceneItemOmit
+    sceneImage?: SceneImageOmit
   }
 
   /* Types for Logging */
@@ -1497,13 +1770,15 @@ export namespace Prisma {
    */
 
   export type UserCountOutputType = {
-    reels: number
     records: number
+    reels: number
+    scenes: number
   }
 
   export type UserCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    reels?: boolean | UserCountOutputTypeCountReelsArgs
     records?: boolean | UserCountOutputTypeCountRecordsArgs
+    reels?: boolean | UserCountOutputTypeCountReelsArgs
+    scenes?: boolean | UserCountOutputTypeCountScenesArgs
   }
 
   // Custom InputTypes
@@ -1520,6 +1795,13 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
+  export type UserCountOutputTypeCountRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: RecordWhereInput
+  }
+
+  /**
+   * UserCountOutputType without action
+   */
   export type UserCountOutputTypeCountReelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: ReelWhereInput
   }
@@ -1527,8 +1809,8 @@ export namespace Prisma {
   /**
    * UserCountOutputType without action
    */
-  export type UserCountOutputTypeCountRecordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: RecordWhereInput
+  export type UserCountOutputTypeCountScenesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SceneWhereInput
   }
 
 
@@ -1537,15 +1819,15 @@ export namespace Prisma {
    */
 
   export type ReelCountOutputType = {
-    childhood: number
     memorys: number
     relationships: number
+    childhood: number
   }
 
   export type ReelCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    childhood?: boolean | ReelCountOutputTypeCountChildhoodArgs
     memorys?: boolean | ReelCountOutputTypeCountMemorysArgs
     relationships?: boolean | ReelCountOutputTypeCountRelationshipsArgs
+    childhood?: boolean | ReelCountOutputTypeCountChildhoodArgs
   }
 
   // Custom InputTypes
@@ -1562,13 +1844,6 @@ export namespace Prisma {
   /**
    * ReelCountOutputType without action
    */
-  export type ReelCountOutputTypeCountChildhoodArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    where?: WheelTextureWhereInput
-  }
-
-  /**
-   * ReelCountOutputType without action
-   */
   export type ReelCountOutputTypeCountMemorysArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: MemoryWhereInput
   }
@@ -1578,6 +1853,13 @@ export namespace Prisma {
    */
   export type ReelCountOutputTypeCountRelationshipsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: RelationshipWhereInput
+  }
+
+  /**
+   * ReelCountOutputType without action
+   */
+  export type ReelCountOutputTypeCountChildhoodArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: WheelTextureWhereInput
   }
 
 
@@ -1675,6 +1957,68 @@ export namespace Prisma {
 
 
   /**
+   * Count Type SceneCountOutputType
+   */
+
+  export type SceneCountOutputType = {
+    items: number
+  }
+
+  export type SceneCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    items?: boolean | SceneCountOutputTypeCountItemsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * SceneCountOutputType without action
+   */
+  export type SceneCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneCountOutputType
+     */
+    select?: SceneCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * SceneCountOutputType without action
+   */
+  export type SceneCountOutputTypeCountItemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SceneItemWhereInput
+  }
+
+
+  /**
+   * Count Type SceneItemCountOutputType
+   */
+
+  export type SceneItemCountOutputType = {
+    images: number
+  }
+
+  export type SceneItemCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    images?: boolean | SceneItemCountOutputTypeCountImagesArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * SceneItemCountOutputType without action
+   */
+  export type SceneItemCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItemCountOutputType
+     */
+    select?: SceneItemCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * SceneItemCountOutputType without action
+   */
+  export type SceneItemCountOutputTypeCountImagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SceneImageWhereInput
+  }
+
+
+  /**
    * Models
    */
 
@@ -1702,27 +2046,27 @@ export namespace Prisma {
     id: number | null
     name: string | null
     mobile: string | null
+    plan: string | null
     birthDate: string | null
     email: string | null
-    plan: string | null
   }
 
   export type UserMaxAggregateOutputType = {
     id: number | null
     name: string | null
     mobile: string | null
+    plan: string | null
     birthDate: string | null
     email: string | null
-    plan: string | null
   }
 
   export type UserCountAggregateOutputType = {
     id: number
     name: number
     mobile: number
+    plan: number
     birthDate: number
     email: number
-    plan: number
     _all: number
   }
 
@@ -1739,27 +2083,27 @@ export namespace Prisma {
     id?: true
     name?: true
     mobile?: true
+    plan?: true
     birthDate?: true
     email?: true
-    plan?: true
   }
 
   export type UserMaxAggregateInputType = {
     id?: true
     name?: true
     mobile?: true
+    plan?: true
     birthDate?: true
     email?: true
-    plan?: true
   }
 
   export type UserCountAggregateInputType = {
     id?: true
     name?: true
     mobile?: true
+    plan?: true
     birthDate?: true
     email?: true
-    plan?: true
     _all?: true
   }
 
@@ -1853,9 +2197,9 @@ export namespace Prisma {
     id: number
     name: string
     mobile: string
+    plan: string
     birthDate: string
     email: string | null
-    plan: string
     _count: UserCountAggregateOutputType | null
     _avg: UserAvgAggregateOutputType | null
     _sum: UserSumAggregateOutputType | null
@@ -1881,11 +2225,12 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     mobile?: boolean
+    plan?: boolean
     birthDate?: boolean
     email?: boolean
-    plan?: boolean
-    reels?: boolean | User$reelsArgs<ExtArgs>
     records?: boolean | User$recordsArgs<ExtArgs>
+    reels?: boolean | User$reelsArgs<ExtArgs>
+    scenes?: boolean | User$scenesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["user"]>
 
@@ -1893,33 +2238,34 @@ export namespace Prisma {
     id?: boolean
     name?: boolean
     mobile?: boolean
+    plan?: boolean
     birthDate?: boolean
     email?: boolean
-    plan?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
     name?: boolean
     mobile?: boolean
+    plan?: boolean
     birthDate?: boolean
     email?: boolean
-    plan?: boolean
   }, ExtArgs["result"]["user"]>
 
   export type UserSelectScalar = {
     id?: boolean
     name?: boolean
     mobile?: boolean
+    plan?: boolean
     birthDate?: boolean
     email?: boolean
-    plan?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "mobile" | "birthDate" | "email" | "plan", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "mobile" | "plan" | "birthDate" | "email", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    reels?: boolean | User$reelsArgs<ExtArgs>
     records?: boolean | User$recordsArgs<ExtArgs>
+    reels?: boolean | User$reelsArgs<ExtArgs>
+    scenes?: boolean | User$scenesArgs<ExtArgs>
     _count?: boolean | UserCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type UserIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {}
@@ -1928,16 +2274,17 @@ export namespace Prisma {
   export type $UserPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "User"
     objects: {
-      reels: Prisma.$ReelPayload<ExtArgs>[]
       records: Prisma.$RecordPayload<ExtArgs>[]
+      reels: Prisma.$ReelPayload<ExtArgs>[]
+      scenes: Prisma.$ScenePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
       name: string
       mobile: string
+      plan: string
       birthDate: string
       email: string | null
-      plan: string
     }, ExtArgs["result"]["user"]>
     composites: {}
   }
@@ -2332,8 +2679,9 @@ export namespace Prisma {
    */
   export interface Prisma__UserClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    reels<T extends User$reelsArgs<ExtArgs> = {}>(args?: Subset<T, User$reelsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     records<T extends User$recordsArgs<ExtArgs> = {}>(args?: Subset<T, User$recordsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RecordPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    reels<T extends User$reelsArgs<ExtArgs> = {}>(args?: Subset<T, User$reelsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    scenes<T extends User$scenesArgs<ExtArgs> = {}>(args?: Subset<T, User$scenesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2366,9 +2714,9 @@ export namespace Prisma {
     readonly id: FieldRef<"User", 'Int'>
     readonly name: FieldRef<"User", 'String'>
     readonly mobile: FieldRef<"User", 'String'>
+    readonly plan: FieldRef<"User", 'String'>
     readonly birthDate: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
-    readonly plan: FieldRef<"User", 'String'>
   }
     
 
@@ -2757,6 +3105,30 @@ export namespace Prisma {
   }
 
   /**
+   * User.records
+   */
+  export type User$recordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Record
+     */
+    select?: RecordSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Record
+     */
+    omit?: RecordOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RecordInclude<ExtArgs> | null
+    where?: RecordWhereInput
+    orderBy?: RecordOrderByWithRelationInput | RecordOrderByWithRelationInput[]
+    cursor?: RecordWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: RecordScalarFieldEnum | RecordScalarFieldEnum[]
+  }
+
+  /**
    * User.reels
    */
   export type User$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -2781,27 +3153,27 @@ export namespace Prisma {
   }
 
   /**
-   * User.records
+   * User.scenes
    */
-  export type User$recordsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+  export type User$scenesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     /**
-     * Select specific fields to fetch from the Record
+     * Select specific fields to fetch from the Scene
      */
-    select?: RecordSelect<ExtArgs> | null
+    select?: SceneSelect<ExtArgs> | null
     /**
-     * Omit specific fields from the Record
+     * Omit specific fields from the Scene
      */
-    omit?: RecordOmit<ExtArgs> | null
+    omit?: SceneOmit<ExtArgs> | null
     /**
      * Choose, which related nodes to fetch as well
      */
-    include?: RecordInclude<ExtArgs> | null
-    where?: RecordWhereInput
-    orderBy?: RecordOrderByWithRelationInput | RecordOrderByWithRelationInput[]
-    cursor?: RecordWhereUniqueInput
+    include?: SceneInclude<ExtArgs> | null
+    where?: SceneWhereInput
+    orderBy?: SceneOrderByWithRelationInput | SceneOrderByWithRelationInput[]
+    cursor?: SceneWhereUniqueInput
     take?: number
     skip?: number
-    distinct?: RecordScalarFieldEnum | RecordScalarFieldEnum[]
+    distinct?: SceneScalarFieldEnum | SceneScalarFieldEnum[]
   }
 
   /**
@@ -3078,10 +3450,10 @@ export namespace Prisma {
     lifestoryId?: boolean
     userId?: boolean
     lifestory?: boolean | Reel$lifestoryArgs<ExtArgs>
-    user?: boolean | Reel$userArgs<ExtArgs>
-    childhood?: boolean | Reel$childhoodArgs<ExtArgs>
     memorys?: boolean | Reel$memorysArgs<ExtArgs>
+    user?: boolean | Reel$userArgs<ExtArgs>
     relationships?: boolean | Reel$relationshipsArgs<ExtArgs>
+    childhood?: boolean | Reel$childhoodArgs<ExtArgs>
     _count?: boolean | ReelCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["reel"]>
 
@@ -3132,10 +3504,10 @@ export namespace Prisma {
   export type ReelOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "name" | "birthDate" | "profileImg" | "birthPlace" | "motto" | "lifestoryId" | "userId", ExtArgs["result"]["reel"]>
   export type ReelInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     lifestory?: boolean | Reel$lifestoryArgs<ExtArgs>
-    user?: boolean | Reel$userArgs<ExtArgs>
-    childhood?: boolean | Reel$childhoodArgs<ExtArgs>
     memorys?: boolean | Reel$memorysArgs<ExtArgs>
+    user?: boolean | Reel$userArgs<ExtArgs>
     relationships?: boolean | Reel$relationshipsArgs<ExtArgs>
+    childhood?: boolean | Reel$childhoodArgs<ExtArgs>
     _count?: boolean | ReelCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type ReelIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -3149,10 +3521,10 @@ export namespace Prisma {
     name: "Reel"
     objects: {
       lifestory: Prisma.$LifestoryPayload<ExtArgs> | null
-      user: Prisma.$UserPayload<ExtArgs> | null
-      childhood: Prisma.$WheelTexturePayload<ExtArgs>[]
       memorys: Prisma.$MemoryPayload<ExtArgs>[]
+      user: Prisma.$UserPayload<ExtArgs> | null
       relationships: Prisma.$RelationshipPayload<ExtArgs>[]
+      childhood: Prisma.$WheelTexturePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -3561,10 +3933,10 @@ export namespace Prisma {
   export interface Prisma__ReelClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     lifestory<T extends Reel$lifestoryArgs<ExtArgs> = {}>(args?: Subset<T, Reel$lifestoryArgs<ExtArgs>>): Prisma__LifestoryClient<$Result.GetResult<Prisma.$LifestoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    user<T extends Reel$userArgs<ExtArgs> = {}>(args?: Subset<T, Reel$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    childhood<T extends Reel$childhoodArgs<ExtArgs> = {}>(args?: Subset<T, Reel$childhoodArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     memorys<T extends Reel$memorysArgs<ExtArgs> = {}>(args?: Subset<T, Reel$memorysArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$MemoryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    user<T extends Reel$userArgs<ExtArgs> = {}>(args?: Subset<T, Reel$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     relationships<T extends Reel$relationshipsArgs<ExtArgs> = {}>(args?: Subset<T, Reel$relationshipsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    childhood<T extends Reel$childhoodArgs<ExtArgs> = {}>(args?: Subset<T, Reel$childhoodArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -4020,49 +4392,6 @@ export namespace Prisma {
   }
 
   /**
-   * Reel.user
-   */
-  export type Reel$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the User
-     */
-    select?: UserSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the User
-     */
-    omit?: UserOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: UserInclude<ExtArgs> | null
-    where?: UserWhereInput
-  }
-
-  /**
-   * Reel.childhood
-   */
-  export type Reel$childhoodArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the WheelTexture
-     */
-    select?: WheelTextureSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the WheelTexture
-     */
-    omit?: WheelTextureOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: WheelTextureInclude<ExtArgs> | null
-    where?: WheelTextureWhereInput
-    orderBy?: WheelTextureOrderByWithRelationInput | WheelTextureOrderByWithRelationInput[]
-    cursor?: WheelTextureWhereUniqueInput
-    take?: number
-    skip?: number
-    distinct?: WheelTextureScalarFieldEnum | WheelTextureScalarFieldEnum[]
-  }
-
-  /**
    * Reel.memorys
    */
   export type Reel$memorysArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4087,6 +4416,25 @@ export namespace Prisma {
   }
 
   /**
+   * Reel.user
+   */
+  export type Reel$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
    * Reel.relationships
    */
   export type Reel$relationshipsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -4108,6 +4456,30 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: RelationshipScalarFieldEnum | RelationshipScalarFieldEnum[]
+  }
+
+  /**
+   * Reel.childhood
+   */
+  export type Reel$childhoodArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the WheelTexture
+     */
+    select?: WheelTextureSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the WheelTexture
+     */
+    omit?: WheelTextureOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: WheelTextureInclude<ExtArgs> | null
+    where?: WheelTextureWhereInput
+    orderBy?: WheelTextureOrderByWithRelationInput | WheelTextureOrderByWithRelationInput[]
+    cursor?: WheelTextureWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: WheelTextureScalarFieldEnum | WheelTextureScalarFieldEnum[]
   }
 
   /**
@@ -5315,9 +5687,9 @@ export namespace Prisma {
     updatedAt: Date | null
     srcType: number | null
     srcUrl: string | null
-    caption: string | null
     memoryId: number | null
     relationshipId: number | null
+    caption: string | null
     reelId: number | null
   }
 
@@ -5327,9 +5699,9 @@ export namespace Prisma {
     updatedAt: Date | null
     srcType: number | null
     srcUrl: string | null
-    caption: string | null
     memoryId: number | null
     relationshipId: number | null
+    caption: string | null
     reelId: number | null
   }
 
@@ -5339,9 +5711,9 @@ export namespace Prisma {
     updatedAt: number
     srcType: number
     srcUrl: number
-    caption: number
     memoryId: number
     relationshipId: number
+    caption: number
     reelId: number
     _all: number
   }
@@ -5369,9 +5741,9 @@ export namespace Prisma {
     updatedAt?: true
     srcType?: true
     srcUrl?: true
-    caption?: true
     memoryId?: true
     relationshipId?: true
+    caption?: true
     reelId?: true
   }
 
@@ -5381,9 +5753,9 @@ export namespace Prisma {
     updatedAt?: true
     srcType?: true
     srcUrl?: true
-    caption?: true
     memoryId?: true
     relationshipId?: true
+    caption?: true
     reelId?: true
   }
 
@@ -5393,9 +5765,9 @@ export namespace Prisma {
     updatedAt?: true
     srcType?: true
     srcUrl?: true
-    caption?: true
     memoryId?: true
     relationshipId?: true
+    caption?: true
     reelId?: true
     _all?: true
   }
@@ -5492,9 +5864,9 @@ export namespace Prisma {
     updatedAt: Date
     srcType: number
     srcUrl: string
-    caption: string | null
     memoryId: number | null
     relationshipId: number | null
+    caption: string | null
     reelId: number | null
     _count: WheelTextureCountAggregateOutputType | null
     _avg: WheelTextureAvgAggregateOutputType | null
@@ -5523,13 +5895,13 @@ export namespace Prisma {
     updatedAt?: boolean
     srcType?: boolean
     srcUrl?: boolean
-    caption?: boolean
     memoryId?: boolean
     relationshipId?: boolean
+    caption?: boolean
     reelId?: boolean
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }, ExtArgs["result"]["wheelTexture"]>
 
   export type WheelTextureSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5538,13 +5910,13 @@ export namespace Prisma {
     updatedAt?: boolean
     srcType?: boolean
     srcUrl?: boolean
-    caption?: boolean
     memoryId?: boolean
     relationshipId?: boolean
+    caption?: boolean
     reelId?: boolean
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }, ExtArgs["result"]["wheelTexture"]>
 
   export type WheelTextureSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5553,13 +5925,13 @@ export namespace Prisma {
     updatedAt?: boolean
     srcType?: boolean
     srcUrl?: boolean
-    caption?: boolean
     memoryId?: boolean
     relationshipId?: boolean
+    caption?: boolean
     reelId?: boolean
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }, ExtArgs["result"]["wheelTexture"]>
 
   export type WheelTextureSelectScalar = {
@@ -5568,35 +5940,35 @@ export namespace Prisma {
     updatedAt?: boolean
     srcType?: boolean
     srcUrl?: boolean
-    caption?: boolean
     memoryId?: boolean
     relationshipId?: boolean
+    caption?: boolean
     reelId?: boolean
   }
 
-  export type WheelTextureOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "srcType" | "srcUrl" | "caption" | "memoryId" | "relationshipId" | "reelId", ExtArgs["result"]["wheelTexture"]>
+  export type WheelTextureOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "srcType" | "srcUrl" | "memoryId" | "relationshipId" | "caption" | "reelId", ExtArgs["result"]["wheelTexture"]>
   export type WheelTextureInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }
   export type WheelTextureIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }
   export type WheelTextureIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     memory?: boolean | WheelTexture$memoryArgs<ExtArgs>
-    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
     reels?: boolean | WheelTexture$reelsArgs<ExtArgs>
+    relationship?: boolean | WheelTexture$relationshipArgs<ExtArgs>
   }
 
   export type $WheelTexturePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "WheelTexture"
     objects: {
       memory: Prisma.$MemoryPayload<ExtArgs> | null
-      relationship: Prisma.$RelationshipPayload<ExtArgs> | null
       reels: Prisma.$ReelPayload<ExtArgs> | null
+      relationship: Prisma.$RelationshipPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -5604,9 +5976,9 @@ export namespace Prisma {
       updatedAt: Date
       srcType: number
       srcUrl: string
-      caption: string | null
       memoryId: number | null
       relationshipId: number | null
+      caption: string | null
       reelId: number | null
     }, ExtArgs["result"]["wheelTexture"]>
     composites: {}
@@ -6003,8 +6375,8 @@ export namespace Prisma {
   export interface Prisma__WheelTextureClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     memory<T extends WheelTexture$memoryArgs<ExtArgs> = {}>(args?: Subset<T, WheelTexture$memoryArgs<ExtArgs>>): Prisma__MemoryClient<$Result.GetResult<Prisma.$MemoryPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-    relationship<T extends WheelTexture$relationshipArgs<ExtArgs> = {}>(args?: Subset<T, WheelTexture$relationshipArgs<ExtArgs>>): Prisma__RelationshipClient<$Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     reels<T extends WheelTexture$reelsArgs<ExtArgs> = {}>(args?: Subset<T, WheelTexture$reelsArgs<ExtArgs>>): Prisma__ReelClient<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    relationship<T extends WheelTexture$relationshipArgs<ExtArgs> = {}>(args?: Subset<T, WheelTexture$relationshipArgs<ExtArgs>>): Prisma__RelationshipClient<$Result.GetResult<Prisma.$RelationshipPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -6039,9 +6411,9 @@ export namespace Prisma {
     readonly updatedAt: FieldRef<"WheelTexture", 'DateTime'>
     readonly srcType: FieldRef<"WheelTexture", 'Int'>
     readonly srcUrl: FieldRef<"WheelTexture", 'String'>
-    readonly caption: FieldRef<"WheelTexture", 'String'>
     readonly memoryId: FieldRef<"WheelTexture", 'Int'>
     readonly relationshipId: FieldRef<"WheelTexture", 'Int'>
+    readonly caption: FieldRef<"WheelTexture", 'String'>
     readonly reelId: FieldRef<"WheelTexture", 'Int'>
   }
     
@@ -6458,25 +6830,6 @@ export namespace Prisma {
   }
 
   /**
-   * WheelTexture.relationship
-   */
-  export type WheelTexture$relationshipArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Relationship
-     */
-    select?: RelationshipSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Relationship
-     */
-    omit?: RelationshipOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: RelationshipInclude<ExtArgs> | null
-    where?: RelationshipWhereInput
-  }
-
-  /**
    * WheelTexture.reels
    */
   export type WheelTexture$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -6493,6 +6846,25 @@ export namespace Prisma {
      */
     include?: ReelInclude<ExtArgs> | null
     where?: ReelWhereInput
+  }
+
+  /**
+   * WheelTexture.relationship
+   */
+  export type WheelTexture$relationshipArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Relationship
+     */
+    select?: RelationshipSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Relationship
+     */
+    omit?: RelationshipOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: RelationshipInclude<ExtArgs> | null
+    where?: RelationshipWhereInput
   }
 
   /**
@@ -6740,8 +7112,8 @@ export namespace Prisma {
     date?: boolean
     comment?: boolean
     reelId?: boolean
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
     wheelTextures?: boolean | Memory$wheelTexturesArgs<ExtArgs>
-    reel?: boolean | Memory$reelArgs<ExtArgs>
     _count?: boolean | MemoryCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["memory"]>
 
@@ -6754,7 +7126,7 @@ export namespace Prisma {
     date?: boolean
     comment?: boolean
     reelId?: boolean
-    reel?: boolean | Memory$reelArgs<ExtArgs>
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["memory"]>
 
   export type MemorySelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -6766,7 +7138,7 @@ export namespace Prisma {
     date?: boolean
     comment?: boolean
     reelId?: boolean
-    reel?: boolean | Memory$reelArgs<ExtArgs>
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["memory"]>
 
   export type MemorySelectScalar = {
@@ -6782,22 +7154,22 @@ export namespace Prisma {
 
   export type MemoryOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "subTitle" | "date" | "comment" | "reelId", ExtArgs["result"]["memory"]>
   export type MemoryInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
     wheelTextures?: boolean | Memory$wheelTexturesArgs<ExtArgs>
-    reel?: boolean | Memory$reelArgs<ExtArgs>
     _count?: boolean | MemoryCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type MemoryIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    reel?: boolean | Memory$reelArgs<ExtArgs>
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
   }
   export type MemoryIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    reel?: boolean | Memory$reelArgs<ExtArgs>
+    reel?: boolean | ReelDefaultArgs<ExtArgs>
   }
 
   export type $MemoryPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Memory"
     objects: {
+      reel: Prisma.$ReelPayload<ExtArgs>
       wheelTextures: Prisma.$WheelTexturePayload<ExtArgs>[]
-      reel: Prisma.$ReelPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -7202,8 +7574,8 @@ export namespace Prisma {
    */
   export interface Prisma__MemoryClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
+    reel<T extends ReelDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ReelDefaultArgs<ExtArgs>>): Prisma__ReelClient<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
     wheelTextures<T extends Memory$wheelTexturesArgs<ExtArgs> = {}>(args?: Subset<T, Memory$wheelTexturesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-    reel<T extends Memory$reelArgs<ExtArgs> = {}>(args?: Subset<T, Memory$reelArgs<ExtArgs>>): Prisma__ReelClient<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -7661,25 +8033,6 @@ export namespace Prisma {
   }
 
   /**
-   * Memory.reel
-   */
-  export type Memory$reelArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Reel
-     */
-    select?: ReelSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Reel
-     */
-    omit?: ReelOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ReelInclude<ExtArgs> | null
-    where?: ReelWhereInput
-  }
-
-  /**
    * Memory without action
    */
   export type MemoryDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7916,8 +8269,8 @@ export namespace Prisma {
     relation?: boolean
     comment?: boolean
     reelId?: boolean
-    wheelTextures?: boolean | Relationship$wheelTexturesArgs<ExtArgs>
     reels?: boolean | Relationship$reelsArgs<ExtArgs>
+    wheelTextures?: boolean | Relationship$wheelTexturesArgs<ExtArgs>
     _count?: boolean | RelationshipCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["relationship"]>
 
@@ -7955,8 +8308,8 @@ export namespace Prisma {
 
   export type RelationshipOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "name" | "relation" | "comment" | "reelId", ExtArgs["result"]["relationship"]>
   export type RelationshipInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    wheelTextures?: boolean | Relationship$wheelTexturesArgs<ExtArgs>
     reels?: boolean | Relationship$reelsArgs<ExtArgs>
+    wheelTextures?: boolean | Relationship$wheelTexturesArgs<ExtArgs>
     _count?: boolean | RelationshipCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type RelationshipIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -7969,8 +8322,8 @@ export namespace Prisma {
   export type $RelationshipPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     name: "Relationship"
     objects: {
-      wheelTextures: Prisma.$WheelTexturePayload<ExtArgs>[]
       reels: Prisma.$ReelPayload<ExtArgs> | null
+      wheelTextures: Prisma.$WheelTexturePayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
@@ -8374,8 +8727,8 @@ export namespace Prisma {
    */
   export interface Prisma__RelationshipClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise"
-    wheelTextures<T extends Relationship$wheelTexturesArgs<ExtArgs> = {}>(args?: Subset<T, Relationship$wheelTexturesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     reels<T extends Relationship$reelsArgs<ExtArgs> = {}>(args?: Subset<T, Relationship$reelsArgs<ExtArgs>>): Prisma__ReelClient<$Result.GetResult<Prisma.$ReelPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    wheelTextures<T extends Relationship$wheelTexturesArgs<ExtArgs> = {}>(args?: Subset<T, Relationship$wheelTexturesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$WheelTexturePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8808,6 +9161,25 @@ export namespace Prisma {
   }
 
   /**
+   * Relationship.reels
+   */
+  export type Relationship$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Reel
+     */
+    select?: ReelSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Reel
+     */
+    omit?: ReelOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: ReelInclude<ExtArgs> | null
+    where?: ReelWhereInput
+  }
+
+  /**
    * Relationship.wheelTextures
    */
   export type Relationship$wheelTexturesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8829,25 +9201,6 @@ export namespace Prisma {
     take?: number
     skip?: number
     distinct?: WheelTextureScalarFieldEnum | WheelTextureScalarFieldEnum[]
-  }
-
-  /**
-   * Relationship.reels
-   */
-  export type Relationship$reelsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
-    /**
-     * Select specific fields to fetch from the Reel
-     */
-    select?: ReelSelect<ExtArgs> | null
-    /**
-     * Omit specific fields from the Reel
-     */
-    omit?: ReelOmit<ExtArgs> | null
-    /**
-     * Choose, which related nodes to fetch as well
-     */
-    include?: ReelInclude<ExtArgs> | null
-    where?: ReelWhereInput
   }
 
   /**
@@ -8896,7 +9249,6 @@ export namespace Prisma {
     createdAt: Date | null
     updatedAt: Date | null
     identifier: string | null
-    userName: string | null
     coverUrl: string | null
     name: string | null
     subName: string | null
@@ -8904,6 +9256,9 @@ export namespace Prisma {
     bgm: string | null
     color: string | null
     userId: number | null
+    userName: string | null
+    birthDate: string | null
+    displayMode: string | null
   }
 
   export type RecordMaxAggregateOutputType = {
@@ -8911,7 +9266,6 @@ export namespace Prisma {
     createdAt: Date | null
     updatedAt: Date | null
     identifier: string | null
-    userName: string | null
     coverUrl: string | null
     name: string | null
     subName: string | null
@@ -8919,6 +9273,9 @@ export namespace Prisma {
     bgm: string | null
     color: string | null
     userId: number | null
+    userName: string | null
+    birthDate: string | null
+    displayMode: string | null
   }
 
   export type RecordCountAggregateOutputType = {
@@ -8926,7 +9283,6 @@ export namespace Prisma {
     createdAt: number
     updatedAt: number
     identifier: number
-    userName: number
     coverUrl: number
     name: number
     subName: number
@@ -8934,6 +9290,9 @@ export namespace Prisma {
     bgm: number
     color: number
     userId: number
+    userName: number
+    birthDate: number
+    displayMode: number
     _all: number
   }
 
@@ -8953,7 +9312,6 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     identifier?: true
-    userName?: true
     coverUrl?: true
     name?: true
     subName?: true
@@ -8961,6 +9319,9 @@ export namespace Prisma {
     bgm?: true
     color?: true
     userId?: true
+    userName?: true
+    birthDate?: true
+    displayMode?: true
   }
 
   export type RecordMaxAggregateInputType = {
@@ -8968,7 +9329,6 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     identifier?: true
-    userName?: true
     coverUrl?: true
     name?: true
     subName?: true
@@ -8976,6 +9336,9 @@ export namespace Prisma {
     bgm?: true
     color?: true
     userId?: true
+    userName?: true
+    birthDate?: true
+    displayMode?: true
   }
 
   export type RecordCountAggregateInputType = {
@@ -8983,7 +9346,6 @@ export namespace Prisma {
     createdAt?: true
     updatedAt?: true
     identifier?: true
-    userName?: true
     coverUrl?: true
     name?: true
     subName?: true
@@ -8991,6 +9353,9 @@ export namespace Prisma {
     bgm?: true
     color?: true
     userId?: true
+    userName?: true
+    birthDate?: true
+    displayMode?: true
     _all?: true
   }
 
@@ -9085,7 +9450,6 @@ export namespace Prisma {
     createdAt: Date
     updatedAt: Date
     identifier: string
-    userName: string | null
     coverUrl: string | null
     name: string | null
     subName: string | null
@@ -9093,6 +9457,9 @@ export namespace Prisma {
     bgm: string | null
     color: string | null
     userId: number | null
+    userName: string | null
+    birthDate: string | null
+    displayMode: string | null
     _count: RecordCountAggregateOutputType | null
     _avg: RecordAvgAggregateOutputType | null
     _sum: RecordSumAggregateOutputType | null
@@ -9119,7 +9486,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     identifier?: boolean
-    userName?: boolean
     coverUrl?: boolean
     name?: boolean
     subName?: boolean
@@ -9127,6 +9493,9 @@ export namespace Prisma {
     bgm?: boolean
     color?: boolean
     userId?: boolean
+    userName?: boolean
+    birthDate?: boolean
+    displayMode?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
     recordItems?: boolean | Record$recordItemsArgs<ExtArgs>
     _count?: boolean | RecordCountOutputTypeDefaultArgs<ExtArgs>
@@ -9137,7 +9506,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     identifier?: boolean
-    userName?: boolean
     coverUrl?: boolean
     name?: boolean
     subName?: boolean
@@ -9145,6 +9513,9 @@ export namespace Prisma {
     bgm?: boolean
     color?: boolean
     userId?: boolean
+    userName?: boolean
+    birthDate?: boolean
+    displayMode?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
   }, ExtArgs["result"]["record"]>
 
@@ -9153,7 +9524,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     identifier?: boolean
-    userName?: boolean
     coverUrl?: boolean
     name?: boolean
     subName?: boolean
@@ -9161,6 +9531,9 @@ export namespace Prisma {
     bgm?: boolean
     color?: boolean
     userId?: boolean
+    userName?: boolean
+    birthDate?: boolean
+    displayMode?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
   }, ExtArgs["result"]["record"]>
 
@@ -9169,7 +9542,6 @@ export namespace Prisma {
     createdAt?: boolean
     updatedAt?: boolean
     identifier?: boolean
-    userName?: boolean
     coverUrl?: boolean
     name?: boolean
     subName?: boolean
@@ -9177,9 +9549,12 @@ export namespace Prisma {
     bgm?: boolean
     color?: boolean
     userId?: boolean
+    userName?: boolean
+    birthDate?: boolean
+    displayMode?: boolean
   }
 
-  export type RecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "userName" | "coverUrl" | "name" | "subName" | "description" | "bgm" | "color" | "userId", ExtArgs["result"]["record"]>
+  export type RecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "coverUrl" | "name" | "subName" | "description" | "bgm" | "color" | "userId" | "userName" | "birthDate" | "displayMode", ExtArgs["result"]["record"]>
   export type RecordInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | Record$userArgs<ExtArgs>
     recordItems?: boolean | Record$recordItemsArgs<ExtArgs>
@@ -9203,7 +9578,6 @@ export namespace Prisma {
       createdAt: Date
       updatedAt: Date
       identifier: string
-      userName: string | null
       coverUrl: string | null
       name: string | null
       subName: string | null
@@ -9211,6 +9585,9 @@ export namespace Prisma {
       bgm: string | null
       color: string | null
       userId: number | null
+      userName: string | null
+      birthDate: string | null
+      displayMode: string | null
     }, ExtArgs["result"]["record"]>
     composites: {}
   }
@@ -9640,7 +10017,6 @@ export namespace Prisma {
     readonly createdAt: FieldRef<"Record", 'DateTime'>
     readonly updatedAt: FieldRef<"Record", 'DateTime'>
     readonly identifier: FieldRef<"Record", 'String'>
-    readonly userName: FieldRef<"Record", 'String'>
     readonly coverUrl: FieldRef<"Record", 'String'>
     readonly name: FieldRef<"Record", 'String'>
     readonly subName: FieldRef<"Record", 'String'>
@@ -9648,6 +10024,9 @@ export namespace Prisma {
     readonly bgm: FieldRef<"Record", 'String'>
     readonly color: FieldRef<"Record", 'String'>
     readonly userId: FieldRef<"Record", 'Int'>
+    readonly userName: FieldRef<"Record", 'String'>
+    readonly birthDate: FieldRef<"Record", 'String'>
+    readonly displayMode: FieldRef<"Record", 'String'>
   }
     
 
@@ -10167,6 +10546,7 @@ export namespace Prisma {
     isHighlight: number
     coverUrl: number
     recordId: number
+    images: number
     _all: number
   }
 
@@ -10221,6 +10601,7 @@ export namespace Prisma {
     isHighlight?: true
     coverUrl?: true
     recordId?: true
+    images?: true
     _all?: true
   }
 
@@ -10322,6 +10703,7 @@ export namespace Prisma {
     isHighlight: boolean
     coverUrl: string | null
     recordId: number
+    images: string[]
     _count: RecordItemCountAggregateOutputType | null
     _avg: RecordItemAvgAggregateOutputType | null
     _sum: RecordItemSumAggregateOutputType | null
@@ -10355,6 +10737,7 @@ export namespace Prisma {
     isHighlight?: boolean
     coverUrl?: boolean
     recordId?: boolean
+    images?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
 
@@ -10370,6 +10753,7 @@ export namespace Prisma {
     isHighlight?: boolean
     coverUrl?: boolean
     recordId?: boolean
+    images?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
 
@@ -10385,6 +10769,7 @@ export namespace Prisma {
     isHighlight?: boolean
     coverUrl?: boolean
     recordId?: boolean
+    images?: boolean
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["recordItem"]>
 
@@ -10400,9 +10785,10 @@ export namespace Prisma {
     isHighlight?: boolean
     coverUrl?: boolean
     recordId?: boolean
+    images?: boolean
   }
 
-  export type RecordItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "date" | "location" | "description" | "color" | "isHighlight" | "coverUrl" | "recordId", ExtArgs["result"]["recordItem"]>
+  export type RecordItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "date" | "location" | "description" | "color" | "isHighlight" | "coverUrl" | "recordId" | "images", ExtArgs["result"]["recordItem"]>
   export type RecordItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     record?: boolean | RecordDefaultArgs<ExtArgs>
   }
@@ -10430,6 +10816,7 @@ export namespace Prisma {
       isHighlight: boolean
       coverUrl: string | null
       recordId: number
+      images: string[]
     }, ExtArgs["result"]["recordItem"]>
     composites: {}
   }
@@ -10865,6 +11252,7 @@ export namespace Prisma {
     readonly isHighlight: FieldRef<"RecordItem", 'Boolean'>
     readonly coverUrl: FieldRef<"RecordItem", 'String'>
     readonly recordId: FieldRef<"RecordItem", 'Int'>
+    readonly images: FieldRef<"RecordItem", 'String[]'>
   }
     
 
@@ -11280,6 +11668,3507 @@ export namespace Prisma {
 
 
   /**
+   * Model Scene
+   */
+
+  export type AggregateScene = {
+    _count: SceneCountAggregateOutputType | null
+    _avg: SceneAvgAggregateOutputType | null
+    _sum: SceneSumAggregateOutputType | null
+    _min: SceneMinAggregateOutputType | null
+    _max: SceneMaxAggregateOutputType | null
+  }
+
+  export type SceneAvgAggregateOutputType = {
+    id: number | null
+    userId: number | null
+  }
+
+  export type SceneSumAggregateOutputType = {
+    id: number | null
+    userId: number | null
+  }
+
+  export type SceneMinAggregateOutputType = {
+    id: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    identifier: string | null
+    profilePhoto: string | null
+    profileName: string | null
+    profileBirthDate: string | null
+    profileBirthPlace: string | null
+    profileBiography: string | null
+    userId: number | null
+  }
+
+  export type SceneMaxAggregateOutputType = {
+    id: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    identifier: string | null
+    profilePhoto: string | null
+    profileName: string | null
+    profileBirthDate: string | null
+    profileBirthPlace: string | null
+    profileBiography: string | null
+    userId: number | null
+  }
+
+  export type SceneCountAggregateOutputType = {
+    id: number
+    createdAt: number
+    updatedAt: number
+    identifier: number
+    profilePhoto: number
+    profileName: number
+    profileBirthDate: number
+    profileBirthPlace: number
+    profileBiography: number
+    lifestoryProgress: number
+    userId: number
+    _all: number
+  }
+
+
+  export type SceneAvgAggregateInputType = {
+    id?: true
+    userId?: true
+  }
+
+  export type SceneSumAggregateInputType = {
+    id?: true
+    userId?: true
+  }
+
+  export type SceneMinAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    identifier?: true
+    profilePhoto?: true
+    profileName?: true
+    profileBirthDate?: true
+    profileBirthPlace?: true
+    profileBiography?: true
+    userId?: true
+  }
+
+  export type SceneMaxAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    identifier?: true
+    profilePhoto?: true
+    profileName?: true
+    profileBirthDate?: true
+    profileBirthPlace?: true
+    profileBiography?: true
+    userId?: true
+  }
+
+  export type SceneCountAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    identifier?: true
+    profilePhoto?: true
+    profileName?: true
+    profileBirthDate?: true
+    profileBirthPlace?: true
+    profileBiography?: true
+    lifestoryProgress?: true
+    userId?: true
+    _all?: true
+  }
+
+  export type SceneAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Scene to aggregate.
+     */
+    where?: SceneWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Scenes to fetch.
+     */
+    orderBy?: SceneOrderByWithRelationInput | SceneOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SceneWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Scenes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Scenes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned Scenes
+    **/
+    _count?: true | SceneCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: SceneAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SceneSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SceneMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SceneMaxAggregateInputType
+  }
+
+  export type GetSceneAggregateType<T extends SceneAggregateArgs> = {
+        [P in keyof T & keyof AggregateScene]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateScene[P]>
+      : GetScalarType<T[P], AggregateScene[P]>
+  }
+
+
+
+
+  export type SceneGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SceneWhereInput
+    orderBy?: SceneOrderByWithAggregationInput | SceneOrderByWithAggregationInput[]
+    by: SceneScalarFieldEnum[] | SceneScalarFieldEnum
+    having?: SceneScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SceneCountAggregateInputType | true
+    _avg?: SceneAvgAggregateInputType
+    _sum?: SceneSumAggregateInputType
+    _min?: SceneMinAggregateInputType
+    _max?: SceneMaxAggregateInputType
+  }
+
+  export type SceneGroupByOutputType = {
+    id: number
+    createdAt: Date
+    updatedAt: Date
+    identifier: string
+    profilePhoto: string | null
+    profileName: string | null
+    profileBirthDate: string | null
+    profileBirthPlace: string | null
+    profileBiography: string | null
+    lifestoryProgress: JsonValue | null
+    userId: number | null
+    _count: SceneCountAggregateOutputType | null
+    _avg: SceneAvgAggregateOutputType | null
+    _sum: SceneSumAggregateOutputType | null
+    _min: SceneMinAggregateOutputType | null
+    _max: SceneMaxAggregateOutputType | null
+  }
+
+  type GetSceneGroupByPayload<T extends SceneGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SceneGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SceneGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SceneGroupByOutputType[P]>
+            : GetScalarType<T[P], SceneGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SceneSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    identifier?: boolean
+    profilePhoto?: boolean
+    profileName?: boolean
+    profileBirthDate?: boolean
+    profileBirthPlace?: boolean
+    profileBiography?: boolean
+    lifestoryProgress?: boolean
+    userId?: boolean
+    user?: boolean | Scene$userArgs<ExtArgs>
+    items?: boolean | Scene$itemsArgs<ExtArgs>
+    _count?: boolean | SceneCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["scene"]>
+
+  export type SceneSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    identifier?: boolean
+    profilePhoto?: boolean
+    profileName?: boolean
+    profileBirthDate?: boolean
+    profileBirthPlace?: boolean
+    profileBiography?: boolean
+    lifestoryProgress?: boolean
+    userId?: boolean
+    user?: boolean | Scene$userArgs<ExtArgs>
+  }, ExtArgs["result"]["scene"]>
+
+  export type SceneSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    identifier?: boolean
+    profilePhoto?: boolean
+    profileName?: boolean
+    profileBirthDate?: boolean
+    profileBirthPlace?: boolean
+    profileBiography?: boolean
+    lifestoryProgress?: boolean
+    userId?: boolean
+    user?: boolean | Scene$userArgs<ExtArgs>
+  }, ExtArgs["result"]["scene"]>
+
+  export type SceneSelectScalar = {
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    identifier?: boolean
+    profilePhoto?: boolean
+    profileName?: boolean
+    profileBirthDate?: boolean
+    profileBirthPlace?: boolean
+    profileBiography?: boolean
+    lifestoryProgress?: boolean
+    userId?: boolean
+  }
+
+  export type SceneOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "profilePhoto" | "profileName" | "profileBirthDate" | "profileBirthPlace" | "profileBiography" | "lifestoryProgress" | "userId", ExtArgs["result"]["scene"]>
+  export type SceneInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | Scene$userArgs<ExtArgs>
+    items?: boolean | Scene$itemsArgs<ExtArgs>
+    _count?: boolean | SceneCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type SceneIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | Scene$userArgs<ExtArgs>
+  }
+  export type SceneIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    user?: boolean | Scene$userArgs<ExtArgs>
+  }
+
+  export type $ScenePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "Scene"
+    objects: {
+      user: Prisma.$UserPayload<ExtArgs> | null
+      items: Prisma.$SceneItemPayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      createdAt: Date
+      updatedAt: Date
+      identifier: string
+      profilePhoto: string | null
+      profileName: string | null
+      profileBirthDate: string | null
+      profileBirthPlace: string | null
+      profileBiography: string | null
+      lifestoryProgress: Prisma.JsonValue | null
+      userId: number | null
+    }, ExtArgs["result"]["scene"]>
+    composites: {}
+  }
+
+  type SceneGetPayload<S extends boolean | null | undefined | SceneDefaultArgs> = $Result.GetResult<Prisma.$ScenePayload, S>
+
+  type SceneCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SceneFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SceneCountAggregateInputType | true
+    }
+
+  export interface SceneDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['Scene'], meta: { name: 'Scene' } }
+    /**
+     * Find zero or one Scene that matches the filter.
+     * @param {SceneFindUniqueArgs} args - Arguments to find a Scene
+     * @example
+     * // Get one Scene
+     * const scene = await prisma.scene.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SceneFindUniqueArgs>(args: SelectSubset<T, SceneFindUniqueArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one Scene that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SceneFindUniqueOrThrowArgs} args - Arguments to find a Scene
+     * @example
+     * // Get one Scene
+     * const scene = await prisma.scene.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SceneFindUniqueOrThrowArgs>(args: SelectSubset<T, SceneFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Scene that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneFindFirstArgs} args - Arguments to find a Scene
+     * @example
+     * // Get one Scene
+     * const scene = await prisma.scene.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SceneFindFirstArgs>(args?: SelectSubset<T, SceneFindFirstArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first Scene that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneFindFirstOrThrowArgs} args - Arguments to find a Scene
+     * @example
+     * // Get one Scene
+     * const scene = await prisma.scene.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SceneFindFirstOrThrowArgs>(args?: SelectSubset<T, SceneFindFirstOrThrowArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more Scenes that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all Scenes
+     * const scenes = await prisma.scene.findMany()
+     * 
+     * // Get first 10 Scenes
+     * const scenes = await prisma.scene.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const sceneWithIdOnly = await prisma.scene.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SceneFindManyArgs>(args?: SelectSubset<T, SceneFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a Scene.
+     * @param {SceneCreateArgs} args - Arguments to create a Scene.
+     * @example
+     * // Create one Scene
+     * const Scene = await prisma.scene.create({
+     *   data: {
+     *     // ... data to create a Scene
+     *   }
+     * })
+     * 
+     */
+    create<T extends SceneCreateArgs>(args: SelectSubset<T, SceneCreateArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many Scenes.
+     * @param {SceneCreateManyArgs} args - Arguments to create many Scenes.
+     * @example
+     * // Create many Scenes
+     * const scene = await prisma.scene.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SceneCreateManyArgs>(args?: SelectSubset<T, SceneCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many Scenes and returns the data saved in the database.
+     * @param {SceneCreateManyAndReturnArgs} args - Arguments to create many Scenes.
+     * @example
+     * // Create many Scenes
+     * const scene = await prisma.scene.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many Scenes and only return the `id`
+     * const sceneWithIdOnly = await prisma.scene.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SceneCreateManyAndReturnArgs>(args?: SelectSubset<T, SceneCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a Scene.
+     * @param {SceneDeleteArgs} args - Arguments to delete one Scene.
+     * @example
+     * // Delete one Scene
+     * const Scene = await prisma.scene.delete({
+     *   where: {
+     *     // ... filter to delete one Scene
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SceneDeleteArgs>(args: SelectSubset<T, SceneDeleteArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one Scene.
+     * @param {SceneUpdateArgs} args - Arguments to update one Scene.
+     * @example
+     * // Update one Scene
+     * const scene = await prisma.scene.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SceneUpdateArgs>(args: SelectSubset<T, SceneUpdateArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more Scenes.
+     * @param {SceneDeleteManyArgs} args - Arguments to filter Scenes to delete.
+     * @example
+     * // Delete a few Scenes
+     * const { count } = await prisma.scene.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SceneDeleteManyArgs>(args?: SelectSubset<T, SceneDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Scenes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many Scenes
+     * const scene = await prisma.scene.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SceneUpdateManyArgs>(args: SelectSubset<T, SceneUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more Scenes and returns the data updated in the database.
+     * @param {SceneUpdateManyAndReturnArgs} args - Arguments to update many Scenes.
+     * @example
+     * // Update many Scenes
+     * const scene = await prisma.scene.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more Scenes and only return the `id`
+     * const sceneWithIdOnly = await prisma.scene.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SceneUpdateManyAndReturnArgs>(args: SelectSubset<T, SceneUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one Scene.
+     * @param {SceneUpsertArgs} args - Arguments to update or create a Scene.
+     * @example
+     * // Update or create a Scene
+     * const scene = await prisma.scene.upsert({
+     *   create: {
+     *     // ... data to create a Scene
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the Scene we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SceneUpsertArgs>(args: SelectSubset<T, SceneUpsertArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of Scenes.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneCountArgs} args - Arguments to filter Scenes to count.
+     * @example
+     * // Count the number of Scenes
+     * const count = await prisma.scene.count({
+     *   where: {
+     *     // ... the filter for the Scenes we want to count
+     *   }
+     * })
+    **/
+    count<T extends SceneCountArgs>(
+      args?: Subset<T, SceneCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SceneCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a Scene.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SceneAggregateArgs>(args: Subset<T, SceneAggregateArgs>): Prisma.PrismaPromise<GetSceneAggregateType<T>>
+
+    /**
+     * Group by Scene.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SceneGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SceneGroupByArgs['orderBy'] }
+        : { orderBy?: SceneGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SceneGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSceneGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the Scene model
+   */
+  readonly fields: SceneFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for Scene.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SceneClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    user<T extends Scene$userArgs<ExtArgs> = {}>(args?: Subset<T, Scene$userArgs<ExtArgs>>): Prisma__UserClient<$Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+    items<T extends Scene$itemsArgs<ExtArgs> = {}>(args?: Subset<T, Scene$itemsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the Scene model
+   */
+  interface SceneFieldRefs {
+    readonly id: FieldRef<"Scene", 'Int'>
+    readonly createdAt: FieldRef<"Scene", 'DateTime'>
+    readonly updatedAt: FieldRef<"Scene", 'DateTime'>
+    readonly identifier: FieldRef<"Scene", 'String'>
+    readonly profilePhoto: FieldRef<"Scene", 'String'>
+    readonly profileName: FieldRef<"Scene", 'String'>
+    readonly profileBirthDate: FieldRef<"Scene", 'String'>
+    readonly profileBirthPlace: FieldRef<"Scene", 'String'>
+    readonly profileBiography: FieldRef<"Scene", 'String'>
+    readonly lifestoryProgress: FieldRef<"Scene", 'Json'>
+    readonly userId: FieldRef<"Scene", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * Scene findUnique
+   */
+  export type SceneFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * Filter, which Scene to fetch.
+     */
+    where: SceneWhereUniqueInput
+  }
+
+  /**
+   * Scene findUniqueOrThrow
+   */
+  export type SceneFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * Filter, which Scene to fetch.
+     */
+    where: SceneWhereUniqueInput
+  }
+
+  /**
+   * Scene findFirst
+   */
+  export type SceneFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * Filter, which Scene to fetch.
+     */
+    where?: SceneWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Scenes to fetch.
+     */
+    orderBy?: SceneOrderByWithRelationInput | SceneOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Scenes.
+     */
+    cursor?: SceneWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Scenes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Scenes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Scenes.
+     */
+    distinct?: SceneScalarFieldEnum | SceneScalarFieldEnum[]
+  }
+
+  /**
+   * Scene findFirstOrThrow
+   */
+  export type SceneFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * Filter, which Scene to fetch.
+     */
+    where?: SceneWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Scenes to fetch.
+     */
+    orderBy?: SceneOrderByWithRelationInput | SceneOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for Scenes.
+     */
+    cursor?: SceneWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Scenes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Scenes.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of Scenes.
+     */
+    distinct?: SceneScalarFieldEnum | SceneScalarFieldEnum[]
+  }
+
+  /**
+   * Scene findMany
+   */
+  export type SceneFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * Filter, which Scenes to fetch.
+     */
+    where?: SceneWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of Scenes to fetch.
+     */
+    orderBy?: SceneOrderByWithRelationInput | SceneOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing Scenes.
+     */
+    cursor?: SceneWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` Scenes from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` Scenes.
+     */
+    skip?: number
+    distinct?: SceneScalarFieldEnum | SceneScalarFieldEnum[]
+  }
+
+  /**
+   * Scene create
+   */
+  export type SceneCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * The data needed to create a Scene.
+     */
+    data: XOR<SceneCreateInput, SceneUncheckedCreateInput>
+  }
+
+  /**
+   * Scene createMany
+   */
+  export type SceneCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many Scenes.
+     */
+    data: SceneCreateManyInput | SceneCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * Scene createManyAndReturn
+   */
+  export type SceneCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * The data used to create many Scenes.
+     */
+    data: SceneCreateManyInput | SceneCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Scene update
+   */
+  export type SceneUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * The data needed to update a Scene.
+     */
+    data: XOR<SceneUpdateInput, SceneUncheckedUpdateInput>
+    /**
+     * Choose, which Scene to update.
+     */
+    where: SceneWhereUniqueInput
+  }
+
+  /**
+   * Scene updateMany
+   */
+  export type SceneUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update Scenes.
+     */
+    data: XOR<SceneUpdateManyMutationInput, SceneUncheckedUpdateManyInput>
+    /**
+     * Filter which Scenes to update
+     */
+    where?: SceneWhereInput
+    /**
+     * Limit how many Scenes to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * Scene updateManyAndReturn
+   */
+  export type SceneUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * The data used to update Scenes.
+     */
+    data: XOR<SceneUpdateManyMutationInput, SceneUncheckedUpdateManyInput>
+    /**
+     * Filter which Scenes to update
+     */
+    where?: SceneWhereInput
+    /**
+     * Limit how many Scenes to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * Scene upsert
+   */
+  export type SceneUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * The filter to search for the Scene to update in case it exists.
+     */
+    where: SceneWhereUniqueInput
+    /**
+     * In case the Scene found by the `where` argument doesn't exist, create a new Scene with this data.
+     */
+    create: XOR<SceneCreateInput, SceneUncheckedCreateInput>
+    /**
+     * In case the Scene was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SceneUpdateInput, SceneUncheckedUpdateInput>
+  }
+
+  /**
+   * Scene delete
+   */
+  export type SceneDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+    /**
+     * Filter which Scene to delete.
+     */
+    where: SceneWhereUniqueInput
+  }
+
+  /**
+   * Scene deleteMany
+   */
+  export type SceneDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which Scenes to delete
+     */
+    where?: SceneWhereInput
+    /**
+     * Limit how many Scenes to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * Scene.user
+   */
+  export type Scene$userArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the User
+     */
+    select?: UserSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the User
+     */
+    omit?: UserOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: UserInclude<ExtArgs> | null
+    where?: UserWhereInput
+  }
+
+  /**
+   * Scene.items
+   */
+  export type Scene$itemsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    where?: SceneItemWhereInput
+    orderBy?: SceneItemOrderByWithRelationInput | SceneItemOrderByWithRelationInput[]
+    cursor?: SceneItemWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SceneItemScalarFieldEnum | SceneItemScalarFieldEnum[]
+  }
+
+  /**
+   * Scene without action
+   */
+  export type SceneDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Scene
+     */
+    select?: SceneSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the Scene
+     */
+    omit?: SceneOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SceneItem
+   */
+
+  export type AggregateSceneItem = {
+    _count: SceneItemCountAggregateOutputType | null
+    _avg: SceneItemAvgAggregateOutputType | null
+    _sum: SceneItemSumAggregateOutputType | null
+    _min: SceneItemMinAggregateOutputType | null
+    _max: SceneItemMaxAggregateOutputType | null
+  }
+
+  export type SceneItemAvgAggregateOutputType = {
+    id: number | null
+    order: number | null
+    sceneId: number | null
+  }
+
+  export type SceneItemSumAggregateOutputType = {
+    id: number | null
+    order: number | null
+    sceneId: number | null
+  }
+
+  export type SceneItemMinAggregateOutputType = {
+    id: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    title: string | null
+    date: string | null
+    desc: string | null
+    order: number | null
+    sceneId: number | null
+  }
+
+  export type SceneItemMaxAggregateOutputType = {
+    id: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    title: string | null
+    date: string | null
+    desc: string | null
+    order: number | null
+    sceneId: number | null
+  }
+
+  export type SceneItemCountAggregateOutputType = {
+    id: number
+    createdAt: number
+    updatedAt: number
+    title: number
+    date: number
+    desc: number
+    order: number
+    sceneId: number
+    _all: number
+  }
+
+
+  export type SceneItemAvgAggregateInputType = {
+    id?: true
+    order?: true
+    sceneId?: true
+  }
+
+  export type SceneItemSumAggregateInputType = {
+    id?: true
+    order?: true
+    sceneId?: true
+  }
+
+  export type SceneItemMinAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    title?: true
+    date?: true
+    desc?: true
+    order?: true
+    sceneId?: true
+  }
+
+  export type SceneItemMaxAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    title?: true
+    date?: true
+    desc?: true
+    order?: true
+    sceneId?: true
+  }
+
+  export type SceneItemCountAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    title?: true
+    date?: true
+    desc?: true
+    order?: true
+    sceneId?: true
+    _all?: true
+  }
+
+  export type SceneItemAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SceneItem to aggregate.
+     */
+    where?: SceneItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SceneItems to fetch.
+     */
+    orderBy?: SceneItemOrderByWithRelationInput | SceneItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SceneItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SceneItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SceneItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SceneItems
+    **/
+    _count?: true | SceneItemCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: SceneItemAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SceneItemSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SceneItemMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SceneItemMaxAggregateInputType
+  }
+
+  export type GetSceneItemAggregateType<T extends SceneItemAggregateArgs> = {
+        [P in keyof T & keyof AggregateSceneItem]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSceneItem[P]>
+      : GetScalarType<T[P], AggregateSceneItem[P]>
+  }
+
+
+
+
+  export type SceneItemGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SceneItemWhereInput
+    orderBy?: SceneItemOrderByWithAggregationInput | SceneItemOrderByWithAggregationInput[]
+    by: SceneItemScalarFieldEnum[] | SceneItemScalarFieldEnum
+    having?: SceneItemScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SceneItemCountAggregateInputType | true
+    _avg?: SceneItemAvgAggregateInputType
+    _sum?: SceneItemSumAggregateInputType
+    _min?: SceneItemMinAggregateInputType
+    _max?: SceneItemMaxAggregateInputType
+  }
+
+  export type SceneItemGroupByOutputType = {
+    id: number
+    createdAt: Date
+    updatedAt: Date
+    title: string | null
+    date: string | null
+    desc: string | null
+    order: number
+    sceneId: number
+    _count: SceneItemCountAggregateOutputType | null
+    _avg: SceneItemAvgAggregateOutputType | null
+    _sum: SceneItemSumAggregateOutputType | null
+    _min: SceneItemMinAggregateOutputType | null
+    _max: SceneItemMaxAggregateOutputType | null
+  }
+
+  type GetSceneItemGroupByPayload<T extends SceneItemGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SceneItemGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SceneItemGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SceneItemGroupByOutputType[P]>
+            : GetScalarType<T[P], SceneItemGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SceneItemSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    title?: boolean
+    date?: boolean
+    desc?: boolean
+    order?: boolean
+    sceneId?: boolean
+    scene?: boolean | SceneDefaultArgs<ExtArgs>
+    images?: boolean | SceneItem$imagesArgs<ExtArgs>
+    _count?: boolean | SceneItemCountOutputTypeDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sceneItem"]>
+
+  export type SceneItemSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    title?: boolean
+    date?: boolean
+    desc?: boolean
+    order?: boolean
+    sceneId?: boolean
+    scene?: boolean | SceneDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sceneItem"]>
+
+  export type SceneItemSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    title?: boolean
+    date?: boolean
+    desc?: boolean
+    order?: boolean
+    sceneId?: boolean
+    scene?: boolean | SceneDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sceneItem"]>
+
+  export type SceneItemSelectScalar = {
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    title?: boolean
+    date?: boolean
+    desc?: boolean
+    order?: boolean
+    sceneId?: boolean
+  }
+
+  export type SceneItemOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "title" | "date" | "desc" | "order" | "sceneId", ExtArgs["result"]["sceneItem"]>
+  export type SceneItemInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    scene?: boolean | SceneDefaultArgs<ExtArgs>
+    images?: boolean | SceneItem$imagesArgs<ExtArgs>
+    _count?: boolean | SceneItemCountOutputTypeDefaultArgs<ExtArgs>
+  }
+  export type SceneItemIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    scene?: boolean | SceneDefaultArgs<ExtArgs>
+  }
+  export type SceneItemIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    scene?: boolean | SceneDefaultArgs<ExtArgs>
+  }
+
+  export type $SceneItemPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SceneItem"
+    objects: {
+      scene: Prisma.$ScenePayload<ExtArgs>
+      images: Prisma.$SceneImagePayload<ExtArgs>[]
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      createdAt: Date
+      updatedAt: Date
+      title: string | null
+      date: string | null
+      desc: string | null
+      order: number
+      sceneId: number
+    }, ExtArgs["result"]["sceneItem"]>
+    composites: {}
+  }
+
+  type SceneItemGetPayload<S extends boolean | null | undefined | SceneItemDefaultArgs> = $Result.GetResult<Prisma.$SceneItemPayload, S>
+
+  type SceneItemCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SceneItemFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SceneItemCountAggregateInputType | true
+    }
+
+  export interface SceneItemDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SceneItem'], meta: { name: 'SceneItem' } }
+    /**
+     * Find zero or one SceneItem that matches the filter.
+     * @param {SceneItemFindUniqueArgs} args - Arguments to find a SceneItem
+     * @example
+     * // Get one SceneItem
+     * const sceneItem = await prisma.sceneItem.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SceneItemFindUniqueArgs>(args: SelectSubset<T, SceneItemFindUniqueArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SceneItem that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SceneItemFindUniqueOrThrowArgs} args - Arguments to find a SceneItem
+     * @example
+     * // Get one SceneItem
+     * const sceneItem = await prisma.sceneItem.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SceneItemFindUniqueOrThrowArgs>(args: SelectSubset<T, SceneItemFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SceneItem that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneItemFindFirstArgs} args - Arguments to find a SceneItem
+     * @example
+     * // Get one SceneItem
+     * const sceneItem = await prisma.sceneItem.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SceneItemFindFirstArgs>(args?: SelectSubset<T, SceneItemFindFirstArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SceneItem that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneItemFindFirstOrThrowArgs} args - Arguments to find a SceneItem
+     * @example
+     * // Get one SceneItem
+     * const sceneItem = await prisma.sceneItem.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SceneItemFindFirstOrThrowArgs>(args?: SelectSubset<T, SceneItemFindFirstOrThrowArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SceneItems that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneItemFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SceneItems
+     * const sceneItems = await prisma.sceneItem.findMany()
+     * 
+     * // Get first 10 SceneItems
+     * const sceneItems = await prisma.sceneItem.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const sceneItemWithIdOnly = await prisma.sceneItem.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SceneItemFindManyArgs>(args?: SelectSubset<T, SceneItemFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SceneItem.
+     * @param {SceneItemCreateArgs} args - Arguments to create a SceneItem.
+     * @example
+     * // Create one SceneItem
+     * const SceneItem = await prisma.sceneItem.create({
+     *   data: {
+     *     // ... data to create a SceneItem
+     *   }
+     * })
+     * 
+     */
+    create<T extends SceneItemCreateArgs>(args: SelectSubset<T, SceneItemCreateArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SceneItems.
+     * @param {SceneItemCreateManyArgs} args - Arguments to create many SceneItems.
+     * @example
+     * // Create many SceneItems
+     * const sceneItem = await prisma.sceneItem.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SceneItemCreateManyArgs>(args?: SelectSubset<T, SceneItemCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SceneItems and returns the data saved in the database.
+     * @param {SceneItemCreateManyAndReturnArgs} args - Arguments to create many SceneItems.
+     * @example
+     * // Create many SceneItems
+     * const sceneItem = await prisma.sceneItem.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SceneItems and only return the `id`
+     * const sceneItemWithIdOnly = await prisma.sceneItem.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SceneItemCreateManyAndReturnArgs>(args?: SelectSubset<T, SceneItemCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SceneItem.
+     * @param {SceneItemDeleteArgs} args - Arguments to delete one SceneItem.
+     * @example
+     * // Delete one SceneItem
+     * const SceneItem = await prisma.sceneItem.delete({
+     *   where: {
+     *     // ... filter to delete one SceneItem
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SceneItemDeleteArgs>(args: SelectSubset<T, SceneItemDeleteArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SceneItem.
+     * @param {SceneItemUpdateArgs} args - Arguments to update one SceneItem.
+     * @example
+     * // Update one SceneItem
+     * const sceneItem = await prisma.sceneItem.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SceneItemUpdateArgs>(args: SelectSubset<T, SceneItemUpdateArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SceneItems.
+     * @param {SceneItemDeleteManyArgs} args - Arguments to filter SceneItems to delete.
+     * @example
+     * // Delete a few SceneItems
+     * const { count } = await prisma.sceneItem.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SceneItemDeleteManyArgs>(args?: SelectSubset<T, SceneItemDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SceneItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneItemUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SceneItems
+     * const sceneItem = await prisma.sceneItem.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SceneItemUpdateManyArgs>(args: SelectSubset<T, SceneItemUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SceneItems and returns the data updated in the database.
+     * @param {SceneItemUpdateManyAndReturnArgs} args - Arguments to update many SceneItems.
+     * @example
+     * // Update many SceneItems
+     * const sceneItem = await prisma.sceneItem.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SceneItems and only return the `id`
+     * const sceneItemWithIdOnly = await prisma.sceneItem.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SceneItemUpdateManyAndReturnArgs>(args: SelectSubset<T, SceneItemUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SceneItem.
+     * @param {SceneItemUpsertArgs} args - Arguments to update or create a SceneItem.
+     * @example
+     * // Update or create a SceneItem
+     * const sceneItem = await prisma.sceneItem.upsert({
+     *   create: {
+     *     // ... data to create a SceneItem
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SceneItem we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SceneItemUpsertArgs>(args: SelectSubset<T, SceneItemUpsertArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SceneItems.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneItemCountArgs} args - Arguments to filter SceneItems to count.
+     * @example
+     * // Count the number of SceneItems
+     * const count = await prisma.sceneItem.count({
+     *   where: {
+     *     // ... the filter for the SceneItems we want to count
+     *   }
+     * })
+    **/
+    count<T extends SceneItemCountArgs>(
+      args?: Subset<T, SceneItemCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SceneItemCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SceneItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneItemAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SceneItemAggregateArgs>(args: Subset<T, SceneItemAggregateArgs>): Prisma.PrismaPromise<GetSceneItemAggregateType<T>>
+
+    /**
+     * Group by SceneItem.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneItemGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SceneItemGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SceneItemGroupByArgs['orderBy'] }
+        : { orderBy?: SceneItemGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SceneItemGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSceneItemGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SceneItem model
+   */
+  readonly fields: SceneItemFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SceneItem.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SceneItemClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    scene<T extends SceneDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SceneDefaultArgs<ExtArgs>>): Prisma__SceneClient<$Result.GetResult<Prisma.$ScenePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    images<T extends SceneItem$imagesArgs<ExtArgs> = {}>(args?: Subset<T, SceneItem$imagesArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SceneItem model
+   */
+  interface SceneItemFieldRefs {
+    readonly id: FieldRef<"SceneItem", 'Int'>
+    readonly createdAt: FieldRef<"SceneItem", 'DateTime'>
+    readonly updatedAt: FieldRef<"SceneItem", 'DateTime'>
+    readonly title: FieldRef<"SceneItem", 'String'>
+    readonly date: FieldRef<"SceneItem", 'String'>
+    readonly desc: FieldRef<"SceneItem", 'String'>
+    readonly order: FieldRef<"SceneItem", 'Int'>
+    readonly sceneId: FieldRef<"SceneItem", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SceneItem findUnique
+   */
+  export type SceneItemFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneItem to fetch.
+     */
+    where: SceneItemWhereUniqueInput
+  }
+
+  /**
+   * SceneItem findUniqueOrThrow
+   */
+  export type SceneItemFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneItem to fetch.
+     */
+    where: SceneItemWhereUniqueInput
+  }
+
+  /**
+   * SceneItem findFirst
+   */
+  export type SceneItemFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneItem to fetch.
+     */
+    where?: SceneItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SceneItems to fetch.
+     */
+    orderBy?: SceneItemOrderByWithRelationInput | SceneItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SceneItems.
+     */
+    cursor?: SceneItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SceneItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SceneItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SceneItems.
+     */
+    distinct?: SceneItemScalarFieldEnum | SceneItemScalarFieldEnum[]
+  }
+
+  /**
+   * SceneItem findFirstOrThrow
+   */
+  export type SceneItemFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneItem to fetch.
+     */
+    where?: SceneItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SceneItems to fetch.
+     */
+    orderBy?: SceneItemOrderByWithRelationInput | SceneItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SceneItems.
+     */
+    cursor?: SceneItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SceneItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SceneItems.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SceneItems.
+     */
+    distinct?: SceneItemScalarFieldEnum | SceneItemScalarFieldEnum[]
+  }
+
+  /**
+   * SceneItem findMany
+   */
+  export type SceneItemFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneItems to fetch.
+     */
+    where?: SceneItemWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SceneItems to fetch.
+     */
+    orderBy?: SceneItemOrderByWithRelationInput | SceneItemOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SceneItems.
+     */
+    cursor?: SceneItemWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SceneItems from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SceneItems.
+     */
+    skip?: number
+    distinct?: SceneItemScalarFieldEnum | SceneItemScalarFieldEnum[]
+  }
+
+  /**
+   * SceneItem create
+   */
+  export type SceneItemCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SceneItem.
+     */
+    data: XOR<SceneItemCreateInput, SceneItemUncheckedCreateInput>
+  }
+
+  /**
+   * SceneItem createMany
+   */
+  export type SceneItemCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SceneItems.
+     */
+    data: SceneItemCreateManyInput | SceneItemCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SceneItem createManyAndReturn
+   */
+  export type SceneItemCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * The data used to create many SceneItems.
+     */
+    data: SceneItemCreateManyInput | SceneItemCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SceneItem update
+   */
+  export type SceneItemUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SceneItem.
+     */
+    data: XOR<SceneItemUpdateInput, SceneItemUncheckedUpdateInput>
+    /**
+     * Choose, which SceneItem to update.
+     */
+    where: SceneItemWhereUniqueInput
+  }
+
+  /**
+   * SceneItem updateMany
+   */
+  export type SceneItemUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SceneItems.
+     */
+    data: XOR<SceneItemUpdateManyMutationInput, SceneItemUncheckedUpdateManyInput>
+    /**
+     * Filter which SceneItems to update
+     */
+    where?: SceneItemWhereInput
+    /**
+     * Limit how many SceneItems to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SceneItem updateManyAndReturn
+   */
+  export type SceneItemUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * The data used to update SceneItems.
+     */
+    data: XOR<SceneItemUpdateManyMutationInput, SceneItemUncheckedUpdateManyInput>
+    /**
+     * Filter which SceneItems to update
+     */
+    where?: SceneItemWhereInput
+    /**
+     * Limit how many SceneItems to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SceneItem upsert
+   */
+  export type SceneItemUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SceneItem to update in case it exists.
+     */
+    where: SceneItemWhereUniqueInput
+    /**
+     * In case the SceneItem found by the `where` argument doesn't exist, create a new SceneItem with this data.
+     */
+    create: XOR<SceneItemCreateInput, SceneItemUncheckedCreateInput>
+    /**
+     * In case the SceneItem was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SceneItemUpdateInput, SceneItemUncheckedUpdateInput>
+  }
+
+  /**
+   * SceneItem delete
+   */
+  export type SceneItemDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+    /**
+     * Filter which SceneItem to delete.
+     */
+    where: SceneItemWhereUniqueInput
+  }
+
+  /**
+   * SceneItem deleteMany
+   */
+  export type SceneItemDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SceneItems to delete
+     */
+    where?: SceneItemWhereInput
+    /**
+     * Limit how many SceneItems to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SceneItem.images
+   */
+  export type SceneItem$imagesArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    where?: SceneImageWhereInput
+    orderBy?: SceneImageOrderByWithRelationInput | SceneImageOrderByWithRelationInput[]
+    cursor?: SceneImageWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: SceneImageScalarFieldEnum | SceneImageScalarFieldEnum[]
+  }
+
+  /**
+   * SceneItem without action
+   */
+  export type SceneItemDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneItem
+     */
+    select?: SceneItemSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneItem
+     */
+    omit?: SceneItemOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneItemInclude<ExtArgs> | null
+  }
+
+
+  /**
+   * Model SceneImage
+   */
+
+  export type AggregateSceneImage = {
+    _count: SceneImageCountAggregateOutputType | null
+    _avg: SceneImageAvgAggregateOutputType | null
+    _sum: SceneImageSumAggregateOutputType | null
+    _min: SceneImageMinAggregateOutputType | null
+    _max: SceneImageMaxAggregateOutputType | null
+  }
+
+  export type SceneImageAvgAggregateOutputType = {
+    id: number | null
+    order: number | null
+    itemId: number | null
+  }
+
+  export type SceneImageSumAggregateOutputType = {
+    id: number | null
+    order: number | null
+    itemId: number | null
+  }
+
+  export type SceneImageMinAggregateOutputType = {
+    id: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    url: string | null
+    order: number | null
+    itemId: number | null
+  }
+
+  export type SceneImageMaxAggregateOutputType = {
+    id: number | null
+    createdAt: Date | null
+    updatedAt: Date | null
+    url: string | null
+    order: number | null
+    itemId: number | null
+  }
+
+  export type SceneImageCountAggregateOutputType = {
+    id: number
+    createdAt: number
+    updatedAt: number
+    url: number
+    order: number
+    itemId: number
+    _all: number
+  }
+
+
+  export type SceneImageAvgAggregateInputType = {
+    id?: true
+    order?: true
+    itemId?: true
+  }
+
+  export type SceneImageSumAggregateInputType = {
+    id?: true
+    order?: true
+    itemId?: true
+  }
+
+  export type SceneImageMinAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    url?: true
+    order?: true
+    itemId?: true
+  }
+
+  export type SceneImageMaxAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    url?: true
+    order?: true
+    itemId?: true
+  }
+
+  export type SceneImageCountAggregateInputType = {
+    id?: true
+    createdAt?: true
+    updatedAt?: true
+    url?: true
+    order?: true
+    itemId?: true
+    _all?: true
+  }
+
+  export type SceneImageAggregateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SceneImage to aggregate.
+     */
+    where?: SceneImageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SceneImages to fetch.
+     */
+    orderBy?: SceneImageOrderByWithRelationInput | SceneImageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the start position
+     */
+    cursor?: SceneImageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SceneImages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SceneImages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Count returned SceneImages
+    **/
+    _count?: true | SceneImageCountAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to average
+    **/
+    _avg?: SceneImageAvgAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to sum
+    **/
+    _sum?: SceneImageSumAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the minimum value
+    **/
+    _min?: SceneImageMinAggregateInputType
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+     * 
+     * Select which fields to find the maximum value
+    **/
+    _max?: SceneImageMaxAggregateInputType
+  }
+
+  export type GetSceneImageAggregateType<T extends SceneImageAggregateArgs> = {
+        [P in keyof T & keyof AggregateSceneImage]: P extends '_count' | 'count'
+      ? T[P] extends true
+        ? number
+        : GetScalarType<T[P], AggregateSceneImage[P]>
+      : GetScalarType<T[P], AggregateSceneImage[P]>
+  }
+
+
+
+
+  export type SceneImageGroupByArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: SceneImageWhereInput
+    orderBy?: SceneImageOrderByWithAggregationInput | SceneImageOrderByWithAggregationInput[]
+    by: SceneImageScalarFieldEnum[] | SceneImageScalarFieldEnum
+    having?: SceneImageScalarWhereWithAggregatesInput
+    take?: number
+    skip?: number
+    _count?: SceneImageCountAggregateInputType | true
+    _avg?: SceneImageAvgAggregateInputType
+    _sum?: SceneImageSumAggregateInputType
+    _min?: SceneImageMinAggregateInputType
+    _max?: SceneImageMaxAggregateInputType
+  }
+
+  export type SceneImageGroupByOutputType = {
+    id: number
+    createdAt: Date
+    updatedAt: Date
+    url: string
+    order: number
+    itemId: number
+    _count: SceneImageCountAggregateOutputType | null
+    _avg: SceneImageAvgAggregateOutputType | null
+    _sum: SceneImageSumAggregateOutputType | null
+    _min: SceneImageMinAggregateOutputType | null
+    _max: SceneImageMaxAggregateOutputType | null
+  }
+
+  type GetSceneImageGroupByPayload<T extends SceneImageGroupByArgs> = Prisma.PrismaPromise<
+    Array<
+      PickEnumerable<SceneImageGroupByOutputType, T['by']> &
+        {
+          [P in ((keyof T) & (keyof SceneImageGroupByOutputType))]: P extends '_count'
+            ? T[P] extends boolean
+              ? number
+              : GetScalarType<T[P], SceneImageGroupByOutputType[P]>
+            : GetScalarType<T[P], SceneImageGroupByOutputType[P]>
+        }
+      >
+    >
+
+
+  export type SceneImageSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    url?: boolean
+    order?: boolean
+    itemId?: boolean
+    item?: boolean | SceneItemDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sceneImage"]>
+
+  export type SceneImageSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    url?: boolean
+    order?: boolean
+    itemId?: boolean
+    item?: boolean | SceneItemDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sceneImage"]>
+
+  export type SceneImageSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    url?: boolean
+    order?: boolean
+    itemId?: boolean
+    item?: boolean | SceneItemDefaultArgs<ExtArgs>
+  }, ExtArgs["result"]["sceneImage"]>
+
+  export type SceneImageSelectScalar = {
+    id?: boolean
+    createdAt?: boolean
+    updatedAt?: boolean
+    url?: boolean
+    order?: boolean
+    itemId?: boolean
+  }
+
+  export type SceneImageOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "url" | "order" | "itemId", ExtArgs["result"]["sceneImage"]>
+  export type SceneImageInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    item?: boolean | SceneItemDefaultArgs<ExtArgs>
+  }
+  export type SceneImageIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    item?: boolean | SceneItemDefaultArgs<ExtArgs>
+  }
+  export type SceneImageIncludeUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    item?: boolean | SceneItemDefaultArgs<ExtArgs>
+  }
+
+  export type $SceneImagePayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    name: "SceneImage"
+    objects: {
+      item: Prisma.$SceneItemPayload<ExtArgs>
+    }
+    scalars: $Extensions.GetPayloadResult<{
+      id: number
+      createdAt: Date
+      updatedAt: Date
+      url: string
+      order: number
+      itemId: number
+    }, ExtArgs["result"]["sceneImage"]>
+    composites: {}
+  }
+
+  type SceneImageGetPayload<S extends boolean | null | undefined | SceneImageDefaultArgs> = $Result.GetResult<Prisma.$SceneImagePayload, S>
+
+  type SceneImageCountArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> =
+    Omit<SceneImageFindManyArgs, 'select' | 'include' | 'distinct' | 'omit'> & {
+      select?: SceneImageCountAggregateInputType | true
+    }
+
+  export interface SceneImageDelegate<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> {
+    [K: symbol]: { types: Prisma.TypeMap<ExtArgs>['model']['SceneImage'], meta: { name: 'SceneImage' } }
+    /**
+     * Find zero or one SceneImage that matches the filter.
+     * @param {SceneImageFindUniqueArgs} args - Arguments to find a SceneImage
+     * @example
+     * // Get one SceneImage
+     * const sceneImage = await prisma.sceneImage.findUnique({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUnique<T extends SceneImageFindUniqueArgs>(args: SelectSubset<T, SceneImageFindUniqueArgs<ExtArgs>>): Prisma__SceneImageClient<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "findUnique", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find one SceneImage that matches the filter or throw an error with `error.code='P2025'`
+     * if no matches were found.
+     * @param {SceneImageFindUniqueOrThrowArgs} args - Arguments to find a SceneImage
+     * @example
+     * // Get one SceneImage
+     * const sceneImage = await prisma.sceneImage.findUniqueOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findUniqueOrThrow<T extends SceneImageFindUniqueOrThrowArgs>(args: SelectSubset<T, SceneImageFindUniqueOrThrowArgs<ExtArgs>>): Prisma__SceneImageClient<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SceneImage that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneImageFindFirstArgs} args - Arguments to find a SceneImage
+     * @example
+     * // Get one SceneImage
+     * const sceneImage = await prisma.sceneImage.findFirst({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirst<T extends SceneImageFindFirstArgs>(args?: SelectSubset<T, SceneImageFindFirstArgs<ExtArgs>>): Prisma__SceneImageClient<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "findFirst", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find the first SceneImage that matches the filter or
+     * throw `PrismaKnownClientError` with `P2025` code if no matches were found.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneImageFindFirstOrThrowArgs} args - Arguments to find a SceneImage
+     * @example
+     * // Get one SceneImage
+     * const sceneImage = await prisma.sceneImage.findFirstOrThrow({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     */
+    findFirstOrThrow<T extends SceneImageFindFirstOrThrowArgs>(args?: SelectSubset<T, SceneImageFindFirstOrThrowArgs<ExtArgs>>): Prisma__SceneImageClient<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "findFirstOrThrow", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Find zero or more SceneImages that matches the filter.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneImageFindManyArgs} args - Arguments to filter and select certain fields only.
+     * @example
+     * // Get all SceneImages
+     * const sceneImages = await prisma.sceneImage.findMany()
+     * 
+     * // Get first 10 SceneImages
+     * const sceneImages = await prisma.sceneImage.findMany({ take: 10 })
+     * 
+     * // Only select the `id`
+     * const sceneImageWithIdOnly = await prisma.sceneImage.findMany({ select: { id: true } })
+     * 
+     */
+    findMany<T extends SceneImageFindManyArgs>(args?: SelectSubset<T, SceneImageFindManyArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "findMany", GlobalOmitOptions>>
+
+    /**
+     * Create a SceneImage.
+     * @param {SceneImageCreateArgs} args - Arguments to create a SceneImage.
+     * @example
+     * // Create one SceneImage
+     * const SceneImage = await prisma.sceneImage.create({
+     *   data: {
+     *     // ... data to create a SceneImage
+     *   }
+     * })
+     * 
+     */
+    create<T extends SceneImageCreateArgs>(args: SelectSubset<T, SceneImageCreateArgs<ExtArgs>>): Prisma__SceneImageClient<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "create", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Create many SceneImages.
+     * @param {SceneImageCreateManyArgs} args - Arguments to create many SceneImages.
+     * @example
+     * // Create many SceneImages
+     * const sceneImage = await prisma.sceneImage.createMany({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     *     
+     */
+    createMany<T extends SceneImageCreateManyArgs>(args?: SelectSubset<T, SceneImageCreateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Create many SceneImages and returns the data saved in the database.
+     * @param {SceneImageCreateManyAndReturnArgs} args - Arguments to create many SceneImages.
+     * @example
+     * // Create many SceneImages
+     * const sceneImage = await prisma.sceneImage.createManyAndReturn({
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Create many SceneImages and only return the `id`
+     * const sceneImageWithIdOnly = await prisma.sceneImage.createManyAndReturn({
+     *   select: { id: true },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    createManyAndReturn<T extends SceneImageCreateManyAndReturnArgs>(args?: SelectSubset<T, SceneImageCreateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "createManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Delete a SceneImage.
+     * @param {SceneImageDeleteArgs} args - Arguments to delete one SceneImage.
+     * @example
+     * // Delete one SceneImage
+     * const SceneImage = await prisma.sceneImage.delete({
+     *   where: {
+     *     // ... filter to delete one SceneImage
+     *   }
+     * })
+     * 
+     */
+    delete<T extends SceneImageDeleteArgs>(args: SelectSubset<T, SceneImageDeleteArgs<ExtArgs>>): Prisma__SceneImageClient<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "delete", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Update one SceneImage.
+     * @param {SceneImageUpdateArgs} args - Arguments to update one SceneImage.
+     * @example
+     * // Update one SceneImage
+     * const sceneImage = await prisma.sceneImage.update({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    update<T extends SceneImageUpdateArgs>(args: SelectSubset<T, SceneImageUpdateArgs<ExtArgs>>): Prisma__SceneImageClient<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "update", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+    /**
+     * Delete zero or more SceneImages.
+     * @param {SceneImageDeleteManyArgs} args - Arguments to filter SceneImages to delete.
+     * @example
+     * // Delete a few SceneImages
+     * const { count } = await prisma.sceneImage.deleteMany({
+     *   where: {
+     *     // ... provide filter here
+     *   }
+     * })
+     * 
+     */
+    deleteMany<T extends SceneImageDeleteManyArgs>(args?: SelectSubset<T, SceneImageDeleteManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SceneImages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneImageUpdateManyArgs} args - Arguments to update one or more rows.
+     * @example
+     * // Update many SceneImages
+     * const sceneImage = await prisma.sceneImage.updateMany({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: {
+     *     // ... provide data here
+     *   }
+     * })
+     * 
+     */
+    updateMany<T extends SceneImageUpdateManyArgs>(args: SelectSubset<T, SceneImageUpdateManyArgs<ExtArgs>>): Prisma.PrismaPromise<BatchPayload>
+
+    /**
+     * Update zero or more SceneImages and returns the data updated in the database.
+     * @param {SceneImageUpdateManyAndReturnArgs} args - Arguments to update many SceneImages.
+     * @example
+     * // Update many SceneImages
+     * const sceneImage = await prisma.sceneImage.updateManyAndReturn({
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * 
+     * // Update zero or more SceneImages and only return the `id`
+     * const sceneImageWithIdOnly = await prisma.sceneImage.updateManyAndReturn({
+     *   select: { id: true },
+     *   where: {
+     *     // ... provide filter here
+     *   },
+     *   data: [
+     *     // ... provide data here
+     *   ]
+     * })
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * 
+     */
+    updateManyAndReturn<T extends SceneImageUpdateManyAndReturnArgs>(args: SelectSubset<T, SceneImageUpdateManyAndReturnArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "updateManyAndReturn", GlobalOmitOptions>>
+
+    /**
+     * Create or update one SceneImage.
+     * @param {SceneImageUpsertArgs} args - Arguments to update or create a SceneImage.
+     * @example
+     * // Update or create a SceneImage
+     * const sceneImage = await prisma.sceneImage.upsert({
+     *   create: {
+     *     // ... data to create a SceneImage
+     *   },
+     *   update: {
+     *     // ... in case it already exists, update
+     *   },
+     *   where: {
+     *     // ... the filter for the SceneImage we want to update
+     *   }
+     * })
+     */
+    upsert<T extends SceneImageUpsertArgs>(args: SelectSubset<T, SceneImageUpsertArgs<ExtArgs>>): Prisma__SceneImageClient<$Result.GetResult<Prisma.$SceneImagePayload<ExtArgs>, T, "upsert", GlobalOmitOptions>, never, ExtArgs, GlobalOmitOptions>
+
+
+    /**
+     * Count the number of SceneImages.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneImageCountArgs} args - Arguments to filter SceneImages to count.
+     * @example
+     * // Count the number of SceneImages
+     * const count = await prisma.sceneImage.count({
+     *   where: {
+     *     // ... the filter for the SceneImages we want to count
+     *   }
+     * })
+    **/
+    count<T extends SceneImageCountArgs>(
+      args?: Subset<T, SceneImageCountArgs>,
+    ): Prisma.PrismaPromise<
+      T extends $Utils.Record<'select', any>
+        ? T['select'] extends true
+          ? number
+          : GetScalarType<T['select'], SceneImageCountAggregateOutputType>
+        : number
+    >
+
+    /**
+     * Allows you to perform aggregations operations on a SceneImage.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneImageAggregateArgs} args - Select which aggregations you would like to apply and on what fields.
+     * @example
+     * // Ordered by age ascending
+     * // Where email contains prisma.io
+     * // Limited to the 10 users
+     * const aggregations = await prisma.user.aggregate({
+     *   _avg: {
+     *     age: true,
+     *   },
+     *   where: {
+     *     email: {
+     *       contains: "prisma.io",
+     *     },
+     *   },
+     *   orderBy: {
+     *     age: "asc",
+     *   },
+     *   take: 10,
+     * })
+    **/
+    aggregate<T extends SceneImageAggregateArgs>(args: Subset<T, SceneImageAggregateArgs>): Prisma.PrismaPromise<GetSceneImageAggregateType<T>>
+
+    /**
+     * Group by SceneImage.
+     * Note, that providing `undefined` is treated as the value not being there.
+     * Read more here: https://pris.ly/d/null-undefined
+     * @param {SceneImageGroupByArgs} args - Group by arguments.
+     * @example
+     * // Group by city, order by createdAt, get count
+     * const result = await prisma.user.groupBy({
+     *   by: ['city', 'createdAt'],
+     *   orderBy: {
+     *     createdAt: true
+     *   },
+     *   _count: {
+     *     _all: true
+     *   },
+     * })
+     * 
+    **/
+    groupBy<
+      T extends SceneImageGroupByArgs,
+      HasSelectOrTake extends Or<
+        Extends<'skip', Keys<T>>,
+        Extends<'take', Keys<T>>
+      >,
+      OrderByArg extends True extends HasSelectOrTake
+        ? { orderBy: SceneImageGroupByArgs['orderBy'] }
+        : { orderBy?: SceneImageGroupByArgs['orderBy'] },
+      OrderFields extends ExcludeUnderscoreKeys<Keys<MaybeTupleToUnion<T['orderBy']>>>,
+      ByFields extends MaybeTupleToUnion<T['by']>,
+      ByValid extends Has<ByFields, OrderFields>,
+      HavingFields extends GetHavingFields<T['having']>,
+      HavingValid extends Has<ByFields, HavingFields>,
+      ByEmpty extends T['by'] extends never[] ? True : False,
+      InputErrors extends ByEmpty extends True
+      ? `Error: "by" must not be empty.`
+      : HavingValid extends False
+      ? {
+          [P in HavingFields]: P extends ByFields
+            ? never
+            : P extends string
+            ? `Error: Field "${P}" used in "having" needs to be provided in "by".`
+            : [
+                Error,
+                'Field ',
+                P,
+                ` in "having" needs to be provided in "by"`,
+              ]
+        }[HavingFields]
+      : 'take' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "take", you also need to provide "orderBy"'
+      : 'skip' extends Keys<T>
+      ? 'orderBy' extends Keys<T>
+        ? ByValid extends True
+          ? {}
+          : {
+              [P in OrderFields]: P extends ByFields
+                ? never
+                : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+            }[OrderFields]
+        : 'Error: If you provide "skip", you also need to provide "orderBy"'
+      : ByValid extends True
+      ? {}
+      : {
+          [P in OrderFields]: P extends ByFields
+            ? never
+            : `Error: Field "${P}" in "orderBy" needs to be provided in "by"`
+        }[OrderFields]
+    >(args: SubsetIntersection<T, SceneImageGroupByArgs, OrderByArg> & InputErrors): {} extends InputErrors ? GetSceneImageGroupByPayload<T> : Prisma.PrismaPromise<InputErrors>
+  /**
+   * Fields of the SceneImage model
+   */
+  readonly fields: SceneImageFieldRefs;
+  }
+
+  /**
+   * The delegate class that acts as a "Promise-like" for SceneImage.
+   * Why is this prefixed with `Prisma__`?
+   * Because we want to prevent naming conflicts as mentioned in
+   * https://github.com/prisma/prisma-client-js/issues/707
+   */
+  export interface Prisma__SceneImageClient<T, Null = never, ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
+    readonly [Symbol.toStringTag]: "PrismaPromise"
+    item<T extends SceneItemDefaultArgs<ExtArgs> = {}>(args?: Subset<T, SceneItemDefaultArgs<ExtArgs>>): Prisma__SceneItemClient<$Result.GetResult<Prisma.$SceneItemPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+    /**
+     * Attaches callbacks for the resolution and/or rejection of the Promise.
+     * @param onfulfilled The callback to execute when the Promise is resolved.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of which ever callback is executed.
+     */
+    then<TResult1 = T, TResult2 = never>(onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>) | undefined | null, onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>) | undefined | null): $Utils.JsPromise<TResult1 | TResult2>
+    /**
+     * Attaches a callback for only the rejection of the Promise.
+     * @param onrejected The callback to execute when the Promise is rejected.
+     * @returns A Promise for the completion of the callback.
+     */
+    catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>) | undefined | null): $Utils.JsPromise<T | TResult>
+    /**
+     * Attaches a callback that is invoked when the Promise is settled (fulfilled or rejected). The
+     * resolved value cannot be modified from the callback.
+     * @param onfinally The callback to execute when the Promise is settled (fulfilled or rejected).
+     * @returns A Promise for the completion of the callback.
+     */
+    finally(onfinally?: (() => void) | undefined | null): $Utils.JsPromise<T>
+  }
+
+
+
+
+  /**
+   * Fields of the SceneImage model
+   */
+  interface SceneImageFieldRefs {
+    readonly id: FieldRef<"SceneImage", 'Int'>
+    readonly createdAt: FieldRef<"SceneImage", 'DateTime'>
+    readonly updatedAt: FieldRef<"SceneImage", 'DateTime'>
+    readonly url: FieldRef<"SceneImage", 'String'>
+    readonly order: FieldRef<"SceneImage", 'Int'>
+    readonly itemId: FieldRef<"SceneImage", 'Int'>
+  }
+    
+
+  // Custom InputTypes
+  /**
+   * SceneImage findUnique
+   */
+  export type SceneImageFindUniqueArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneImage to fetch.
+     */
+    where: SceneImageWhereUniqueInput
+  }
+
+  /**
+   * SceneImage findUniqueOrThrow
+   */
+  export type SceneImageFindUniqueOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneImage to fetch.
+     */
+    where: SceneImageWhereUniqueInput
+  }
+
+  /**
+   * SceneImage findFirst
+   */
+  export type SceneImageFindFirstArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneImage to fetch.
+     */
+    where?: SceneImageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SceneImages to fetch.
+     */
+    orderBy?: SceneImageOrderByWithRelationInput | SceneImageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SceneImages.
+     */
+    cursor?: SceneImageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SceneImages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SceneImages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SceneImages.
+     */
+    distinct?: SceneImageScalarFieldEnum | SceneImageScalarFieldEnum[]
+  }
+
+  /**
+   * SceneImage findFirstOrThrow
+   */
+  export type SceneImageFindFirstOrThrowArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneImage to fetch.
+     */
+    where?: SceneImageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SceneImages to fetch.
+     */
+    orderBy?: SceneImageOrderByWithRelationInput | SceneImageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for searching for SceneImages.
+     */
+    cursor?: SceneImageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SceneImages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SceneImages.
+     */
+    skip?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/distinct Distinct Docs}
+     * 
+     * Filter by unique combinations of SceneImages.
+     */
+    distinct?: SceneImageScalarFieldEnum | SceneImageScalarFieldEnum[]
+  }
+
+  /**
+   * SceneImage findMany
+   */
+  export type SceneImageFindManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * Filter, which SceneImages to fetch.
+     */
+    where?: SceneImageWhereInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/sorting Sorting Docs}
+     * 
+     * Determine the order of SceneImages to fetch.
+     */
+    orderBy?: SceneImageOrderByWithRelationInput | SceneImageOrderByWithRelationInput[]
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination#cursor-based-pagination Cursor Docs}
+     * 
+     * Sets the position for listing SceneImages.
+     */
+    cursor?: SceneImageWhereUniqueInput
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Take `±n` SceneImages from the position of the cursor.
+     */
+    take?: number
+    /**
+     * {@link https://www.prisma.io/docs/concepts/components/prisma-client/pagination Pagination Docs}
+     * 
+     * Skip the first `n` SceneImages.
+     */
+    skip?: number
+    distinct?: SceneImageScalarFieldEnum | SceneImageScalarFieldEnum[]
+  }
+
+  /**
+   * SceneImage create
+   */
+  export type SceneImageCreateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * The data needed to create a SceneImage.
+     */
+    data: XOR<SceneImageCreateInput, SceneImageUncheckedCreateInput>
+  }
+
+  /**
+   * SceneImage createMany
+   */
+  export type SceneImageCreateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to create many SceneImages.
+     */
+    data: SceneImageCreateManyInput | SceneImageCreateManyInput[]
+    skipDuplicates?: boolean
+  }
+
+  /**
+   * SceneImage createManyAndReturn
+   */
+  export type SceneImageCreateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelectCreateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * The data used to create many SceneImages.
+     */
+    data: SceneImageCreateManyInput | SceneImageCreateManyInput[]
+    skipDuplicates?: boolean
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageIncludeCreateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SceneImage update
+   */
+  export type SceneImageUpdateArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * The data needed to update a SceneImage.
+     */
+    data: XOR<SceneImageUpdateInput, SceneImageUncheckedUpdateInput>
+    /**
+     * Choose, which SceneImage to update.
+     */
+    where: SceneImageWhereUniqueInput
+  }
+
+  /**
+   * SceneImage updateMany
+   */
+  export type SceneImageUpdateManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * The data used to update SceneImages.
+     */
+    data: XOR<SceneImageUpdateManyMutationInput, SceneImageUncheckedUpdateManyInput>
+    /**
+     * Filter which SceneImages to update
+     */
+    where?: SceneImageWhereInput
+    /**
+     * Limit how many SceneImages to update.
+     */
+    limit?: number
+  }
+
+  /**
+   * SceneImage updateManyAndReturn
+   */
+  export type SceneImageUpdateManyAndReturnArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelectUpdateManyAndReturn<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * The data used to update SceneImages.
+     */
+    data: XOR<SceneImageUpdateManyMutationInput, SceneImageUncheckedUpdateManyInput>
+    /**
+     * Filter which SceneImages to update
+     */
+    where?: SceneImageWhereInput
+    /**
+     * Limit how many SceneImages to update.
+     */
+    limit?: number
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageIncludeUpdateManyAndReturn<ExtArgs> | null
+  }
+
+  /**
+   * SceneImage upsert
+   */
+  export type SceneImageUpsertArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * The filter to search for the SceneImage to update in case it exists.
+     */
+    where: SceneImageWhereUniqueInput
+    /**
+     * In case the SceneImage found by the `where` argument doesn't exist, create a new SceneImage with this data.
+     */
+    create: XOR<SceneImageCreateInput, SceneImageUncheckedCreateInput>
+    /**
+     * In case the SceneImage was found with the provided `where` argument, update it with this data.
+     */
+    update: XOR<SceneImageUpdateInput, SceneImageUncheckedUpdateInput>
+  }
+
+  /**
+   * SceneImage delete
+   */
+  export type SceneImageDeleteArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+    /**
+     * Filter which SceneImage to delete.
+     */
+    where: SceneImageWhereUniqueInput
+  }
+
+  /**
+   * SceneImage deleteMany
+   */
+  export type SceneImageDeleteManyArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Filter which SceneImages to delete
+     */
+    where?: SceneImageWhereInput
+    /**
+     * Limit how many SceneImages to delete.
+     */
+    limit?: number
+  }
+
+  /**
+   * SceneImage without action
+   */
+  export type SceneImageDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the SceneImage
+     */
+    select?: SceneImageSelect<ExtArgs> | null
+    /**
+     * Omit specific fields from the SceneImage
+     */
+    omit?: SceneImageOmit<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: SceneImageInclude<ExtArgs> | null
+  }
+
+
+  /**
    * Enums
    */
 
@@ -11297,9 +15186,9 @@ export namespace Prisma {
     id: 'id',
     name: 'name',
     mobile: 'mobile',
+    plan: 'plan',
     birthDate: 'birthDate',
-    email: 'email',
-    plan: 'plan'
+    email: 'email'
   };
 
   export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
@@ -11343,9 +15232,9 @@ export namespace Prisma {
     updatedAt: 'updatedAt',
     srcType: 'srcType',
     srcUrl: 'srcUrl',
-    caption: 'caption',
     memoryId: 'memoryId',
     relationshipId: 'relationshipId',
+    caption: 'caption',
     reelId: 'reelId'
   };
 
@@ -11384,14 +15273,16 @@ export namespace Prisma {
     createdAt: 'createdAt',
     updatedAt: 'updatedAt',
     identifier: 'identifier',
-    userName: 'userName',
     coverUrl: 'coverUrl',
     name: 'name',
     subName: 'subName',
     description: 'description',
     bgm: 'bgm',
     color: 'color',
-    userId: 'userId'
+    userId: 'userId',
+    userName: 'userName',
+    birthDate: 'birthDate',
+    displayMode: 'displayMode'
   };
 
   export type RecordScalarFieldEnum = (typeof RecordScalarFieldEnum)[keyof typeof RecordScalarFieldEnum]
@@ -11408,10 +15299,54 @@ export namespace Prisma {
     color: 'color',
     isHighlight: 'isHighlight',
     coverUrl: 'coverUrl',
-    recordId: 'recordId'
+    recordId: 'recordId',
+    images: 'images'
   };
 
   export type RecordItemScalarFieldEnum = (typeof RecordItemScalarFieldEnum)[keyof typeof RecordItemScalarFieldEnum]
+
+
+  export const SceneScalarFieldEnum: {
+    id: 'id',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    identifier: 'identifier',
+    profilePhoto: 'profilePhoto',
+    profileName: 'profileName',
+    profileBirthDate: 'profileBirthDate',
+    profileBirthPlace: 'profileBirthPlace',
+    profileBiography: 'profileBiography',
+    lifestoryProgress: 'lifestoryProgress',
+    userId: 'userId'
+  };
+
+  export type SceneScalarFieldEnum = (typeof SceneScalarFieldEnum)[keyof typeof SceneScalarFieldEnum]
+
+
+  export const SceneItemScalarFieldEnum: {
+    id: 'id',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    title: 'title',
+    date: 'date',
+    desc: 'desc',
+    order: 'order',
+    sceneId: 'sceneId'
+  };
+
+  export type SceneItemScalarFieldEnum = (typeof SceneItemScalarFieldEnum)[keyof typeof SceneItemScalarFieldEnum]
+
+
+  export const SceneImageScalarFieldEnum: {
+    id: 'id',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt',
+    url: 'url',
+    order: 'order',
+    itemId: 'itemId'
+  };
+
+  export type SceneImageScalarFieldEnum = (typeof SceneImageScalarFieldEnum)[keyof typeof SceneImageScalarFieldEnum]
 
 
   export const SortOrder: {
@@ -11547,22 +15482,24 @@ export namespace Prisma {
     id?: IntFilter<"User"> | number
     name?: StringFilter<"User"> | string
     mobile?: StringFilter<"User"> | string
+    plan?: StringFilter<"User"> | string
     birthDate?: StringFilter<"User"> | string
     email?: StringNullableFilter<"User"> | string | null
-    plan?: StringFilter<"User"> | string
-    reels?: ReelListRelationFilter
     records?: RecordListRelationFilter
+    reels?: ReelListRelationFilter
+    scenes?: SceneListRelationFilter
   }
 
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrderInput | SortOrder
-    plan?: SortOrder
-    reels?: ReelOrderByRelationAggregateInput
     records?: RecordOrderByRelationAggregateInput
+    reels?: ReelOrderByRelationAggregateInput
+    scenes?: SceneOrderByRelationAggregateInput
   }
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -11573,19 +15510,20 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     name?: StringFilter<"User"> | string
-    birthDate?: StringFilter<"User"> | string
     plan?: StringFilter<"User"> | string
-    reels?: ReelListRelationFilter
+    birthDate?: StringFilter<"User"> | string
     records?: RecordListRelationFilter
+    reels?: ReelListRelationFilter
+    scenes?: SceneListRelationFilter
   }, "id" | "mobile" | "email">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrderInput | SortOrder
-    plan?: SortOrder
     _count?: UserCountOrderByAggregateInput
     _avg?: UserAvgOrderByAggregateInput
     _max?: UserMaxOrderByAggregateInput
@@ -11600,9 +15538,9 @@ export namespace Prisma {
     id?: IntWithAggregatesFilter<"User"> | number
     name?: StringWithAggregatesFilter<"User"> | string
     mobile?: StringWithAggregatesFilter<"User"> | string
+    plan?: StringWithAggregatesFilter<"User"> | string
     birthDate?: StringWithAggregatesFilter<"User"> | string
     email?: StringNullableWithAggregatesFilter<"User"> | string | null
-    plan?: StringWithAggregatesFilter<"User"> | string
   }
 
   export type ReelWhereInput = {
@@ -11621,10 +15559,10 @@ export namespace Prisma {
     lifestoryId?: IntNullableFilter<"Reel"> | number | null
     userId?: IntNullableFilter<"Reel"> | number | null
     lifestory?: XOR<LifestoryNullableScalarRelationFilter, LifestoryWhereInput> | null
-    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
-    childhood?: WheelTextureListRelationFilter
     memorys?: MemoryListRelationFilter
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     relationships?: RelationshipListRelationFilter
+    childhood?: WheelTextureListRelationFilter
   }
 
   export type ReelOrderByWithRelationInput = {
@@ -11640,10 +15578,10 @@ export namespace Prisma {
     lifestoryId?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
     lifestory?: LifestoryOrderByWithRelationInput
-    user?: UserOrderByWithRelationInput
-    childhood?: WheelTextureOrderByRelationAggregateInput
     memorys?: MemoryOrderByRelationAggregateInput
+    user?: UserOrderByWithRelationInput
     relationships?: RelationshipOrderByRelationAggregateInput
+    childhood?: WheelTextureOrderByRelationAggregateInput
   }
 
   export type ReelWhereUniqueInput = Prisma.AtLeast<{
@@ -11662,10 +15600,10 @@ export namespace Prisma {
     lifestoryId?: IntNullableFilter<"Reel"> | number | null
     userId?: IntNullableFilter<"Reel"> | number | null
     lifestory?: XOR<LifestoryNullableScalarRelationFilter, LifestoryWhereInput> | null
-    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
-    childhood?: WheelTextureListRelationFilter
     memorys?: MemoryListRelationFilter
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     relationships?: RelationshipListRelationFilter
+    childhood?: WheelTextureListRelationFilter
   }, "id" | "identifier">
 
   export type ReelOrderByWithAggregationInput = {
@@ -11790,13 +15728,13 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"WheelTexture"> | Date | string
     srcType?: IntFilter<"WheelTexture"> | number
     srcUrl?: StringFilter<"WheelTexture"> | string
-    caption?: StringNullableFilter<"WheelTexture"> | string | null
     memoryId?: IntNullableFilter<"WheelTexture"> | number | null
     relationshipId?: IntNullableFilter<"WheelTexture"> | number | null
+    caption?: StringNullableFilter<"WheelTexture"> | string | null
     reelId?: IntNullableFilter<"WheelTexture"> | number | null
     memory?: XOR<MemoryNullableScalarRelationFilter, MemoryWhereInput> | null
-    relationship?: XOR<RelationshipNullableScalarRelationFilter, RelationshipWhereInput> | null
     reels?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
+    relationship?: XOR<RelationshipNullableScalarRelationFilter, RelationshipWhereInput> | null
   }
 
   export type WheelTextureOrderByWithRelationInput = {
@@ -11805,13 +15743,13 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrderInput | SortOrder
     memoryId?: SortOrderInput | SortOrder
     relationshipId?: SortOrderInput | SortOrder
+    caption?: SortOrderInput | SortOrder
     reelId?: SortOrderInput | SortOrder
     memory?: MemoryOrderByWithRelationInput
-    relationship?: RelationshipOrderByWithRelationInput
     reels?: ReelOrderByWithRelationInput
+    relationship?: RelationshipOrderByWithRelationInput
   }
 
   export type WheelTextureWhereUniqueInput = Prisma.AtLeast<{
@@ -11823,13 +15761,13 @@ export namespace Prisma {
     updatedAt?: DateTimeFilter<"WheelTexture"> | Date | string
     srcType?: IntFilter<"WheelTexture"> | number
     srcUrl?: StringFilter<"WheelTexture"> | string
-    caption?: StringNullableFilter<"WheelTexture"> | string | null
     memoryId?: IntNullableFilter<"WheelTexture"> | number | null
     relationshipId?: IntNullableFilter<"WheelTexture"> | number | null
+    caption?: StringNullableFilter<"WheelTexture"> | string | null
     reelId?: IntNullableFilter<"WheelTexture"> | number | null
     memory?: XOR<MemoryNullableScalarRelationFilter, MemoryWhereInput> | null
-    relationship?: XOR<RelationshipNullableScalarRelationFilter, RelationshipWhereInput> | null
     reels?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
+    relationship?: XOR<RelationshipNullableScalarRelationFilter, RelationshipWhereInput> | null
   }, "id">
 
   export type WheelTextureOrderByWithAggregationInput = {
@@ -11838,9 +15776,9 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrderInput | SortOrder
     memoryId?: SortOrderInput | SortOrder
     relationshipId?: SortOrderInput | SortOrder
+    caption?: SortOrderInput | SortOrder
     reelId?: SortOrderInput | SortOrder
     _count?: WheelTextureCountOrderByAggregateInput
     _avg?: WheelTextureAvgOrderByAggregateInput
@@ -11858,9 +15796,9 @@ export namespace Prisma {
     updatedAt?: DateTimeWithAggregatesFilter<"WheelTexture"> | Date | string
     srcType?: IntWithAggregatesFilter<"WheelTexture"> | number
     srcUrl?: StringWithAggregatesFilter<"WheelTexture"> | string
-    caption?: StringNullableWithAggregatesFilter<"WheelTexture"> | string | null
     memoryId?: IntNullableWithAggregatesFilter<"WheelTexture"> | number | null
     relationshipId?: IntNullableWithAggregatesFilter<"WheelTexture"> | number | null
+    caption?: StringNullableWithAggregatesFilter<"WheelTexture"> | string | null
     reelId?: IntNullableWithAggregatesFilter<"WheelTexture"> | number | null
   }
 
@@ -11876,8 +15814,8 @@ export namespace Prisma {
     date?: DateTimeNullableFilter<"Memory"> | Date | string | null
     comment?: StringNullableFilter<"Memory"> | string | null
     reelId?: IntFilter<"Memory"> | number
+    reel?: XOR<ReelScalarRelationFilter, ReelWhereInput>
     wheelTextures?: WheelTextureListRelationFilter
-    reel?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
   }
 
   export type MemoryOrderByWithRelationInput = {
@@ -11889,8 +15827,8 @@ export namespace Prisma {
     date?: SortOrderInput | SortOrder
     comment?: SortOrderInput | SortOrder
     reelId?: SortOrder
-    wheelTextures?: WheelTextureOrderByRelationAggregateInput
     reel?: ReelOrderByWithRelationInput
+    wheelTextures?: WheelTextureOrderByRelationAggregateInput
   }
 
   export type MemoryWhereUniqueInput = Prisma.AtLeast<{
@@ -11905,8 +15843,8 @@ export namespace Prisma {
     date?: DateTimeNullableFilter<"Memory"> | Date | string | null
     comment?: StringNullableFilter<"Memory"> | string | null
     reelId?: IntFilter<"Memory"> | number
+    reel?: XOR<ReelScalarRelationFilter, ReelWhereInput>
     wheelTextures?: WheelTextureListRelationFilter
-    reel?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
   }, "id">
 
   export type MemoryOrderByWithAggregationInput = {
@@ -11950,8 +15888,8 @@ export namespace Prisma {
     relation?: StringFilter<"Relationship"> | string
     comment?: StringNullableFilter<"Relationship"> | string | null
     reelId?: IntNullableFilter<"Relationship"> | number | null
-    wheelTextures?: WheelTextureListRelationFilter
     reels?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
+    wheelTextures?: WheelTextureListRelationFilter
   }
 
   export type RelationshipOrderByWithRelationInput = {
@@ -11962,8 +15900,8 @@ export namespace Prisma {
     relation?: SortOrder
     comment?: SortOrderInput | SortOrder
     reelId?: SortOrderInput | SortOrder
-    wheelTextures?: WheelTextureOrderByRelationAggregateInput
     reels?: ReelOrderByWithRelationInput
+    wheelTextures?: WheelTextureOrderByRelationAggregateInput
   }
 
   export type RelationshipWhereUniqueInput = Prisma.AtLeast<{
@@ -11977,8 +15915,8 @@ export namespace Prisma {
     relation?: StringFilter<"Relationship"> | string
     comment?: StringNullableFilter<"Relationship"> | string | null
     reelId?: IntNullableFilter<"Relationship"> | number | null
-    wheelTextures?: WheelTextureListRelationFilter
     reels?: XOR<ReelNullableScalarRelationFilter, ReelWhereInput> | null
+    wheelTextures?: WheelTextureListRelationFilter
   }, "id">
 
   export type RelationshipOrderByWithAggregationInput = {
@@ -12017,7 +15955,6 @@ export namespace Prisma {
     createdAt?: DateTimeFilter<"Record"> | Date | string
     updatedAt?: DateTimeFilter<"Record"> | Date | string
     identifier?: StringFilter<"Record"> | string
-    userName?: StringNullableFilter<"Record"> | string | null
     coverUrl?: StringNullableFilter<"Record"> | string | null
     name?: StringNullableFilter<"Record"> | string | null
     subName?: StringNullableFilter<"Record"> | string | null
@@ -12025,6 +15962,9 @@ export namespace Prisma {
     bgm?: StringNullableFilter<"Record"> | string | null
     color?: StringNullableFilter<"Record"> | string | null
     userId?: IntNullableFilter<"Record"> | number | null
+    userName?: StringNullableFilter<"Record"> | string | null
+    birthDate?: StringNullableFilter<"Record"> | string | null
+    displayMode?: StringNullableFilter<"Record"> | string | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     recordItems?: RecordItemListRelationFilter
   }
@@ -12034,7 +15974,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrderInput | SortOrder
     coverUrl?: SortOrderInput | SortOrder
     name?: SortOrderInput | SortOrder
     subName?: SortOrderInput | SortOrder
@@ -12042,6 +15981,9 @@ export namespace Prisma {
     bgm?: SortOrderInput | SortOrder
     color?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
+    userName?: SortOrderInput | SortOrder
+    birthDate?: SortOrderInput | SortOrder
+    displayMode?: SortOrderInput | SortOrder
     user?: UserOrderByWithRelationInput
     recordItems?: RecordItemOrderByRelationAggregateInput
   }
@@ -12054,7 +15996,6 @@ export namespace Prisma {
     NOT?: RecordWhereInput | RecordWhereInput[]
     createdAt?: DateTimeFilter<"Record"> | Date | string
     updatedAt?: DateTimeFilter<"Record"> | Date | string
-    userName?: StringNullableFilter<"Record"> | string | null
     coverUrl?: StringNullableFilter<"Record"> | string | null
     name?: StringNullableFilter<"Record"> | string | null
     subName?: StringNullableFilter<"Record"> | string | null
@@ -12062,6 +16003,9 @@ export namespace Prisma {
     bgm?: StringNullableFilter<"Record"> | string | null
     color?: StringNullableFilter<"Record"> | string | null
     userId?: IntNullableFilter<"Record"> | number | null
+    userName?: StringNullableFilter<"Record"> | string | null
+    birthDate?: StringNullableFilter<"Record"> | string | null
+    displayMode?: StringNullableFilter<"Record"> | string | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     recordItems?: RecordItemListRelationFilter
   }, "id" | "identifier">
@@ -12071,7 +16015,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrderInput | SortOrder
     coverUrl?: SortOrderInput | SortOrder
     name?: SortOrderInput | SortOrder
     subName?: SortOrderInput | SortOrder
@@ -12079,6 +16022,9 @@ export namespace Prisma {
     bgm?: SortOrderInput | SortOrder
     color?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
+    userName?: SortOrderInput | SortOrder
+    birthDate?: SortOrderInput | SortOrder
+    displayMode?: SortOrderInput | SortOrder
     _count?: RecordCountOrderByAggregateInput
     _avg?: RecordAvgOrderByAggregateInput
     _max?: RecordMaxOrderByAggregateInput
@@ -12094,7 +16040,6 @@ export namespace Prisma {
     createdAt?: DateTimeWithAggregatesFilter<"Record"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"Record"> | Date | string
     identifier?: StringWithAggregatesFilter<"Record"> | string
-    userName?: StringNullableWithAggregatesFilter<"Record"> | string | null
     coverUrl?: StringNullableWithAggregatesFilter<"Record"> | string | null
     name?: StringNullableWithAggregatesFilter<"Record"> | string | null
     subName?: StringNullableWithAggregatesFilter<"Record"> | string | null
@@ -12102,6 +16047,9 @@ export namespace Prisma {
     bgm?: StringNullableWithAggregatesFilter<"Record"> | string | null
     color?: StringNullableWithAggregatesFilter<"Record"> | string | null
     userId?: IntNullableWithAggregatesFilter<"Record"> | number | null
+    userName?: StringNullableWithAggregatesFilter<"Record"> | string | null
+    birthDate?: StringNullableWithAggregatesFilter<"Record"> | string | null
+    displayMode?: StringNullableWithAggregatesFilter<"Record"> | string | null
   }
 
   export type RecordItemWhereInput = {
@@ -12119,6 +16067,7 @@ export namespace Prisma {
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
     recordId?: IntFilter<"RecordItem"> | number
+    images?: StringNullableListFilter<"RecordItem">
     record?: XOR<RecordScalarRelationFilter, RecordWhereInput>
   }
 
@@ -12134,6 +16083,7 @@ export namespace Prisma {
     isHighlight?: SortOrder
     coverUrl?: SortOrderInput | SortOrder
     recordId?: SortOrder
+    images?: SortOrder
     record?: RecordOrderByWithRelationInput
   }
 
@@ -12152,6 +16102,7 @@ export namespace Prisma {
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
     recordId?: IntFilter<"RecordItem"> | number
+    images?: StringNullableListFilter<"RecordItem">
     record?: XOR<RecordScalarRelationFilter, RecordWhereInput>
   }, "id">
 
@@ -12167,6 +16118,7 @@ export namespace Prisma {
     isHighlight?: SortOrder
     coverUrl?: SortOrderInput | SortOrder
     recordId?: SortOrder
+    images?: SortOrder
     _count?: RecordItemCountOrderByAggregateInput
     _avg?: RecordItemAvgOrderByAggregateInput
     _max?: RecordItemMaxOrderByAggregateInput
@@ -12189,74 +16141,306 @@ export namespace Prisma {
     isHighlight?: BoolWithAggregatesFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableWithAggregatesFilter<"RecordItem"> | string | null
     recordId?: IntWithAggregatesFilter<"RecordItem"> | number
+    images?: StringNullableListFilter<"RecordItem">
+  }
+
+  export type SceneWhereInput = {
+    AND?: SceneWhereInput | SceneWhereInput[]
+    OR?: SceneWhereInput[]
+    NOT?: SceneWhereInput | SceneWhereInput[]
+    id?: IntFilter<"Scene"> | number
+    createdAt?: DateTimeFilter<"Scene"> | Date | string
+    updatedAt?: DateTimeFilter<"Scene"> | Date | string
+    identifier?: StringFilter<"Scene"> | string
+    profilePhoto?: StringNullableFilter<"Scene"> | string | null
+    profileName?: StringNullableFilter<"Scene"> | string | null
+    profileBirthDate?: StringNullableFilter<"Scene"> | string | null
+    profileBirthPlace?: StringNullableFilter<"Scene"> | string | null
+    profileBiography?: StringNullableFilter<"Scene"> | string | null
+    lifestoryProgress?: JsonNullableFilter<"Scene">
+    userId?: IntNullableFilter<"Scene"> | number | null
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    items?: SceneItemListRelationFilter
+  }
+
+  export type SceneOrderByWithRelationInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    identifier?: SortOrder
+    profilePhoto?: SortOrderInput | SortOrder
+    profileName?: SortOrderInput | SortOrder
+    profileBirthDate?: SortOrderInput | SortOrder
+    profileBirthPlace?: SortOrderInput | SortOrder
+    profileBiography?: SortOrderInput | SortOrder
+    lifestoryProgress?: SortOrderInput | SortOrder
+    userId?: SortOrderInput | SortOrder
+    user?: UserOrderByWithRelationInput
+    items?: SceneItemOrderByRelationAggregateInput
+  }
+
+  export type SceneWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    identifier?: string
+    AND?: SceneWhereInput | SceneWhereInput[]
+    OR?: SceneWhereInput[]
+    NOT?: SceneWhereInput | SceneWhereInput[]
+    createdAt?: DateTimeFilter<"Scene"> | Date | string
+    updatedAt?: DateTimeFilter<"Scene"> | Date | string
+    profilePhoto?: StringNullableFilter<"Scene"> | string | null
+    profileName?: StringNullableFilter<"Scene"> | string | null
+    profileBirthDate?: StringNullableFilter<"Scene"> | string | null
+    profileBirthPlace?: StringNullableFilter<"Scene"> | string | null
+    profileBiography?: StringNullableFilter<"Scene"> | string | null
+    lifestoryProgress?: JsonNullableFilter<"Scene">
+    userId?: IntNullableFilter<"Scene"> | number | null
+    user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
+    items?: SceneItemListRelationFilter
+  }, "id" | "identifier">
+
+  export type SceneOrderByWithAggregationInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    identifier?: SortOrder
+    profilePhoto?: SortOrderInput | SortOrder
+    profileName?: SortOrderInput | SortOrder
+    profileBirthDate?: SortOrderInput | SortOrder
+    profileBirthPlace?: SortOrderInput | SortOrder
+    profileBiography?: SortOrderInput | SortOrder
+    lifestoryProgress?: SortOrderInput | SortOrder
+    userId?: SortOrderInput | SortOrder
+    _count?: SceneCountOrderByAggregateInput
+    _avg?: SceneAvgOrderByAggregateInput
+    _max?: SceneMaxOrderByAggregateInput
+    _min?: SceneMinOrderByAggregateInput
+    _sum?: SceneSumOrderByAggregateInput
+  }
+
+  export type SceneScalarWhereWithAggregatesInput = {
+    AND?: SceneScalarWhereWithAggregatesInput | SceneScalarWhereWithAggregatesInput[]
+    OR?: SceneScalarWhereWithAggregatesInput[]
+    NOT?: SceneScalarWhereWithAggregatesInput | SceneScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"Scene"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"Scene"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"Scene"> | Date | string
+    identifier?: StringWithAggregatesFilter<"Scene"> | string
+    profilePhoto?: StringNullableWithAggregatesFilter<"Scene"> | string | null
+    profileName?: StringNullableWithAggregatesFilter<"Scene"> | string | null
+    profileBirthDate?: StringNullableWithAggregatesFilter<"Scene"> | string | null
+    profileBirthPlace?: StringNullableWithAggregatesFilter<"Scene"> | string | null
+    profileBiography?: StringNullableWithAggregatesFilter<"Scene"> | string | null
+    lifestoryProgress?: JsonNullableWithAggregatesFilter<"Scene">
+    userId?: IntNullableWithAggregatesFilter<"Scene"> | number | null
+  }
+
+  export type SceneItemWhereInput = {
+    AND?: SceneItemWhereInput | SceneItemWhereInput[]
+    OR?: SceneItemWhereInput[]
+    NOT?: SceneItemWhereInput | SceneItemWhereInput[]
+    id?: IntFilter<"SceneItem"> | number
+    createdAt?: DateTimeFilter<"SceneItem"> | Date | string
+    updatedAt?: DateTimeFilter<"SceneItem"> | Date | string
+    title?: StringNullableFilter<"SceneItem"> | string | null
+    date?: StringNullableFilter<"SceneItem"> | string | null
+    desc?: StringNullableFilter<"SceneItem"> | string | null
+    order?: IntFilter<"SceneItem"> | number
+    sceneId?: IntFilter<"SceneItem"> | number
+    scene?: XOR<SceneScalarRelationFilter, SceneWhereInput>
+    images?: SceneImageListRelationFilter
+  }
+
+  export type SceneItemOrderByWithRelationInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    title?: SortOrderInput | SortOrder
+    date?: SortOrderInput | SortOrder
+    desc?: SortOrderInput | SortOrder
+    order?: SortOrder
+    sceneId?: SortOrder
+    scene?: SceneOrderByWithRelationInput
+    images?: SceneImageOrderByRelationAggregateInput
+  }
+
+  export type SceneItemWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: SceneItemWhereInput | SceneItemWhereInput[]
+    OR?: SceneItemWhereInput[]
+    NOT?: SceneItemWhereInput | SceneItemWhereInput[]
+    createdAt?: DateTimeFilter<"SceneItem"> | Date | string
+    updatedAt?: DateTimeFilter<"SceneItem"> | Date | string
+    title?: StringNullableFilter<"SceneItem"> | string | null
+    date?: StringNullableFilter<"SceneItem"> | string | null
+    desc?: StringNullableFilter<"SceneItem"> | string | null
+    order?: IntFilter<"SceneItem"> | number
+    sceneId?: IntFilter<"SceneItem"> | number
+    scene?: XOR<SceneScalarRelationFilter, SceneWhereInput>
+    images?: SceneImageListRelationFilter
+  }, "id">
+
+  export type SceneItemOrderByWithAggregationInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    title?: SortOrderInput | SortOrder
+    date?: SortOrderInput | SortOrder
+    desc?: SortOrderInput | SortOrder
+    order?: SortOrder
+    sceneId?: SortOrder
+    _count?: SceneItemCountOrderByAggregateInput
+    _avg?: SceneItemAvgOrderByAggregateInput
+    _max?: SceneItemMaxOrderByAggregateInput
+    _min?: SceneItemMinOrderByAggregateInput
+    _sum?: SceneItemSumOrderByAggregateInput
+  }
+
+  export type SceneItemScalarWhereWithAggregatesInput = {
+    AND?: SceneItemScalarWhereWithAggregatesInput | SceneItemScalarWhereWithAggregatesInput[]
+    OR?: SceneItemScalarWhereWithAggregatesInput[]
+    NOT?: SceneItemScalarWhereWithAggregatesInput | SceneItemScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"SceneItem"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"SceneItem"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"SceneItem"> | Date | string
+    title?: StringNullableWithAggregatesFilter<"SceneItem"> | string | null
+    date?: StringNullableWithAggregatesFilter<"SceneItem"> | string | null
+    desc?: StringNullableWithAggregatesFilter<"SceneItem"> | string | null
+    order?: IntWithAggregatesFilter<"SceneItem"> | number
+    sceneId?: IntWithAggregatesFilter<"SceneItem"> | number
+  }
+
+  export type SceneImageWhereInput = {
+    AND?: SceneImageWhereInput | SceneImageWhereInput[]
+    OR?: SceneImageWhereInput[]
+    NOT?: SceneImageWhereInput | SceneImageWhereInput[]
+    id?: IntFilter<"SceneImage"> | number
+    createdAt?: DateTimeFilter<"SceneImage"> | Date | string
+    updatedAt?: DateTimeFilter<"SceneImage"> | Date | string
+    url?: StringFilter<"SceneImage"> | string
+    order?: IntFilter<"SceneImage"> | number
+    itemId?: IntFilter<"SceneImage"> | number
+    item?: XOR<SceneItemScalarRelationFilter, SceneItemWhereInput>
+  }
+
+  export type SceneImageOrderByWithRelationInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    url?: SortOrder
+    order?: SortOrder
+    itemId?: SortOrder
+    item?: SceneItemOrderByWithRelationInput
+  }
+
+  export type SceneImageWhereUniqueInput = Prisma.AtLeast<{
+    id?: number
+    AND?: SceneImageWhereInput | SceneImageWhereInput[]
+    OR?: SceneImageWhereInput[]
+    NOT?: SceneImageWhereInput | SceneImageWhereInput[]
+    createdAt?: DateTimeFilter<"SceneImage"> | Date | string
+    updatedAt?: DateTimeFilter<"SceneImage"> | Date | string
+    url?: StringFilter<"SceneImage"> | string
+    order?: IntFilter<"SceneImage"> | number
+    itemId?: IntFilter<"SceneImage"> | number
+    item?: XOR<SceneItemScalarRelationFilter, SceneItemWhereInput>
+  }, "id">
+
+  export type SceneImageOrderByWithAggregationInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    url?: SortOrder
+    order?: SortOrder
+    itemId?: SortOrder
+    _count?: SceneImageCountOrderByAggregateInput
+    _avg?: SceneImageAvgOrderByAggregateInput
+    _max?: SceneImageMaxOrderByAggregateInput
+    _min?: SceneImageMinOrderByAggregateInput
+    _sum?: SceneImageSumOrderByAggregateInput
+  }
+
+  export type SceneImageScalarWhereWithAggregatesInput = {
+    AND?: SceneImageScalarWhereWithAggregatesInput | SceneImageScalarWhereWithAggregatesInput[]
+    OR?: SceneImageScalarWhereWithAggregatesInput[]
+    NOT?: SceneImageScalarWhereWithAggregatesInput | SceneImageScalarWhereWithAggregatesInput[]
+    id?: IntWithAggregatesFilter<"SceneImage"> | number
+    createdAt?: DateTimeWithAggregatesFilter<"SceneImage"> | Date | string
+    updatedAt?: DateTimeWithAggregatesFilter<"SceneImage"> | Date | string
+    url?: StringWithAggregatesFilter<"SceneImage"> | string
+    order?: IntWithAggregatesFilter<"SceneImage"> | number
+    itemId?: IntWithAggregatesFilter<"SceneImage"> | number
   }
 
   export type UserCreateInput = {
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
-    reels?: ReelCreateNestedManyWithoutUserInput
     records?: RecordCreateNestedManyWithoutUserInput
+    reels?: ReelCreateNestedManyWithoutUserInput
+    scenes?: SceneCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateInput = {
     id?: number
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
-    reels?: ReelUncheckedCreateNestedManyWithoutUserInput
     records?: RecordUncheckedCreateNestedManyWithoutUserInput
+    reels?: ReelUncheckedCreateNestedManyWithoutUserInput
+    scenes?: SceneUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserUpdateInput = {
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
-    reels?: ReelUpdateManyWithoutUserNestedInput
     records?: RecordUpdateManyWithoutUserNestedInput
+    reels?: ReelUpdateManyWithoutUserNestedInput
+    scenes?: SceneUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
-    reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
     records?: RecordUncheckedUpdateManyWithoutUserNestedInput
+    reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
+    scenes?: SceneUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type UserCreateManyInput = {
     id?: number
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
   }
 
   export type UserUpdateManyMutationInput = {
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
   }
 
   export type UserUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
   }
 
   export type ReelCreateInput = {
@@ -12270,10 +16454,10 @@ export namespace Prisma {
     motto?: string | null
     lifestoryId?: number | null
     lifestory?: LifestoryCreateNestedOneWithoutReelInput
-    user?: UserCreateNestedOneWithoutReelsInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
     memorys?: MemoryCreateNestedManyWithoutReelInput
+    user?: UserCreateNestedOneWithoutReelsInput
     relationships?: RelationshipCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUncheckedCreateInput = {
@@ -12289,9 +16473,9 @@ export namespace Prisma {
     lifestoryId?: number | null
     userId?: number | null
     lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
     memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
     relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUpdateInput = {
@@ -12305,10 +16489,10 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUpdateOneWithoutReelNestedInput
-    user?: UserUpdateOneWithoutReelsNestedInput
-    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUpdateManyWithoutReelNestedInput
+    user?: UserUpdateOneWithoutReelsNestedInput
     relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateInput = {
@@ -12324,9 +16508,9 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
     relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelCreateManyInput = {
@@ -12456,8 +16640,8 @@ export namespace Prisma {
     srcUrl: string
     caption?: string | null
     memory?: MemoryCreateNestedOneWithoutWheelTexturesInput
-    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
     reels?: ReelCreateNestedOneWithoutChildhoodInput
+    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
   }
 
   export type WheelTextureUncheckedCreateInput = {
@@ -12466,9 +16650,9 @@ export namespace Prisma {
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     memoryId?: number | null
     relationshipId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -12479,8 +16663,8 @@ export namespace Prisma {
     srcUrl?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
     memory?: MemoryUpdateOneWithoutWheelTexturesNestedInput
-    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
     reels?: ReelUpdateOneWithoutChildhoodNestedInput
+    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
   }
 
   export type WheelTextureUncheckedUpdateInput = {
@@ -12489,9 +16673,9 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     memoryId?: NullableIntFieldUpdateOperationsInput | number | null
     relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -12501,9 +16685,9 @@ export namespace Prisma {
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     memoryId?: number | null
     relationshipId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -12521,9 +16705,9 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     memoryId?: NullableIntFieldUpdateOperationsInput | number | null
     relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -12534,8 +16718,8 @@ export namespace Prisma {
     subTitle?: string | null
     date?: Date | string | null
     comment?: string | null
+    reel: ReelCreateNestedOneWithoutMemorysInput
     wheelTextures?: WheelTextureCreateNestedManyWithoutMemoryInput
-    reel?: ReelCreateNestedOneWithoutMemorysInput
   }
 
   export type MemoryUncheckedCreateInput = {
@@ -12557,8 +16741,8 @@ export namespace Prisma {
     subTitle?: NullableStringFieldUpdateOperationsInput | string | null
     date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     comment?: NullableStringFieldUpdateOperationsInput | string | null
+    reel?: ReelUpdateOneRequiredWithoutMemorysNestedInput
     wheelTextures?: WheelTextureUpdateManyWithoutMemoryNestedInput
-    reel?: ReelUpdateOneWithoutMemorysNestedInput
   }
 
   export type MemoryUncheckedUpdateInput = {
@@ -12610,8 +16794,8 @@ export namespace Prisma {
     name: string
     relation: string
     comment?: string | null
-    wheelTextures?: WheelTextureCreateNestedManyWithoutRelationshipInput
     reels?: ReelCreateNestedOneWithoutRelationshipsInput
+    wheelTextures?: WheelTextureCreateNestedManyWithoutRelationshipInput
   }
 
   export type RelationshipUncheckedCreateInput = {
@@ -12631,8 +16815,8 @@ export namespace Prisma {
     name?: StringFieldUpdateOperationsInput | string
     relation?: StringFieldUpdateOperationsInput | string
     comment?: NullableStringFieldUpdateOperationsInput | string | null
-    wheelTextures?: WheelTextureUpdateManyWithoutRelationshipNestedInput
     reels?: ReelUpdateOneWithoutRelationshipsNestedInput
+    wheelTextures?: WheelTextureUpdateManyWithoutRelationshipNestedInput
   }
 
   export type RelationshipUncheckedUpdateInput = {
@@ -12678,13 +16862,15 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
     description?: string | null
     bgm?: string | null
     color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
     user?: UserCreateNestedOneWithoutRecordsInput
     recordItems?: RecordItemCreateNestedManyWithoutRecordInput
   }
@@ -12694,7 +16880,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
@@ -12702,6 +16887,9 @@ export namespace Prisma {
     bgm?: string | null
     color?: string | null
     userId?: number | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
     recordItems?: RecordItemUncheckedCreateNestedManyWithoutRecordInput
   }
 
@@ -12709,13 +16897,15 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
     user?: UserUpdateOneWithoutRecordsNestedInput
     recordItems?: RecordItemUpdateManyWithoutRecordNestedInput
   }
@@ -12725,7 +16915,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -12733,6 +16922,9 @@ export namespace Prisma {
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
     recordItems?: RecordItemUncheckedUpdateManyWithoutRecordNestedInput
   }
 
@@ -12741,7 +16933,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
@@ -12749,19 +16940,24 @@ export namespace Prisma {
     bgm?: string | null
     color?: string | null
     userId?: number | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
   }
 
   export type RecordUpdateManyMutationInput = {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type RecordUncheckedUpdateManyInput = {
@@ -12769,7 +16965,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -12777,6 +16972,9 @@ export namespace Prisma {
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type RecordItemCreateInput = {
@@ -12789,6 +16987,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
     record: RecordCreateNestedOneWithoutRecordItemsInput
   }
 
@@ -12804,6 +17003,7 @@ export namespace Prisma {
     isHighlight?: boolean
     coverUrl?: string | null
     recordId: number
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemUpdateInput = {
@@ -12816,6 +17016,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
     record?: RecordUpdateOneRequiredWithoutRecordItemsNestedInput
   }
 
@@ -12831,6 +17032,7 @@ export namespace Prisma {
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     recordId?: IntFieldUpdateOperationsInput | number
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemCreateManyInput = {
@@ -12845,6 +17047,7 @@ export namespace Prisma {
     isHighlight?: boolean
     coverUrl?: string | null
     recordId: number
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemUpdateManyMutationInput = {
@@ -12857,6 +17060,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateManyInput = {
@@ -12871,6 +17075,241 @@ export namespace Prisma {
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     recordId?: IntFieldUpdateOperationsInput | number
+    images?: RecordItemUpdateimagesInput | string[]
+  }
+
+  export type SceneCreateInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    profilePhoto?: string | null
+    profileName?: string | null
+    profileBirthDate?: string | null
+    profileBirthPlace?: string | null
+    profileBiography?: string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    user?: UserCreateNestedOneWithoutScenesInput
+    items?: SceneItemCreateNestedManyWithoutSceneInput
+  }
+
+  export type SceneUncheckedCreateInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    profilePhoto?: string | null
+    profileName?: string | null
+    profileBirthDate?: string | null
+    profileBirthPlace?: string | null
+    profileBiography?: string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    userId?: number | null
+    items?: SceneItemUncheckedCreateNestedManyWithoutSceneInput
+  }
+
+  export type SceneUpdateInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    user?: UserUpdateOneWithoutScenesNestedInput
+    items?: SceneItemUpdateManyWithoutSceneNestedInput
+  }
+
+  export type SceneUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    items?: SceneItemUncheckedUpdateManyWithoutSceneNestedInput
+  }
+
+  export type SceneCreateManyInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    profilePhoto?: string | null
+    profileName?: string | null
+    profileBirthDate?: string | null
+    profileBirthPlace?: string | null
+    profileBiography?: string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    userId?: number | null
+  }
+
+  export type SceneUpdateManyMutationInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type SceneUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type SceneItemCreateInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    title?: string | null
+    date?: string | null
+    desc?: string | null
+    order?: number
+    scene: SceneCreateNestedOneWithoutItemsInput
+    images?: SceneImageCreateNestedManyWithoutItemInput
+  }
+
+  export type SceneItemUncheckedCreateInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    title?: string | null
+    date?: string | null
+    desc?: string | null
+    order?: number
+    sceneId: number
+    images?: SceneImageUncheckedCreateNestedManyWithoutItemInput
+  }
+
+  export type SceneItemUpdateInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    scene?: SceneUpdateOneRequiredWithoutItemsNestedInput
+    images?: SceneImageUpdateManyWithoutItemNestedInput
+  }
+
+  export type SceneItemUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    sceneId?: IntFieldUpdateOperationsInput | number
+    images?: SceneImageUncheckedUpdateManyWithoutItemNestedInput
+  }
+
+  export type SceneItemCreateManyInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    title?: string | null
+    date?: string | null
+    desc?: string | null
+    order?: number
+    sceneId: number
+  }
+
+  export type SceneItemUpdateManyMutationInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type SceneItemUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    sceneId?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type SceneImageCreateInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    url: string
+    order?: number
+    item: SceneItemCreateNestedOneWithoutImagesInput
+  }
+
+  export type SceneImageUncheckedCreateInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    url: string
+    order?: number
+    itemId: number
+  }
+
+  export type SceneImageUpdateInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    url?: StringFieldUpdateOperationsInput | string
+    order?: IntFieldUpdateOperationsInput | number
+    item?: SceneItemUpdateOneRequiredWithoutImagesNestedInput
+  }
+
+  export type SceneImageUncheckedUpdateInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    url?: StringFieldUpdateOperationsInput | string
+    order?: IntFieldUpdateOperationsInput | number
+    itemId?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type SceneImageCreateManyInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    url: string
+    order?: number
+    itemId: number
+  }
+
+  export type SceneImageUpdateManyMutationInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    url?: StringFieldUpdateOperationsInput | string
+    order?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type SceneImageUncheckedUpdateManyInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    url?: StringFieldUpdateOperationsInput | string
+    order?: IntFieldUpdateOperationsInput | number
+    itemId?: IntFieldUpdateOperationsInput | number
   }
 
   export type IntFilter<$PrismaModel = never> = {
@@ -12914,16 +17353,22 @@ export namespace Prisma {
     not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
+  export type RecordListRelationFilter = {
+    every?: RecordWhereInput
+    some?: RecordWhereInput
+    none?: RecordWhereInput
+  }
+
   export type ReelListRelationFilter = {
     every?: ReelWhereInput
     some?: ReelWhereInput
     none?: ReelWhereInput
   }
 
-  export type RecordListRelationFilter = {
-    every?: RecordWhereInput
-    some?: RecordWhereInput
-    none?: RecordWhereInput
+  export type SceneListRelationFilter = {
+    every?: SceneWhereInput
+    some?: SceneWhereInput
+    none?: SceneWhereInput
   }
 
   export type SortOrderInput = {
@@ -12931,11 +17376,15 @@ export namespace Prisma {
     nulls?: NullsOrder
   }
 
+  export type RecordOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
   export type ReelOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
-  export type RecordOrderByRelationAggregateInput = {
+  export type SceneOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -12943,9 +17392,9 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrder
-    plan?: SortOrder
   }
 
   export type UserAvgOrderByAggregateInput = {
@@ -12956,18 +17405,18 @@ export namespace Prisma {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrder
-    plan?: SortOrder
   }
 
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
+    plan?: SortOrder
     birthDate?: SortOrder
     email?: SortOrder
-    plan?: SortOrder
   }
 
   export type UserSumOrderByAggregateInput = {
@@ -13053,21 +17502,15 @@ export namespace Prisma {
     isNot?: LifestoryWhereInput | null
   }
 
-  export type UserNullableScalarRelationFilter = {
-    is?: UserWhereInput | null
-    isNot?: UserWhereInput | null
-  }
-
-  export type WheelTextureListRelationFilter = {
-    every?: WheelTextureWhereInput
-    some?: WheelTextureWhereInput
-    none?: WheelTextureWhereInput
-  }
-
   export type MemoryListRelationFilter = {
     every?: MemoryWhereInput
     some?: MemoryWhereInput
     none?: MemoryWhereInput
+  }
+
+  export type UserNullableScalarRelationFilter = {
+    is?: UserWhereInput | null
+    isNot?: UserWhereInput | null
   }
 
   export type RelationshipListRelationFilter = {
@@ -13076,8 +17519,10 @@ export namespace Prisma {
     none?: RelationshipWhereInput
   }
 
-  export type WheelTextureOrderByRelationAggregateInput = {
-    _count?: SortOrder
+  export type WheelTextureListRelationFilter = {
+    every?: WheelTextureWhereInput
+    some?: WheelTextureWhereInput
+    none?: WheelTextureWhereInput
   }
 
   export type MemoryOrderByRelationAggregateInput = {
@@ -13085,6 +17530,10 @@ export namespace Prisma {
   }
 
   export type RelationshipOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type WheelTextureOrderByRelationAggregateInput = {
     _count?: SortOrder
   }
 
@@ -13279,14 +17728,14 @@ export namespace Prisma {
     isNot?: MemoryWhereInput | null
   }
 
-  export type RelationshipNullableScalarRelationFilter = {
-    is?: RelationshipWhereInput | null
-    isNot?: RelationshipWhereInput | null
-  }
-
   export type ReelNullableScalarRelationFilter = {
     is?: ReelWhereInput | null
     isNot?: ReelWhereInput | null
+  }
+
+  export type RelationshipNullableScalarRelationFilter = {
+    is?: RelationshipWhereInput | null
+    isNot?: RelationshipWhereInput | null
   }
 
   export type WheelTextureCountOrderByAggregateInput = {
@@ -13295,9 +17744,9 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrder
     memoryId?: SortOrder
     relationshipId?: SortOrder
+    caption?: SortOrder
     reelId?: SortOrder
   }
 
@@ -13315,9 +17764,9 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrder
     memoryId?: SortOrder
     relationshipId?: SortOrder
+    caption?: SortOrder
     reelId?: SortOrder
   }
 
@@ -13327,9 +17776,9 @@ export namespace Prisma {
     updatedAt?: SortOrder
     srcType?: SortOrder
     srcUrl?: SortOrder
-    caption?: SortOrder
     memoryId?: SortOrder
     relationshipId?: SortOrder
+    caption?: SortOrder
     reelId?: SortOrder
   }
 
@@ -13464,7 +17913,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrder
     coverUrl?: SortOrder
     name?: SortOrder
     subName?: SortOrder
@@ -13472,6 +17920,9 @@ export namespace Prisma {
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
+    userName?: SortOrder
+    birthDate?: SortOrder
+    displayMode?: SortOrder
   }
 
   export type RecordAvgOrderByAggregateInput = {
@@ -13484,7 +17935,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrder
     coverUrl?: SortOrder
     name?: SortOrder
     subName?: SortOrder
@@ -13492,6 +17942,9 @@ export namespace Prisma {
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
+    userName?: SortOrder
+    birthDate?: SortOrder
+    displayMode?: SortOrder
   }
 
   export type RecordMinOrderByAggregateInput = {
@@ -13499,7 +17952,6 @@ export namespace Prisma {
     createdAt?: SortOrder
     updatedAt?: SortOrder
     identifier?: SortOrder
-    userName?: SortOrder
     coverUrl?: SortOrder
     name?: SortOrder
     subName?: SortOrder
@@ -13507,6 +17959,9 @@ export namespace Prisma {
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
+    userName?: SortOrder
+    birthDate?: SortOrder
+    displayMode?: SortOrder
   }
 
   export type RecordSumOrderByAggregateInput = {
@@ -13517,6 +17972,14 @@ export namespace Prisma {
   export type BoolFilter<$PrismaModel = never> = {
     equals?: boolean | BooleanFieldRefInput<$PrismaModel>
     not?: NestedBoolFilter<$PrismaModel> | boolean
+  }
+
+  export type StringNullableListFilter<$PrismaModel = never> = {
+    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    has?: string | StringFieldRefInput<$PrismaModel> | null
+    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
+    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
   }
 
   export type RecordScalarRelationFilter = {
@@ -13536,6 +17999,7 @@ export namespace Prisma {
     isHighlight?: SortOrder
     coverUrl?: SortOrder
     recordId?: SortOrder
+    images?: SortOrder
   }
 
   export type RecordItemAvgOrderByAggregateInput = {
@@ -13584,6 +18048,177 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
+  export type SceneItemListRelationFilter = {
+    every?: SceneItemWhereInput
+    some?: SceneItemWhereInput
+    none?: SceneItemWhereInput
+  }
+
+  export type SceneItemOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type SceneCountOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    identifier?: SortOrder
+    profilePhoto?: SortOrder
+    profileName?: SortOrder
+    profileBirthDate?: SortOrder
+    profileBirthPlace?: SortOrder
+    profileBiography?: SortOrder
+    lifestoryProgress?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type SceneAvgOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type SceneMaxOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    identifier?: SortOrder
+    profilePhoto?: SortOrder
+    profileName?: SortOrder
+    profileBirthDate?: SortOrder
+    profileBirthPlace?: SortOrder
+    profileBiography?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type SceneMinOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    identifier?: SortOrder
+    profilePhoto?: SortOrder
+    profileName?: SortOrder
+    profileBirthDate?: SortOrder
+    profileBirthPlace?: SortOrder
+    profileBiography?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type SceneSumOrderByAggregateInput = {
+    id?: SortOrder
+    userId?: SortOrder
+  }
+
+  export type SceneScalarRelationFilter = {
+    is?: SceneWhereInput
+    isNot?: SceneWhereInput
+  }
+
+  export type SceneImageListRelationFilter = {
+    every?: SceneImageWhereInput
+    some?: SceneImageWhereInput
+    none?: SceneImageWhereInput
+  }
+
+  export type SceneImageOrderByRelationAggregateInput = {
+    _count?: SortOrder
+  }
+
+  export type SceneItemCountOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    title?: SortOrder
+    date?: SortOrder
+    desc?: SortOrder
+    order?: SortOrder
+    sceneId?: SortOrder
+  }
+
+  export type SceneItemAvgOrderByAggregateInput = {
+    id?: SortOrder
+    order?: SortOrder
+    sceneId?: SortOrder
+  }
+
+  export type SceneItemMaxOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    title?: SortOrder
+    date?: SortOrder
+    desc?: SortOrder
+    order?: SortOrder
+    sceneId?: SortOrder
+  }
+
+  export type SceneItemMinOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    title?: SortOrder
+    date?: SortOrder
+    desc?: SortOrder
+    order?: SortOrder
+    sceneId?: SortOrder
+  }
+
+  export type SceneItemSumOrderByAggregateInput = {
+    id?: SortOrder
+    order?: SortOrder
+    sceneId?: SortOrder
+  }
+
+  export type SceneItemScalarRelationFilter = {
+    is?: SceneItemWhereInput
+    isNot?: SceneItemWhereInput
+  }
+
+  export type SceneImageCountOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    url?: SortOrder
+    order?: SortOrder
+    itemId?: SortOrder
+  }
+
+  export type SceneImageAvgOrderByAggregateInput = {
+    id?: SortOrder
+    order?: SortOrder
+    itemId?: SortOrder
+  }
+
+  export type SceneImageMaxOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    url?: SortOrder
+    order?: SortOrder
+    itemId?: SortOrder
+  }
+
+  export type SceneImageMinOrderByAggregateInput = {
+    id?: SortOrder
+    createdAt?: SortOrder
+    updatedAt?: SortOrder
+    url?: SortOrder
+    order?: SortOrder
+    itemId?: SortOrder
+  }
+
+  export type SceneImageSumOrderByAggregateInput = {
+    id?: SortOrder
+    order?: SortOrder
+    itemId?: SortOrder
+  }
+
+  export type RecordCreateNestedManyWithoutUserInput = {
+    create?: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput> | RecordCreateWithoutUserInput[] | RecordUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: RecordCreateOrConnectWithoutUserInput | RecordCreateOrConnectWithoutUserInput[]
+    createMany?: RecordCreateManyUserInputEnvelope
+    connect?: RecordWhereUniqueInput | RecordWhereUniqueInput[]
+  }
+
   export type ReelCreateNestedManyWithoutUserInput = {
     create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
@@ -13591,7 +18226,14 @@ export namespace Prisma {
     connect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
   }
 
-  export type RecordCreateNestedManyWithoutUserInput = {
+  export type SceneCreateNestedManyWithoutUserInput = {
+    create?: XOR<SceneCreateWithoutUserInput, SceneUncheckedCreateWithoutUserInput> | SceneCreateWithoutUserInput[] | SceneUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: SceneCreateOrConnectWithoutUserInput | SceneCreateOrConnectWithoutUserInput[]
+    createMany?: SceneCreateManyUserInputEnvelope
+    connect?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+  }
+
+  export type RecordUncheckedCreateNestedManyWithoutUserInput = {
     create?: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput> | RecordCreateWithoutUserInput[] | RecordUncheckedCreateWithoutUserInput[]
     connectOrCreate?: RecordCreateOrConnectWithoutUserInput | RecordCreateOrConnectWithoutUserInput[]
     createMany?: RecordCreateManyUserInputEnvelope
@@ -13605,11 +18247,11 @@ export namespace Prisma {
     connect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
   }
 
-  export type RecordUncheckedCreateNestedManyWithoutUserInput = {
-    create?: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput> | RecordCreateWithoutUserInput[] | RecordUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: RecordCreateOrConnectWithoutUserInput | RecordCreateOrConnectWithoutUserInput[]
-    createMany?: RecordCreateManyUserInputEnvelope
-    connect?: RecordWhereUniqueInput | RecordWhereUniqueInput[]
+  export type SceneUncheckedCreateNestedManyWithoutUserInput = {
+    create?: XOR<SceneCreateWithoutUserInput, SceneUncheckedCreateWithoutUserInput> | SceneCreateWithoutUserInput[] | SceneUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: SceneCreateOrConnectWithoutUserInput | SceneCreateOrConnectWithoutUserInput[]
+    createMany?: SceneCreateManyUserInputEnvelope
+    connect?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
   }
 
   export type StringFieldUpdateOperationsInput = {
@@ -13618,20 +18260,6 @@ export namespace Prisma {
 
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
-  }
-
-  export type ReelUpdateManyWithoutUserNestedInput = {
-    create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
-    connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
-    upsert?: ReelUpsertWithWhereUniqueWithoutUserInput | ReelUpsertWithWhereUniqueWithoutUserInput[]
-    createMany?: ReelCreateManyUserInputEnvelope
-    set?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-    disconnect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-    delete?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-    connect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
-    update?: ReelUpdateWithWhereUniqueWithoutUserInput | ReelUpdateWithWhereUniqueWithoutUserInput[]
-    updateMany?: ReelUpdateManyWithWhereWithoutUserInput | ReelUpdateManyWithWhereWithoutUserInput[]
-    deleteMany?: ReelScalarWhereInput | ReelScalarWhereInput[]
   }
 
   export type RecordUpdateManyWithoutUserNestedInput = {
@@ -13648,15 +18276,7 @@ export namespace Prisma {
     deleteMany?: RecordScalarWhereInput | RecordScalarWhereInput[]
   }
 
-  export type IntFieldUpdateOperationsInput = {
-    set?: number
-    increment?: number
-    decrement?: number
-    multiply?: number
-    divide?: number
-  }
-
-  export type ReelUncheckedUpdateManyWithoutUserNestedInput = {
+  export type ReelUpdateManyWithoutUserNestedInput = {
     create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
     connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
     upsert?: ReelUpsertWithWhereUniqueWithoutUserInput | ReelUpsertWithWhereUniqueWithoutUserInput[]
@@ -13668,6 +18288,28 @@ export namespace Prisma {
     update?: ReelUpdateWithWhereUniqueWithoutUserInput | ReelUpdateWithWhereUniqueWithoutUserInput[]
     updateMany?: ReelUpdateManyWithWhereWithoutUserInput | ReelUpdateManyWithWhereWithoutUserInput[]
     deleteMany?: ReelScalarWhereInput | ReelScalarWhereInput[]
+  }
+
+  export type SceneUpdateManyWithoutUserNestedInput = {
+    create?: XOR<SceneCreateWithoutUserInput, SceneUncheckedCreateWithoutUserInput> | SceneCreateWithoutUserInput[] | SceneUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: SceneCreateOrConnectWithoutUserInput | SceneCreateOrConnectWithoutUserInput[]
+    upsert?: SceneUpsertWithWhereUniqueWithoutUserInput | SceneUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: SceneCreateManyUserInputEnvelope
+    set?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+    disconnect?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+    delete?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+    connect?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+    update?: SceneUpdateWithWhereUniqueWithoutUserInput | SceneUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: SceneUpdateManyWithWhereWithoutUserInput | SceneUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: SceneScalarWhereInput | SceneScalarWhereInput[]
+  }
+
+  export type IntFieldUpdateOperationsInput = {
+    set?: number
+    increment?: number
+    decrement?: number
+    multiply?: number
+    divide?: number
   }
 
   export type RecordUncheckedUpdateManyWithoutUserNestedInput = {
@@ -13684,23 +18326,38 @@ export namespace Prisma {
     deleteMany?: RecordScalarWhereInput | RecordScalarWhereInput[]
   }
 
+  export type ReelUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<ReelCreateWithoutUserInput, ReelUncheckedCreateWithoutUserInput> | ReelCreateWithoutUserInput[] | ReelUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: ReelCreateOrConnectWithoutUserInput | ReelCreateOrConnectWithoutUserInput[]
+    upsert?: ReelUpsertWithWhereUniqueWithoutUserInput | ReelUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: ReelCreateManyUserInputEnvelope
+    set?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+    disconnect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+    delete?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+    connect?: ReelWhereUniqueInput | ReelWhereUniqueInput[]
+    update?: ReelUpdateWithWhereUniqueWithoutUserInput | ReelUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: ReelUpdateManyWithWhereWithoutUserInput | ReelUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: ReelScalarWhereInput | ReelScalarWhereInput[]
+  }
+
+  export type SceneUncheckedUpdateManyWithoutUserNestedInput = {
+    create?: XOR<SceneCreateWithoutUserInput, SceneUncheckedCreateWithoutUserInput> | SceneCreateWithoutUserInput[] | SceneUncheckedCreateWithoutUserInput[]
+    connectOrCreate?: SceneCreateOrConnectWithoutUserInput | SceneCreateOrConnectWithoutUserInput[]
+    upsert?: SceneUpsertWithWhereUniqueWithoutUserInput | SceneUpsertWithWhereUniqueWithoutUserInput[]
+    createMany?: SceneCreateManyUserInputEnvelope
+    set?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+    disconnect?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+    delete?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+    connect?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
+    update?: SceneUpdateWithWhereUniqueWithoutUserInput | SceneUpdateWithWhereUniqueWithoutUserInput[]
+    updateMany?: SceneUpdateManyWithWhereWithoutUserInput | SceneUpdateManyWithWhereWithoutUserInput[]
+    deleteMany?: SceneScalarWhereInput | SceneScalarWhereInput[]
+  }
+
   export type LifestoryCreateNestedOneWithoutReelInput = {
     create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
     connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
     connect?: LifestoryWhereUniqueInput
-  }
-
-  export type UserCreateNestedOneWithoutReelsInput = {
-    create?: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutReelsInput
-    connect?: UserWhereUniqueInput
-  }
-
-  export type WheelTextureCreateNestedManyWithoutReelsInput = {
-    create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
-    connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
-    createMany?: WheelTextureCreateManyReelsInputEnvelope
-    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
   }
 
   export type MemoryCreateNestedManyWithoutReelInput = {
@@ -13710,6 +18367,12 @@ export namespace Prisma {
     connect?: MemoryWhereUniqueInput | MemoryWhereUniqueInput[]
   }
 
+  export type UserCreateNestedOneWithoutReelsInput = {
+    create?: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReelsInput
+    connect?: UserWhereUniqueInput
+  }
+
   export type RelationshipCreateNestedManyWithoutReelsInput = {
     create?: XOR<RelationshipCreateWithoutReelsInput, RelationshipUncheckedCreateWithoutReelsInput> | RelationshipCreateWithoutReelsInput[] | RelationshipUncheckedCreateWithoutReelsInput[]
     connectOrCreate?: RelationshipCreateOrConnectWithoutReelsInput | RelationshipCreateOrConnectWithoutReelsInput[]
@@ -13717,17 +18380,17 @@ export namespace Prisma {
     connect?: RelationshipWhereUniqueInput | RelationshipWhereUniqueInput[]
   }
 
-  export type LifestoryUncheckedCreateNestedOneWithoutReelInput = {
-    create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
-    connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
-    connect?: LifestoryWhereUniqueInput
-  }
-
-  export type WheelTextureUncheckedCreateNestedManyWithoutReelsInput = {
+  export type WheelTextureCreateNestedManyWithoutReelsInput = {
     create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
     createMany?: WheelTextureCreateManyReelsInputEnvelope
     connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+  }
+
+  export type LifestoryUncheckedCreateNestedOneWithoutReelInput = {
+    create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
+    connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
+    connect?: LifestoryWhereUniqueInput
   }
 
   export type MemoryUncheckedCreateNestedManyWithoutReelInput = {
@@ -13742,6 +18405,13 @@ export namespace Prisma {
     connectOrCreate?: RelationshipCreateOrConnectWithoutReelsInput | RelationshipCreateOrConnectWithoutReelsInput[]
     createMany?: RelationshipCreateManyReelsInputEnvelope
     connect?: RelationshipWhereUniqueInput | RelationshipWhereUniqueInput[]
+  }
+
+  export type WheelTextureUncheckedCreateNestedManyWithoutReelsInput = {
+    create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
+    connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
+    createMany?: WheelTextureCreateManyReelsInputEnvelope
+    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
   }
 
   export type DateTimeFieldUpdateOperationsInput = {
@@ -13766,30 +18436,6 @@ export namespace Prisma {
     update?: XOR<XOR<LifestoryUpdateToOneWithWhereWithoutReelInput, LifestoryUpdateWithoutReelInput>, LifestoryUncheckedUpdateWithoutReelInput>
   }
 
-  export type UserUpdateOneWithoutReelsNestedInput = {
-    create?: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
-    connectOrCreate?: UserCreateOrConnectWithoutReelsInput
-    upsert?: UserUpsertWithoutReelsInput
-    disconnect?: UserWhereInput | boolean
-    delete?: UserWhereInput | boolean
-    connect?: UserWhereUniqueInput
-    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutReelsInput, UserUpdateWithoutReelsInput>, UserUncheckedUpdateWithoutReelsInput>
-  }
-
-  export type WheelTextureUpdateManyWithoutReelsNestedInput = {
-    create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
-    connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
-    upsert?: WheelTextureUpsertWithWhereUniqueWithoutReelsInput | WheelTextureUpsertWithWhereUniqueWithoutReelsInput[]
-    createMany?: WheelTextureCreateManyReelsInputEnvelope
-    set?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
-    disconnect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
-    delete?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
-    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
-    update?: WheelTextureUpdateWithWhereUniqueWithoutReelsInput | WheelTextureUpdateWithWhereUniqueWithoutReelsInput[]
-    updateMany?: WheelTextureUpdateManyWithWhereWithoutReelsInput | WheelTextureUpdateManyWithWhereWithoutReelsInput[]
-    deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
-  }
-
   export type MemoryUpdateManyWithoutReelNestedInput = {
     create?: XOR<MemoryCreateWithoutReelInput, MemoryUncheckedCreateWithoutReelInput> | MemoryCreateWithoutReelInput[] | MemoryUncheckedCreateWithoutReelInput[]
     connectOrCreate?: MemoryCreateOrConnectWithoutReelInput | MemoryCreateOrConnectWithoutReelInput[]
@@ -13802,6 +18448,16 @@ export namespace Prisma {
     update?: MemoryUpdateWithWhereUniqueWithoutReelInput | MemoryUpdateWithWhereUniqueWithoutReelInput[]
     updateMany?: MemoryUpdateManyWithWhereWithoutReelInput | MemoryUpdateManyWithWhereWithoutReelInput[]
     deleteMany?: MemoryScalarWhereInput | MemoryScalarWhereInput[]
+  }
+
+  export type UserUpdateOneWithoutReelsNestedInput = {
+    create?: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
+    connectOrCreate?: UserCreateOrConnectWithoutReelsInput
+    upsert?: UserUpsertWithoutReelsInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutReelsInput, UserUpdateWithoutReelsInput>, UserUncheckedUpdateWithoutReelsInput>
   }
 
   export type RelationshipUpdateManyWithoutReelsNestedInput = {
@@ -13818,17 +18474,7 @@ export namespace Prisma {
     deleteMany?: RelationshipScalarWhereInput | RelationshipScalarWhereInput[]
   }
 
-  export type LifestoryUncheckedUpdateOneWithoutReelNestedInput = {
-    create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
-    connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
-    upsert?: LifestoryUpsertWithoutReelInput
-    disconnect?: LifestoryWhereInput | boolean
-    delete?: LifestoryWhereInput | boolean
-    connect?: LifestoryWhereUniqueInput
-    update?: XOR<XOR<LifestoryUpdateToOneWithWhereWithoutReelInput, LifestoryUpdateWithoutReelInput>, LifestoryUncheckedUpdateWithoutReelInput>
-  }
-
-  export type WheelTextureUncheckedUpdateManyWithoutReelsNestedInput = {
+  export type WheelTextureUpdateManyWithoutReelsNestedInput = {
     create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
     upsert?: WheelTextureUpsertWithWhereUniqueWithoutReelsInput | WheelTextureUpsertWithWhereUniqueWithoutReelsInput[]
@@ -13840,6 +18486,16 @@ export namespace Prisma {
     update?: WheelTextureUpdateWithWhereUniqueWithoutReelsInput | WheelTextureUpdateWithWhereUniqueWithoutReelsInput[]
     updateMany?: WheelTextureUpdateManyWithWhereWithoutReelsInput | WheelTextureUpdateManyWithWhereWithoutReelsInput[]
     deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
+  }
+
+  export type LifestoryUncheckedUpdateOneWithoutReelNestedInput = {
+    create?: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
+    connectOrCreate?: LifestoryCreateOrConnectWithoutReelInput
+    upsert?: LifestoryUpsertWithoutReelInput
+    disconnect?: LifestoryWhereInput | boolean
+    delete?: LifestoryWhereInput | boolean
+    connect?: LifestoryWhereUniqueInput
+    update?: XOR<XOR<LifestoryUpdateToOneWithWhereWithoutReelInput, LifestoryUpdateWithoutReelInput>, LifestoryUncheckedUpdateWithoutReelInput>
   }
 
   export type MemoryUncheckedUpdateManyWithoutReelNestedInput = {
@@ -13870,6 +18526,20 @@ export namespace Prisma {
     deleteMany?: RelationshipScalarWhereInput | RelationshipScalarWhereInput[]
   }
 
+  export type WheelTextureUncheckedUpdateManyWithoutReelsNestedInput = {
+    create?: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput> | WheelTextureCreateWithoutReelsInput[] | WheelTextureUncheckedCreateWithoutReelsInput[]
+    connectOrCreate?: WheelTextureCreateOrConnectWithoutReelsInput | WheelTextureCreateOrConnectWithoutReelsInput[]
+    upsert?: WheelTextureUpsertWithWhereUniqueWithoutReelsInput | WheelTextureUpsertWithWhereUniqueWithoutReelsInput[]
+    createMany?: WheelTextureCreateManyReelsInputEnvelope
+    set?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+    disconnect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+    delete?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+    update?: WheelTextureUpdateWithWhereUniqueWithoutReelsInput | WheelTextureUpdateWithWhereUniqueWithoutReelsInput[]
+    updateMany?: WheelTextureUpdateManyWithWhereWithoutReelsInput | WheelTextureUpdateManyWithWhereWithoutReelsInput[]
+    deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
+  }
+
   export type ReelCreateNestedOneWithoutLifestoryInput = {
     create?: XOR<ReelCreateWithoutLifestoryInput, ReelUncheckedCreateWithoutLifestoryInput>
     connectOrCreate?: ReelCreateOrConnectWithoutLifestoryInput
@@ -13890,16 +18560,16 @@ export namespace Prisma {
     connect?: MemoryWhereUniqueInput
   }
 
-  export type RelationshipCreateNestedOneWithoutWheelTexturesInput = {
-    create?: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
-    connectOrCreate?: RelationshipCreateOrConnectWithoutWheelTexturesInput
-    connect?: RelationshipWhereUniqueInput
-  }
-
   export type ReelCreateNestedOneWithoutChildhoodInput = {
     create?: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
     connectOrCreate?: ReelCreateOrConnectWithoutChildhoodInput
     connect?: ReelWhereUniqueInput
+  }
+
+  export type RelationshipCreateNestedOneWithoutWheelTexturesInput = {
+    create?: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
+    connectOrCreate?: RelationshipCreateOrConnectWithoutWheelTexturesInput
+    connect?: RelationshipWhereUniqueInput
   }
 
   export type MemoryUpdateOneWithoutWheelTexturesNestedInput = {
@@ -13912,16 +18582,6 @@ export namespace Prisma {
     update?: XOR<XOR<MemoryUpdateToOneWithWhereWithoutWheelTexturesInput, MemoryUpdateWithoutWheelTexturesInput>, MemoryUncheckedUpdateWithoutWheelTexturesInput>
   }
 
-  export type RelationshipUpdateOneWithoutWheelTexturesNestedInput = {
-    create?: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
-    connectOrCreate?: RelationshipCreateOrConnectWithoutWheelTexturesInput
-    upsert?: RelationshipUpsertWithoutWheelTexturesInput
-    disconnect?: RelationshipWhereInput | boolean
-    delete?: RelationshipWhereInput | boolean
-    connect?: RelationshipWhereUniqueInput
-    update?: XOR<XOR<RelationshipUpdateToOneWithWhereWithoutWheelTexturesInput, RelationshipUpdateWithoutWheelTexturesInput>, RelationshipUncheckedUpdateWithoutWheelTexturesInput>
-  }
-
   export type ReelUpdateOneWithoutChildhoodNestedInput = {
     create?: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
     connectOrCreate?: ReelCreateOrConnectWithoutChildhoodInput
@@ -13932,17 +18592,27 @@ export namespace Prisma {
     update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutChildhoodInput, ReelUpdateWithoutChildhoodInput>, ReelUncheckedUpdateWithoutChildhoodInput>
   }
 
-  export type WheelTextureCreateNestedManyWithoutMemoryInput = {
-    create?: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput> | WheelTextureCreateWithoutMemoryInput[] | WheelTextureUncheckedCreateWithoutMemoryInput[]
-    connectOrCreate?: WheelTextureCreateOrConnectWithoutMemoryInput | WheelTextureCreateOrConnectWithoutMemoryInput[]
-    createMany?: WheelTextureCreateManyMemoryInputEnvelope
-    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+  export type RelationshipUpdateOneWithoutWheelTexturesNestedInput = {
+    create?: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
+    connectOrCreate?: RelationshipCreateOrConnectWithoutWheelTexturesInput
+    upsert?: RelationshipUpsertWithoutWheelTexturesInput
+    disconnect?: RelationshipWhereInput | boolean
+    delete?: RelationshipWhereInput | boolean
+    connect?: RelationshipWhereUniqueInput
+    update?: XOR<XOR<RelationshipUpdateToOneWithWhereWithoutWheelTexturesInput, RelationshipUpdateWithoutWheelTexturesInput>, RelationshipUncheckedUpdateWithoutWheelTexturesInput>
   }
 
   export type ReelCreateNestedOneWithoutMemorysInput = {
     create?: XOR<ReelCreateWithoutMemorysInput, ReelUncheckedCreateWithoutMemorysInput>
     connectOrCreate?: ReelCreateOrConnectWithoutMemorysInput
     connect?: ReelWhereUniqueInput
+  }
+
+  export type WheelTextureCreateNestedManyWithoutMemoryInput = {
+    create?: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput> | WheelTextureCreateWithoutMemoryInput[] | WheelTextureUncheckedCreateWithoutMemoryInput[]
+    connectOrCreate?: WheelTextureCreateOrConnectWithoutMemoryInput | WheelTextureCreateOrConnectWithoutMemoryInput[]
+    createMany?: WheelTextureCreateManyMemoryInputEnvelope
+    connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
   }
 
   export type WheelTextureUncheckedCreateNestedManyWithoutMemoryInput = {
@@ -13954,6 +18624,14 @@ export namespace Prisma {
 
   export type NullableDateTimeFieldUpdateOperationsInput = {
     set?: Date | string | null
+  }
+
+  export type ReelUpdateOneRequiredWithoutMemorysNestedInput = {
+    create?: XOR<ReelCreateWithoutMemorysInput, ReelUncheckedCreateWithoutMemorysInput>
+    connectOrCreate?: ReelCreateOrConnectWithoutMemorysInput
+    upsert?: ReelUpsertWithoutMemorysInput
+    connect?: ReelWhereUniqueInput
+    update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutMemorysInput, ReelUpdateWithoutMemorysInput>, ReelUncheckedUpdateWithoutMemorysInput>
   }
 
   export type WheelTextureUpdateManyWithoutMemoryNestedInput = {
@@ -13970,16 +18648,6 @@ export namespace Prisma {
     deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
   }
 
-  export type ReelUpdateOneWithoutMemorysNestedInput = {
-    create?: XOR<ReelCreateWithoutMemorysInput, ReelUncheckedCreateWithoutMemorysInput>
-    connectOrCreate?: ReelCreateOrConnectWithoutMemorysInput
-    upsert?: ReelUpsertWithoutMemorysInput
-    disconnect?: ReelWhereInput | boolean
-    delete?: ReelWhereInput | boolean
-    connect?: ReelWhereUniqueInput
-    update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutMemorysInput, ReelUpdateWithoutMemorysInput>, ReelUncheckedUpdateWithoutMemorysInput>
-  }
-
   export type WheelTextureUncheckedUpdateManyWithoutMemoryNestedInput = {
     create?: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput> | WheelTextureCreateWithoutMemoryInput[] | WheelTextureUncheckedCreateWithoutMemoryInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutMemoryInput | WheelTextureCreateOrConnectWithoutMemoryInput[]
@@ -13994,6 +18662,12 @@ export namespace Prisma {
     deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
   }
 
+  export type ReelCreateNestedOneWithoutRelationshipsInput = {
+    create?: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
+    connectOrCreate?: ReelCreateOrConnectWithoutRelationshipsInput
+    connect?: ReelWhereUniqueInput
+  }
+
   export type WheelTextureCreateNestedManyWithoutRelationshipInput = {
     create?: XOR<WheelTextureCreateWithoutRelationshipInput, WheelTextureUncheckedCreateWithoutRelationshipInput> | WheelTextureCreateWithoutRelationshipInput[] | WheelTextureUncheckedCreateWithoutRelationshipInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutRelationshipInput | WheelTextureCreateOrConnectWithoutRelationshipInput[]
@@ -14001,17 +18675,21 @@ export namespace Prisma {
     connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
   }
 
-  export type ReelCreateNestedOneWithoutRelationshipsInput = {
-    create?: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
-    connectOrCreate?: ReelCreateOrConnectWithoutRelationshipsInput
-    connect?: ReelWhereUniqueInput
-  }
-
   export type WheelTextureUncheckedCreateNestedManyWithoutRelationshipInput = {
     create?: XOR<WheelTextureCreateWithoutRelationshipInput, WheelTextureUncheckedCreateWithoutRelationshipInput> | WheelTextureCreateWithoutRelationshipInput[] | WheelTextureUncheckedCreateWithoutRelationshipInput[]
     connectOrCreate?: WheelTextureCreateOrConnectWithoutRelationshipInput | WheelTextureCreateOrConnectWithoutRelationshipInput[]
     createMany?: WheelTextureCreateManyRelationshipInputEnvelope
     connect?: WheelTextureWhereUniqueInput | WheelTextureWhereUniqueInput[]
+  }
+
+  export type ReelUpdateOneWithoutRelationshipsNestedInput = {
+    create?: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
+    connectOrCreate?: ReelCreateOrConnectWithoutRelationshipsInput
+    upsert?: ReelUpsertWithoutRelationshipsInput
+    disconnect?: ReelWhereInput | boolean
+    delete?: ReelWhereInput | boolean
+    connect?: ReelWhereUniqueInput
+    update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutRelationshipsInput, ReelUpdateWithoutRelationshipsInput>, ReelUncheckedUpdateWithoutRelationshipsInput>
   }
 
   export type WheelTextureUpdateManyWithoutRelationshipNestedInput = {
@@ -14026,16 +18704,6 @@ export namespace Prisma {
     update?: WheelTextureUpdateWithWhereUniqueWithoutRelationshipInput | WheelTextureUpdateWithWhereUniqueWithoutRelationshipInput[]
     updateMany?: WheelTextureUpdateManyWithWhereWithoutRelationshipInput | WheelTextureUpdateManyWithWhereWithoutRelationshipInput[]
     deleteMany?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
-  }
-
-  export type ReelUpdateOneWithoutRelationshipsNestedInput = {
-    create?: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
-    connectOrCreate?: ReelCreateOrConnectWithoutRelationshipsInput
-    upsert?: ReelUpsertWithoutRelationshipsInput
-    disconnect?: ReelWhereInput | boolean
-    delete?: ReelWhereInput | boolean
-    connect?: ReelWhereUniqueInput
-    update?: XOR<XOR<ReelUpdateToOneWithWhereWithoutRelationshipsInput, ReelUpdateWithoutRelationshipsInput>, ReelUncheckedUpdateWithoutRelationshipsInput>
   }
 
   export type WheelTextureUncheckedUpdateManyWithoutRelationshipNestedInput = {
@@ -14110,6 +18778,10 @@ export namespace Prisma {
     deleteMany?: RecordItemScalarWhereInput | RecordItemScalarWhereInput[]
   }
 
+  export type RecordItemCreateimagesInput = {
+    set: string[]
+  }
+
   export type RecordCreateNestedOneWithoutRecordItemsInput = {
     create?: XOR<RecordCreateWithoutRecordItemsInput, RecordUncheckedCreateWithoutRecordItemsInput>
     connectOrCreate?: RecordCreateOrConnectWithoutRecordItemsInput
@@ -14120,12 +18792,145 @@ export namespace Prisma {
     set?: boolean
   }
 
+  export type RecordItemUpdateimagesInput = {
+    set?: string[]
+    push?: string | string[]
+  }
+
   export type RecordUpdateOneRequiredWithoutRecordItemsNestedInput = {
     create?: XOR<RecordCreateWithoutRecordItemsInput, RecordUncheckedCreateWithoutRecordItemsInput>
     connectOrCreate?: RecordCreateOrConnectWithoutRecordItemsInput
     upsert?: RecordUpsertWithoutRecordItemsInput
     connect?: RecordWhereUniqueInput
     update?: XOR<XOR<RecordUpdateToOneWithWhereWithoutRecordItemsInput, RecordUpdateWithoutRecordItemsInput>, RecordUncheckedUpdateWithoutRecordItemsInput>
+  }
+
+  export type UserCreateNestedOneWithoutScenesInput = {
+    create?: XOR<UserCreateWithoutScenesInput, UserUncheckedCreateWithoutScenesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutScenesInput
+    connect?: UserWhereUniqueInput
+  }
+
+  export type SceneItemCreateNestedManyWithoutSceneInput = {
+    create?: XOR<SceneItemCreateWithoutSceneInput, SceneItemUncheckedCreateWithoutSceneInput> | SceneItemCreateWithoutSceneInput[] | SceneItemUncheckedCreateWithoutSceneInput[]
+    connectOrCreate?: SceneItemCreateOrConnectWithoutSceneInput | SceneItemCreateOrConnectWithoutSceneInput[]
+    createMany?: SceneItemCreateManySceneInputEnvelope
+    connect?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+  }
+
+  export type SceneItemUncheckedCreateNestedManyWithoutSceneInput = {
+    create?: XOR<SceneItemCreateWithoutSceneInput, SceneItemUncheckedCreateWithoutSceneInput> | SceneItemCreateWithoutSceneInput[] | SceneItemUncheckedCreateWithoutSceneInput[]
+    connectOrCreate?: SceneItemCreateOrConnectWithoutSceneInput | SceneItemCreateOrConnectWithoutSceneInput[]
+    createMany?: SceneItemCreateManySceneInputEnvelope
+    connect?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+  }
+
+  export type UserUpdateOneWithoutScenesNestedInput = {
+    create?: XOR<UserCreateWithoutScenesInput, UserUncheckedCreateWithoutScenesInput>
+    connectOrCreate?: UserCreateOrConnectWithoutScenesInput
+    upsert?: UserUpsertWithoutScenesInput
+    disconnect?: UserWhereInput | boolean
+    delete?: UserWhereInput | boolean
+    connect?: UserWhereUniqueInput
+    update?: XOR<XOR<UserUpdateToOneWithWhereWithoutScenesInput, UserUpdateWithoutScenesInput>, UserUncheckedUpdateWithoutScenesInput>
+  }
+
+  export type SceneItemUpdateManyWithoutSceneNestedInput = {
+    create?: XOR<SceneItemCreateWithoutSceneInput, SceneItemUncheckedCreateWithoutSceneInput> | SceneItemCreateWithoutSceneInput[] | SceneItemUncheckedCreateWithoutSceneInput[]
+    connectOrCreate?: SceneItemCreateOrConnectWithoutSceneInput | SceneItemCreateOrConnectWithoutSceneInput[]
+    upsert?: SceneItemUpsertWithWhereUniqueWithoutSceneInput | SceneItemUpsertWithWhereUniqueWithoutSceneInput[]
+    createMany?: SceneItemCreateManySceneInputEnvelope
+    set?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+    disconnect?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+    delete?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+    connect?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+    update?: SceneItemUpdateWithWhereUniqueWithoutSceneInput | SceneItemUpdateWithWhereUniqueWithoutSceneInput[]
+    updateMany?: SceneItemUpdateManyWithWhereWithoutSceneInput | SceneItemUpdateManyWithWhereWithoutSceneInput[]
+    deleteMany?: SceneItemScalarWhereInput | SceneItemScalarWhereInput[]
+  }
+
+  export type SceneItemUncheckedUpdateManyWithoutSceneNestedInput = {
+    create?: XOR<SceneItemCreateWithoutSceneInput, SceneItemUncheckedCreateWithoutSceneInput> | SceneItemCreateWithoutSceneInput[] | SceneItemUncheckedCreateWithoutSceneInput[]
+    connectOrCreate?: SceneItemCreateOrConnectWithoutSceneInput | SceneItemCreateOrConnectWithoutSceneInput[]
+    upsert?: SceneItemUpsertWithWhereUniqueWithoutSceneInput | SceneItemUpsertWithWhereUniqueWithoutSceneInput[]
+    createMany?: SceneItemCreateManySceneInputEnvelope
+    set?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+    disconnect?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+    delete?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+    connect?: SceneItemWhereUniqueInput | SceneItemWhereUniqueInput[]
+    update?: SceneItemUpdateWithWhereUniqueWithoutSceneInput | SceneItemUpdateWithWhereUniqueWithoutSceneInput[]
+    updateMany?: SceneItemUpdateManyWithWhereWithoutSceneInput | SceneItemUpdateManyWithWhereWithoutSceneInput[]
+    deleteMany?: SceneItemScalarWhereInput | SceneItemScalarWhereInput[]
+  }
+
+  export type SceneCreateNestedOneWithoutItemsInput = {
+    create?: XOR<SceneCreateWithoutItemsInput, SceneUncheckedCreateWithoutItemsInput>
+    connectOrCreate?: SceneCreateOrConnectWithoutItemsInput
+    connect?: SceneWhereUniqueInput
+  }
+
+  export type SceneImageCreateNestedManyWithoutItemInput = {
+    create?: XOR<SceneImageCreateWithoutItemInput, SceneImageUncheckedCreateWithoutItemInput> | SceneImageCreateWithoutItemInput[] | SceneImageUncheckedCreateWithoutItemInput[]
+    connectOrCreate?: SceneImageCreateOrConnectWithoutItemInput | SceneImageCreateOrConnectWithoutItemInput[]
+    createMany?: SceneImageCreateManyItemInputEnvelope
+    connect?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+  }
+
+  export type SceneImageUncheckedCreateNestedManyWithoutItemInput = {
+    create?: XOR<SceneImageCreateWithoutItemInput, SceneImageUncheckedCreateWithoutItemInput> | SceneImageCreateWithoutItemInput[] | SceneImageUncheckedCreateWithoutItemInput[]
+    connectOrCreate?: SceneImageCreateOrConnectWithoutItemInput | SceneImageCreateOrConnectWithoutItemInput[]
+    createMany?: SceneImageCreateManyItemInputEnvelope
+    connect?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+  }
+
+  export type SceneUpdateOneRequiredWithoutItemsNestedInput = {
+    create?: XOR<SceneCreateWithoutItemsInput, SceneUncheckedCreateWithoutItemsInput>
+    connectOrCreate?: SceneCreateOrConnectWithoutItemsInput
+    upsert?: SceneUpsertWithoutItemsInput
+    connect?: SceneWhereUniqueInput
+    update?: XOR<XOR<SceneUpdateToOneWithWhereWithoutItemsInput, SceneUpdateWithoutItemsInput>, SceneUncheckedUpdateWithoutItemsInput>
+  }
+
+  export type SceneImageUpdateManyWithoutItemNestedInput = {
+    create?: XOR<SceneImageCreateWithoutItemInput, SceneImageUncheckedCreateWithoutItemInput> | SceneImageCreateWithoutItemInput[] | SceneImageUncheckedCreateWithoutItemInput[]
+    connectOrCreate?: SceneImageCreateOrConnectWithoutItemInput | SceneImageCreateOrConnectWithoutItemInput[]
+    upsert?: SceneImageUpsertWithWhereUniqueWithoutItemInput | SceneImageUpsertWithWhereUniqueWithoutItemInput[]
+    createMany?: SceneImageCreateManyItemInputEnvelope
+    set?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+    disconnect?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+    delete?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+    connect?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+    update?: SceneImageUpdateWithWhereUniqueWithoutItemInput | SceneImageUpdateWithWhereUniqueWithoutItemInput[]
+    updateMany?: SceneImageUpdateManyWithWhereWithoutItemInput | SceneImageUpdateManyWithWhereWithoutItemInput[]
+    deleteMany?: SceneImageScalarWhereInput | SceneImageScalarWhereInput[]
+  }
+
+  export type SceneImageUncheckedUpdateManyWithoutItemNestedInput = {
+    create?: XOR<SceneImageCreateWithoutItemInput, SceneImageUncheckedCreateWithoutItemInput> | SceneImageCreateWithoutItemInput[] | SceneImageUncheckedCreateWithoutItemInput[]
+    connectOrCreate?: SceneImageCreateOrConnectWithoutItemInput | SceneImageCreateOrConnectWithoutItemInput[]
+    upsert?: SceneImageUpsertWithWhereUniqueWithoutItemInput | SceneImageUpsertWithWhereUniqueWithoutItemInput[]
+    createMany?: SceneImageCreateManyItemInputEnvelope
+    set?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+    disconnect?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+    delete?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+    connect?: SceneImageWhereUniqueInput | SceneImageWhereUniqueInput[]
+    update?: SceneImageUpdateWithWhereUniqueWithoutItemInput | SceneImageUpdateWithWhereUniqueWithoutItemInput[]
+    updateMany?: SceneImageUpdateManyWithWhereWithoutItemInput | SceneImageUpdateManyWithWhereWithoutItemInput[]
+    deleteMany?: SceneImageScalarWhereInput | SceneImageScalarWhereInput[]
+  }
+
+  export type SceneItemCreateNestedOneWithoutImagesInput = {
+    create?: XOR<SceneItemCreateWithoutImagesInput, SceneItemUncheckedCreateWithoutImagesInput>
+    connectOrCreate?: SceneItemCreateOrConnectWithoutImagesInput
+    connect?: SceneItemWhereUniqueInput
+  }
+
+  export type SceneItemUpdateOneRequiredWithoutImagesNestedInput = {
+    create?: XOR<SceneItemCreateWithoutImagesInput, SceneItemUncheckedCreateWithoutImagesInput>
+    connectOrCreate?: SceneItemCreateOrConnectWithoutImagesInput
+    upsert?: SceneItemUpsertWithoutImagesInput
+    connect?: SceneItemWhereUniqueInput
+    update?: XOR<XOR<SceneItemUpdateToOneWithWhereWithoutImagesInput, SceneItemUpdateWithoutImagesInput>, SceneItemUncheckedUpdateWithoutImagesInput>
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -14352,6 +19157,49 @@ export namespace Prisma {
     _max?: NestedBoolFilter<$PrismaModel>
   }
 
+  export type RecordCreateWithoutUserInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    coverUrl?: string | null
+    name?: string | null
+    subName?: string | null
+    description?: string | null
+    bgm?: string | null
+    color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
+    recordItems?: RecordItemCreateNestedManyWithoutRecordInput
+  }
+
+  export type RecordUncheckedCreateWithoutUserInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    coverUrl?: string | null
+    name?: string | null
+    subName?: string | null
+    description?: string | null
+    bgm?: string | null
+    color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
+    recordItems?: RecordItemUncheckedCreateNestedManyWithoutRecordInput
+  }
+
+  export type RecordCreateOrConnectWithoutUserInput = {
+    where: RecordWhereUniqueInput
+    create: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput>
+  }
+
+  export type RecordCreateManyUserInputEnvelope = {
+    data: RecordCreateManyUserInput | RecordCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
   export type ReelCreateWithoutUserInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -14363,9 +19211,9 @@ export namespace Prisma {
     motto?: string | null
     lifestoryId?: number | null
     lifestory?: LifestoryCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
     memorys?: MemoryCreateNestedManyWithoutReelInput
     relationships?: RelationshipCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUncheckedCreateWithoutUserInput = {
@@ -14380,9 +19228,9 @@ export namespace Prisma {
     motto?: string | null
     lifestoryId?: number | null
     lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
     memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
     relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
   }
 
   export type ReelCreateOrConnectWithoutUserInput = {
@@ -14395,43 +19243,77 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
-  export type RecordCreateWithoutUserInput = {
+  export type SceneCreateWithoutUserInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
-    coverUrl?: string | null
-    name?: string | null
-    subName?: string | null
-    description?: string | null
-    bgm?: string | null
-    color?: string | null
-    recordItems?: RecordItemCreateNestedManyWithoutRecordInput
+    profilePhoto?: string | null
+    profileName?: string | null
+    profileBirthDate?: string | null
+    profileBirthPlace?: string | null
+    profileBiography?: string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    items?: SceneItemCreateNestedManyWithoutSceneInput
   }
 
-  export type RecordUncheckedCreateWithoutUserInput = {
+  export type SceneUncheckedCreateWithoutUserInput = {
     id?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
-    coverUrl?: string | null
-    name?: string | null
-    subName?: string | null
-    description?: string | null
-    bgm?: string | null
-    color?: string | null
-    recordItems?: RecordItemUncheckedCreateNestedManyWithoutRecordInput
+    profilePhoto?: string | null
+    profileName?: string | null
+    profileBirthDate?: string | null
+    profileBirthPlace?: string | null
+    profileBiography?: string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    items?: SceneItemUncheckedCreateNestedManyWithoutSceneInput
   }
 
-  export type RecordCreateOrConnectWithoutUserInput = {
+  export type SceneCreateOrConnectWithoutUserInput = {
+    where: SceneWhereUniqueInput
+    create: XOR<SceneCreateWithoutUserInput, SceneUncheckedCreateWithoutUserInput>
+  }
+
+  export type SceneCreateManyUserInputEnvelope = {
+    data: SceneCreateManyUserInput | SceneCreateManyUserInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type RecordUpsertWithWhereUniqueWithoutUserInput = {
     where: RecordWhereUniqueInput
+    update: XOR<RecordUpdateWithoutUserInput, RecordUncheckedUpdateWithoutUserInput>
     create: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput>
   }
 
-  export type RecordCreateManyUserInputEnvelope = {
-    data: RecordCreateManyUserInput | RecordCreateManyUserInput[]
-    skipDuplicates?: boolean
+  export type RecordUpdateWithWhereUniqueWithoutUserInput = {
+    where: RecordWhereUniqueInput
+    data: XOR<RecordUpdateWithoutUserInput, RecordUncheckedUpdateWithoutUserInput>
+  }
+
+  export type RecordUpdateManyWithWhereWithoutUserInput = {
+    where: RecordScalarWhereInput
+    data: XOR<RecordUpdateManyMutationInput, RecordUncheckedUpdateManyWithoutUserInput>
+  }
+
+  export type RecordScalarWhereInput = {
+    AND?: RecordScalarWhereInput | RecordScalarWhereInput[]
+    OR?: RecordScalarWhereInput[]
+    NOT?: RecordScalarWhereInput | RecordScalarWhereInput[]
+    id?: IntFilter<"Record"> | number
+    createdAt?: DateTimeFilter<"Record"> | Date | string
+    updatedAt?: DateTimeFilter<"Record"> | Date | string
+    identifier?: StringFilter<"Record"> | string
+    coverUrl?: StringNullableFilter<"Record"> | string | null
+    name?: StringNullableFilter<"Record"> | string | null
+    subName?: StringNullableFilter<"Record"> | string | null
+    description?: StringNullableFilter<"Record"> | string | null
+    bgm?: StringNullableFilter<"Record"> | string | null
+    color?: StringNullableFilter<"Record"> | string | null
+    userId?: IntNullableFilter<"Record"> | number | null
+    userName?: StringNullableFilter<"Record"> | string | null
+    birthDate?: StringNullableFilter<"Record"> | string | null
+    displayMode?: StringNullableFilter<"Record"> | string | null
   }
 
   export type ReelUpsertWithWhereUniqueWithoutUserInput = {
@@ -14467,38 +19349,37 @@ export namespace Prisma {
     userId?: IntNullableFilter<"Reel"> | number | null
   }
 
-  export type RecordUpsertWithWhereUniqueWithoutUserInput = {
-    where: RecordWhereUniqueInput
-    update: XOR<RecordUpdateWithoutUserInput, RecordUncheckedUpdateWithoutUserInput>
-    create: XOR<RecordCreateWithoutUserInput, RecordUncheckedCreateWithoutUserInput>
+  export type SceneUpsertWithWhereUniqueWithoutUserInput = {
+    where: SceneWhereUniqueInput
+    update: XOR<SceneUpdateWithoutUserInput, SceneUncheckedUpdateWithoutUserInput>
+    create: XOR<SceneCreateWithoutUserInput, SceneUncheckedCreateWithoutUserInput>
   }
 
-  export type RecordUpdateWithWhereUniqueWithoutUserInput = {
-    where: RecordWhereUniqueInput
-    data: XOR<RecordUpdateWithoutUserInput, RecordUncheckedUpdateWithoutUserInput>
+  export type SceneUpdateWithWhereUniqueWithoutUserInput = {
+    where: SceneWhereUniqueInput
+    data: XOR<SceneUpdateWithoutUserInput, SceneUncheckedUpdateWithoutUserInput>
   }
 
-  export type RecordUpdateManyWithWhereWithoutUserInput = {
-    where: RecordScalarWhereInput
-    data: XOR<RecordUpdateManyMutationInput, RecordUncheckedUpdateManyWithoutUserInput>
+  export type SceneUpdateManyWithWhereWithoutUserInput = {
+    where: SceneScalarWhereInput
+    data: XOR<SceneUpdateManyMutationInput, SceneUncheckedUpdateManyWithoutUserInput>
   }
 
-  export type RecordScalarWhereInput = {
-    AND?: RecordScalarWhereInput | RecordScalarWhereInput[]
-    OR?: RecordScalarWhereInput[]
-    NOT?: RecordScalarWhereInput | RecordScalarWhereInput[]
-    id?: IntFilter<"Record"> | number
-    createdAt?: DateTimeFilter<"Record"> | Date | string
-    updatedAt?: DateTimeFilter<"Record"> | Date | string
-    identifier?: StringFilter<"Record"> | string
-    userName?: StringNullableFilter<"Record"> | string | null
-    coverUrl?: StringNullableFilter<"Record"> | string | null
-    name?: StringNullableFilter<"Record"> | string | null
-    subName?: StringNullableFilter<"Record"> | string | null
-    description?: StringNullableFilter<"Record"> | string | null
-    bgm?: StringNullableFilter<"Record"> | string | null
-    color?: StringNullableFilter<"Record"> | string | null
-    userId?: IntNullableFilter<"Record"> | number | null
+  export type SceneScalarWhereInput = {
+    AND?: SceneScalarWhereInput | SceneScalarWhereInput[]
+    OR?: SceneScalarWhereInput[]
+    NOT?: SceneScalarWhereInput | SceneScalarWhereInput[]
+    id?: IntFilter<"Scene"> | number
+    createdAt?: DateTimeFilter<"Scene"> | Date | string
+    updatedAt?: DateTimeFilter<"Scene"> | Date | string
+    identifier?: StringFilter<"Scene"> | string
+    profilePhoto?: StringNullableFilter<"Scene"> | string | null
+    profileName?: StringNullableFilter<"Scene"> | string | null
+    profileBirthDate?: StringNullableFilter<"Scene"> | string | null
+    profileBirthPlace?: StringNullableFilter<"Scene"> | string | null
+    profileBiography?: StringNullableFilter<"Scene"> | string | null
+    lifestoryProgress?: JsonNullableFilter<"Scene">
+    userId?: IntNullableFilter<"Scene"> | number | null
   }
 
   export type LifestoryCreateWithoutReelInput = {
@@ -14525,61 +19406,6 @@ export namespace Prisma {
   export type LifestoryCreateOrConnectWithoutReelInput = {
     where: LifestoryWhereUniqueInput
     create: XOR<LifestoryCreateWithoutReelInput, LifestoryUncheckedCreateWithoutReelInput>
-  }
-
-  export type UserCreateWithoutReelsInput = {
-    name: string
-    mobile: string
-    birthDate: string
-    email?: string | null
-    plan?: string
-    records?: RecordCreateNestedManyWithoutUserInput
-  }
-
-  export type UserUncheckedCreateWithoutReelsInput = {
-    id?: number
-    name: string
-    mobile: string
-    birthDate: string
-    email?: string | null
-    plan?: string
-    records?: RecordUncheckedCreateNestedManyWithoutUserInput
-  }
-
-  export type UserCreateOrConnectWithoutReelsInput = {
-    where: UserWhereUniqueInput
-    create: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
-  }
-
-  export type WheelTextureCreateWithoutReelsInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    memory?: MemoryCreateNestedOneWithoutWheelTexturesInput
-    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
-  }
-
-  export type WheelTextureUncheckedCreateWithoutReelsInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    memoryId?: number | null
-    relationshipId?: number | null
-  }
-
-  export type WheelTextureCreateOrConnectWithoutReelsInput = {
-    where: WheelTextureWhereUniqueInput
-    create: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput>
-  }
-
-  export type WheelTextureCreateManyReelsInputEnvelope = {
-    data: WheelTextureCreateManyReelsInput | WheelTextureCreateManyReelsInput[]
-    skipDuplicates?: boolean
   }
 
   export type MemoryCreateWithoutReelInput = {
@@ -14613,6 +19439,32 @@ export namespace Prisma {
     skipDuplicates?: boolean
   }
 
+  export type UserCreateWithoutReelsInput = {
+    name: string
+    mobile: string
+    plan?: string
+    birthDate: string
+    email?: string | null
+    records?: RecordCreateNestedManyWithoutUserInput
+    scenes?: SceneCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutReelsInput = {
+    id?: number
+    name: string
+    mobile: string
+    plan?: string
+    birthDate: string
+    email?: string | null
+    records?: RecordUncheckedCreateNestedManyWithoutUserInput
+    scenes?: SceneUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutReelsInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
+  }
+
   export type RelationshipCreateWithoutReelsInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -14639,6 +19491,37 @@ export namespace Prisma {
 
   export type RelationshipCreateManyReelsInputEnvelope = {
     data: RelationshipCreateManyReelsInput | RelationshipCreateManyReelsInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type WheelTextureCreateWithoutReelsInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    caption?: string | null
+    memory?: MemoryCreateNestedOneWithoutWheelTexturesInput
+    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
+  }
+
+  export type WheelTextureUncheckedCreateWithoutReelsInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    memoryId?: number | null
+    relationshipId?: number | null
+    caption?: string | null
+  }
+
+  export type WheelTextureCreateOrConnectWithoutReelsInput = {
+    where: WheelTextureWhereUniqueInput
+    create: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput>
+  }
+
+  export type WheelTextureCreateManyReelsInputEnvelope = {
+    data: WheelTextureCreateManyReelsInput | WheelTextureCreateManyReelsInput[]
     skipDuplicates?: boolean
   }
 
@@ -14674,67 +19557,6 @@ export namespace Prisma {
     result?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
-  export type UserUpsertWithoutReelsInput = {
-    update: XOR<UserUpdateWithoutReelsInput, UserUncheckedUpdateWithoutReelsInput>
-    create: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
-    where?: UserWhereInput
-  }
-
-  export type UserUpdateToOneWithWhereWithoutReelsInput = {
-    where?: UserWhereInput
-    data: XOR<UserUpdateWithoutReelsInput, UserUncheckedUpdateWithoutReelsInput>
-  }
-
-  export type UserUpdateWithoutReelsInput = {
-    name?: StringFieldUpdateOperationsInput | string
-    mobile?: StringFieldUpdateOperationsInput | string
-    birthDate?: StringFieldUpdateOperationsInput | string
-    email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
-    records?: RecordUpdateManyWithoutUserNestedInput
-  }
-
-  export type UserUncheckedUpdateWithoutReelsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    name?: StringFieldUpdateOperationsInput | string
-    mobile?: StringFieldUpdateOperationsInput | string
-    birthDate?: StringFieldUpdateOperationsInput | string
-    email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
-    records?: RecordUncheckedUpdateManyWithoutUserNestedInput
-  }
-
-  export type WheelTextureUpsertWithWhereUniqueWithoutReelsInput = {
-    where: WheelTextureWhereUniqueInput
-    update: XOR<WheelTextureUpdateWithoutReelsInput, WheelTextureUncheckedUpdateWithoutReelsInput>
-    create: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput>
-  }
-
-  export type WheelTextureUpdateWithWhereUniqueWithoutReelsInput = {
-    where: WheelTextureWhereUniqueInput
-    data: XOR<WheelTextureUpdateWithoutReelsInput, WheelTextureUncheckedUpdateWithoutReelsInput>
-  }
-
-  export type WheelTextureUpdateManyWithWhereWithoutReelsInput = {
-    where: WheelTextureScalarWhereInput
-    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutReelsInput>
-  }
-
-  export type WheelTextureScalarWhereInput = {
-    AND?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
-    OR?: WheelTextureScalarWhereInput[]
-    NOT?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
-    id?: IntFilter<"WheelTexture"> | number
-    createdAt?: DateTimeFilter<"WheelTexture"> | Date | string
-    updatedAt?: DateTimeFilter<"WheelTexture"> | Date | string
-    srcType?: IntFilter<"WheelTexture"> | number
-    srcUrl?: StringFilter<"WheelTexture"> | string
-    caption?: StringNullableFilter<"WheelTexture"> | string | null
-    memoryId?: IntNullableFilter<"WheelTexture"> | number | null
-    relationshipId?: IntNullableFilter<"WheelTexture"> | number | null
-    reelId?: IntNullableFilter<"WheelTexture"> | number | null
-  }
-
   export type MemoryUpsertWithWhereUniqueWithoutReelInput = {
     where: MemoryWhereUniqueInput
     update: XOR<MemoryUpdateWithoutReelInput, MemoryUncheckedUpdateWithoutReelInput>
@@ -14763,6 +19585,38 @@ export namespace Prisma {
     date?: DateTimeNullableFilter<"Memory"> | Date | string | null
     comment?: StringNullableFilter<"Memory"> | string | null
     reelId?: IntFilter<"Memory"> | number
+  }
+
+  export type UserUpsertWithoutReelsInput = {
+    update: XOR<UserUpdateWithoutReelsInput, UserUncheckedUpdateWithoutReelsInput>
+    create: XOR<UserCreateWithoutReelsInput, UserUncheckedCreateWithoutReelsInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutReelsInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutReelsInput, UserUncheckedUpdateWithoutReelsInput>
+  }
+
+  export type UserUpdateWithoutReelsInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    records?: RecordUpdateManyWithoutUserNestedInput
+    scenes?: SceneUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutReelsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    records?: RecordUncheckedUpdateManyWithoutUserNestedInput
+    scenes?: SceneUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type RelationshipUpsertWithWhereUniqueWithoutReelsInput = {
@@ -14794,6 +19648,37 @@ export namespace Prisma {
     reelId?: IntNullableFilter<"Relationship"> | number | null
   }
 
+  export type WheelTextureUpsertWithWhereUniqueWithoutReelsInput = {
+    where: WheelTextureWhereUniqueInput
+    update: XOR<WheelTextureUpdateWithoutReelsInput, WheelTextureUncheckedUpdateWithoutReelsInput>
+    create: XOR<WheelTextureCreateWithoutReelsInput, WheelTextureUncheckedCreateWithoutReelsInput>
+  }
+
+  export type WheelTextureUpdateWithWhereUniqueWithoutReelsInput = {
+    where: WheelTextureWhereUniqueInput
+    data: XOR<WheelTextureUpdateWithoutReelsInput, WheelTextureUncheckedUpdateWithoutReelsInput>
+  }
+
+  export type WheelTextureUpdateManyWithWhereWithoutReelsInput = {
+    where: WheelTextureScalarWhereInput
+    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutReelsInput>
+  }
+
+  export type WheelTextureScalarWhereInput = {
+    AND?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
+    OR?: WheelTextureScalarWhereInput[]
+    NOT?: WheelTextureScalarWhereInput | WheelTextureScalarWhereInput[]
+    id?: IntFilter<"WheelTexture"> | number
+    createdAt?: DateTimeFilter<"WheelTexture"> | Date | string
+    updatedAt?: DateTimeFilter<"WheelTexture"> | Date | string
+    srcType?: IntFilter<"WheelTexture"> | number
+    srcUrl?: StringFilter<"WheelTexture"> | string
+    memoryId?: IntNullableFilter<"WheelTexture"> | number | null
+    relationshipId?: IntNullableFilter<"WheelTexture"> | number | null
+    caption?: StringNullableFilter<"WheelTexture"> | string | null
+    reelId?: IntNullableFilter<"WheelTexture"> | number | null
+  }
+
   export type ReelCreateWithoutLifestoryInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -14804,10 +19689,10 @@ export namespace Prisma {
     birthPlace?: string | null
     motto?: string | null
     lifestoryId?: number | null
-    user?: UserCreateNestedOneWithoutReelsInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
     memorys?: MemoryCreateNestedManyWithoutReelInput
+    user?: UserCreateNestedOneWithoutReelsInput
     relationships?: RelationshipCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUncheckedCreateWithoutLifestoryInput = {
@@ -14822,9 +19707,9 @@ export namespace Prisma {
     motto?: string | null
     lifestoryId?: number | null
     userId?: number | null
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
     memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
     relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
   }
 
   export type ReelCreateOrConnectWithoutLifestoryInput = {
@@ -14853,10 +19738,10 @@ export namespace Prisma {
     birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    user?: UserUpdateOneWithoutReelsNestedInput
-    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUpdateManyWithoutReelNestedInput
+    user?: UserUpdateOneWithoutReelsNestedInput
     relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateWithoutLifestoryInput = {
@@ -14871,9 +19756,9 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
     relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
   }
 
   export type MemoryCreateWithoutWheelTexturesInput = {
@@ -14883,7 +19768,7 @@ export namespace Prisma {
     subTitle?: string | null
     date?: Date | string | null
     comment?: string | null
-    reel?: ReelCreateNestedOneWithoutMemorysInput
+    reel: ReelCreateNestedOneWithoutMemorysInput
   }
 
   export type MemoryUncheckedCreateWithoutWheelTexturesInput = {
@@ -14900,6 +19785,44 @@ export namespace Prisma {
   export type MemoryCreateOrConnectWithoutWheelTexturesInput = {
     where: MemoryWhereUniqueInput
     create: XOR<MemoryCreateWithoutWheelTexturesInput, MemoryUncheckedCreateWithoutWheelTexturesInput>
+  }
+
+  export type ReelCreateWithoutChildhoodInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    name: string
+    birthDate: string
+    profileImg?: string | null
+    birthPlace?: string | null
+    motto?: string | null
+    lifestoryId?: number | null
+    lifestory?: LifestoryCreateNestedOneWithoutReelInput
+    memorys?: MemoryCreateNestedManyWithoutReelInput
+    user?: UserCreateNestedOneWithoutReelsInput
+    relationships?: RelationshipCreateNestedManyWithoutReelsInput
+  }
+
+  export type ReelUncheckedCreateWithoutChildhoodInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    name: string
+    birthDate: string
+    profileImg?: string | null
+    birthPlace?: string | null
+    motto?: string | null
+    lifestoryId?: number | null
+    userId?: number | null
+    lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
+    memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
+    relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+  }
+
+  export type ReelCreateOrConnectWithoutChildhoodInput = {
+    where: ReelWhereUniqueInput
+    create: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
   }
 
   export type RelationshipCreateWithoutWheelTexturesInput = {
@@ -14926,44 +19849,6 @@ export namespace Prisma {
     create: XOR<RelationshipCreateWithoutWheelTexturesInput, RelationshipUncheckedCreateWithoutWheelTexturesInput>
   }
 
-  export type ReelCreateWithoutChildhoodInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    name: string
-    birthDate: string
-    profileImg?: string | null
-    birthPlace?: string | null
-    motto?: string | null
-    lifestoryId?: number | null
-    lifestory?: LifestoryCreateNestedOneWithoutReelInput
-    user?: UserCreateNestedOneWithoutReelsInput
-    memorys?: MemoryCreateNestedManyWithoutReelInput
-    relationships?: RelationshipCreateNestedManyWithoutReelsInput
-  }
-
-  export type ReelUncheckedCreateWithoutChildhoodInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    name: string
-    birthDate: string
-    profileImg?: string | null
-    birthPlace?: string | null
-    motto?: string | null
-    lifestoryId?: number | null
-    userId?: number | null
-    lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
-    relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
-  }
-
-  export type ReelCreateOrConnectWithoutChildhoodInput = {
-    where: ReelWhereUniqueInput
-    create: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
-  }
-
   export type MemoryUpsertWithoutWheelTexturesInput = {
     update: XOR<MemoryUpdateWithoutWheelTexturesInput, MemoryUncheckedUpdateWithoutWheelTexturesInput>
     create: XOR<MemoryCreateWithoutWheelTexturesInput, MemoryUncheckedCreateWithoutWheelTexturesInput>
@@ -14982,7 +19867,7 @@ export namespace Prisma {
     subTitle?: NullableStringFieldUpdateOperationsInput | string | null
     date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     comment?: NullableStringFieldUpdateOperationsInput | string | null
-    reel?: ReelUpdateOneWithoutMemorysNestedInput
+    reel?: ReelUpdateOneRequiredWithoutMemorysNestedInput
   }
 
   export type MemoryUncheckedUpdateWithoutWheelTexturesInput = {
@@ -14994,6 +19879,50 @@ export namespace Prisma {
     date?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     comment?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type ReelUpsertWithoutChildhoodInput = {
+    update: XOR<ReelUpdateWithoutChildhoodInput, ReelUncheckedUpdateWithoutChildhoodInput>
+    create: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
+    where?: ReelWhereInput
+  }
+
+  export type ReelUpdateToOneWithWhereWithoutChildhoodInput = {
+    where?: ReelWhereInput
+    data: XOR<ReelUpdateWithoutChildhoodInput, ReelUncheckedUpdateWithoutChildhoodInput>
+  }
+
+  export type ReelUpdateWithoutChildhoodInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    profileImg?: NullableStringFieldUpdateOperationsInput | string | null
+    birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    motto?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    lifestory?: LifestoryUpdateOneWithoutReelNestedInput
+    memorys?: MemoryUpdateManyWithoutReelNestedInput
+    user?: UserUpdateOneWithoutReelsNestedInput
+    relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+  }
+
+  export type ReelUncheckedUpdateWithoutChildhoodInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    name?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    profileImg?: NullableStringFieldUpdateOperationsInput | string | null
+    birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    motto?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+    lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
+    memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
+    relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
   }
 
   export type RelationshipUpsertWithoutWheelTexturesInput = {
@@ -15026,81 +19955,6 @@ export namespace Prisma {
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
-  export type ReelUpsertWithoutChildhoodInput = {
-    update: XOR<ReelUpdateWithoutChildhoodInput, ReelUncheckedUpdateWithoutChildhoodInput>
-    create: XOR<ReelCreateWithoutChildhoodInput, ReelUncheckedCreateWithoutChildhoodInput>
-    where?: ReelWhereInput
-  }
-
-  export type ReelUpdateToOneWithWhereWithoutChildhoodInput = {
-    where?: ReelWhereInput
-    data: XOR<ReelUpdateWithoutChildhoodInput, ReelUncheckedUpdateWithoutChildhoodInput>
-  }
-
-  export type ReelUpdateWithoutChildhoodInput = {
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    identifier?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    birthDate?: StringFieldUpdateOperationsInput | string
-    profileImg?: NullableStringFieldUpdateOperationsInput | string | null
-    birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
-    motto?: NullableStringFieldUpdateOperationsInput | string | null
-    lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    lifestory?: LifestoryUpdateOneWithoutReelNestedInput
-    user?: UserUpdateOneWithoutReelsNestedInput
-    memorys?: MemoryUpdateManyWithoutReelNestedInput
-    relationships?: RelationshipUpdateManyWithoutReelsNestedInput
-  }
-
-  export type ReelUncheckedUpdateWithoutChildhoodInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    identifier?: StringFieldUpdateOperationsInput | string
-    name?: StringFieldUpdateOperationsInput | string
-    birthDate?: StringFieldUpdateOperationsInput | string
-    profileImg?: NullableStringFieldUpdateOperationsInput | string | null
-    birthPlace?: NullableStringFieldUpdateOperationsInput | string | null
-    motto?: NullableStringFieldUpdateOperationsInput | string | null
-    lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    userId?: NullableIntFieldUpdateOperationsInput | number | null
-    lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
-    relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
-  }
-
-  export type WheelTextureCreateWithoutMemoryInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
-    reels?: ReelCreateNestedOneWithoutChildhoodInput
-  }
-
-  export type WheelTextureUncheckedCreateWithoutMemoryInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    relationshipId?: number | null
-    reelId?: number | null
-  }
-
-  export type WheelTextureCreateOrConnectWithoutMemoryInput = {
-    where: WheelTextureWhereUniqueInput
-    create: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput>
-  }
-
-  export type WheelTextureCreateManyMemoryInputEnvelope = {
-    data: WheelTextureCreateManyMemoryInput | WheelTextureCreateManyMemoryInput[]
-    skipDuplicates?: boolean
-  }
-
   export type ReelCreateWithoutMemorysInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
@@ -15113,8 +19967,8 @@ export namespace Prisma {
     lifestoryId?: number | null
     lifestory?: LifestoryCreateNestedOneWithoutReelInput
     user?: UserCreateNestedOneWithoutReelsInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
     relationships?: RelationshipCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
   }
 
   export type ReelUncheckedCreateWithoutMemorysInput = {
@@ -15130,8 +19984,8 @@ export namespace Prisma {
     lifestoryId?: number | null
     userId?: number | null
     lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
     relationships?: RelationshipUncheckedCreateNestedManyWithoutReelsInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
   }
 
   export type ReelCreateOrConnectWithoutMemorysInput = {
@@ -15139,20 +19993,35 @@ export namespace Prisma {
     create: XOR<ReelCreateWithoutMemorysInput, ReelUncheckedCreateWithoutMemorysInput>
   }
 
-  export type WheelTextureUpsertWithWhereUniqueWithoutMemoryInput = {
+  export type WheelTextureCreateWithoutMemoryInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    caption?: string | null
+    reels?: ReelCreateNestedOneWithoutChildhoodInput
+    relationship?: RelationshipCreateNestedOneWithoutWheelTexturesInput
+  }
+
+  export type WheelTextureUncheckedCreateWithoutMemoryInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    relationshipId?: number | null
+    caption?: string | null
+    reelId?: number | null
+  }
+
+  export type WheelTextureCreateOrConnectWithoutMemoryInput = {
     where: WheelTextureWhereUniqueInput
-    update: XOR<WheelTextureUpdateWithoutMemoryInput, WheelTextureUncheckedUpdateWithoutMemoryInput>
     create: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput>
   }
 
-  export type WheelTextureUpdateWithWhereUniqueWithoutMemoryInput = {
-    where: WheelTextureWhereUniqueInput
-    data: XOR<WheelTextureUpdateWithoutMemoryInput, WheelTextureUncheckedUpdateWithoutMemoryInput>
-  }
-
-  export type WheelTextureUpdateManyWithWhereWithoutMemoryInput = {
-    where: WheelTextureScalarWhereInput
-    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutMemoryInput>
+  export type WheelTextureCreateManyMemoryInputEnvelope = {
+    data: WheelTextureCreateManyMemoryInput | WheelTextureCreateManyMemoryInput[]
+    skipDuplicates?: boolean
   }
 
   export type ReelUpsertWithoutMemorysInput = {
@@ -15178,8 +20047,8 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUpdateOneWithoutReelNestedInput
     user?: UserUpdateOneWithoutReelsNestedInput
-    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
     relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateWithoutMemorysInput = {
@@ -15195,8 +20064,62 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
+  }
+
+  export type WheelTextureUpsertWithWhereUniqueWithoutMemoryInput = {
+    where: WheelTextureWhereUniqueInput
+    update: XOR<WheelTextureUpdateWithoutMemoryInput, WheelTextureUncheckedUpdateWithoutMemoryInput>
+    create: XOR<WheelTextureCreateWithoutMemoryInput, WheelTextureUncheckedCreateWithoutMemoryInput>
+  }
+
+  export type WheelTextureUpdateWithWhereUniqueWithoutMemoryInput = {
+    where: WheelTextureWhereUniqueInput
+    data: XOR<WheelTextureUpdateWithoutMemoryInput, WheelTextureUncheckedUpdateWithoutMemoryInput>
+  }
+
+  export type WheelTextureUpdateManyWithWhereWithoutMemoryInput = {
+    where: WheelTextureScalarWhereInput
+    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutMemoryInput>
+  }
+
+  export type ReelCreateWithoutRelationshipsInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    name: string
+    birthDate: string
+    profileImg?: string | null
+    birthPlace?: string | null
+    motto?: string | null
+    lifestoryId?: number | null
+    lifestory?: LifestoryCreateNestedOneWithoutReelInput
+    memorys?: MemoryCreateNestedManyWithoutReelInput
+    user?: UserCreateNestedOneWithoutReelsInput
+    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
+  }
+
+  export type ReelUncheckedCreateWithoutRelationshipsInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    name: string
+    birthDate: string
+    profileImg?: string | null
+    birthPlace?: string | null
+    motto?: string | null
+    lifestoryId?: number | null
+    userId?: number | null
+    lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
+    memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
+    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
+  }
+
+  export type ReelCreateOrConnectWithoutRelationshipsInput = {
+    where: ReelWhereUniqueInput
+    create: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
   }
 
   export type WheelTextureCreateWithoutRelationshipInput = {
@@ -15215,8 +20138,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     memoryId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -15228,60 +20151,6 @@ export namespace Prisma {
   export type WheelTextureCreateManyRelationshipInputEnvelope = {
     data: WheelTextureCreateManyRelationshipInput | WheelTextureCreateManyRelationshipInput[]
     skipDuplicates?: boolean
-  }
-
-  export type ReelCreateWithoutRelationshipsInput = {
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    name: string
-    birthDate: string
-    profileImg?: string | null
-    birthPlace?: string | null
-    motto?: string | null
-    lifestoryId?: number | null
-    lifestory?: LifestoryCreateNestedOneWithoutReelInput
-    user?: UserCreateNestedOneWithoutReelsInput
-    childhood?: WheelTextureCreateNestedManyWithoutReelsInput
-    memorys?: MemoryCreateNestedManyWithoutReelInput
-  }
-
-  export type ReelUncheckedCreateWithoutRelationshipsInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    identifier: string
-    name: string
-    birthDate: string
-    profileImg?: string | null
-    birthPlace?: string | null
-    motto?: string | null
-    lifestoryId?: number | null
-    userId?: number | null
-    lifestory?: LifestoryUncheckedCreateNestedOneWithoutReelInput
-    childhood?: WheelTextureUncheckedCreateNestedManyWithoutReelsInput
-    memorys?: MemoryUncheckedCreateNestedManyWithoutReelInput
-  }
-
-  export type ReelCreateOrConnectWithoutRelationshipsInput = {
-    where: ReelWhereUniqueInput
-    create: XOR<ReelCreateWithoutRelationshipsInput, ReelUncheckedCreateWithoutRelationshipsInput>
-  }
-
-  export type WheelTextureUpsertWithWhereUniqueWithoutRelationshipInput = {
-    where: WheelTextureWhereUniqueInput
-    update: XOR<WheelTextureUpdateWithoutRelationshipInput, WheelTextureUncheckedUpdateWithoutRelationshipInput>
-    create: XOR<WheelTextureCreateWithoutRelationshipInput, WheelTextureUncheckedCreateWithoutRelationshipInput>
-  }
-
-  export type WheelTextureUpdateWithWhereUniqueWithoutRelationshipInput = {
-    where: WheelTextureWhereUniqueInput
-    data: XOR<WheelTextureUpdateWithoutRelationshipInput, WheelTextureUncheckedUpdateWithoutRelationshipInput>
-  }
-
-  export type WheelTextureUpdateManyWithWhereWithoutRelationshipInput = {
-    where: WheelTextureScalarWhereInput
-    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutRelationshipInput>
   }
 
   export type ReelUpsertWithoutRelationshipsInput = {
@@ -15306,9 +20175,9 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUpdateOneWithoutReelNestedInput
+    memorys?: MemoryUpdateManyWithoutReelNestedInput
     user?: UserUpdateOneWithoutReelsNestedInput
     childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
-    memorys?: MemoryUpdateManyWithoutReelNestedInput
   }
 
   export type ReelUncheckedUpdateWithoutRelationshipsInput = {
@@ -15324,27 +20193,45 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
+  }
+
+  export type WheelTextureUpsertWithWhereUniqueWithoutRelationshipInput = {
+    where: WheelTextureWhereUniqueInput
+    update: XOR<WheelTextureUpdateWithoutRelationshipInput, WheelTextureUncheckedUpdateWithoutRelationshipInput>
+    create: XOR<WheelTextureCreateWithoutRelationshipInput, WheelTextureUncheckedCreateWithoutRelationshipInput>
+  }
+
+  export type WheelTextureUpdateWithWhereUniqueWithoutRelationshipInput = {
+    where: WheelTextureWhereUniqueInput
+    data: XOR<WheelTextureUpdateWithoutRelationshipInput, WheelTextureUncheckedUpdateWithoutRelationshipInput>
+  }
+
+  export type WheelTextureUpdateManyWithWhereWithoutRelationshipInput = {
+    where: WheelTextureScalarWhereInput
+    data: XOR<WheelTextureUpdateManyMutationInput, WheelTextureUncheckedUpdateManyWithoutRelationshipInput>
   }
 
   export type UserCreateWithoutRecordsInput = {
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
     reels?: ReelCreateNestedManyWithoutUserInput
+    scenes?: SceneCreateNestedManyWithoutUserInput
   }
 
   export type UserUncheckedCreateWithoutRecordsInput = {
     id?: number
     name: string
     mobile: string
+    plan?: string
     birthDate: string
     email?: string | null
-    plan?: string
     reels?: ReelUncheckedCreateNestedManyWithoutUserInput
+    scenes?: SceneUncheckedCreateNestedManyWithoutUserInput
   }
 
   export type UserCreateOrConnectWithoutRecordsInput = {
@@ -15362,6 +20249,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemUncheckedCreateWithoutRecordInput = {
@@ -15375,6 +20263,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemCreateOrConnectWithoutRecordInput = {
@@ -15401,20 +20290,22 @@ export namespace Prisma {
   export type UserUpdateWithoutRecordsInput = {
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
     reels?: ReelUpdateManyWithoutUserNestedInput
+    scenes?: SceneUpdateManyWithoutUserNestedInput
   }
 
   export type UserUncheckedUpdateWithoutRecordsInput = {
     id?: IntFieldUpdateOperationsInput | number
     name?: StringFieldUpdateOperationsInput | string
     mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
     birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
-    plan?: StringFieldUpdateOperationsInput | string
     reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
+    scenes?: SceneUncheckedUpdateManyWithoutUserNestedInput
   }
 
   export type RecordItemUpsertWithWhereUniqueWithoutRecordInput = {
@@ -15448,19 +20339,22 @@ export namespace Prisma {
     isHighlight?: BoolFilter<"RecordItem"> | boolean
     coverUrl?: StringNullableFilter<"RecordItem"> | string | null
     recordId?: IntFilter<"RecordItem"> | number
+    images?: StringNullableListFilter<"RecordItem">
   }
 
   export type RecordCreateWithoutRecordItemsInput = {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
     description?: string | null
     bgm?: string | null
     color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
     user?: UserCreateNestedOneWithoutRecordsInput
   }
 
@@ -15469,7 +20363,6 @@ export namespace Prisma {
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
     coverUrl?: string | null
     name?: string | null
     subName?: string | null
@@ -15477,6 +20370,9 @@ export namespace Prisma {
     bgm?: string | null
     color?: string | null
     userId?: number | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
   }
 
   export type RecordCreateOrConnectWithoutRecordItemsInput = {
@@ -15499,13 +20395,15 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
     user?: UserUpdateOneWithoutRecordsNestedInput
   }
 
@@ -15514,7 +20412,6 @@ export namespace Prisma {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -15522,6 +20419,325 @@ export namespace Prisma {
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type UserCreateWithoutScenesInput = {
+    name: string
+    mobile: string
+    plan?: string
+    birthDate: string
+    email?: string | null
+    records?: RecordCreateNestedManyWithoutUserInput
+    reels?: ReelCreateNestedManyWithoutUserInput
+  }
+
+  export type UserUncheckedCreateWithoutScenesInput = {
+    id?: number
+    name: string
+    mobile: string
+    plan?: string
+    birthDate: string
+    email?: string | null
+    records?: RecordUncheckedCreateNestedManyWithoutUserInput
+    reels?: ReelUncheckedCreateNestedManyWithoutUserInput
+  }
+
+  export type UserCreateOrConnectWithoutScenesInput = {
+    where: UserWhereUniqueInput
+    create: XOR<UserCreateWithoutScenesInput, UserUncheckedCreateWithoutScenesInput>
+  }
+
+  export type SceneItemCreateWithoutSceneInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    title?: string | null
+    date?: string | null
+    desc?: string | null
+    order?: number
+    images?: SceneImageCreateNestedManyWithoutItemInput
+  }
+
+  export type SceneItemUncheckedCreateWithoutSceneInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    title?: string | null
+    date?: string | null
+    desc?: string | null
+    order?: number
+    images?: SceneImageUncheckedCreateNestedManyWithoutItemInput
+  }
+
+  export type SceneItemCreateOrConnectWithoutSceneInput = {
+    where: SceneItemWhereUniqueInput
+    create: XOR<SceneItemCreateWithoutSceneInput, SceneItemUncheckedCreateWithoutSceneInput>
+  }
+
+  export type SceneItemCreateManySceneInputEnvelope = {
+    data: SceneItemCreateManySceneInput | SceneItemCreateManySceneInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type UserUpsertWithoutScenesInput = {
+    update: XOR<UserUpdateWithoutScenesInput, UserUncheckedUpdateWithoutScenesInput>
+    create: XOR<UserCreateWithoutScenesInput, UserUncheckedCreateWithoutScenesInput>
+    where?: UserWhereInput
+  }
+
+  export type UserUpdateToOneWithWhereWithoutScenesInput = {
+    where?: UserWhereInput
+    data: XOR<UserUpdateWithoutScenesInput, UserUncheckedUpdateWithoutScenesInput>
+  }
+
+  export type UserUpdateWithoutScenesInput = {
+    name?: StringFieldUpdateOperationsInput | string
+    mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    records?: RecordUpdateManyWithoutUserNestedInput
+    reels?: ReelUpdateManyWithoutUserNestedInput
+  }
+
+  export type UserUncheckedUpdateWithoutScenesInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    mobile?: StringFieldUpdateOperationsInput | string
+    plan?: StringFieldUpdateOperationsInput | string
+    birthDate?: StringFieldUpdateOperationsInput | string
+    email?: NullableStringFieldUpdateOperationsInput | string | null
+    records?: RecordUncheckedUpdateManyWithoutUserNestedInput
+    reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
+  }
+
+  export type SceneItemUpsertWithWhereUniqueWithoutSceneInput = {
+    where: SceneItemWhereUniqueInput
+    update: XOR<SceneItemUpdateWithoutSceneInput, SceneItemUncheckedUpdateWithoutSceneInput>
+    create: XOR<SceneItemCreateWithoutSceneInput, SceneItemUncheckedCreateWithoutSceneInput>
+  }
+
+  export type SceneItemUpdateWithWhereUniqueWithoutSceneInput = {
+    where: SceneItemWhereUniqueInput
+    data: XOR<SceneItemUpdateWithoutSceneInput, SceneItemUncheckedUpdateWithoutSceneInput>
+  }
+
+  export type SceneItemUpdateManyWithWhereWithoutSceneInput = {
+    where: SceneItemScalarWhereInput
+    data: XOR<SceneItemUpdateManyMutationInput, SceneItemUncheckedUpdateManyWithoutSceneInput>
+  }
+
+  export type SceneItemScalarWhereInput = {
+    AND?: SceneItemScalarWhereInput | SceneItemScalarWhereInput[]
+    OR?: SceneItemScalarWhereInput[]
+    NOT?: SceneItemScalarWhereInput | SceneItemScalarWhereInput[]
+    id?: IntFilter<"SceneItem"> | number
+    createdAt?: DateTimeFilter<"SceneItem"> | Date | string
+    updatedAt?: DateTimeFilter<"SceneItem"> | Date | string
+    title?: StringNullableFilter<"SceneItem"> | string | null
+    date?: StringNullableFilter<"SceneItem"> | string | null
+    desc?: StringNullableFilter<"SceneItem"> | string | null
+    order?: IntFilter<"SceneItem"> | number
+    sceneId?: IntFilter<"SceneItem"> | number
+  }
+
+  export type SceneCreateWithoutItemsInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    profilePhoto?: string | null
+    profileName?: string | null
+    profileBirthDate?: string | null
+    profileBirthPlace?: string | null
+    profileBiography?: string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    user?: UserCreateNestedOneWithoutScenesInput
+  }
+
+  export type SceneUncheckedCreateWithoutItemsInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    profilePhoto?: string | null
+    profileName?: string | null
+    profileBirthDate?: string | null
+    profileBirthPlace?: string | null
+    profileBiography?: string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    userId?: number | null
+  }
+
+  export type SceneCreateOrConnectWithoutItemsInput = {
+    where: SceneWhereUniqueInput
+    create: XOR<SceneCreateWithoutItemsInput, SceneUncheckedCreateWithoutItemsInput>
+  }
+
+  export type SceneImageCreateWithoutItemInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    url: string
+    order?: number
+  }
+
+  export type SceneImageUncheckedCreateWithoutItemInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    url: string
+    order?: number
+  }
+
+  export type SceneImageCreateOrConnectWithoutItemInput = {
+    where: SceneImageWhereUniqueInput
+    create: XOR<SceneImageCreateWithoutItemInput, SceneImageUncheckedCreateWithoutItemInput>
+  }
+
+  export type SceneImageCreateManyItemInputEnvelope = {
+    data: SceneImageCreateManyItemInput | SceneImageCreateManyItemInput[]
+    skipDuplicates?: boolean
+  }
+
+  export type SceneUpsertWithoutItemsInput = {
+    update: XOR<SceneUpdateWithoutItemsInput, SceneUncheckedUpdateWithoutItemsInput>
+    create: XOR<SceneCreateWithoutItemsInput, SceneUncheckedCreateWithoutItemsInput>
+    where?: SceneWhereInput
+  }
+
+  export type SceneUpdateToOneWithWhereWithoutItemsInput = {
+    where?: SceneWhereInput
+    data: XOR<SceneUpdateWithoutItemsInput, SceneUncheckedUpdateWithoutItemsInput>
+  }
+
+  export type SceneUpdateWithoutItemsInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    user?: UserUpdateOneWithoutScenesNestedInput
+  }
+
+  export type SceneUncheckedUpdateWithoutItemsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    userId?: NullableIntFieldUpdateOperationsInput | number | null
+  }
+
+  export type SceneImageUpsertWithWhereUniqueWithoutItemInput = {
+    where: SceneImageWhereUniqueInput
+    update: XOR<SceneImageUpdateWithoutItemInput, SceneImageUncheckedUpdateWithoutItemInput>
+    create: XOR<SceneImageCreateWithoutItemInput, SceneImageUncheckedCreateWithoutItemInput>
+  }
+
+  export type SceneImageUpdateWithWhereUniqueWithoutItemInput = {
+    where: SceneImageWhereUniqueInput
+    data: XOR<SceneImageUpdateWithoutItemInput, SceneImageUncheckedUpdateWithoutItemInput>
+  }
+
+  export type SceneImageUpdateManyWithWhereWithoutItemInput = {
+    where: SceneImageScalarWhereInput
+    data: XOR<SceneImageUpdateManyMutationInput, SceneImageUncheckedUpdateManyWithoutItemInput>
+  }
+
+  export type SceneImageScalarWhereInput = {
+    AND?: SceneImageScalarWhereInput | SceneImageScalarWhereInput[]
+    OR?: SceneImageScalarWhereInput[]
+    NOT?: SceneImageScalarWhereInput | SceneImageScalarWhereInput[]
+    id?: IntFilter<"SceneImage"> | number
+    createdAt?: DateTimeFilter<"SceneImage"> | Date | string
+    updatedAt?: DateTimeFilter<"SceneImage"> | Date | string
+    url?: StringFilter<"SceneImage"> | string
+    order?: IntFilter<"SceneImage"> | number
+    itemId?: IntFilter<"SceneImage"> | number
+  }
+
+  export type SceneItemCreateWithoutImagesInput = {
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    title?: string | null
+    date?: string | null
+    desc?: string | null
+    order?: number
+    scene: SceneCreateNestedOneWithoutItemsInput
+  }
+
+  export type SceneItemUncheckedCreateWithoutImagesInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    title?: string | null
+    date?: string | null
+    desc?: string | null
+    order?: number
+    sceneId: number
+  }
+
+  export type SceneItemCreateOrConnectWithoutImagesInput = {
+    where: SceneItemWhereUniqueInput
+    create: XOR<SceneItemCreateWithoutImagesInput, SceneItemUncheckedCreateWithoutImagesInput>
+  }
+
+  export type SceneItemUpsertWithoutImagesInput = {
+    update: XOR<SceneItemUpdateWithoutImagesInput, SceneItemUncheckedUpdateWithoutImagesInput>
+    create: XOR<SceneItemCreateWithoutImagesInput, SceneItemUncheckedCreateWithoutImagesInput>
+    where?: SceneItemWhereInput
+  }
+
+  export type SceneItemUpdateToOneWithWhereWithoutImagesInput = {
+    where?: SceneItemWhereInput
+    data: XOR<SceneItemUpdateWithoutImagesInput, SceneItemUncheckedUpdateWithoutImagesInput>
+  }
+
+  export type SceneItemUpdateWithoutImagesInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    scene?: SceneUpdateOneRequiredWithoutItemsNestedInput
+  }
+
+  export type SceneItemUncheckedUpdateWithoutImagesInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    sceneId?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type RecordCreateManyUserInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    identifier: string
+    coverUrl?: string | null
+    name?: string | null
+    subName?: string | null
+    description?: string | null
+    bgm?: string | null
+    color?: string | null
+    userName?: string | null
+    birthDate?: string | null
+    displayMode?: string | null
   }
 
   export type ReelCreateManyUserInput = {
@@ -15537,18 +20753,66 @@ export namespace Prisma {
     lifestoryId?: number | null
   }
 
-  export type RecordCreateManyUserInput = {
+  export type SceneCreateManyUserInput = {
     id?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     identifier: string
-    userName?: string | null
-    coverUrl?: string | null
-    name?: string | null
-    subName?: string | null
-    description?: string | null
-    bgm?: string | null
-    color?: string | null
+    profilePhoto?: string | null
+    profileName?: string | null
+    profileBirthDate?: string | null
+    profileBirthPlace?: string | null
+    profileBiography?: string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type RecordUpdateWithoutUserInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    subName?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    bgm?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
+    recordItems?: RecordItemUpdateManyWithoutRecordNestedInput
+  }
+
+  export type RecordUncheckedUpdateWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    subName?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    bgm?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
+    recordItems?: RecordItemUncheckedUpdateManyWithoutRecordNestedInput
+  }
+
+  export type RecordUncheckedUpdateManyWithoutUserInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    identifier?: StringFieldUpdateOperationsInput | string
+    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    name?: NullableStringFieldUpdateOperationsInput | string | null
+    subName?: NullableStringFieldUpdateOperationsInput | string | null
+    description?: NullableStringFieldUpdateOperationsInput | string | null
+    bgm?: NullableStringFieldUpdateOperationsInput | string | null
+    color?: NullableStringFieldUpdateOperationsInput | string | null
+    userName?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    displayMode?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ReelUpdateWithoutUserInput = {
@@ -15562,9 +20826,9 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUpdateManyWithoutReelNestedInput
     relationships?: RelationshipUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateWithoutUserInput = {
@@ -15579,9 +20843,9 @@ export namespace Prisma {
     motto?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
     lifestory?: LifestoryUncheckedUpdateOneWithoutReelNestedInput
-    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
     memorys?: MemoryUncheckedUpdateManyWithoutReelNestedInput
     relationships?: RelationshipUncheckedUpdateManyWithoutReelsNestedInput
+    childhood?: WheelTextureUncheckedUpdateManyWithoutReelsNestedInput
   }
 
   export type ReelUncheckedUpdateManyWithoutUserInput = {
@@ -15597,58 +20861,44 @@ export namespace Prisma {
     lifestoryId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
-  export type RecordUpdateWithoutUserInput = {
+  export type SceneUpdateWithoutUserInput = {
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
-    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    subName?: NullableStringFieldUpdateOperationsInput | string | null
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    bgm?: NullableStringFieldUpdateOperationsInput | string | null
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-    recordItems?: RecordItemUpdateManyWithoutRecordNestedInput
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    items?: SceneItemUpdateManyWithoutSceneNestedInput
   }
 
-  export type RecordUncheckedUpdateWithoutUserInput = {
+  export type SceneUncheckedUpdateWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
-    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    subName?: NullableStringFieldUpdateOperationsInput | string | null
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    bgm?: NullableStringFieldUpdateOperationsInput | string | null
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-    recordItems?: RecordItemUncheckedUpdateManyWithoutRecordNestedInput
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
+    items?: SceneItemUncheckedUpdateManyWithoutSceneNestedInput
   }
 
-  export type RecordUncheckedUpdateManyWithoutUserInput = {
+  export type SceneUncheckedUpdateManyWithoutUserInput = {
     id?: IntFieldUpdateOperationsInput | number
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     identifier?: StringFieldUpdateOperationsInput | string
-    userName?: NullableStringFieldUpdateOperationsInput | string | null
-    coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
-    name?: NullableStringFieldUpdateOperationsInput | string | null
-    subName?: NullableStringFieldUpdateOperationsInput | string | null
-    description?: NullableStringFieldUpdateOperationsInput | string | null
-    bgm?: NullableStringFieldUpdateOperationsInput | string | null
-    color?: NullableStringFieldUpdateOperationsInput | string | null
-  }
-
-  export type WheelTextureCreateManyReelsInput = {
-    id?: number
-    createdAt?: Date | string
-    updatedAt?: Date | string
-    srcType: number
-    srcUrl: string
-    caption?: string | null
-    memoryId?: number | null
-    relationshipId?: number | null
+    profilePhoto?: NullableStringFieldUpdateOperationsInput | string | null
+    profileName?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
+    profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type MemoryCreateManyReelInput = {
@@ -15670,36 +20920,15 @@ export namespace Prisma {
     comment?: string | null
   }
 
-  export type WheelTextureUpdateWithoutReelsInput = {
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    srcType?: IntFieldUpdateOperationsInput | number
-    srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
-    memory?: MemoryUpdateOneWithoutWheelTexturesNestedInput
-    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
-  }
-
-  export type WheelTextureUncheckedUpdateWithoutReelsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    srcType?: IntFieldUpdateOperationsInput | number
-    srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
-    memoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
-  }
-
-  export type WheelTextureUncheckedUpdateManyWithoutReelsInput = {
-    id?: IntFieldUpdateOperationsInput | number
-    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
-    srcType?: IntFieldUpdateOperationsInput | number
-    srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
-    memoryId?: NullableIntFieldUpdateOperationsInput | number | null
-    relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+  export type WheelTextureCreateManyReelsInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    srcType: number
+    srcUrl: string
+    memoryId?: number | null
+    relationshipId?: number | null
+    caption?: string | null
   }
 
   export type MemoryUpdateWithoutReelInput = {
@@ -15761,14 +20990,46 @@ export namespace Prisma {
     comment?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
+  export type WheelTextureUpdateWithoutReelsInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    srcType?: IntFieldUpdateOperationsInput | number
+    srcUrl?: StringFieldUpdateOperationsInput | string
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
+    memory?: MemoryUpdateOneWithoutWheelTexturesNestedInput
+    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
+  }
+
+  export type WheelTextureUncheckedUpdateWithoutReelsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    srcType?: IntFieldUpdateOperationsInput | number
+    srcUrl?: StringFieldUpdateOperationsInput | string
+    memoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
+  export type WheelTextureUncheckedUpdateManyWithoutReelsInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    srcType?: IntFieldUpdateOperationsInput | number
+    srcUrl?: StringFieldUpdateOperationsInput | string
+    memoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
+  }
+
   export type WheelTextureCreateManyMemoryInput = {
     id?: number
     createdAt?: Date | string
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     relationshipId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -15778,8 +21039,8 @@ export namespace Prisma {
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
     caption?: NullableStringFieldUpdateOperationsInput | string | null
-    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
     reels?: ReelUpdateOneWithoutChildhoodNestedInput
+    relationship?: RelationshipUpdateOneWithoutWheelTexturesNestedInput
   }
 
   export type WheelTextureUncheckedUpdateWithoutMemoryInput = {
@@ -15788,8 +21049,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -15799,8 +21060,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     relationshipId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -15810,8 +21071,8 @@ export namespace Prisma {
     updatedAt?: Date | string
     srcType: number
     srcUrl: string
-    caption?: string | null
     memoryId?: number | null
+    caption?: string | null
     reelId?: number | null
   }
 
@@ -15831,8 +21092,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     memoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -15842,8 +21103,8 @@ export namespace Prisma {
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
     srcType?: IntFieldUpdateOperationsInput | number
     srcUrl?: StringFieldUpdateOperationsInput | string
-    caption?: NullableStringFieldUpdateOperationsInput | string | null
     memoryId?: NullableIntFieldUpdateOperationsInput | number | null
+    caption?: NullableStringFieldUpdateOperationsInput | string | null
     reelId?: NullableIntFieldUpdateOperationsInput | number | null
   }
 
@@ -15858,6 +21119,7 @@ export namespace Prisma {
     color?: string | null
     isHighlight?: boolean
     coverUrl?: string | null
+    images?: RecordItemCreateimagesInput | string[]
   }
 
   export type RecordItemUpdateWithoutRecordInput = {
@@ -15870,6 +21132,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateWithoutRecordInput = {
@@ -15883,6 +21146,7 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
   }
 
   export type RecordItemUncheckedUpdateManyWithoutRecordInput = {
@@ -15896,6 +21160,79 @@ export namespace Prisma {
     color?: NullableStringFieldUpdateOperationsInput | string | null
     isHighlight?: BoolFieldUpdateOperationsInput | boolean
     coverUrl?: NullableStringFieldUpdateOperationsInput | string | null
+    images?: RecordItemUpdateimagesInput | string[]
+  }
+
+  export type SceneItemCreateManySceneInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    title?: string | null
+    date?: string | null
+    desc?: string | null
+    order?: number
+  }
+
+  export type SceneItemUpdateWithoutSceneInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    images?: SceneImageUpdateManyWithoutItemNestedInput
+  }
+
+  export type SceneItemUncheckedUpdateWithoutSceneInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+    images?: SceneImageUncheckedUpdateManyWithoutItemNestedInput
+  }
+
+  export type SceneItemUncheckedUpdateManyWithoutSceneInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    title?: NullableStringFieldUpdateOperationsInput | string | null
+    date?: NullableStringFieldUpdateOperationsInput | string | null
+    desc?: NullableStringFieldUpdateOperationsInput | string | null
+    order?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type SceneImageCreateManyItemInput = {
+    id?: number
+    createdAt?: Date | string
+    updatedAt?: Date | string
+    url: string
+    order?: number
+  }
+
+  export type SceneImageUpdateWithoutItemInput = {
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    url?: StringFieldUpdateOperationsInput | string
+    order?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type SceneImageUncheckedUpdateWithoutItemInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    url?: StringFieldUpdateOperationsInput | string
+    order?: IntFieldUpdateOperationsInput | number
+  }
+
+  export type SceneImageUncheckedUpdateManyWithoutItemInput = {
+    id?: IntFieldUpdateOperationsInput | number
+    createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
+    url?: StringFieldUpdateOperationsInput | string
+    order?: IntFieldUpdateOperationsInput | number
   }
 
 

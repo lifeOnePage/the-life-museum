@@ -6,16 +6,22 @@ import { FaEdit } from "react-icons/fa";
 import { iconBtn, inputStyle } from "./styles";
 
 export default function ItemActionModal({ open, type, item, onClose, onSaveIdentifier, onOpenEditor }) {
-  
+
   const [val, setVal] = useState(item?.identifier || "");
   const [name, setName] = useState(
-    type === "reels" ? item?.name || "" : item?.userName || ""
+    type === "reels" ? item?.name || "" :
+    type === "scenes" ? item?.profileName || "" :
+    item?.userName || ""
   );
   console.log(type, name)
   useEffect(() => {
-    setName(type === "reels" ? item?.name || "" : item?.userName || "");
+    setName(
+      type === "reels" ? item?.name || "" :
+      type === "scenes" ? item?.profileName || "" :
+      item?.userName || ""
+    );
     setVal(item?.identifier || "");
-  }, [item?.identifier, item?.name, item?.userName, open, type]);
+  }, [item?.identifier, item?.name, item?.userName, item?.profileName, open, type]);
 
   if (!open || !item) return null;
 
@@ -49,7 +55,11 @@ export default function ItemActionModal({ open, type, item, onClose, onSaveIdent
         style={{ width: "min(80vw, 760px)", background: "#121212", border: "1px solid #2e2e2e", borderRadius: 12, padding:"40px 16px", color: "#fff" }}
       >
         <div style={{ display: "flex", alignItems: "center" }}>
-          <h3 style={{ margin: 0, flex: 1 }}>{type === "reels" ? "Life-Reels" : "Life-Records"} 설정</h3>
+          <h3 style={{ margin: 0, flex: 1 }}>
+            {type === "reels" ? "Life-Reels" :
+             type === "scenes" ? "Life-Scenes" :
+             "Life-Records"} 설정
+          </h3>
           <button onClick={onClose} style={{ ...iconBtn, padding: 6 }}>
             <FiX />
           </button>

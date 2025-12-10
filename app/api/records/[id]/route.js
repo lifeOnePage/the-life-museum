@@ -36,6 +36,11 @@ export async function GET(req, { params }) {
         description: true,
         bgm: true,
         color: true,
+        birthDate: true,
+        displayMode: true,
+        userName: true,
+        createdAt: true,
+        updatedAt: true,
         recordItems: {
           select: {
             id: true,
@@ -46,6 +51,7 @@ export async function GET(req, { params }) {
             color: true,
             isHighlight: true,
             coverUrl: true,
+            images: true,
             createdAt: true,
           },
           orderBy: { createdAt: "asc" },
@@ -72,18 +78,32 @@ export async function GET(req, { params }) {
           description: record.description,
           bgm: record.bgm,
           color: record.color,
+          birthDate: record.birthDate || null,
+          displayMode: record.displayMode || "year",
+          userName: record.userName || null,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
         },
-        recordItems: (record.recordItems || []).map((item) => ({
-          id: item.id,
-          title: item.title || "",
-          date: item.date || "",
-          location: item.location || "",
-          description: item.description || "",
-          color: item.color || "",
-          isHighlight: item.isHighlight || false,
-          coverUrl: item.coverUrl || "",
-          createdAt: item.createdAt,
-        })),
+        recordItems: (record.recordItems || []).map((item) => {
+          console.log(
+            "[API GET /records/[id]] Item:",
+            item.id,
+            "images from DB:",
+            item.images,
+          );
+          return {
+            id: item.id,
+            title: item.title || "",
+            date: item.date || "",
+            location: item.location || "",
+            description: item.description || "",
+            color: item.color || "",
+            isHighlight: item.isHighlight || false,
+            coverUrl: item.coverUrl || "",
+            images: item.images || [],
+            createdAt: item.createdAt,
+          };
+        }),
       },
     });
   } catch (e) {
@@ -109,7 +129,10 @@ export async function PATCH(req, { params }) {
 
     const body = await req.json().catch(() => ({}));
     const { identifier, userName } = body || {};
-    console.log("[records:PATCH] params id:", id, "body:", { identifier, userName });
+    console.log("[records:PATCH] params id:", id, "body:", {
+      identifier,
+      userName,
+    });
     const idf = String(identifier || "").trim();
     if (!/^[a-z0-9_-]{3,32}$/i.test(idf))
       return NextResponse.json(
@@ -120,7 +143,7 @@ export async function PATCH(req, { params }) {
     // id가 숫자면 숫자 ID로, 아니면 identifier로 찾기
     const idParam = String(id || "").trim();
     const isNumericId = /^\d+$/.test(idParam);
-    
+
     let target;
     if (isNumericId) {
       // 숫자 ID로 직접 찾기
@@ -135,7 +158,7 @@ export async function PATCH(req, { params }) {
         select: { id: true, userId: true },
       });
     }
-    
+
     console.log("[records:PATCH] target:", target);
     if (!target || target.userId !== Number(payload.sub)) {
       return NextResponse.json(
@@ -152,7 +175,13 @@ export async function PATCH(req, { params }) {
     const item = await client.record.update({
       where: { id: target.id },
       data: updateData,
-      select: { id: true, identifier: true, userName: true, createdAt: true, updatedAt: true },
+      select: {
+        id: true,
+        identifier: true,
+        userName: true,
+        createdAt: true,
+        updatedAt: true,
+      },
     });
     return NextResponse.json({ ok: true, item });
   } catch (e) {

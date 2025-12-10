@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import LifeRecordDesktop from "./components/LifeRecordDesktop";
 import LifeRecordMobile from "./components/LifeRecordMobile";
@@ -7,7 +7,12 @@ import "./styles/cardPage.css";
 import "./styles/cardPage-mobile.css";
 
 function useWindowSize() {
-  const [size, setSize] = useState({ width: 0, height: 0 });
+  const [size, setSize] = useState(() => {
+    if (typeof window !== "undefined") {
+      return { width: window.innerWidth, height: window.innerHeight };
+    }
+    return { width: 0, height: 0 };
+  });
   useEffect(() => {
     const updateSize = () => {
       setSize({ width: window.innerWidth, height: window.innerHeight });
@@ -25,6 +30,15 @@ export default function ViewRecordsPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const [autoSlideEnabled, setAutoSlideEnabled] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth > 1000 ? true : false;
+    }
+    return false; // SSR fallback
+  });
+  const isInitializedRef = useRef(false);
+  const prevWidthRef = useRef(width);
 
   useEffect(() => {
     if (!identifier) return;
@@ -74,12 +88,29 @@ export default function ViewRecordsPage() {
     );
   }
 
+  useEffect(() => {
+    if (!isInitializedRef.current && width > 0) {
+      isInitializedRef.current = true;
+      const initialValue = width > 1000 ? true : false;
+      setAutoSlideEnabled(initialValue);
+      prevWidthRef.current = width;
+    }
+  }, [width]);
+
   return (
     <>
-      {width <= 768 ? (
-        <LifeRecordMobile data={data} />
+      {width <= 1000 ? (
+        <LifeRecordMobile
+          data={data}
+          autoSlideEnabled={autoSlideEnabled}
+          onAutoSlideEnabledChange={setAutoSlideEnabled}
+        />
       ) : (
-        <LifeRecordDesktop data={data} />
+        <LifeRecordDesktop
+          data={data}
+          autoSlideEnabled={autoSlideEnabled}
+          onAutoSlideEnabledChange={setAutoSlideEnabled}
+        />
       )}
     </>
   );

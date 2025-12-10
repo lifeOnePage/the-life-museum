@@ -147,7 +147,6 @@ export default function Mypage() {
           const res = await createScene(token, identifier, name);
           setScenes((arr) => [res.item, ...arr]);
         }
-        closeCreate();
       } catch (e) {
         console.error(e);
         setError(
@@ -282,7 +281,7 @@ export default function Mypage() {
   };
   const main = () => {
     router.push(`/`);
-  }
+  };
 
   return (
     <>

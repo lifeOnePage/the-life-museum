@@ -5,42 +5,42 @@ import { useState, useRef, useEffect } from "react";
 const BGM_LIST = [
   {
     id: "bgm1",
-    name: "BGM 1",
+    name: "설레고 부드러운 음악",
     url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/01.mp3",
   },
   {
     id: "bgm2",
-    name: "BGM 2",
+    name: "그루브하고 차분한 음악",
     url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/02.mp3",
   },
   {
     id: "bgm3",
-    name: "BGM 3",
+    name: "애틋하고 따뜻한 음악",
     url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/03.mp3",
   },
   {
     id: "bgm4",
-    name: "BGM 4",
+    name: "활기차고 밝은 음악",
     url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/04.mp3",
   },
   {
     id: "bgm5",
-    name: "BGM 5",
+    name: "꿈결 같고 느릿한 음악",
     url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/05.mp3",
   },
   {
     id: "bgm6",
-    name: "BGM 6",
+    name: "몽환적이고 아련한 음악",
     url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/06.mp3",
   },
   {
     id: "bgm7",
-    name: "BGM 7",
+    name: "맑고 희망찬 음악",
     url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/07.mp3",
   },
   {
     id: "bgm8",
-    name: "BGM 8",
+    name: "도시적이고 쿨한 음악",
     url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/08.mp3",
   },
 ];

@@ -2,7 +2,7 @@
   --bg: #121212;
   --text: #f2f2f2;
   --muted: #9a9a9a;
-  --card: #efefef;
+  --card: #ffffff;
   --ink: #0f0f0f;
   --hair: 1px;
 }
@@ -46,10 +46,15 @@ body,
 
 .lr-left {
   align-self: center;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: left;
 }
 
 .lr-title {
-  font-size: clamp(40px, 6vw, 96px);
+  font-size: 96px;
   font-weight: 700;
   font-style: italic;
   letter-spacing: 0.5px;
@@ -62,7 +67,7 @@ body,
 .lr-sub {
   margin: 0;
   line-height: 1.7;
-  font-size: clamp(14px, 1.6vw, 18px);
+  font-size: 18px;
   font-family: "Pretendard Variable";
   font-style: normal;
   font-weight: 300;
@@ -77,11 +82,12 @@ body,
 }
 
 .lr-card {
-  background: var(--card);
+  background: #f2f2f2;
+  /* background: color-mix(in srgb, var(--bg) 85%, white);  */
   color: var(--ink);
+  /* border: 1px solid var(--text); */
   border-radius: 14px;
   overflow: hidden;
-  border: 1px solid #ddd;
   padding: 1.5rem;
   height: 100%;
 }
@@ -123,6 +129,54 @@ body,
 .lr-image-change-badge {
   position: absolute;
   right: 10px;
+  bottom: 48px;
+  padding: 6px 12px;
+  height: auto;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: none;
+  color: white;
+  cursor: pointer;
+  opacity: 0.7;
+  transition:
+    opacity 0.2s ease,
+    background 0.2s ease;
+  z-index: 10;
+  font-size: 0.75rem;
+  font-family: "Pretendard Variable";
+  white-space: nowrap;
+}
+
+.lr-image-change-badge:hover:not(:disabled) {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.lr-image-change-badge:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.lr-image-change-badge svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.lr-image-change-badge span {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.lr-image-delete-badge {
+  position: absolute;
+  right: 10px;
   bottom: 10px;
   padding: 6px 12px;
   height: auto;
@@ -146,18 +200,24 @@ body,
   white-space: nowrap;
 }
 
-.lr-image-change-badge:hover {
+.lr-image-delete-badge:hover:not(:disabled) {
   opacity: 1;
   background: rgba(0, 0, 0, 0.6);
 }
 
-.lr-image-change-badge svg {
+.lr-image-delete-badge:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.lr-image-delete-badge svg {
   width: 18px;
   height: 18px;
   flex-shrink: 0;
 }
 
-.lr-image-change-badge span {
+.lr-image-delete-badge span {
   font-size: 0.75rem;
   font-weight: 500;
 }
@@ -172,7 +232,7 @@ body,
   font-family: "Pretendard Variable";
   font-size: 1rem;
   font-style: normal;
-  font-weight: 300;
+  font-weight: 200;
   line-height: 130%;
   letter-spacing: -0.05rem;
   height: 7rem;
@@ -185,13 +245,14 @@ body,
 .lr-meta {
   border-top: 1.2px solid #121212;
   display: flex;
-  align-items: baseline;
-  gap: 10px;
+  align-items: flex-start;
+  padding-top: 15px;
 }
 
 .lr-meta .lr-name {
   flex: 6;
   min-width: 0;
+  align-items: flex-start;
 }
 
 .lr-meta .lr-date-location {
@@ -200,8 +261,21 @@ body,
   text-align: right;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 4px;
+  justify-content: space-between;
+  padding-top: 0;
+  width: 100%;
+}
+
+.lr-meta .lr-date-location > .lr-date:first-child {
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  line-height: 1 !important;
+  margin-bottom: 0;
+}
+
+.lr-meta--mainTop {
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .lr-meta--mainTop p {
@@ -222,11 +296,12 @@ body,
 .lr-date-location {
   text-align: right;
   font-family: "Helvetica Neue LT Std";
+  justify-content: space-between;
   font-size: 2rem;
   font-style: normal;
-  font-weight: 300;
+  font-weight: 200;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.05rem;
 }
 
 .lr-date {
@@ -234,12 +309,13 @@ body,
   font-family: "Helvetica Neue LT Std";
   font-size: 1.9rem;
   font-style: normal;
-  font-weight: 300;
+  font-weight: 200;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.1rem;
   white-space: nowrap;
   display: block;
-  width: 100%;
+  margin-top: 0;
+  padding-top: 0;
 }
 
 .lr-location {
@@ -274,7 +350,7 @@ body,
 .lp-wrap {
   position: absolute;
   top: 50%;
-  left: -120%;
+  left: -70%;
   transform: translateY(-50%);
   z-index: 1;
   cursor: pointer;
@@ -286,7 +362,7 @@ body,
   left: 50%;
   width: 0;
   height: 0;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) translateX(-60px);
 }
 
 .year-item {
@@ -303,6 +379,8 @@ body,
   font-weight: 100;
   line-height: 130%;
   text-align: center;
+  display: flex;
+  align-items: center;
 }
 
 .year-item.active {
@@ -321,6 +399,8 @@ body,
 
 .lp-disc {
   transition: transform 160ms ease-out;
+  width: 70%;
+  min-width: 400px; /* 최소 너비 설정으로 창 크기가 줄어들어도 작아지지 않음 */
   display: block;
   will-change: transform;
   pointer-events: none;
@@ -510,24 +590,28 @@ body,
   justify-content: space-between;
   width: 100%;
   padding: 0rem 3rem;
+  background: var(--bg);
 }
 
 .footer-logo {
   font-size: 0.7rem;
   font-weight: 300;
   font-family: "Pretendard Variable";
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
 }
 
 .footer-copyright {
   font-size: 0.7rem;
   font-weight: 300;
   font-family: "Pretendard Variable";
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
 }
 
 .login-btn-fixed {
-  color: #a6a6a6;
+  color: var(--text);
+  opacity: 0.7;
   font-size: 0.7rem;
   font-family: "Pretendard Variable";
   cursor: pointer;
@@ -710,14 +794,6 @@ body,
   transform: scale(1.02);
 }
 
-.lr-highlight-item::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 10px;
-}
-
 .lr-highlight-title {
   width: 100%;
   position: absolute;
@@ -738,9 +814,12 @@ body,
   font-family: "Pretendard Variable";
   font-size: 0.75rem;
   font-style: normal;
-  font-weight: 300;
-  line-height: 130%;
-  letter-spacing: -0.0375rem;
+  font-weight: 600;
+  text-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.9),
+    0 2px 6px rgba(0, 0, 0, 0.8),
+    0 0 12px rgba(0, 0, 0, 0.7),
+    0 0 20px rgba(0, 0, 0, 0.5);
 }
 
 @media (min-width: 601px) {
@@ -748,7 +827,7 @@ body,
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 24px;
+    bottom: 20px;
   }
 }
 
@@ -865,6 +944,11 @@ body,
   white-space: pre-wrap;
 }
 
+.lr-desc-input::placeholder {
+  color: #9a9a9a;
+  opacity: 0.5;
+}
+
 .lr-char-count {
   text-align: right;
   font-size: 0.75rem;
@@ -885,8 +969,6 @@ body,
   line-height: 110%;
   letter-spacing: -0.25rem;
   white-space: pre-line;
-
-  margin-top: 1rem;
 }
 
 textarea.lr-name {
@@ -918,20 +1000,68 @@ input.lr-name {
   border-radius: 4px;
   padding: 10px 8px;
 }
+
+input.lr-name::placeholder,
+textarea.lr-name::placeholder {
+  color: #9a9a9a;
+  opacity: 0.5;
+}
+
+.lr-subtitle {
+  font-family: "Pretendard Variable";
+  font-size: 1.2rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.05rem;
+  margin-bottom: 0.5rem;
+  opacity: 0.8;
+}
+
+input.lr-subtitle {
+  background: transparent;
+  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  padding: 8px;
+  color: inherit;
+  width: 100%;
+  font-size: 1.2rem;
+  font-style: normal;
+  font-weight: 400;
+  line-height: normal;
+  letter-spacing: -0.05rem;
+  opacity: 1;
+}
+
+input.lr-subtitle::placeholder {
+  color: #9a9a9a;
+  opacity: 0.5;
+}
+
 .lr-date-input,
 .lr-location-input {
   background: transparent;
   text-align: right;
   border: 1px dashed rgba(0, 0, 0, 0.4);
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 6px 8px 6px 8px;
   color: inherit;
   font-family: "Helvetica Neue LT Std";
   font-size: 1.5rem;
   font-style: normal;
   font-weight: 300;
   line-height: 110%;
-  letter-spacing: -0.125rem;
+  letter-spacing: -0.05rem;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  flex-shrink: 1;
+}
+
+.lr-date-input::placeholder,
+.lr-location-input::placeholder {
+  color: #9a9a9a;
+  opacity: 0.5;
 }
 
 .lr-display-mode-control {
@@ -955,28 +1085,36 @@ input.lr-name {
   font-family: "Pretendard Variable";
   font-size: 0.85rem;
   font-weight: 400;
-  color: rgba(0, 0, 0, 0.6);
+  color: #0f0f0f;
+  opacity: 0.7;
 }
 
 .lr-mode-switch {
   position: relative;
   width: 44px;
   height: 24px;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed #0f0f0f;
   border-radius: 12px;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 2px;
+  opacity: 0.4;
+  flex-shrink: 0;
 }
 
 .lr-mode-switch:hover {
-  border-color: rgba(0, 0, 0, 0.6);
+  opacity: 0.6;
 }
 
 .lr-mode-switch.active {
-  background: rgba(0, 0, 0, 0.1);
-  border-color: rgba(0, 0, 0, 0.6);
+  background: none;
+  opacity: 0.8;
+  border-color: #0f0f0f;
+}
+
+.lr-mode-switch.active:hover {
+  opacity: 1;
 }
 
 .lr-mode-switch-slider {
@@ -985,35 +1123,43 @@ input.lr-name {
   left: 2px;
   width: 18px;
   height: 18px;
-  background: rgba(0, 0, 0, 0.3);
+  background: #0f0f0f;
   border-radius: 50%;
   transition: all 0.2s ease;
+  opacity: 0.5;
 }
 
 .lr-mode-switch.active .lr-mode-switch-slider {
   left: 22px;
-  background: rgba(0, 0, 0, 0.6);
+  opacity: 1;
 }
 
 .lr-birthdate-input-inline {
   flex: 1;
   min-width: 200px;
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed #0f0f0f;
   border-radius: 4px;
   padding: 6px 10px;
-  color: inherit;
+  color: #0f0f0f;
   font-family: "Pretendard Variable";
   font-size: 0.9rem;
   font-weight: 400;
   transition:
     opacity 0.2s ease,
     visibility 0.2s ease;
+  opacity: 0.7;
 }
 
 .lr-birthdate-input-inline:focus {
   outline: none;
-  border-color: rgba(0, 0, 0, 0.6);
+  border-color: #0f0f0f;
+  opacity: 1;
+}
+
+.lr-birthdate-input-inline::placeholder {
+  color: #9a9a9a;
+  opacity: 0.5;
 }
 
 .lr-birthdate-input-hidden {

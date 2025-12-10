@@ -18,6 +18,8 @@ export async function GET(_req, { params }) {
         description: true,
         bgm: true,
         color: true,
+        birthDate: true,
+        displayMode: true,
         userName: true,
         userId: true,
         user: {
@@ -35,6 +37,7 @@ export async function GET(_req, { params }) {
             color: true,
             isHighlight: true,
             coverUrl: true,
+            images: true,
             createdAt: true,
           },
           orderBy: { createdAt: "asc" },
@@ -80,6 +83,8 @@ export async function GET(_req, { params }) {
         description: record.description,
         bgm: record.bgm,
         color: record.color,
+        birthDate: record.birthDate || null,
+        displayMode: record.displayMode || "year",
         userName: userName,
       },
       items: (record.recordItems || []).map((item) => ({
@@ -91,6 +96,7 @@ export async function GET(_req, { params }) {
         color: item.color || "",
         isHighlight: item.isHighlight || false,
         coverUrl: item.coverUrl || "",
+        images: item.images || [],
       })),
     };
 

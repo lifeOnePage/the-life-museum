@@ -63,7 +63,7 @@ export async function PUT(req, { params }) {
       );
     }
 
-    // Transaction으로 전체 업데이트
+    // Transaction으로 전체 업데이트 (타임아웃과 재시도 설정)
     const updatedScene = await client.$transaction(async (tx) => {
       // 1. Scene 기본 정보 업데이트
       const scene = await tx.scene.update({
@@ -104,26 +104,29 @@ export async function PUT(req, { params }) {
 
           console.log(`[PUT /api/scenes/[id]] Created item ${createdItem.id}, images:`, item.img);
 
-          // 이미지 추가
+          // 이미지 추가 - createMany로 배치 생성
           if (item.img && Array.isArray(item.img) && item.img.length > 0) {
             console.log(`[PUT /api/scenes/[id]] Processing ${item.img.length} images for item ${createdItem.id}`);
-            for (let j = 0; j < item.img.length; j++) {
-              const imgUrl = typeof item.img[j] === "string"
-                ? item.img[j]
-                : item.img[j]?.url;
 
-              console.log(`[PUT /api/scenes/[id]] Image ${j}: ${imgUrl}`);
-
-              if (imgUrl) {
-                const createdImage = await tx.sceneImage.create({
-                  data: {
+            const imagesToCreate = item.img
+              .map((img, j) => {
+                const imgUrl = typeof img === "string" ? img : img?.url;
+                if (imgUrl) {
+                  return {
                     itemId: createdItem.id,
                     url: imgUrl,
                     order: j,
-                  },
-                });
-                console.log(`[PUT /api/scenes/[id]] Created image ${createdImage.id}`);
-              }
+                  };
+                }
+                return null;
+              })
+              .filter(Boolean);
+
+            if (imagesToCreate.length > 0) {
+              const result = await tx.sceneImage.createMany({
+                data: imagesToCreate,
+              });
+              console.log(`[PUT /api/scenes/[id]] Created ${result.count} images for item ${createdItem.id}`);
             }
           } else {
             console.log(`[PUT /api/scenes/[id]] No images for item ${createdItem.id}`);
@@ -151,9 +154,22 @@ export async function PUT(req, { params }) {
 
     return NextResponse.json({ ok: true, scene: result });
   } catch (error) {
-    console.error("[PUT /api/scenes/[id]]", error);
+    console.error("[PUT /api/scenes/[id]] Error:", error);
+
+    // Prisma Transaction 관련 에러 처리
+    if (error.message?.includes("Transaction")) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "데이터베이스 트랜잭션 오류가 발생했습니다. 다시 시도해주세요.",
+          details: error.message
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
-      { ok: false, error: error.message },
+      { ok: false, error: error.message || "저장 중 오류가 발생했습니다." },
       { status: 500 }
     );
   }

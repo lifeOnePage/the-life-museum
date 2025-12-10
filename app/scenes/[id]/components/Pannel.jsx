@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -45,6 +45,9 @@ export default function Pannel({
   const [isProfileView, setIsProfileView] = useState(false);
   const [isLifestoryGuideMode, setIsLifestoryGuideMode] = useState(false);
   const [lifestoryProgressData, setLifestoryProgressData] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  const detailEditRef = useRef(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -157,12 +160,31 @@ export default function Pannel({
     }
 
     try {
+      setIsUploading(true);
+
+      // 먼저 이미지 업로드
+      let finalEditedData = editedData;
+      if (detailEditRef.current?.uploadPendingImages) {
+        try {
+          const uploadedImages = await detailEditRef.current.uploadPendingImages();
+          finalEditedData = {
+            ...editedData,
+            img: uploadedImages.map(img => img.url)
+          };
+        } catch (uploadError) {
+          console.error("Image upload failed:", uploadError);
+          alert("이미지 업로드 중 오류가 발생했습니다. 다시 시도해주세요.");
+          setIsUploading(false);
+          return;
+        }
+      }
+
       let updatedItems;
 
       if (selectedItem?.isNew) {
         // 새 아이템 추가
         const newItem = {
-          ...editedData,
+          ...finalEditedData,
           isNew: false,
           // img 필드 유지 (DetailEdit과 일관성 유지)
         };
@@ -178,14 +200,14 @@ export default function Pannel({
         updatedItems = items.map((item) =>
           item.id === selectedItem.id ? {
             ...item,
-            ...editedData,
+            ...finalEditedData,
             // img 필드 유지 (DetailEdit과 일관성 유지)
           } : item
         );
         setItems(updatedItems);
       }
 
-      console.log("[Pannel.handleSaveItem] editedData:", editedData);
+      console.log("[Pannel.handleSaveItem] finalEditedData:", finalEditedData);
       console.log("[Pannel.handleSaveItem] updatedItems:", updatedItems);
 
       // DB에 저장
@@ -221,9 +243,11 @@ export default function Pannel({
       setHasChanges(false);
       setSelectedItem(null);
       setEditedData(null);
+      setIsUploading(false);
       alert("저장되었습니다.");
     } catch (error) {
       console.error("Failed to save item:", error);
+      setIsUploading(false);
       alert("저장 중 오류가 발생했습니다.");
     }
   };
@@ -397,12 +421,18 @@ export default function Pannel({
           onSave={handleSaveItem}
           onBack={handleBack}
           onToggleMode={onToggleMode}
+          isDisabled={isUploading}
         />
         <div className="flex-1 overflow-y-auto">
           {mode === "view" ? (
             <DetailView item={selectedItem} />
           ) : (
-            <DetailEdit item={editedData} onChange={handleChange} />
+            <DetailEdit
+              ref={detailEditRef}
+              item={editedData}
+              onChange={handleChange}
+              onUploadStateChange={setIsUploading}
+            />
           )}
         </div>
       </div>

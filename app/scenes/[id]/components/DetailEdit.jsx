@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import {
   DndContext,
   closestCenter,
@@ -17,13 +17,14 @@ import {
 } from "@dnd-kit/sortable";
 import ImageThumbnail from "./ImageThumbnail";
 
-export default function DetailEdit({ item, onChange }) {
+const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStateChange }, ref) {
   const [formData, setFormData] = useState({
     title: item?.title || "",
     date: item?.date || "",
     desc: item?.desc || "",
-    img: (item?.img || []).map((url, idx) => ({ id: `img-${Date.now()}-${idx}`, url })),
+    img: (item?.img || []).map((url, idx) => ({ id: `img-${Date.now()}-${idx}`, url, isUploaded: true })),
   });
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const lastSentDataRef = useRef(null);
   const prevItemIdRef = useRef(null);
@@ -38,7 +39,7 @@ export default function DetailEdit({ item, onChange }) {
         desc: item.desc || "",
         img: (item.img || item.images || []).map((url, idx) => {
           const imgUrl = typeof url === 'string' ? url : url.url;
-          return { id: `img-${Date.now()}-${idx}`, url: imgUrl };
+          return { id: `img-${Date.now()}-${idx}`, url: imgUrl, isUploaded: true };
         }),
       });
       // 초기화 시에는 onChange 호출하지 않도록 lastSentDataRef 업데이트
@@ -52,6 +53,14 @@ export default function DetailEdit({ item, onChange }) {
       });
     }
   }, [item]);
+
+  // 업로드 상태 변경 시 부모에게 알림
+  useEffect(() => {
+    if (onUploadStateChange) {
+      const hasUnuploadedImages = formData.img.some(img => !img.isUploaded);
+      onUploadStateChange(hasUnuploadedImages || isProcessing);
+    }
+  }, [formData.img, isProcessing, onUploadStateChange]);
 
   // formData 변경 시 부모에게 알림
   useEffect(() => {
@@ -103,30 +112,39 @@ export default function DetailEdit({ item, onChange }) {
     }));
   };
 
-  const handleImageUpload = async (e) => {
+  const handleImageSelect = (e) => {
     const files = Array.from(e.target.files);
     if (files.length === 0) return;
 
-    // 업로드 중 표시를 위한 임시 이미지 추가
-    const tempImages = files.map((file, idx) => ({
-      id: `temp-${Date.now()}-${idx}`,
+    setIsProcessing(true);
+
+    // Blob URL 생성 (즉시 표시용) + File 객체 보관 (나중에 업로드용)
+    const newImages = files.map((file, idx) => ({
+      id: `pending-${Date.now()}-${idx}`,
       url: URL.createObjectURL(file),
-      isUploading: true
+      file: file, // File 객체 보관
+      isUploaded: false // 아직 업로드 안됨
     }));
 
     setFormData(prev => ({
       ...prev,
-      img: [...prev.img, ...tempImages]
+      img: [...prev.img, ...newImages]
     }));
 
-    // 실제 업로드
-    try {
-      const uploadedImages = [];
+    setIsProcessing(false);
+  };
 
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
+  // 저장 시 호출될 업로드 함수 (외부에서 사용 가능하도록 useImperativeHandle 대신 직접 노출)
+  const uploadPendingImages = async () => {
+    const pendingImages = formData.img.filter(img => !img.isUploaded);
+    if (pendingImages.length === 0) return formData.img;
+
+    setIsProcessing(true);
+
+    try {
+      const uploadPromises = pendingImages.map(async (img) => {
         const formDataToSend = new FormData();
-        formDataToSend.append("file", file);
+        formDataToSend.append("file", img.file);
         formDataToSend.append("prefix", "scenes");
 
         const res = await fetch("/api/storage/upload", {
@@ -137,34 +155,59 @@ export default function DetailEdit({ item, onChange }) {
         const data = await res.json();
 
         if (data.ok && data.publicUrl) {
-          uploadedImages.push({
-            id: `img-${Date.now()}-${i}`,
-            url: data.publicUrl
-          });
+          // Blob URL 해제
+          URL.revokeObjectURL(img.url);
+          return {
+            id: img.id,
+            url: data.publicUrl,
+            isUploaded: true
+          };
         } else {
           console.error("Upload failed:", data.error);
+          throw new Error(data.error || "Upload failed");
         }
-      }
+      });
 
-      // 임시 이미지를 실제 업로드된 이미지로 교체
+      const uploadedImages = await Promise.all(uploadPromises);
+
+      // formData 업데이트: 업로드된 이미지로 교체
+      const updatedImages = formData.img.map(img => {
+        if (!img.isUploaded) {
+          const uploaded = uploadedImages.find(u => u.id === img.id);
+          return uploaded || img;
+        }
+        return img;
+      });
+
       setFormData(prev => ({
         ...prev,
-        img: [
-          ...prev.img.filter(img => !img.isUploading),
-          ...uploadedImages
-        ]
+        img: updatedImages
       }));
+
+      setIsProcessing(false);
+      return updatedImages;
     } catch (error) {
       console.error("Failed to upload images:", error);
-      alert("이미지 업로드 중 오류가 발생했습니다.");
-
-      // 실패한 경우 임시 이미지 제거
-      setFormData(prev => ({
-        ...prev,
-        img: prev.img.filter(img => !img.isUploading)
-      }));
+      setIsProcessing(false);
+      throw error;
     }
   };
+
+  // 컴포넌트가 언마운트될 때 Blob URL 해제
+  useEffect(() => {
+    return () => {
+      formData.img.forEach(img => {
+        if (!img.isUploaded && img.url.startsWith('blob:')) {
+          URL.revokeObjectURL(img.url);
+        }
+      });
+    };
+  }, [formData.img]);
+
+  // 외부에서 호출 가능하도록 ref로 uploadPendingImages 노출
+  useImperativeHandle(ref, () => ({
+    uploadPendingImages
+  }));
 
   return (
     <div className="px-4 py-4">
@@ -226,7 +269,7 @@ export default function DetailEdit({ item, onChange }) {
                     id={img.id}
                     imgUrl={img.url}
                     onDelete={() => handleDeleteImage(img.id)}
-                    isUploading={img.isUploading}
+                    isUploading={!img.isUploaded}
                   />
                 ))}
               </div>
@@ -244,11 +287,14 @@ export default function DetailEdit({ item, onChange }) {
             type="file"
             multiple
             accept="image/*"
-            onChange={handleImageUpload}
+            onChange={handleImageSelect}
             className="hidden"
+            disabled={isProcessing}
           />
         </label>
       </div>
     </div>
   );
-}
+});
+
+export default DetailEdit;

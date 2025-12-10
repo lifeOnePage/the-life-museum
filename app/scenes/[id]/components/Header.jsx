@@ -1,12 +1,13 @@
 "use client";
 
-export default function Header({ mode, hasChanges, onSave, onBack, onToggleMode }) {
+export default function Header({ mode, hasChanges, onSave, onBack, onToggleMode, isDisabled }) {
   return (
     <div className="flex items-center justify-between px-4 py-3 border-b border-white/20">
       {onBack && (
         <button
           onClick={onBack}
-          className="text-white hover:text-white/70 transition-colors"
+          disabled={isDisabled}
+          className="text-white hover:text-white/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg
             width="24"
@@ -60,9 +61,10 @@ export default function Header({ mode, hasChanges, onSave, onBack, onToggleMode 
       {mode === "edit" && hasChanges && (
         <button
           onClick={onSave}
-          className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-colors ml-2"
+          disabled={isDisabled}
+          className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-colors ml-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white"
         >
-          저장하기
+          {isDisabled ? "업로드 중..." : "저장하기"}
         </button>
       )}
     </div>

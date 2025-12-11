@@ -277,7 +277,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "/Users/ihyeonseo/Desktop/2025/tlm/the-life-museum/app/generated/prisma",
+      "value": "/vercel/sandbox/primary/app/generated/prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -286,7 +286,7 @@ const config = {
     "binaryTargets": [
       {
         "fromEnvVar": null,
-        "value": "darwin-arm64",
+        "value": "rhel-openssl-3.0.x",
         "native": true
       },
       {
@@ -295,7 +295,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/ihyeonseo/Desktop/2025/tlm/the-life-museum/prisma/schema.prisma",
+    "sourceFilePath": "/vercel/sandbox/primary/prisma/schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

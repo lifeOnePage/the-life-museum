@@ -17,6 +17,7 @@ export default function DesktopLayout({
   onSaveProfile,
   reels,
   records,
+  scenes,
   desktopNav,
   setDesktopNav,
   onOpenCreate,
@@ -92,6 +93,16 @@ export default function DesktopLayout({
                   onOpenAction={(item) => onOpenAction("records", item)}
                 />
               </Section>
+
+              {/* Scenes */}
+              <Section title="Life-Scenes">
+                <HorizontalThumbs
+                  items={scenes}
+                  label="Life-Scenes"
+                  onOpenCreate={() => onOpenCreate("scenes")}
+                  onOpenAction={(item) => onOpenAction("scenes", item)}
+                />
+              </Section>
             </motion.div>
           ) : (
             <motion.div
@@ -115,9 +126,11 @@ export default function DesktopLayout({
             ? "새 Life-Reels"
             : createModal.type === "records"
             ? "새 Life-Records"
+            : createModal.type === "scenes"
+            ? "새 Life-Scenes"
             : ""
         }
-        contentType={createModal.type === "records" ? "records" : "reels"}
+        contentType={createModal.type === "records" ? "records" : createModal.type === "scenes" ? "scenes" : "reels"}
         onClose={closeCreate}
         onConfirm={onConfirmCreate}
       />

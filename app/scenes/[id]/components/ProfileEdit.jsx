@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 
-export default function ProfileEdit({ profile, onChange, mode = "view" }) {
+export default function ProfileEdit({ profile, onChange, mode = "view", onStartLifestoryGuide }) {
   const [formData, setFormData] = useState({
     photo: profile?.photo || "",
     name: profile?.name || "",
@@ -11,26 +11,64 @@ export default function ProfileEdit({ profile, onChange, mode = "view" }) {
     biography: profile?.biography || "",
   });
 
-  const [shouldNotifyChange, setShouldNotifyChange] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
+  const isInternalUpdateRef = useRef(false);
 
+  // profile prop이 외부에서 변경되면 formData 업데이트 (생애문 가이드 등)
   useEffect(() => {
-    if (shouldNotifyChange && onChange) {
-      onChange(formData);
-      setShouldNotifyChange(false);
+    if (profile && !isInternalUpdateRef.current) {
+      setFormData({
+        photo: profile.photo || "",
+        name: profile.name || "",
+        birthDate: profile.birthDate || "",
+        birthPlace: profile.birthPlace || "",
+        biography: profile.biography || "",
+      });
     }
-  }, [shouldNotifyChange]);
+    isInternalUpdateRef.current = false;
+  }, [profile]);
 
   const handleInputChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    setShouldNotifyChange(true);
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
+
+    // 부모로 즉시 전달하되, 내부 업데이트 플래그 설정
+    if (onChange) {
+      isInternalUpdateRef.current = true;
+      onChange(newFormData);
+    }
   };
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const url = URL.createObjectURL(file);
-      handleInputChange("photo", url);
+    if (!file) return;
+
+    setIsUploadingPhoto(true);
+
+    try {
+      const formDataToSend = new FormData();
+      formDataToSend.append("file", file);
+      formDataToSend.append("prefix", "scenes/profiles");
+
+      const res = await fetch("/api/storage/upload", {
+        method: "POST",
+        body: formDataToSend,
+      });
+
+      const data = await res.json();
+
+      if (data.ok && data.publicUrl) {
+        handleInputChange("photo", data.publicUrl);
+      } else {
+        console.error("Upload failed:", data.error);
+        alert("이미지 업로드에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to upload photo:", error);
+      alert("이미지 업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploadingPhoto(false);
     }
   };
 
@@ -81,7 +119,9 @@ export default function ProfileEdit({ profile, onChange, mode = "view" }) {
       <div className="flex flex-col gap-4">
         <div
           onClick={handlePhotoClick}
-          className="w-full aspect-square bg-white/5 rounded-lg overflow-hidden cursor-pointer relative group"
+          className={`w-full aspect-square bg-white/5 rounded-lg overflow-hidden ${
+            isUploadingPhoto ? "cursor-wait" : "cursor-pointer"
+          } relative group`}
         >
           {formData.photo ? (
             <>
@@ -90,13 +130,20 @@ export default function ProfileEdit({ profile, onChange, mode = "view" }) {
                 alt="Profile"
                 className="w-full h-full object-cover transition-opacity group-hover:opacity-50"
               />
-              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <span className="text-white text-sm">클릭하여 업로드</span>
-              </div>
+              {!isUploadingPhoto && (
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                  <span className="text-white text-sm">클릭하여 업로드</span>
+                </div>
+              )}
             </>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <span className="text-white/60 text-sm">클릭하여 업로드</span>
+            </div>
+          )}
+          {isUploadingPhoto && (
+            <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+              <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
             </div>
           )}
           <input
@@ -105,6 +152,7 @@ export default function ProfileEdit({ profile, onChange, mode = "view" }) {
             accept="image/*"
             onChange={handlePhotoUpload}
             className="hidden"
+            disabled={isUploadingPhoto}
           />
         </div>
 
@@ -142,7 +190,32 @@ export default function ProfileEdit({ profile, onChange, mode = "view" }) {
         </div>
 
         <div>
-          <label className="text-white/60 text-xs mb-1 block">생애문</label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-white/60 text-xs">생애문</label>
+            {onStartLifestoryGuide && (
+              <button
+                onClick={onStartLifestoryGuide}
+                className="flex items-center gap-1 px-2 py-1 bg-white/10 hover:bg-white/20 rounded transition-colors text-xs text-white/80 hover:text-white"
+                type="button"
+              >
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+                생성하기
+              </button>
+            )}
+          </div>
           <textarea
             placeholder="생애문"
             value={formData.biography}

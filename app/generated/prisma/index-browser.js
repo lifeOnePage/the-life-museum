@@ -216,8 +216,42 @@ exports.Prisma.RecordItemScalarFieldEnum = {
   color: 'color',
   isHighlight: 'isHighlight',
   coverUrl: 'coverUrl',
-  images: 'images',
-  recordId: 'recordId'
+  recordId: 'recordId',
+  images: 'images'
+};
+
+exports.Prisma.SceneScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  identifier: 'identifier',
+  profilePhoto: 'profilePhoto',
+  profileName: 'profileName',
+  profileBirthDate: 'profileBirthDate',
+  profileBirthPlace: 'profileBirthPlace',
+  profileBiography: 'profileBiography',
+  lifestoryProgress: 'lifestoryProgress',
+  userId: 'userId'
+};
+
+exports.Prisma.SceneItemScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  title: 'title',
+  date: 'date',
+  desc: 'desc',
+  order: 'order',
+  sceneId: 'sceneId'
+};
+
+exports.Prisma.SceneImageScalarFieldEnum = {
+  id: 'id',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  url: 'url',
+  order: 'order',
+  itemId: 'itemId'
 };
 
 exports.Prisma.SortOrder = {
@@ -255,7 +289,10 @@ exports.Prisma.ModelName = {
   Memory: 'Memory',
   Relationship: 'Relationship',
   Record: 'Record',
-  RecordItem: 'RecordItem'
+  RecordItem: 'RecordItem',
+  Scene: 'Scene',
+  SceneItem: 'SceneItem',
+  SceneImage: 'SceneImage'
 };
 
 /**

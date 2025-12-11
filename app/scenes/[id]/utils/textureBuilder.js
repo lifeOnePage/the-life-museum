@@ -20,14 +20,31 @@ export function buildTextureData(profile, items) {
       itemIndex: -1,
     });
     currentIndex++;
-    itemRanges['profile'] = { start: startIndex, end: currentIndex };
+    itemRanges['profile'] = { start: startIndex, end: startIndex };
   }
 
-  // 2. 각 아이템의 이미지들 추가
+  // 2. 각 아이템의 이미지들 추가 (프로필 아이템 제외)
   items.forEach((item, itemIdx) => {
-    if (!item.img || item.img.length === 0) return;
+    // 프로필 아이템은 건너뛰기 (이미 위에서 처리됨)
+    if (item.isProfile) {
+      return;
+    }
 
     const startIndex = currentIndex;
+
+    // 빈 이미지 배열인 경우 empty 텍스쳐 1개 추가
+    if (!item.img || item.img.length === 0) {
+      textures.push({
+        kind: 'empty',
+        url: null,
+        itemId: item.id,
+        itemIndex: itemIdx,
+      });
+      currentIndex++;
+      itemRanges[item.id] = { start: startIndex, end: startIndex };
+      console.log(`Item ${item.id} (${item.title}): empty range [${startIndex}, ${startIndex}]`);
+      return;
+    }
 
     item.img.forEach((media) => {
       // media가 객체인 경우 (DetailEdit에서 생성된 경우)

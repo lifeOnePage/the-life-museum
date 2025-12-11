@@ -3,7 +3,7 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-export default function ItemBlock({ id, title, date, mode, onClick, onDelete, hasUnsavedChanges = false }) {
+export default function ItemBlock({ id, title, date, mode, onClick, onDelete, hasUnsavedChanges = false, isProfile = false }) {
   const {
     attributes,
     listeners,
@@ -11,7 +11,7 @@ export default function ItemBlock({ id, title, date, mode, onClick, onDelete, ha
     transform,
     transition,
     isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: isProfile });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -31,10 +31,10 @@ export default function ItemBlock({ id, title, date, mode, onClick, onDelete, ha
         )}
         {mode === "edit" && (
           <div
-            {...attributes}
-            {...listeners}
+            {...(isProfile ? {} : attributes)}
+            {...(isProfile ? {} : listeners)}
             onClick={(e) => e.stopPropagation()}
-            className="cursor-grab active:cursor-grabbing text-white/50 hover:text-white/80 transition-colors"
+            className={`${isProfile ? 'cursor-not-allowed opacity-30' : 'cursor-grab active:cursor-grabbing text-white/50 hover:text-white/80'} transition-colors`}
           >
             <svg
               width="16"
@@ -74,7 +74,7 @@ export default function ItemBlock({ id, title, date, mode, onClick, onDelete, ha
       </div>
       <div className="flex items-center gap-2">
         <span className="text-white/70 text-sm cursor-pointer text-xs" onClick={onClick}>{date}</span>
-        {mode === "edit" && onDelete && (
+        {mode === "edit" && onDelete && !isProfile && (
           <button
             onClick={(e) => {
               e.stopPropagation();

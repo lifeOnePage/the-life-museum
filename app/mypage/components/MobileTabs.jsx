@@ -5,6 +5,7 @@ export default function MobileTabs({ active, onChange }) {
   const tabs = [
     { key: "reels", label: "LifeReels" },
     { key: "records", label: "LifeRecords" },
+    { key: "scenes", label: "Life-Scenes" },
     { key: "plan", label: "Plan" },
   ];
 

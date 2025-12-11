@@ -10,10 +10,13 @@ import SmartButton from "@/app/components/loading/SmartButton";
 import {
   fetchMyReels,
   fetchMyRecords,
+  fetchMyScenes,
   createReel,
   createRecord,
+  createScene,
   updateReelIdentifier,
   updateRecordIdentifier,
+  updateSceneIdentifier,
   updateMyProfile,
   fetchMyDatas,
 } from "./services/mypageApi";
@@ -32,15 +35,16 @@ export default function Mypage() {
   // 데이터
   const [reels, setReels] = useState([]);
   const [records, setRecords] = useState([]);
+  const [scenes, setScenes] = useState([]);
 
-  // 모바일 탭: reels | records | plan
+  // 모바일 탭: reels | records | scenes | plan
   const [mobileTab, setMobileTab] = useState("reels");
 
   // 데스크탑 왼쪽 VerticalNav: data | plan
   const [desktopNav, setDesktopNav] = useState("data");
 
   // 생성/액션 모달
-  const [createModal, setCreateModal] = useState({ type: null, open: false }); // type: 'reels'|'records'
+  const [createModal, setCreateModal] = useState({ type: null, open: false }); // type: 'reels'|'records'|'scenes'
   const [actionModal, setActionModal] = useState({
     open: false,
     type: null,
@@ -92,15 +96,21 @@ export default function Mypage() {
     if (!token) return;
     (async () => {
       try {
-        // const [r1, r2] = await Promise.all([
+        // const [r1, r2, r3] = await Promise.all([
         //   fetchMyReels(token),
         //   fetchMyRecords(token),
+        //   fetchMyScenes(token),
         // ]);
         // setReels(r1.items || []);
         // setRecords(r2.items || []);
+        // setScenes(r3.items || []);
         const items = await fetchMyDatas({ token });
         setReels(items.items.reels);
         setRecords(items.items.records);
+
+        // Fetch scenes separately for now
+        const scenesData = await fetchMyScenes(token);
+        setScenes(scenesData.items || []);
       } catch (e) {
         console.error(e);
         setError("데이터를 불러오는 중 문제가 발생했어요.");
@@ -130,12 +140,12 @@ export default function Mypage() {
         if (createModal.type === "reels") {
           const res = await createReel(token, identifier, name);
           setReels((arr) => [res.item, ...arr]);
-          closeCreate();
-        } else {
+        } else if (createModal.type === "records") {
           const res = await createRecord(token, identifier, name);
           setRecords((arr) => [res.item, ...arr]);
-          closeCreate();
-          router.push(`/edit/${identifier}/records`);
+        } else if (createModal.type === "scenes") {
+          const res = await createScene(token, identifier, name);
+          setScenes((arr) => [res.item, ...arr]);
         }
       } catch (e) {
         console.error(e);
@@ -171,7 +181,7 @@ export default function Mypage() {
                 : x,
             ),
           );
-        } else {
+        } else if (type === "records") {
           const r = await updateRecordIdentifier(
             token,
             id,
@@ -185,6 +195,25 @@ export default function Mypage() {
                     ...x,
                     identifier: r.item.identifier,
                     userName: r.item.userName,
+                    updatedAt: r.item.updatedAt,
+                  }
+                : x,
+            ),
+          );
+        } else if (type === "scenes") {
+          const r = await updateSceneIdentifier(
+            token,
+            id,
+            nextIdentifier,
+            nextName,
+          );
+          setScenes((arr) =>
+            arr.map((x) =>
+              x.id === id
+                ? {
+                    ...x,
+                    identifier: r.item.identifier,
+                    profileName: r.item.profileName,
                     updatedAt: r.item.updatedAt,
                   }
                 : x,
@@ -219,8 +248,13 @@ export default function Mypage() {
     }
   });
 
-  const goEditPage = (type, item) =>
-    router.push(`/edit/${item.identifier}/${type}`); // 블랙박스 라우팅
+  const goEditPage = (type, item) => {
+    if (type === "scenes") {
+      router.push(`/scenes/${item.identifier}`);
+    } else {
+      router.push(`/edit/${item.identifier}/${type}`);
+    }
+  };
 
   const pageStyle = {
     fontFamily:
@@ -280,6 +314,7 @@ export default function Mypage() {
               onSaveProfile={onSaveProfile}
               reels={reels}
               records={records}
+              scenes={scenes}
               activeTab={mobileTab}
               setActiveTab={setMobileTab}
               onOpenCreate={openCreate}
@@ -302,6 +337,7 @@ export default function Mypage() {
               onSaveProfile={onSaveProfile}
               reels={reels}
               records={records}
+              scenes={scenes}
               desktopNav={desktopNav}
               setDesktopNav={setDesktopNav}
               onOpenCreate={openCreate}

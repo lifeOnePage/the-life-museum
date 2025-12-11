@@ -141,3 +141,58 @@ export async function updateMyProfile(token, payload) {
   if (!json.ok) throw new Error("update profile failed");
   return json; // { ok: true, user }
 }
+
+// ========== Scene APIs ==========
+
+export async function fetchMyScenes(token) {
+  console.group("----fetchMyScenes----");
+  console.log(token);
+  console.groupEnd();
+  const res = await fetch("/api/scenes", {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error("failed to fetch scenes");
+  return json;
+}
+
+export async function createScene(token, identifier, name) {
+  console.group("----createScene----");
+  console.log("identifier: ", identifier);
+  console.log("name: ", name);
+  console.groupEnd();
+  const data = { identifier, name };
+  const res = await fetch("/api/scenes", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (res.status === 409) throw new Error("409");
+  const json = await res.json();
+  console.group("createScene response");
+  console.log("ok: ", json.ok);
+  console.log("message: ", json.error);
+  console.groupEnd();
+  if (!json.ok) throw new Error("create scene failed");
+  return json;
+}
+
+export async function updateSceneIdentifier(token, id, identifier, name) {
+  const data = { identifier, name };
+  const res = await fetch(`/api/scenes/${id}/identifier`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (res.status === 409) throw new Error("409");
+  const json = await res.json();
+  if (!json.ok) throw new Error("update scene failed");
+  return json;
+}

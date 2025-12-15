@@ -1804,32 +1804,58 @@ export default function LifeRecordDesktop({
                   {timeline
                     .filter((it) => it.isHighlight)
                     .slice(0, 10)
-                    .map((it) => (
-                      <div
-                        key={it.id}
-                        className="lr-highlight-item"
-                        role="listitem"
-                        title={
-                          (it.kind === "year" ? it.event : it.title) ||
-                          "하이라이트"
-                        }
-                        onClick={() => {
-                          const i = timeline.findIndex((x) => x.id === it.id);
-                          if (i >= 0) snapToIndex(i);
-                        }}
-                      >
-                        <img
-                          src={it.cover || "/images/records/No image.png"}
-                          alt={
-                            (it.kind === "year" ? it.event : it.title) ||
-                            "highlight"
+                    .map((it) => {
+                      let dateLabel = "";
+                      if (it.date) {
+                        if (displayMode === "age" && data.record?.birthDate) {
+                          const age = calculateAge(
+                            data.record.birthDate,
+                            it.date,
+                          );
+                          if (age !== null) {
+                            dateLabel = `${age}세`;
                           }
-                        />
-                        <span className="lr-highlight-title">
-                          {it.kind === "year" ? it.event : it.title}
-                        </span>
-                      </div>
-                    ))}
+                        } else {
+                          const year = getYear(it.date);
+                          if (year) {
+                            dateLabel = year.trim();
+                          }
+                        }
+                      }
+                      return (
+                        <div
+                          key={it.id}
+                          className="lr-highlight-item"
+                          role="listitem"
+                          title={
+                            (it.kind === "year" ? it.event : it.title) ||
+                            "하이라이트"
+                          }
+                          onClick={() => {
+                            const i = timeline.findIndex((x) => x.id === it.id);
+                            if (i >= 0) snapToIndex(i);
+                          }}
+                        >
+                          <div className="lr-highlight-image-wrapper">
+                            <img
+                              src={it.cover || "/images/records/No image.png"}
+                              alt={
+                                (it.kind === "year" ? it.event : it.title) ||
+                                "highlight"
+                              }
+                            />
+                            <span className="lr-highlight-title">
+                              {it.kind === "year" ? it.event : it.title}
+                            </span>
+                          </div>
+                          {dateLabel && (
+                            <span className="lr-highlight-date">
+                              {dateLabel}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
                 </div>
               )}
             </div>

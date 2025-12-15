@@ -35,10 +35,10 @@ body,
 }
 
 .lr-grid {
-  width: min(1250px, 100%);
+  width: min(1500px, 100%);
   height: 95vh;
   display: grid;
-  grid-template-columns: 1fr minmax(300px, 450px) 1fr;
+  grid-template-columns: 1fr minmax(300px, 700px) 1.2fr;
   align-items: center;
   position: relative;
   margin-top: 1rem;
@@ -82,20 +82,19 @@ body,
 }
 
 .lr-card {
-  background: #f2f2f2;
-  /* background: color-mix(in srgb, var(--bg) 85%, white);  */
+  background: color-mix(in srgb, var(--bg) 90%, white);
   color: var(--ink);
-  /* border: 1px solid var(--text); */
+  border: 1px solid var(--text);
   border-radius: 14px;
   overflow: hidden;
   padding: 1.5rem;
-  height: 100%;
+  height: min(80vh);
 }
 
 .lr-card-media {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   height: 100%;
   border-radius: 0.6rem;
   margin-bottom: 0.8rem;
@@ -224,11 +223,12 @@ body,
 
 .lr-card-desc {
   /* border-bottom: 1px solid #121212; */
+  color: var(--text);
   font-size: 14px;
   line-height: 1.75;
 }
 .lr-card-desc p {
-  border-top: 1px solid #121212;
+  border-top: 1px solid var(--text);
   font-family: "Pretendard Variable";
   font-size: 1rem;
   font-style: normal;
@@ -243,7 +243,7 @@ body,
 }
 
 .lr-meta {
-  border-top: 1.2px solid #121212;
+  border-top: 1.2px solid var(--text);
   display: flex;
   align-items: flex-start;
   padding-top: 15px;
@@ -287,7 +287,7 @@ body,
   height: auto;
   min-height: 6rem;
   margin-bottom: 0.8rem;
-  border-bottom: 1.2px solid #121212;
+  border-bottom: 1.2px solid var(--text);
   white-space: pre-line;
   overflow: visible;
   text-overflow: clip;
@@ -738,8 +738,6 @@ body,
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 10px;
-  border-radius: 10px;
-  /* background: #dfdfdf; */
 }
 
 .lr-highlight-item {
@@ -764,19 +762,29 @@ body,
 
 .lr-highlight-grid {
   display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  grid-auto-rows: 92px;
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(100px, 1fr)) !important;
+  grid-auto-rows: auto;
+  gap: 8px;
   justify-content: start !important;
   align-content: start;
+  width: 100%;
 }
 
 .lr-highlight-item {
   width: 100%;
-  border-radius: 10px;
-  position: relative;
-  background: #000;
+  display: flex;
+  flex-direction: column;
   cursor: pointer;
+}
+
+.lr-highlight-image-wrapper {
+  width: 100%;
+  height: 50px;
+  position: relative;
+  border-radius: 8px;
+  background: #000;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .lr-highlight-item img {
@@ -788,38 +796,49 @@ body,
   transition:
     transform 160ms ease,
     opacity 160ms ease;
-  border-radius: 10px;
 }
-.lr-highlight-item:hover img {
+
+.lr-highlight-item:hover .lr-highlight-image-wrapper img {
   transform: scale(1.02);
 }
 
 .lr-highlight-title {
-  width: 100%;
   position: absolute;
-  padding: 0;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  width: 100%;
   max-width: calc(100% - 20px);
   padding: 0 8px;
   text-align: center;
   color: #fff;
-  font-size: 0.82rem;
+  font-size: 0.75rem;
   line-height: 1.25;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   z-index: 1;
-  font-family: "Pretendard Variable";
-  font-size: 0.75rem;
+  font-family: "Yde street";
   font-style: normal;
-  font-weight: 600;
+  font-weight: 500;
   text-shadow:
     0 1px 3px rgba(0, 0, 0, 0.9),
     0 2px 6px rgba(0, 0, 0, 0.8),
     0 0 12px rgba(0, 0, 0, 0.7),
     0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+.lr-highlight-date {
+  margin-top: 4px;
+  color: var(--text);
+  font-family: "Yde street";
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0.7;
+  line-height: 1.2;
+  flex-shrink: 0;
 }
 
 @media (min-width: 601px) {

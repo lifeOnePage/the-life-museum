@@ -1402,7 +1402,7 @@ export default function LifeRecordMobile({
                     onDataChange?.(newData);
                   }}
                   className="lr-mobile-meta-desc lr-mobile-edit-input"
-                  maxLength={80}
+                  maxLength={150}
                   placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 80자)"
                 />
                 <div className="lr-mobile-char-count">

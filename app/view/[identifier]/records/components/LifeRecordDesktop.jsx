@@ -1614,8 +1614,8 @@ export default function LifeRecordDesktop({
                             onDataChange?.(newData);
                           }}
                           className="lr-desc-input"
-                          maxLength={80}
-                          placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 80자)"
+                          maxLength={150}
+                          placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 150자)"
                         />
                         <div className="lr-char-count">
                           {(data.record?.description || "").length} / 80

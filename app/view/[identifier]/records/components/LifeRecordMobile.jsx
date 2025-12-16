@@ -1502,10 +1502,14 @@ export default function LifeRecordMobile({
                                 }
                               }}
                             >
-                              <img
-                                src={it.cover || "/images/records/No image.png"}
-                                alt={it.kind === "year" ? it.event : it.title}
-                              />
+                              <div className="lr-mobile-highlight-image-wrapper">
+                                <img
+                                  src={
+                                    it.cover || "/images/records/No image.png"
+                                  }
+                                  alt={it.kind === "year" ? it.event : it.title}
+                                />
+                              </div>
                               <span className="lr-mobile-highlight-title">
                                 {it.kind === "year" ? it.event : it.title}
                               </span>
@@ -1646,10 +1650,14 @@ export default function LifeRecordMobile({
                                 }
                               }}
                             >
-                              <img
-                                src={it.cover || "/images/records/No image.png"}
-                                alt={it.kind === "year" ? it.event : it.title}
-                              />
+                              <div className="lr-mobile-highlight-image-wrapper">
+                                <img
+                                  src={
+                                    it.cover || "/images/records/No image.png"
+                                  }
+                                  alt={it.kind === "year" ? it.event : it.title}
+                                />
+                              </div>
                               <span className="lr-mobile-highlight-title">
                                 {it.kind === "year" ? it.event : it.title}
                               </span>

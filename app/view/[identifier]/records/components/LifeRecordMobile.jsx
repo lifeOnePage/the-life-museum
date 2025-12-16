@@ -55,6 +55,12 @@ function formatDate(str) {
   return `${y} ${monthName} ${day}`;
 }
 
+const getYear = (str) => {
+  if (!str) return "";
+  const [y] = str.split(".");
+  return y ? y + " " : "";
+};
+
 // 생년월일과 이벤트 날짜로 나이 계산
 const calculateAge = (birthDate, eventDate) => {
   if (!birthDate || !eventDate) return null;
@@ -251,11 +257,16 @@ export default function LifeRecordMobile({
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
   const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
+  const currentImageIndexRef = useRef(0); // 자동 슬라이드를 위한 currentImageIndex ref
 
   // activeIdx가 변경될 때 ref 업데이트
   useEffect(() => {
     activeIdxRef.current = activeIdx;
   }, [activeIdx]);
+
+  useEffect(() => {
+    currentImageIndexRef.current = currentImageIndex;
+  }, [currentImageIndex]);
 
   // isEditing이 변경될 때 autoSlideEnabled 업데이트 (edit 모드에서는 항상 off)
   useEffect(() => {
@@ -460,13 +471,10 @@ export default function LifeRecordMobile({
       const validImages = (currentItem?.images || []).filter((img) => img);
 
       if (validImages.length > 1) {
-        // 이미지가 여러 장이면 다음 이미지로 이동
-        const currentImgIdx = currentImageIndex;
+        const currentImgIdx = currentImageIndexRef.current;
         if (currentImgIdx < validImages.length - 1) {
-          // 아직 더 볼 이미지가 있으면 다음 이미지로
           setCurrentImageIndex(currentImgIdx + 1);
         } else {
-          // 모든 이미지를 봤으면 다음 이벤트로
           let newIdx;
           if (currentIdx >= timeline.length - 1) {
             newIdx = 0;
@@ -480,7 +488,6 @@ export default function LifeRecordMobile({
           }, 150);
         }
       } else {
-        // 이미지가 1장 이하면 바로 다음 이벤트로
         let newIdx;
         if (currentIdx >= timeline.length - 1) {
           newIdx = 0;
@@ -496,13 +503,7 @@ export default function LifeRecordMobile({
     }, 5000);
 
     return () => clearInterval(autoSlideInterval);
-  }, [
-    isEditing,
-    autoSlideEnabled,
-    timeline.length,
-    currentImageIndex,
-    timeline,
-  ]);
+  }, [isEditing, autoSlideEnabled, timeline.length, timeline]);
 
   const handleMenuClick = () => {
     setShowMenu(!showMenu);
@@ -1458,35 +1459,138 @@ export default function LifeRecordMobile({
                 {/* 하이라이트된 타임라인 아이템 표시 */}
                 {timeline.filter((it) => it.isHighlight && it.kind !== "main")
                   .length > 0 && (
-                  <div className="lr-mobile-highlight-grid">
-                    {timeline
-                      .filter((it) => it.isHighlight && it.kind !== "main")
-                      .slice(0, 10)
-                      .map((it) => (
-                        <div
-                          key={it.id}
-                          className="lr-mobile-highlight-item"
-                          onClick={() => {
-                            const i = timeline.findIndex((x) => x.id === it.id);
-                            if (i >= 0) {
-                              setIsTransitioning(true);
-                              setTimeout(() => {
-                                setActiveIdx(i);
-                                setIsTransitioning(false);
-                              }, 150);
+                  <>
+                    <div className="lr-mobile-highlight-grid">
+                      {timeline
+                        .filter((it) => it.isHighlight && it.kind !== "main")
+                        .slice(0, 10)
+                        .map((it) => {
+                          let dateLabel = "";
+                          if (it.date) {
+                            if (
+                              displayMode === "age" &&
+                              data.record?.birthDate
+                            ) {
+                              const age = calculateAge(
+                                data.record.birthDate,
+                                it.date,
+                              );
+                              if (age !== null) {
+                                dateLabel = `${age}세`;
+                              }
+                            } else {
+                              const year = getYear(it.date);
+                              if (year) {
+                                dateLabel = year.trim();
+                              }
                             }
-                          }}
-                        >
-                          <img
-                            src={it.cover || "/images/records/No image.png"}
-                            alt={it.kind === "year" ? it.event : it.title}
-                          />
-                          <span className="lr-mobile-highlight-title">
-                            {it.kind === "year" ? it.event : it.title}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
+                          }
+                          return (
+                            <div
+                              key={it.id}
+                              className="lr-mobile-highlight-item"
+                              onClick={() => {
+                                const i = timeline.findIndex(
+                                  (x) => x.id === it.id,
+                                );
+                                if (i >= 0) {
+                                  setIsTransitioning(true);
+                                  setTimeout(() => {
+                                    setActiveIdx(i);
+                                    setIsTransitioning(false);
+                                  }, 150);
+                                }
+                              }}
+                            >
+                              <div className="lr-mobile-highlight-image-wrapper">
+                                <img
+                                  src={
+                                    it.cover || "/images/records/No image.png"
+                                  }
+                                  alt={it.kind === "year" ? it.event : it.title}
+                                />
+                              </div>
+                              <span className="lr-mobile-highlight-title">
+                                {it.kind === "year" ? it.event : it.title}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    <div className="lr-mobile-highlight-timeline">
+                      <div className="lr-mobile-timeline-line"></div>
+                      <div className="lr-mobile-timeline-markers">
+                        {timeline
+                          .filter((it) => it.isHighlight && it.kind !== "main")
+                          .slice(0, 10)
+                          .map((it, index) => {
+                            const colIndex = index % 5;
+
+                            let dateLabel = "";
+                            if (it.date) {
+                              if (
+                                displayMode === "age" &&
+                                data.record?.birthDate
+                              ) {
+                                const age = calculateAge(
+                                  data.record.birthDate,
+                                  it.date,
+                                );
+                                if (age !== null) {
+                                  dateLabel = `${age}세`;
+                                }
+                              } else {
+                                const year = getYear(it.date);
+                                if (year) {
+                                  dateLabel = year.trim();
+                                }
+                              }
+                            }
+                            return (
+                              <div
+                                key={it.id}
+                                className="lr-mobile-timeline-marker"
+                                style={{
+                                  gridColumn: colIndex + 1,
+                                }}
+                                onClick={() => {
+                                  const i = timeline.findIndex(
+                                    (x) => x.id === it.id,
+                                  );
+                                  if (i >= 0) {
+                                    setIsTransitioning(true);
+                                    setTimeout(() => {
+                                      setActiveIdx(i);
+                                      setIsTransitioning(false);
+                                    }, 150);
+                                  }
+                                }}
+                              >
+                                <div className="lr-mobile-timeline-connector"></div>
+                                <div className="lr-mobile-timeline-dot"></div>
+                                {it.date && (
+                                  <div className="lr-mobile-timeline-date">
+                                    {displayMode === "age" &&
+                                    data.record?.birthDate
+                                      ? (() => {
+                                          const age = calculateAge(
+                                            data.record.birthDate,
+                                            it.date,
+                                          );
+                                          return age !== null ? `${age}세` : "";
+                                        })()
+                                      : (() => {
+                                          const year = getYear(it.date);
+                                          return year ? year.trim() : "";
+                                        })()}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </>
                 )}
               </>
             ) : (
@@ -1506,35 +1610,138 @@ export default function LifeRecordMobile({
                 {/* 하이라이트된 타임라인 아이템 표시 */}
                 {timeline.filter((it) => it.isHighlight && it.kind !== "main")
                   .length > 0 && (
-                  <div className="lr-mobile-highlight-grid">
-                    {timeline
-                      .filter((it) => it.isHighlight && it.kind !== "main")
-                      .slice(0, 10)
-                      .map((it) => (
-                        <div
-                          key={it.id}
-                          className="lr-mobile-highlight-item"
-                          onClick={() => {
-                            const i = timeline.findIndex((x) => x.id === it.id);
-                            if (i >= 0) {
-                              setIsTransitioning(true);
-                              setTimeout(() => {
-                                setActiveIdx(i);
-                                setIsTransitioning(false);
-                              }, 150);
+                  <>
+                    <div className="lr-mobile-highlight-grid">
+                      {timeline
+                        .filter((it) => it.isHighlight && it.kind !== "main")
+                        .slice(0, 10)
+                        .map((it) => {
+                          let dateLabel = "";
+                          if (it.date) {
+                            if (
+                              displayMode === "age" &&
+                              data.record?.birthDate
+                            ) {
+                              const age = calculateAge(
+                                data.record.birthDate,
+                                it.date,
+                              );
+                              if (age !== null) {
+                                dateLabel = `${age}세`;
+                              }
+                            } else {
+                              const year = getYear(it.date);
+                              if (year) {
+                                dateLabel = year.trim();
+                              }
                             }
-                          }}
-                        >
-                          <img
-                            src={it.cover || "/images/records/No image.png"}
-                            alt={it.kind === "year" ? it.event : it.title}
-                          />
-                          <span className="lr-mobile-highlight-title">
-                            {it.kind === "year" ? it.event : it.title}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
+                          }
+                          return (
+                            <div
+                              key={it.id}
+                              className="lr-mobile-highlight-item"
+                              onClick={() => {
+                                const i = timeline.findIndex(
+                                  (x) => x.id === it.id,
+                                );
+                                if (i >= 0) {
+                                  setIsTransitioning(true);
+                                  setTimeout(() => {
+                                    setActiveIdx(i);
+                                    setIsTransitioning(false);
+                                  }, 150);
+                                }
+                              }}
+                            >
+                              <div className="lr-mobile-highlight-image-wrapper">
+                                <img
+                                  src={
+                                    it.cover || "/images/records/No image.png"
+                                  }
+                                  alt={it.kind === "year" ? it.event : it.title}
+                                />
+                              </div>
+                              <span className="lr-mobile-highlight-title">
+                                {it.kind === "year" ? it.event : it.title}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                    <div className="lr-mobile-highlight-timeline">
+                      <div className="lr-mobile-timeline-line"></div>
+                      <div className="lr-mobile-timeline-markers">
+                        {timeline
+                          .filter((it) => it.isHighlight && it.kind !== "main")
+                          .slice(0, 10)
+                          .map((it, index) => {
+                            const colIndex = index % 5;
+
+                            let dateLabel = "";
+                            if (it.date) {
+                              if (
+                                displayMode === "age" &&
+                                data.record?.birthDate
+                              ) {
+                                const age = calculateAge(
+                                  data.record.birthDate,
+                                  it.date,
+                                );
+                                if (age !== null) {
+                                  dateLabel = `${age}세`;
+                                }
+                              } else {
+                                const year = getYear(it.date);
+                                if (year) {
+                                  dateLabel = year.trim();
+                                }
+                              }
+                            }
+                            return (
+                              <div
+                                key={it.id}
+                                className="lr-mobile-timeline-marker"
+                                style={{
+                                  gridColumn: colIndex + 1,
+                                }}
+                                onClick={() => {
+                                  const i = timeline.findIndex(
+                                    (x) => x.id === it.id,
+                                  );
+                                  if (i >= 0) {
+                                    setIsTransitioning(true);
+                                    setTimeout(() => {
+                                      setActiveIdx(i);
+                                      setIsTransitioning(false);
+                                    }, 150);
+                                  }
+                                }}
+                              >
+                                <div className="lr-mobile-timeline-connector"></div>
+                                <div className="lr-mobile-timeline-dot"></div>
+                                {it.date && (
+                                  <div className="lr-mobile-timeline-date">
+                                    {displayMode === "age" &&
+                                    data.record?.birthDate
+                                      ? (() => {
+                                          const age = calculateAge(
+                                            data.record.birthDate,
+                                            it.date,
+                                          );
+                                          return age !== null ? `${age}세` : "";
+                                        })()
+                                      : (() => {
+                                          const year = getYear(it.date);
+                                          return year ? year.trim() : "";
+                                        })()}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                      </div>
+                    </div>
+                  </>
                 )}
               </>
             )}

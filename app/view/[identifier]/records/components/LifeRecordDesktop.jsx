@@ -275,6 +275,8 @@ export default function LifeRecordDesktop({
   const editingDateItemIdRef = useRef(null); // 날짜 입력 중인 항목의 ID 추적 (useMemo에서 사용)
   const originalDateRef = useRef(null); // 날짜 입력 시작 시 원래 날짜 저장
   const editingItemIdRef = useRef(null); // 현재 날짜를 수정 중인 항목의 ID 저장
+  const pendingSortItemIdRef = useRef(null); // 정렬 후 이동할 항목의 ID 저장
+  const latestItemsRef = useRef(null); // onChange에서 업데이트한 최신 items 저장
   const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
   const rotationRef = useRef(0); // 자동 슬라이드를 위한 rotation ref
   const currentImageIndexRef = useRef(0); // 자동 슬라이드를 위한 currentImageIndex ref
@@ -287,6 +289,50 @@ export default function LifeRecordDesktop({
   useEffect(() => {
     rotationRef.current = rotation;
   }, [rotation]);
+
+  useEffect(() => {
+    if (!editingDateItemId && data.items && data.items.length > 0) {
+      const itemsWithYear = data.items.map((item) => {
+        const [y] = (item.date || "").split(".");
+        const year = y ? parseInt(y, 10) : 0;
+        return { ...item, year };
+      });
+
+      const isSorted = itemsWithYear.every((item, index) => {
+        if (index === 0) return true;
+        const prev = itemsWithYear[index - 1];
+        if (!prev.year && !item.year) return true;
+        if (!prev.year) return false;
+        if (!item.year) return true;
+        return prev.year <= item.year;
+      });
+
+      if (!isSorted) {
+        itemsWithYear.sort((a, b) => {
+          if (!a.year && !b.year) return 0;
+          if (!a.year) return 1;
+          if (!b.year) return -1;
+          return a.year - b.year;
+        });
+
+        const sortedItems = itemsWithYear.map(({ year, ...item }) => item);
+        onDataChange?.({ ...data, items: sortedItems });
+      }
+    }
+  }, [data.items, editingDateItemId]);
+
+  useEffect(() => {
+    if (pendingSortItemIdRef.current && !editingDateItemId) {
+      const itemId = pendingSortItemIdRef.current;
+      const targetIdx = timeline.findIndex((item) => item.id === itemId);
+      if (targetIdx !== -1 && targetIdx !== activeIdx) {
+        setActiveIdx(targetIdx);
+        const targetAngle = angleForIndex(targetIdx);
+        setRotation(targetAngle - getAnchor());
+      }
+      pendingSortItemIdRef.current = null;
+    }
+  }, [timeline, editingDateItemId, activeIdx]);
 
   useEffect(() => {
     currentImageIndexRef.current = currentImageIndex;
@@ -1722,6 +1768,65 @@ export default function LifeRecordDesktop({
                               }
                               onMouseDown={(e) => {
                                 e.stopPropagation();
+                                console.log("=== INPUT BOX CLICK ===");
+                                console.log(
+                                  "data.items:",
+                                  data.items?.map((item) => ({
+                                    id: item.id,
+                                    date: item.date,
+                                  })),
+                                );
+                                console.log(
+                                  "latestItemsRef.current:",
+                                  latestItemsRef.current?.map((item) => ({
+                                    id: item.id,
+                                    date: item.date,
+                                  })),
+                                );
+
+                                const allItems = data.items || [];
+                                const latestItems =
+                                  latestItemsRef.current || [];
+                                const itemsMap = new Map();
+                                allItems.forEach((item) => {
+                                  itemsMap.set(item.id, item);
+                                });
+                                latestItems.forEach((item) => {
+                                  itemsMap.set(item.id, item);
+                                });
+                                const mergedItems = Array.from(
+                                  itemsMap.values(),
+                                );
+                                console.log(
+                                  "mergedItems:",
+                                  mergedItems.map((item) => ({
+                                    id: item.id,
+                                    date: item.date,
+                                  })),
+                                );
+
+                                const sortedCheck = [...mergedItems].map(
+                                  (item) => {
+                                    const [y] = (item.date || "").split(".");
+                                    const year = y ? parseInt(y, 10) : 0;
+                                    return { ...item, year };
+                                  },
+                                );
+                                sortedCheck.sort((a, b) => {
+                                  if (!a.year && !b.year) return 0;
+                                  if (!a.year) return 1;
+                                  if (!b.year) return -1;
+                                  return a.year - b.year;
+                                });
+                                console.log(
+                                  "should be sorted as:",
+                                  sortedCheck.map((item) => ({
+                                    id: item.id,
+                                    date: item.date,
+                                    year: item.year,
+                                  })),
+                                );
+
                                 if (activeItem?.id) {
                                   const currentItem = data.items?.find(
                                     (item) => item.id === activeItem.id,
@@ -1743,6 +1848,7 @@ export default function LifeRecordDesktop({
                                     ? { ...item, date: e.target.value }
                                     : item,
                                 );
+                                latestItemsRef.current = newItems;
                                 onDataChange?.({ ...data, items: newItems });
                               }}
                               onFocus={(e) => {
@@ -1756,70 +1862,64 @@ export default function LifeRecordDesktop({
                                   );
                                   editingDateItemIdRef.current =
                                     editingItemIdRef.current;
-                                  console.log(
-                                    "onFocus - saved editingItemId:",
-                                    editingItemIdRef.current,
-                                  );
                                 }
                               }}
                               onBlur={() => {
                                 const editingItemId = editingItemIdRef.current;
-                                console.log("=== DATE INPUT BLUR DEBUG ===");
-                                console.log("editingItemId:", editingItemId);
-                                console.log("activeItem.id:", activeItem.id);
-                                console.log("activeIdx:", activeIdx);
+                                console.log("=== DATE INPUT BLUR ===");
 
                                 if (editingItemId) {
-                                  const currentItem = data.items?.find(
+                                  const itemsToCheck =
+                                    latestItemsRef.current || data.items || [];
+                                  const currentItem = itemsToCheck.find(
                                     (item) => item.id === editingItemId,
                                   );
                                   const currentDate = currentItem?.date || "";
                                   const originalDate =
                                     originalDateRef.current || "";
 
-                                  console.log("currentDate:", currentDate);
-                                  console.log("originalDate:", originalDate);
-                                  console.log(
-                                    "date changed:",
-                                    currentDate !== originalDate,
-                                  );
-                                  console.log(
-                                    "is editing active item:",
-                                    editingItemId === activeItem.id,
-                                  );
-
                                   if (currentDate !== originalDate) {
                                     setEditingDateItemId(null);
                                     editingDateItemIdRef.current = null;
                                     originalDateRef.current = null;
                                     editingItemIdRef.current = null;
-                                    console.log("=== SORTING LOGIC ===");
+                                    console.log("=== SORTING ON BLUR ===");
+
+                                    const latestItems =
+                                      latestItemsRef.current || [];
+                                    const allItems = data.items || [];
+                                    const itemsMap = new Map();
+
+                                    allItems.forEach((item) => {
+                                      itemsMap.set(item.id, item);
+                                    });
+
+                                    latestItems.forEach((item) => {
+                                      itemsMap.set(item.id, item);
+                                    });
+
+                                    const itemsToSort = Array.from(
+                                      itemsMap.values(),
+                                    );
                                     console.log(
-                                      "Before sort - items:",
-                                      data.items?.map((item) => ({
+                                      "itemsToSort:",
+                                      itemsToSort.map((item) => ({
                                         id: item.id,
                                         date: item.date,
                                       })),
                                     );
 
-                                    const sortedItems = [
-                                      ...(data.items || []),
-                                    ].map((item) => {
-                                      const [y] = (item.date || "").split(".");
-                                      const year = y ? parseInt(y, 10) : 0;
-                                      return {
-                                        ...item,
-                                        year: year,
-                                      };
-                                    });
-
-                                    console.log(
-                                      "Before sort - with years:",
-                                      sortedItems.map((item) => ({
-                                        id: item.id,
-                                        date: item.date,
-                                        year: item.year,
-                                      })),
+                                    const sortedItems = [...itemsToSort].map(
+                                      (item) => {
+                                        const [y] = (item.date || "").split(
+                                          ".",
+                                        );
+                                        const year = y ? parseInt(y, 10) : 0;
+                                        return {
+                                          ...item,
+                                          year: year,
+                                        };
+                                      },
                                     );
 
                                     sortedItems.sort((a, b) => {
@@ -1834,13 +1934,11 @@ export default function LifeRecordDesktop({
                                         ({ year, ...item }) => item,
                                       );
 
-                                    onDataChange?.({
-                                      ...data,
-                                      items: sortedItemsWithoutYear,
-                                    });
+                                    pendingSortItemIdRef.current =
+                                      editingItemId;
 
                                     console.log(
-                                      "After sort:",
+                                      "sortedItems:",
                                       sortedItems.map((item) => ({
                                         id: item.id,
                                         date: item.date,
@@ -1848,68 +1946,16 @@ export default function LifeRecordDesktop({
                                       })),
                                     );
 
-                                    const sortedIdx = sortedItems.findIndex(
-                                      (item) => item.id === editingItemId,
-                                    );
-                                    console.log("sortedIdx:", sortedIdx);
-                                    console.log(
-                                      "editingItemId:",
-                                      editingItemId,
-                                    );
-                                    console.log(
-                                      "activeItem.id:",
-                                      activeItem.id,
-                                    );
-                                    console.log("activeIdx:", activeIdx);
-
-                                    if (sortedIdx !== -1) {
-                                      const targetIdx = sortedIdx + 1;
-                                      console.log("targetIdx:", targetIdx);
-                                      console.log(
-                                        "current activeIdx:",
-                                        activeIdx,
-                                      );
-                                      console.log(
-                                        "will move:",
-                                        targetIdx !== activeIdx,
-                                      );
-
-                                      setTimeout(() => {
-                                        if (targetIdx !== activeIdx) {
-                                          console.log(
-                                            "MOVING to idx:",
-                                            targetIdx,
-                                          );
-                                          setActiveIdx(targetIdx);
-                                          const targetAngle =
-                                            angleForIndex(targetIdx);
-                                          setRotation(
-                                            targetAngle - getAnchor(),
-                                          );
-                                        } else {
-                                          console.log(
-                                            "NOT MOVING - already at correct position",
-                                          );
-                                        }
-                                      }, 0);
-                                    } else {
-                                      console.log(
-                                        "ERROR: sortedIdx is -1, item not found!",
-                                      );
-                                    }
+                                    onDataChange?.({
+                                      ...data,
+                                      items: sortedItemsWithoutYear,
+                                    });
                                   } else {
-                                    console.log(
-                                      "SKIPPING - date not changed, no movement",
-                                    );
                                     setEditingDateItemId(null);
-                                    editingDateItemIdRef.current = null;
                                     originalDateRef.current = null;
                                     editingItemIdRef.current = null;
                                   }
-                                } else {
-                                  console.log("SKIPPING - no editingItemId");
                                 }
-                                console.log("=== END DEBUG ===");
                               }}
                               placeholder="예: 2024.01.15"
                               className="lr-date-input"

@@ -258,6 +258,8 @@ export default function LifeRecordMobile({
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
   const originalDateRef = useRef(null); // 날짜 입력 시작 시 원래 날짜 저장
   const editingItemIdRef = useRef(null); // 현재 날짜를 수정 중인 항목의 ID 저장
+  const pendingSortItemIdRef = useRef(null); // 정렬 후 이동할 항목의 ID 저장
+  const latestItemsRef = useRef(null); // onChange에서 업데이트한 최신 items 저장
   const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
   const currentImageIndexRef = useRef(0); // 자동 슬라이드를 위한 currentImageIndex ref
 
@@ -269,6 +271,52 @@ export default function LifeRecordMobile({
   useEffect(() => {
     currentImageIndexRef.current = currentImageIndex;
   }, [currentImageIndex]);
+
+  useEffect(() => {
+    if (!editingDateItemId && data.items && data.items.length > 0) {
+      const itemsWithYear = data.items.map((item) => {
+        const [y] = (item.date || "").split(".");
+        const year = y ? parseInt(y, 10) : 0;
+        return { ...item, year };
+      });
+
+      const isSorted = itemsWithYear.every((item, index) => {
+        if (index === 0) return true;
+        const prev = itemsWithYear[index - 1];
+        if (!prev.year && !item.year) return true;
+        if (!prev.year) return false;
+        if (!item.year) return true;
+        return prev.year <= item.year;
+      });
+
+      if (!isSorted) {
+        itemsWithYear.sort((a, b) => {
+          if (!a.year && !b.year) return 0;
+          if (!a.year) return 1;
+          if (!b.year) return -1;
+          return a.year - b.year;
+        });
+
+        const sortedItems = itemsWithYear.map(({ year, ...item }) => item);
+        onDataChange?.({ ...data, items: sortedItems });
+      }
+    }
+  }, [data.items, editingDateItemId]);
+
+  useEffect(() => {
+    if (pendingSortItemIdRef.current && !editingDateItemId) {
+      const itemId = pendingSortItemIdRef.current;
+      const targetIdx = timeline.findIndex((item) => item.id === itemId);
+      if (targetIdx !== -1 && targetIdx !== activeIdx) {
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setActiveIdx(targetIdx);
+          setIsTransitioning(false);
+        }, 150);
+      }
+      pendingSortItemIdRef.current = null;
+    }
+  }, [timeline, editingDateItemId, activeIdx]);
 
   // isEditing이 변경될 때 autoSlideEnabled 업데이트 (edit 모드에서는 항상 off)
   useEffect(() => {
@@ -1825,6 +1873,7 @@ export default function LifeRecordMobile({
                             ? { ...item, date: e.target.value }
                             : item,
                         );
+                        latestItemsRef.current = newItems;
                         onDataChange?.({ ...data, items: newItems });
                       }}
                       onFocus={(e) => {
@@ -1846,7 +1895,9 @@ export default function LifeRecordMobile({
                         console.log("activeIdx:", activeIdx);
 
                         if (editingItemId) {
-                          const currentItem = data.items?.find(
+                          const itemsToCheck =
+                            latestItemsRef.current || data.items || [];
+                          const currentItem = itemsToCheck.find(
                             (item) => item.id === editingItemId,
                           );
                           const currentDate = currentItem?.date || "";
@@ -1868,24 +1919,36 @@ export default function LifeRecordMobile({
                             originalDateRef.current = null;
                             editingItemIdRef.current = null;
                             console.log("=== SORTING LOGIC (MOBILE) ===");
+
+                            const latestItems = latestItemsRef.current || [];
+                            const allItems = data.items || [];
+                            const itemsMap = new Map();
+
+                            allItems.forEach((item) => {
+                              itemsMap.set(item.id, item);
+                            });
+
+                            latestItems.forEach((item) => {
+                              itemsMap.set(item.id, item);
+                            });
+
+                            const itemsToSort = Array.from(itemsMap.values());
                             console.log(
                               "Before sort - items:",
-                              data.items?.map((item) => ({
+                              itemsToSort.map((item) => ({
                                 id: item.id,
                                 date: item.date,
                               })),
                             );
 
-                            const sortedItems = [...(data.items || [])].map(
-                              (item) => {
-                                const [y] = (item.date || "").split(".");
-                                const year = y ? parseInt(y, 10) : 0;
-                                return {
-                                  ...item,
-                                  year: year,
-                                };
-                              },
-                            );
+                            const sortedItems = [...itemsToSort].map((item) => {
+                              const [y] = (item.date || "").split(".");
+                              const year = y ? parseInt(y, 10) : 0;
+                              return {
+                                ...item,
+                                year: year,
+                              };
+                            });
 
                             console.log(
                               "Before sort - with years:",
@@ -1907,6 +1970,8 @@ export default function LifeRecordMobile({
                               ({ year, ...item }) => item,
                             );
 
+                            pendingSortItemIdRef.current = editingItemId;
+
                             onDataChange?.({
                               ...data,
                               items: sortedItemsWithoutYear,
@@ -1920,43 +1985,6 @@ export default function LifeRecordMobile({
                                 year: item.year,
                               })),
                             );
-
-                            const sortedIdx = sortedItems.findIndex(
-                              (item) => item.id === editingItemId,
-                            );
-                            console.log("sortedIdx:", sortedIdx);
-                            console.log("editingItemId:", editingItemId);
-                            console.log("activeItem.id:", activeItem.id);
-                            console.log("activeIdx:", activeIdx);
-
-                            if (sortedIdx !== -1) {
-                              const targetIdx = sortedIdx + 1;
-                              console.log("targetIdx:", targetIdx);
-                              console.log("current activeIdx:", activeIdx);
-
-                              console.log(
-                                "will move:",
-                                targetIdx !== activeIdx,
-                              );
-                              setTimeout(() => {
-                                if (targetIdx !== activeIdx) {
-                                  console.log("MOVING to idx:", targetIdx);
-                                  setIsTransitioning(true);
-                                  setTimeout(() => {
-                                    setActiveIdx(targetIdx);
-                                    setIsTransitioning(false);
-                                  }, 150);
-                                } else {
-                                  console.log(
-                                    "NOT MOVING - already at correct position",
-                                  );
-                                }
-                              }, 0);
-                            } else {
-                              console.log(
-                                "ERROR: sortedIdx is -1, item not found!",
-                              );
-                            }
                           } else {
                             console.log(
                               "SKIPPING - date not changed, no movement",

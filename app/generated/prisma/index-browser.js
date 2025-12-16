@@ -202,7 +202,9 @@ exports.Prisma.RecordScalarFieldEnum = {
   userId: 'userId',
   userName: 'userName',
   birthDate: 'birthDate',
-  displayMode: 'displayMode'
+  displayMode: 'displayMode',
+  pageTitle: 'pageTitle',
+  pageSubtitle: 'pageSubtitle'
 };
 
 exports.Prisma.RecordItemScalarFieldEnum = {

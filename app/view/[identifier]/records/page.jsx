@@ -62,6 +62,14 @@ export default function ViewRecordsPage() {
     })();
   }, [identifier]);
 
+  useEffect(() => {
+    if (!isInitializedRef.current && width > 0) {
+      isInitializedRef.current = true;
+      setAutoSlideEnabled(false);
+      prevWidthRef.current = width;
+    }
+  }, [width]);
+
   if (loading) {
     return (
       <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
@@ -82,14 +90,6 @@ export default function ViewRecordsPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!isInitializedRef.current && width > 0) {
-      isInitializedRef.current = true;
-      setAutoSlideEnabled(false);
-      prevWidthRef.current = width;
-    }
-  }, [width]);
 
   return (
     <>

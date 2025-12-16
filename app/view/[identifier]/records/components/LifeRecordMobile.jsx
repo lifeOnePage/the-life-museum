@@ -1579,7 +1579,10 @@ export default function LifeRecordMobile({
                                           );
                                           return age !== null ? `${age}세` : "";
                                         })()
-                                      : it.date}
+                                      : (() => {
+                                          const year = getYear(it.date);
+                                          return year ? year.trim() : "";
+                                        })()}
                                   </div>
                                 )}
                               </div>
@@ -1727,7 +1730,10 @@ export default function LifeRecordMobile({
                                           );
                                           return age !== null ? `${age}세` : "";
                                         })()
-                                      : it.date}
+                                      : (() => {
+                                          const year = getYear(it.date);
+                                          return year ? year.trim() : "";
+                                        })()}
                                   </div>
                                 )}
                               </div>

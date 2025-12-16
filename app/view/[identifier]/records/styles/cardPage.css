@@ -238,7 +238,7 @@ body,
 .lr-card-desc p {
   border-top: 1px solid var(--text);
   font-family: "Pretendard Variable";
-  font-size: 14px;
+  font-size: 16px;
   font-style: normal;
   font-weight: 200;
   line-height: 130%;
@@ -818,29 +818,20 @@ body,
 }
 
 .lr-highlight-title {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  margin-top: 8px;
   width: 100%;
-  max-width: calc(100% - 20px);
-  padding: 0 8px;
   text-align: center;
-  color: #fff;
+  color: var(--text);
   font-size: 0.75rem;
-  line-height: 1.25;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  z-index: 1;
   font-family: "Yde street";
   font-style: normal;
   font-weight: 500;
-  text-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.9),
-    0 2px 6px rgba(0, 0, 0, 0.8),
-    0 0 12px rgba(0, 0, 0, 0.7),
-    0 0 20px rgba(0, 0, 0, 0.5);
+  opacity: 0.9;
+  flex-shrink: 0;
 }
 
 .lr-highlight-date {

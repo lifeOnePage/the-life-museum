@@ -1851,15 +1851,10 @@ export default function LifeRecordDesktop({
                                   "highlight"
                                 }
                               />
-                              <span className="lr-highlight-title">
-                                {it.kind === "year" ? it.event : it.title}
-                              </span>
                             </div>
-                            {dateLabel && (
-                              <span className="lr-highlight-date">
-                                {dateLabel}
-                              </span>
-                            )}
+                            <span className="lr-highlight-title">
+                              {it.kind === "year" ? it.event : it.title}
+                            </span>
                           </div>
                         );
                       })}
@@ -1920,7 +1915,10 @@ export default function LifeRecordDesktop({
                                         );
                                         return age !== null ? `${age}세` : "";
                                       })()
-                                    : it.date}
+                                    : (() => {
+                                        const year = getYear(it.date);
+                                        return year ? year.trim() : "";
+                                      })()}
                                 </div>
                               )}
                             </div>

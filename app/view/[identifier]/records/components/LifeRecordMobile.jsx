@@ -487,6 +487,15 @@ export default function LifeRecordMobile({
     return DEFAULT_THEME;
   }, [activeItem.color, data.record?.color]);
 
+  useEffect(() => {
+    document.body.style.background = theme.bg;
+    document.documentElement.style.background = theme.bg;
+    return () => {
+      document.body.style.background = "";
+      document.documentElement.style.background = "";
+    };
+  }, [theme.bg]);
+
   const mainTitle = useMemo(() => {
     const mainItem = timeline.find((it) => it.kind === "main");
     return mainItem?.title || "사용자의 이야기";
@@ -1456,7 +1465,7 @@ export default function LifeRecordMobile({
                   placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 80자)"
                 />
                 <div className="lr-mobile-char-count">
-                  {(data.record?.description || "").length} / 80
+                  {(data.record?.description || "").length} / 150
                 </div>
                 {/* 연도/나이 표시 토글 및 생년월일 입력 */}
                 <div className="lr-mobile-display-mode-control">

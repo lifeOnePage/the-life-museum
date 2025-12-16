@@ -1,11 +1,18 @@
 :root {
-  --bg: #121212;
   --text: #f2f2f2;
+}
+
+body,
+html {
+  margin: 0;
+  padding: 0;
 }
 
 .lr-mobile-root {
   width: 100%;
-  min-width: 325px; /* 최소 너비 제한 */
+  min-width: 325px;
+  max-width: 415px;
+  margin: 0 auto;
   min-height: 100vh;
   min-height: 100dvh;
   background: var(--bg);
@@ -13,11 +20,9 @@
   display: flex;
   flex-direction: column;
   padding: 0;
-  margin: 0;
   overflow-x: hidden;
   overflow-y: auto;
   position: relative;
-  padding-bottom: 150px;
   padding-top: env(safe-area-inset-top);
   padding-bottom: calc(150px + env(safe-area-inset-bottom));
 }
@@ -319,7 +324,7 @@
 .lr-mobile-meta {
   margin-bottom: 30px;
   flex: 1;
-  padding: 0 10vw;
+  padding: 0 40px;
   transition:
     opacity 0.3s ease,
     transform 0.3s ease;
@@ -431,7 +436,7 @@ textarea.lr-mobile-meta-title.lr-mobile-edit-input {
 .lr-mobile-char-count {
   text-align: right;
   font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--text);
   font-family: "Pretendard Variable";
   margin-bottom: 16px;
   margin-top: -8px;
@@ -918,16 +923,19 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0px 2rem 0rem 2rem;
+  max-width: 415px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0px 35px 0rem 35px;
   position: fixed;
   bottom: 50px;
-  left: 0;
-  right: 0;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
   background: var(--bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  height: 80px; /* nav 높이 고정 */
+  height: 80px;
   box-sizing: border-box;
 }
 
@@ -963,9 +971,10 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8vw;
+  gap: 40px;
   min-width: 120px;
   position: relative;
+  flex: 1;
 }
 
 .lr-mobile-nav-timeline span {
@@ -983,7 +992,6 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   flex-shrink: 0;
 }
 
-/* 년도 라벨 클릭 시 작아지는 효과 제거 */
 .lr-mobile-nav-label:active {
   transform: scale(1) !important;
 }
@@ -998,12 +1006,14 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
   padding: 12px 16px;
   background: var(--bg);
   position: fixed;
-  bottom: 0; /* 화면 맨 아래 */
-  left: 0;
-  right: 0;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 415px;
+  width: 100%;
   z-index: 99;
   flex-wrap: wrap;
-  min-width: 325px; /* 최소 너비 제한 */
+  min-width: 325px;
   box-sizing: border-box;
 }
 

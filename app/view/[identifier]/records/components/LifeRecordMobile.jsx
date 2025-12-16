@@ -256,6 +256,10 @@ export default function LifeRecordMobile({
   const [isBgmPlaying, setIsBgmPlaying] = useState(false);
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
+  const originalDateRef = useRef(null); // 날짜 입력 시작 시 원래 날짜 저장
+  const editingItemIdRef = useRef(null); // 현재 날짜를 수정 중인 항목의 ID 저장
+  const pendingSortItemIdRef = useRef(null); // 정렬 후 이동할 항목의 ID 저장
+  const latestItemsRef = useRef(null); // onChange에서 업데이트한 최신 items 저장
   const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
   const currentImageIndexRef = useRef(0); // 자동 슬라이드를 위한 currentImageIndex ref
 
@@ -267,6 +271,52 @@ export default function LifeRecordMobile({
   useEffect(() => {
     currentImageIndexRef.current = currentImageIndex;
   }, [currentImageIndex]);
+
+  useEffect(() => {
+    if (!editingDateItemId && data.items && data.items.length > 0) {
+      const itemsWithYear = data.items.map((item) => {
+        const [y] = (item.date || "").split(".");
+        const year = y ? parseInt(y, 10) : 0;
+        return { ...item, year };
+      });
+
+      const isSorted = itemsWithYear.every((item, index) => {
+        if (index === 0) return true;
+        const prev = itemsWithYear[index - 1];
+        if (!prev.year && !item.year) return true;
+        if (!prev.year) return false;
+        if (!item.year) return true;
+        return prev.year <= item.year;
+      });
+
+      if (!isSorted) {
+        itemsWithYear.sort((a, b) => {
+          if (!a.year && !b.year) return 0;
+          if (!a.year) return 1;
+          if (!b.year) return -1;
+          return a.year - b.year;
+        });
+
+        const sortedItems = itemsWithYear.map(({ year, ...item }) => item);
+        onDataChange?.({ ...data, items: sortedItems });
+      }
+    }
+  }, [data.items, editingDateItemId]);
+
+  useEffect(() => {
+    if (pendingSortItemIdRef.current && !editingDateItemId) {
+      const itemId = pendingSortItemIdRef.current;
+      const targetIdx = timeline.findIndex((item) => item.id === itemId);
+      if (targetIdx !== -1 && targetIdx !== activeIdx) {
+        setIsTransitioning(true);
+        setTimeout(() => {
+          setActiveIdx(targetIdx);
+          setIsTransitioning(false);
+        }, 150);
+      }
+      pendingSortItemIdRef.current = null;
+    }
+  }, [timeline, editingDateItemId, activeIdx]);
 
   // isEditing이 변경될 때 autoSlideEnabled 업데이트 (edit 모드에서는 항상 off)
   useEffect(() => {
@@ -436,6 +486,15 @@ export default function LifeRecordMobile({
     }
     return DEFAULT_THEME;
   }, [activeItem.color, data.record?.color]);
+
+  useEffect(() => {
+    document.body.style.background = theme.bg;
+    document.documentElement.style.background = theme.bg;
+    return () => {
+      document.body.style.background = "";
+      document.documentElement.style.background = "";
+    };
+  }, [theme.bg]);
 
   const mainTitle = useMemo(() => {
     const mainItem = timeline.find((it) => it.kind === "main");
@@ -1402,11 +1461,11 @@ export default function LifeRecordMobile({
                     onDataChange?.(newData);
                   }}
                   className="lr-mobile-meta-desc lr-mobile-edit-input"
-                  maxLength={80}
+                  maxLength={150}
                   placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 80자)"
                 />
                 <div className="lr-mobile-char-count">
-                  {(data.record?.description || "").length} / 80
+                  {(data.record?.description || "").length} / 150
                 </div>
                 {/* 연도/나이 표시 토글 및 생년월일 입력 */}
                 <div className="lr-mobile-display-mode-control">
@@ -1801,57 +1860,152 @@ export default function LifeRecordMobile({
                         data.items?.find((item) => item.id === activeItem.id)
                           ?.date || ""
                       }
+                      onMouseDown={(e) => {
+                        e.stopPropagation();
+                        if (activeItem?.id) {
+                          const currentItem = data.items?.find(
+                            (item) => item.id === activeItem.id,
+                          );
+                          originalDateRef.current = currentItem?.date || "";
+                          editingItemIdRef.current = activeItem.id;
+                        }
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                      onMouseUp={(e) => {
+                        e.stopPropagation();
+                      }}
                       onChange={(e) => {
                         const newItems = data.items.map((item) =>
                           item.id === activeItem.id
                             ? { ...item, date: e.target.value }
                             : item,
                         );
+                        latestItemsRef.current = newItems;
                         onDataChange?.({ ...data, items: newItems });
                       }}
-                      onFocus={() => {
-                        // 날짜 입력 시작
-                        if (activeItem?.id) {
-                          setEditingDateItemId(activeItem.id);
+                      onFocus={(e) => {
+                        e.stopPropagation();
+                        if (activeItem?.id && editingItemIdRef.current) {
+                          setEditingDateItemId(editingItemIdRef.current);
+                          editingItemIdRef.current = editingItemIdRef.current;
+                          console.log(
+                            "onFocus (mobile) - saved editingItemId:",
+                            editingItemIdRef.current,
+                          );
                         }
                       }}
                       onBlur={() => {
-                        // 날짜 입력 완료 - 정렬하고 새 위치로 이동
-                        if (activeItem?.id) {
-                          setEditingDateItemId(null);
+                        const editingItemId = editingItemIdRef.current;
+                        console.log("=== DATE INPUT BLUR DEBUG (MOBILE) ===");
+                        console.log("editingItemId:", editingItemId);
+                        console.log("activeItem.id:", activeItem.id);
+                        console.log("activeIdx:", activeIdx);
 
-                          // 정렬된 위치 계산
-                          const sortedItems = [...(data.items || [])].map(
-                            (item) => {
+                        if (editingItemId) {
+                          const itemsToCheck =
+                            latestItemsRef.current || data.items || [];
+                          const currentItem = itemsToCheck.find(
+                            (item) => item.id === editingItemId,
+                          );
+                          const currentDate = currentItem?.date || "";
+                          const originalDate = originalDateRef.current || "";
+
+                          console.log("currentDate:", currentDate);
+                          console.log("originalDate:", originalDate);
+                          console.log(
+                            "date changed:",
+                            currentDate !== originalDate,
+                          );
+                          console.log(
+                            "is editing active item:",
+                            editingItemId === activeItem.id,
+                          );
+
+                          if (currentDate !== originalDate) {
+                            setEditingDateItemId(null);
+                            originalDateRef.current = null;
+                            editingItemIdRef.current = null;
+                            console.log("=== SORTING LOGIC (MOBILE) ===");
+
+                            const latestItems = latestItemsRef.current || [];
+                            const allItems = data.items || [];
+                            const itemsMap = new Map();
+
+                            allItems.forEach((item) => {
+                              itemsMap.set(item.id, item);
+                            });
+
+                            latestItems.forEach((item) => {
+                              itemsMap.set(item.id, item);
+                            });
+
+                            const itemsToSort = Array.from(itemsMap.values());
+                            console.log(
+                              "Before sort - items:",
+                              itemsToSort.map((item) => ({
+                                id: item.id,
+                                date: item.date,
+                              })),
+                            );
+
+                            const sortedItems = [...itemsToSort].map((item) => {
                               const [y] = (item.date || "").split(".");
+                              const year = y ? parseInt(y, 10) : 0;
                               return {
                                 ...item,
-                                year: y ? parseInt(y, 10) : 0,
+                                year: year,
                               };
-                            },
-                          );
+                            });
 
-                          sortedItems.sort((a, b) => {
-                            if (!a.year && !b.year) return 0;
-                            if (!a.year) return 1;
-                            if (!b.year) return -1;
-                            return a.year - b.year;
-                          });
+                            console.log(
+                              "Before sort - with years:",
+                              sortedItems.map((item) => ({
+                                id: item.id,
+                                date: item.date,
+                                year: item.year,
+                              })),
+                            );
 
-                          // 정렬된 위치에서 현재 항목의 인덱스 찾기 (main 제외)
-                          const sortedIdx = sortedItems.findIndex(
-                            (item) => item.id === activeItem.id,
-                          );
-                          if (sortedIdx !== -1) {
-                            // main이 첫 번째이므로 +1
-                            const targetIdx = sortedIdx + 1;
-                            setIsTransitioning(true);
-                            setTimeout(() => {
-                              setActiveIdx(targetIdx);
-                              setIsTransitioning(false);
-                            }, 150);
+                            sortedItems.sort((a, b) => {
+                              if (!a.year && !b.year) return 0;
+                              if (!a.year) return 1;
+                              if (!b.year) return -1;
+                              return a.year - b.year;
+                            });
+
+                            const sortedItemsWithoutYear = sortedItems.map(
+                              ({ year, ...item }) => item,
+                            );
+
+                            pendingSortItemIdRef.current = editingItemId;
+
+                            onDataChange?.({
+                              ...data,
+                              items: sortedItemsWithoutYear,
+                            });
+
+                            console.log(
+                              "After sort:",
+                              sortedItems.map((item) => ({
+                                id: item.id,
+                                date: item.date,
+                                year: item.year,
+                              })),
+                            );
+                          } else {
+                            console.log(
+                              "SKIPPING - date not changed, no movement",
+                            );
+                            setEditingDateItemId(null);
+                            originalDateRef.current = null;
+                            editingItemIdRef.current = null;
                           }
+                        } else {
+                          console.log("SKIPPING - no editingItemId");
                         }
+                        console.log("=== END DEBUG (MOBILE) ===");
                       }}
                       placeholder="예: 2024.01.15"
                       className="lr-mobile-meta-date lr-mobile-edit-input"

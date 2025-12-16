@@ -563,7 +563,7 @@ body,
   right: 8px;
   bottom: 6px;
   font-size: 12px;
-  color: #9a9a9a;
+  color: var(--text);
   user-select: none;
 }
 
@@ -767,7 +767,7 @@ body,
 .lr-highlight-empty {
   grid-column: 1 / -1;
   padding: 12px;
-  border: 1px dashed rgba(0, 0, 0, 0.15);
+  border: 1px dashed var(--text);
   border-radius: 8px;
   background: #f7f7f7;
   color: #555;
@@ -1031,7 +1031,7 @@ body,
 
 .lr-desc-input {
   background: transparent;
-  border: 1px dashed rgba(8, 8, 8, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
@@ -1059,7 +1059,7 @@ body,
 .lr-char-count {
   text-align: right;
   font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--text);
   font-family: "Pretendard Variable";
   margin-bottom: 16px;
   margin-top: -8px;
@@ -1080,7 +1080,7 @@ body,
 
 textarea.lr-name {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 10px 8px;
   color: inherit;
@@ -1103,7 +1103,7 @@ textarea.lr-name {
 }
 
 input.lr-name {
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 10px 8px;
 }
@@ -1127,7 +1127,7 @@ textarea.lr-name::placeholder {
 
 input.lr-subtitle {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
@@ -1149,7 +1149,7 @@ input.lr-subtitle::placeholder {
 .lr-location-input {
   background: transparent;
   text-align: right;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 6px 8px 6px 8px;
   color: inherit;
@@ -1167,7 +1167,7 @@ input.lr-subtitle::placeholder {
 
 .lr-date-input::placeholder,
 .lr-location-input::placeholder {
-  color: #9a9a9a;
+  color: var(--text);
   opacity: 0.5;
 }
 
@@ -1192,7 +1192,7 @@ input.lr-subtitle::placeholder {
   font-family: "Pretendard Variable";
   font-size: 0.85rem;
   font-weight: 400;
-  color: #0f0f0f;
+  color: var(--text);
   opacity: 0.7;
 }
 
@@ -1200,7 +1200,7 @@ input.lr-subtitle::placeholder {
   position: relative;
   width: 44px;
   height: 24px;
-  border: 1px dashed #0f0f0f;
+  border: 1px dashed var(--text);
   border-radius: 12px;
   background: transparent;
   cursor: pointer;
@@ -1217,7 +1217,7 @@ input.lr-subtitle::placeholder {
 .lr-mode-switch.active {
   background: none;
   opacity: 0.8;
-  border-color: #0f0f0f;
+  border-color: var(--text);
 }
 
 .lr-mode-switch.active:hover {
@@ -1230,7 +1230,7 @@ input.lr-subtitle::placeholder {
   left: 2px;
   width: 18px;
   height: 18px;
-  background: #0f0f0f;
+  background: var(--text);
   border-radius: 50%;
   transition: all 0.2s ease;
   opacity: 0.5;
@@ -1245,10 +1245,10 @@ input.lr-subtitle::placeholder {
   flex: 1;
   min-width: 200px;
   background: transparent;
-  border: 1px dashed #0f0f0f;
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 6px 10px;
-  color: #0f0f0f;
+  color: var(--text);
   font-family: "Pretendard Variable";
   font-size: 0.9rem;
   font-weight: 400;
@@ -1260,12 +1260,12 @@ input.lr-subtitle::placeholder {
 
 .lr-birthdate-input-inline:focus {
   outline: none;
-  border-color: #0f0f0f;
+  border-color: var(--text);
   opacity: 1;
 }
 
 .lr-birthdate-input-inline::placeholder {
-  color: #9a9a9a;
+  color: var(--text);
   opacity: 0.5;
 }
 

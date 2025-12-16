@@ -249,10 +249,10 @@ export default function LifeRecordDesktop({
 
   const [rotation, setRotation] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
-  // 자동재생 기본값: edit 미리보기 off, desktop view on
+  // 자동재생 기본값: 항상 off
   // 부모에서 prop으로 전달되면 그것을 사용, 없으면 내부 상태 사용
   const [internalAutoSlideEnabled, setInternalAutoSlideEnabled] =
-    useState(!isEditing);
+    useState(false);
   const autoSlideEnabled =
     propAutoSlideEnabled !== undefined
       ? propAutoSlideEnabled
@@ -275,6 +275,7 @@ export default function LifeRecordDesktop({
   const editingDateItemIdRef = useRef(null); // 날짜 입력 중인 항목의 ID 추적 (useMemo에서 사용)
   const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
   const rotationRef = useRef(0); // 자동 슬라이드를 위한 rotation ref
+  const currentImageIndexRef = useRef(0); // 자동 슬라이드를 위한 currentImageIndex ref
 
   // activeIdx와 rotation이 변경될 때 ref 업데이트
   useEffect(() => {
@@ -284,6 +285,10 @@ export default function LifeRecordDesktop({
   useEffect(() => {
     rotationRef.current = rotation;
   }, [rotation]);
+
+  useEffect(() => {
+    currentImageIndexRef.current = currentImageIndex;
+  }, [currentImageIndex]);
 
   const activeItem = timeline[activeIdx] || {};
 
@@ -355,7 +360,7 @@ export default function LifeRecordDesktop({
     }
   };
 
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(1000);
   const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 200, ANCHOR: 0 };
   const MOBILE = { START: 110, SWEEP: 180, RADIUS: 140, ANCHOR: 110 };
   const CFG = isMobile ? MOBILE : DESKTOP;
@@ -371,8 +376,7 @@ export default function LifeRecordDesktop({
   }, [isEditing]);
 
   const angleForIndex = (i) => {
-    // 타임라인 항목 수와 관계없이 고정된 각도 간격 사용하기
-    const FIXED_STEP = 25;
+    const FIXED_STEP = 22;
     return CFG.START + FIXED_STEP * i;
   };
 
@@ -381,7 +385,7 @@ export default function LifeRecordDesktop({
     if (diff > 180) diff = 360 - diff;
 
     const normalizedDiff = Math.min(diff / 90, 1);
-    const opacity = 1 - normalizedDiff * normalizedDiff * 1;
+    const opacity = 1 - normalizedDiff * normalizedDiff * 1.5;
     return Math.max(opacity, 0);
   };
 
@@ -550,7 +554,7 @@ export default function LifeRecordDesktop({
       const validImages = (currentItem?.images || []).filter((img) => img);
 
       if (validImages.length > 1) {
-        const currentImgIdx = currentImageIndex;
+        const currentImgIdx = currentImageIndexRef.current;
         if (currentImgIdx < validImages.length - 1) {
           setCurrentImageIndex(currentImgIdx + 1);
         } else {
@@ -574,7 +578,7 @@ export default function LifeRecordDesktop({
     }, 5000);
 
     return () => clearInterval(autoSlideInterval);
-  }, [isEditing, autoSlideEnabled, timeline.length, currentImageIndex]);
+  }, [isEditing, autoSlideEnabled, timeline.length]);
 
   const safeIdx = Math.min(activeIdx, Math.max(0, (timeline?.length || 1) - 1));
   const mainTitle = useMemo(() => {
@@ -1800,63 +1804,131 @@ export default function LifeRecordDesktop({
               </div>
 
               {activeItem.kind === "main" && (
-                <div className="lr-highlight-grid" role="list">
-                  {timeline
-                    .filter((it) => it.isHighlight)
-                    .slice(0, 10)
-                    .map((it) => {
-                      let dateLabel = "";
-                      if (it.date) {
-                        if (displayMode === "age" && data.record?.birthDate) {
-                          const age = calculateAge(
-                            data.record.birthDate,
-                            it.date,
-                          );
-                          if (age !== null) {
-                            dateLabel = `${age}세`;
-                          }
-                        } else {
-                          const year = getYear(it.date);
-                          if (year) {
-                            dateLabel = year.trim();
+                <>
+                  <div className="lr-highlight-grid" role="list">
+                    {timeline
+                      .filter((it) => it.isHighlight)
+                      .slice(0, 10)
+                      .map((it) => {
+                        let dateLabel = "";
+                        if (it.date) {
+                          if (displayMode === "age" && data.record?.birthDate) {
+                            const age = calculateAge(
+                              data.record.birthDate,
+                              it.date,
+                            );
+                            if (age !== null) {
+                              dateLabel = `${age}세`;
+                            }
+                          } else {
+                            const year = getYear(it.date);
+                            if (year) {
+                              dateLabel = year.trim();
+                            }
                           }
                         }
-                      }
-                      return (
-                        <div
-                          key={it.id}
-                          className="lr-highlight-item"
-                          role="listitem"
-                          title={
-                            (it.kind === "year" ? it.event : it.title) ||
-                            "하이라이트"
-                          }
-                          onClick={() => {
-                            const i = timeline.findIndex((x) => x.id === it.id);
-                            if (i >= 0) snapToIndex(i);
-                          }}
-                        >
-                          <div className="lr-highlight-image-wrapper">
-                            <img
-                              src={it.cover || "/images/records/No image.png"}
-                              alt={
-                                (it.kind === "year" ? it.event : it.title) ||
-                                "highlight"
-                              }
-                            />
-                            <span className="lr-highlight-title">
-                              {it.kind === "year" ? it.event : it.title}
-                            </span>
+                        return (
+                          <div
+                            key={it.id}
+                            className="lr-highlight-item"
+                            role="listitem"
+                            title={
+                              (it.kind === "year" ? it.event : it.title) ||
+                              "하이라이트"
+                            }
+                            onClick={() => {
+                              const i = timeline.findIndex(
+                                (x) => x.id === it.id,
+                              );
+                              if (i >= 0) snapToIndex(i);
+                            }}
+                          >
+                            <div className="lr-highlight-image-wrapper">
+                              <img
+                                src={it.cover || "/images/records/No image.png"}
+                                alt={
+                                  (it.kind === "year" ? it.event : it.title) ||
+                                  "highlight"
+                                }
+                              />
+                              <span className="lr-highlight-title">
+                                {it.kind === "year" ? it.event : it.title}
+                              </span>
+                            </div>
+                            {dateLabel && (
+                              <span className="lr-highlight-date">
+                                {dateLabel}
+                              </span>
+                            )}
                           </div>
-                          {dateLabel && (
-                            <span className="lr-highlight-date">
-                              {dateLabel}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })}
-                </div>
+                        );
+                      })}
+                  </div>
+                  <div className="lr-highlight-timeline">
+                    <div className="lr-timeline-line"></div>
+                    <div className="lr-timeline-markers">
+                      {timeline
+                        .filter((it) => it.isHighlight)
+                        .slice(0, 10)
+                        .map((it, index) => {
+                          const colIndex = index % 5;
+
+                          let dateLabel = "";
+                          if (it.date) {
+                            if (
+                              displayMode === "age" &&
+                              data.record?.birthDate
+                            ) {
+                              const age = calculateAge(
+                                data.record.birthDate,
+                                it.date,
+                              );
+                              if (age !== null) {
+                                dateLabel = `${age}세`;
+                              }
+                            } else {
+                              const year = getYear(it.date);
+                              if (year) {
+                                dateLabel = year.trim();
+                              }
+                            }
+                          }
+                          return (
+                            <div
+                              key={it.id}
+                              className="lr-timeline-marker"
+                              style={{
+                                gridColumn: colIndex + 1,
+                              }}
+                              onClick={() => {
+                                const i = timeline.findIndex(
+                                  (x) => x.id === it.id,
+                                );
+                                if (i >= 0) snapToIndex(i);
+                              }}
+                            >
+                              <div className="lr-timeline-connector"></div>
+                              <div className="lr-timeline-dot"></div>
+                              {it.date && (
+                                <div className="lr-timeline-date">
+                                  {displayMode === "age" &&
+                                  data.record?.birthDate
+                                    ? (() => {
+                                        const age = calculateAge(
+                                          data.record.birthDate,
+                                          it.date,
+                                        );
+                                        return age !== null ? `${age}세` : "";
+                                      })()
+                                    : it.date}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </article>
@@ -1874,9 +1946,6 @@ export default function LifeRecordDesktop({
               {timeline.map((item, i) => {
                 const baseAngle = angleForIndex(i);
                 const phi = baseAngle + rotation;
-                // anchor 위치(0도)에서의 거리를 기준으로 opacity 계산
-                // rotation이 변경되어도 각 항목의 baseAngle은 고정이므로,
-                // rotation을 고려한 실제 화면상 위치를 계산
                 const anchor = getAnchor();
                 const relativeAngle = norm360(phi - anchor);
                 const opacity = getOpacityForAngle(relativeAngle, 0);

@@ -251,11 +251,16 @@ export default function LifeRecordMobile({
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
   const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
+  const currentImageIndexRef = useRef(0); // 자동 슬라이드를 위한 currentImageIndex ref
 
   // activeIdx가 변경될 때 ref 업데이트
   useEffect(() => {
     activeIdxRef.current = activeIdx;
   }, [activeIdx]);
+
+  useEffect(() => {
+    currentImageIndexRef.current = currentImageIndex;
+  }, [currentImageIndex]);
 
   // isEditing이 변경될 때 autoSlideEnabled 업데이트 (edit 모드에서는 항상 off)
   useEffect(() => {
@@ -460,13 +465,10 @@ export default function LifeRecordMobile({
       const validImages = (currentItem?.images || []).filter((img) => img);
 
       if (validImages.length > 1) {
-        // 이미지가 여러 장이면 다음 이미지로 이동
-        const currentImgIdx = currentImageIndex;
+        const currentImgIdx = currentImageIndexRef.current;
         if (currentImgIdx < validImages.length - 1) {
-          // 아직 더 볼 이미지가 있으면 다음 이미지로
           setCurrentImageIndex(currentImgIdx + 1);
         } else {
-          // 모든 이미지를 봤으면 다음 이벤트로
           let newIdx;
           if (currentIdx >= timeline.length - 1) {
             newIdx = 0;
@@ -480,7 +482,6 @@ export default function LifeRecordMobile({
           }, 150);
         }
       } else {
-        // 이미지가 1장 이하면 바로 다음 이벤트로
         let newIdx;
         if (currentIdx >= timeline.length - 1) {
           newIdx = 0;
@@ -496,13 +497,7 @@ export default function LifeRecordMobile({
     }, 5000);
 
     return () => clearInterval(autoSlideInterval);
-  }, [
-    isEditing,
-    autoSlideEnabled,
-    timeline.length,
-    currentImageIndex,
-    timeline,
-  ]);
+  }, [isEditing, autoSlideEnabled, timeline.length, timeline]);
 
   const handleMenuClick = () => {
     setShowMenu(!showMenu);

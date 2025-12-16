@@ -31,12 +31,7 @@ export default function ViewRecordsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [autoSlideEnabled, setAutoSlideEnabled] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth > 1000 ? true : false;
-    }
-    return false; // SSR fallback
-  });
+  const [autoSlideEnabled, setAutoSlideEnabled] = useState(false);
   const isInitializedRef = useRef(false);
   const prevWidthRef = useRef(width);
 
@@ -91,8 +86,7 @@ export default function ViewRecordsPage() {
   useEffect(() => {
     if (!isInitializedRef.current && width > 0) {
       isInitializedRef.current = true;
-      const initialValue = width > 1000 ? true : false;
-      setAutoSlideEnabled(initialValue);
+      setAutoSlideEnabled(false);
       prevWidthRef.current = width;
     }
   }, [width]);

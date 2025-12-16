@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { IoIosArrowDown, IoIosArrowUp, IoIosLogOut } from "react-icons/io";
 import { MdPerson } from "react-icons/md";
 import { FiEye, FiEyeOff, FiSave } from "react-icons/fi";
+import { MdEdit } from "react-icons/md";
 import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { MdAdd } from "react-icons/md";
 import { MdPalette } from "react-icons/md";
@@ -85,7 +86,7 @@ export default function FloatingToolbar({
     {
       key: "preview",
       onClick: preview,
-      icon: isPreview ? <FiEyeOff size={20} /> : <FiEye size={20} />,
+      icon: isPreview ? <MdEdit size={20} /> : <FiEye size={20} />,
       disabled: false,
       getLabel: () => (isPreview ? "클릭하여 편집" : "클릭하여 미리보기"),
     },

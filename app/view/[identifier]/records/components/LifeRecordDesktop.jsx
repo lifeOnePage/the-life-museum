@@ -376,7 +376,7 @@ export default function LifeRecordDesktop({
   }, [isEditing]);
 
   const angleForIndex = (i) => {
-    const FIXED_STEP = 22;
+    const FIXED_STEP = 23;
     return CFG.START + FIXED_STEP * i;
   };
 
@@ -527,7 +527,7 @@ export default function LifeRecordDesktop({
     setActiveIdx(best);
   };
 
-  const STEP = 3;
+  const STEP = 1;
   const handleWheel = (e) => {
     const dir = e.deltaY > 0 ? -1 : 1;
     const next = rotation + dir * STEP;

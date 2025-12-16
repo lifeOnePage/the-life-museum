@@ -767,7 +767,7 @@ body,
 .lr-highlight-empty {
   grid-column: 1 / -1;
   padding: 12px;
-  border: 1px dashed rgba(0, 0, 0, 0.15);
+  border: 1px dashed var(--text);
   border-radius: 8px;
   background: #f7f7f7;
   color: #555;
@@ -1031,7 +1031,7 @@ body,
 
 .lr-desc-input {
   background: transparent;
-  border: 1px dashed rgba(8, 8, 8, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
@@ -1080,7 +1080,7 @@ body,
 
 textarea.lr-name {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 10px 8px;
   color: inherit;
@@ -1103,7 +1103,7 @@ textarea.lr-name {
 }
 
 input.lr-name {
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 10px 8px;
 }
@@ -1127,7 +1127,7 @@ textarea.lr-name::placeholder {
 
 input.lr-subtitle {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
@@ -1149,7 +1149,7 @@ input.lr-subtitle::placeholder {
 .lr-location-input {
   background: transparent;
   text-align: right;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 6px 8px 6px 8px;
   color: inherit;

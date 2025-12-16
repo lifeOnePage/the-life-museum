@@ -704,7 +704,7 @@ textarea.lr-mobile-meta-name.lr-mobile-edit-input {
 .lr-mobile-edit-input,
 .lr-mobile-edit-textarea {
   width: 180%;
-  border: 2px dashed rgba(255, 255, 255);
+  border: 2px dashed var(--text);
   border-radius: 8px;
   padding: 16px;
   background: transparent;

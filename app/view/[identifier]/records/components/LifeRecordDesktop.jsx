@@ -273,6 +273,8 @@ export default function LifeRecordDesktop({
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
   const editingDateItemIdRef = useRef(null); // 날짜 입력 중인 항목의 ID 추적 (useMemo에서 사용)
+  const originalDateRef = useRef(null); // 날짜 입력 시작 시 원래 날짜 저장
+  const editingItemIdRef = useRef(null); // 현재 날짜를 수정 중인 항목의 ID 저장
   const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
   const rotationRef = useRef(0); // 자동 슬라이드를 위한 rotation ref
   const currentImageIndexRef = useRef(0); // 자동 슬라이드를 위한 currentImageIndex ref
@@ -1696,7 +1698,19 @@ export default function LifeRecordDesktop({
                             : "최아텍"}
                         </div>
                       )}
-                      <div className="lr-date-location">
+                      <div
+                        className="lr-date-location"
+                        onMouseDown={(e) => {
+                          if (e.target.tagName === "INPUT") {
+                            e.stopPropagation();
+                          }
+                        }}
+                        onClick={(e) => {
+                          if (e.target.tagName === "INPUT") {
+                            e.stopPropagation();
+                          }
+                        }}
+                      >
                         {isEditing ? (
                           <>
                             <input
@@ -1706,6 +1720,23 @@ export default function LifeRecordDesktop({
                                   (item) => item.id === activeItem.id,
                                 )?.date || ""
                               }
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                if (activeItem?.id) {
+                                  const currentItem = data.items?.find(
+                                    (item) => item.id === activeItem.id,
+                                  );
+                                  originalDateRef.current =
+                                    currentItem?.date || "";
+                                  editingItemIdRef.current = activeItem.id;
+                                }
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                              onMouseUp={(e) => {
+                                e.stopPropagation();
+                              }}
                               onChange={(e) => {
                                 const newItems = data.items.map((item) =>
                                   item.id === activeItem.id
@@ -1714,50 +1745,171 @@ export default function LifeRecordDesktop({
                                 );
                                 onDataChange?.({ ...data, items: newItems });
                               }}
-                              onFocus={() => {
-                                // 날짜 입력 시작
-                                if (activeItem?.id) {
-                                  setEditingDateItemId(activeItem.id);
-                                  editingDateItemIdRef.current = activeItem.id;
+                              onFocus={(e) => {
+                                e.stopPropagation();
+                                if (
+                                  activeItem?.id &&
+                                  editingItemIdRef.current
+                                ) {
+                                  setEditingDateItemId(
+                                    editingItemIdRef.current,
+                                  );
+                                  editingDateItemIdRef.current =
+                                    editingItemIdRef.current;
+                                  console.log(
+                                    "onFocus - saved editingItemId:",
+                                    editingItemIdRef.current,
+                                  );
                                 }
                               }}
                               onBlur={() => {
-                                // 날짜 입력 완료 - 정렬하고 새 위치로 이동
-                                if (activeItem?.id) {
-                                  setEditingDateItemId(null);
-                                  editingDateItemIdRef.current = null;
+                                const editingItemId = editingItemIdRef.current;
+                                console.log("=== DATE INPUT BLUR DEBUG ===");
+                                console.log("editingItemId:", editingItemId);
+                                console.log("activeItem.id:", activeItem.id);
+                                console.log("activeIdx:", activeIdx);
 
-                                  // 정렬된 위치 계산
-                                  const sortedItems = [
-                                    ...(data.items || []),
-                                  ].map((item) => {
-                                    const [y] = (item.date || "").split(".");
-                                    return {
-                                      ...item,
-                                      year: y ? parseInt(y, 10) : 0,
-                                    };
-                                  });
-
-                                  sortedItems.sort((a, b) => {
-                                    if (!a.year && !b.year) return 0;
-                                    if (!a.year) return 1;
-                                    if (!b.year) return -1;
-                                    return a.year - b.year;
-                                  });
-
-                                  // 정렬된 위치에서 현재 항목의 인덱스 찾기 (main 제외)
-                                  const sortedIdx = sortedItems.findIndex(
-                                    (item) => item.id === activeItem.id,
+                                if (editingItemId) {
+                                  const currentItem = data.items?.find(
+                                    (item) => item.id === editingItemId,
                                   );
-                                  if (sortedIdx !== -1) {
-                                    // main이 첫 번째이므로 +1
-                                    const targetIdx = sortedIdx + 1;
-                                    setActiveIdx(targetIdx);
-                                    const targetAngle =
-                                      angleForIndex(targetIdx);
-                                    setRotation(targetAngle - getAnchor());
+                                  const currentDate = currentItem?.date || "";
+                                  const originalDate =
+                                    originalDateRef.current || "";
+
+                                  console.log("currentDate:", currentDate);
+                                  console.log("originalDate:", originalDate);
+                                  console.log(
+                                    "date changed:",
+                                    currentDate !== originalDate,
+                                  );
+                                  console.log(
+                                    "is editing active item:",
+                                    editingItemId === activeItem.id,
+                                  );
+
+                                  if (currentDate !== originalDate) {
+                                    setEditingDateItemId(null);
+                                    editingDateItemIdRef.current = null;
+                                    originalDateRef.current = null;
+                                    editingItemIdRef.current = null;
+                                    console.log("=== SORTING LOGIC ===");
+                                    console.log(
+                                      "Before sort - items:",
+                                      data.items?.map((item) => ({
+                                        id: item.id,
+                                        date: item.date,
+                                      })),
+                                    );
+
+                                    const sortedItems = [
+                                      ...(data.items || []),
+                                    ].map((item) => {
+                                      const [y] = (item.date || "").split(".");
+                                      const year = y ? parseInt(y, 10) : 0;
+                                      return {
+                                        ...item,
+                                        year: year,
+                                      };
+                                    });
+
+                                    console.log(
+                                      "Before sort - with years:",
+                                      sortedItems.map((item) => ({
+                                        id: item.id,
+                                        date: item.date,
+                                        year: item.year,
+                                      })),
+                                    );
+
+                                    sortedItems.sort((a, b) => {
+                                      if (!a.year && !b.year) return 0;
+                                      if (!a.year) return 1;
+                                      if (!b.year) return -1;
+                                      return a.year - b.year;
+                                    });
+
+                                    const sortedItemsWithoutYear =
+                                      sortedItems.map(
+                                        ({ year, ...item }) => item,
+                                      );
+
+                                    onDataChange?.({
+                                      ...data,
+                                      items: sortedItemsWithoutYear,
+                                    });
+
+                                    console.log(
+                                      "After sort:",
+                                      sortedItems.map((item) => ({
+                                        id: item.id,
+                                        date: item.date,
+                                        year: item.year,
+                                      })),
+                                    );
+
+                                    const sortedIdx = sortedItems.findIndex(
+                                      (item) => item.id === editingItemId,
+                                    );
+                                    console.log("sortedIdx:", sortedIdx);
+                                    console.log(
+                                      "editingItemId:",
+                                      editingItemId,
+                                    );
+                                    console.log(
+                                      "activeItem.id:",
+                                      activeItem.id,
+                                    );
+                                    console.log("activeIdx:", activeIdx);
+
+                                    if (sortedIdx !== -1) {
+                                      const targetIdx = sortedIdx + 1;
+                                      console.log("targetIdx:", targetIdx);
+                                      console.log(
+                                        "current activeIdx:",
+                                        activeIdx,
+                                      );
+                                      console.log(
+                                        "will move:",
+                                        targetIdx !== activeIdx,
+                                      );
+
+                                      setTimeout(() => {
+                                        if (targetIdx !== activeIdx) {
+                                          console.log(
+                                            "MOVING to idx:",
+                                            targetIdx,
+                                          );
+                                          setActiveIdx(targetIdx);
+                                          const targetAngle =
+                                            angleForIndex(targetIdx);
+                                          setRotation(
+                                            targetAngle - getAnchor(),
+                                          );
+                                        } else {
+                                          console.log(
+                                            "NOT MOVING - already at correct position",
+                                          );
+                                        }
+                                      }, 0);
+                                    } else {
+                                      console.log(
+                                        "ERROR: sortedIdx is -1, item not found!",
+                                      );
+                                    }
+                                  } else {
+                                    console.log(
+                                      "SKIPPING - date not changed, no movement",
+                                    );
+                                    setEditingDateItemId(null);
+                                    editingDateItemIdRef.current = null;
+                                    originalDateRef.current = null;
+                                    editingItemIdRef.current = null;
                                   }
+                                } else {
+                                  console.log("SKIPPING - no editingItemId");
                                 }
+                                console.log("=== END DEBUG ===");
                               }}
                               placeholder="예: 2024.01.15"
                               className="lr-date-input"

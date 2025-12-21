@@ -7,7 +7,7 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
   // console.log(profile)
   // console.groupEnd()
   return (
-    <div className={`w-full h-full flex items-center justify-center transition-colors duration-500 ${isMobile ? 'bg-black/50' : 'bg-black/50'}`}>
+    <div className={`w-full h-full flex items-center justify-center transition-colors duration-500 ${isMobile ? 'bg-black/50' : 'bg-white'}`}>
       {/* 프로필 이미지 컨테이너 - 정방형 */}
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}

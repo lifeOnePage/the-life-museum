@@ -51,12 +51,12 @@ export default function ProfileCurtain({ open, onClose, profile }) {
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={profile.photo}
-              alt={profile?.name || "프로필"}
+              alt={profile?.name || "대표 타이틀"}
               className="w-full h-auto max-h-[40vh] object-cover object-center"
             />
           ) : (
             <div className="grid h-[30vh] w-full place-items-center text-white/40 bg-white/5">
-              프로필 이미지 없음
+              대표 이미지 없음
             </div>
           )}
         </div>

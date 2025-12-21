@@ -9259,8 +9259,6 @@ export namespace Prisma {
     userName: string | null
     birthDate: string | null
     displayMode: string | null
-    pageTitle: string | null
-    pageSubtitle: string | null
   }
 
   export type RecordMaxAggregateOutputType = {
@@ -9278,8 +9276,6 @@ export namespace Prisma {
     userName: string | null
     birthDate: string | null
     displayMode: string | null
-    pageTitle: string | null
-    pageSubtitle: string | null
   }
 
   export type RecordCountAggregateOutputType = {
@@ -9297,8 +9293,6 @@ export namespace Prisma {
     userName: number
     birthDate: number
     displayMode: number
-    pageTitle: number
-    pageSubtitle: number
     _all: number
   }
 
@@ -9328,8 +9322,6 @@ export namespace Prisma {
     userName?: true
     birthDate?: true
     displayMode?: true
-    pageTitle?: true
-    pageSubtitle?: true
   }
 
   export type RecordMaxAggregateInputType = {
@@ -9347,8 +9339,6 @@ export namespace Prisma {
     userName?: true
     birthDate?: true
     displayMode?: true
-    pageTitle?: true
-    pageSubtitle?: true
   }
 
   export type RecordCountAggregateInputType = {
@@ -9366,8 +9356,6 @@ export namespace Prisma {
     userName?: true
     birthDate?: true
     displayMode?: true
-    pageTitle?: true
-    pageSubtitle?: true
     _all?: true
   }
 
@@ -9472,8 +9460,6 @@ export namespace Prisma {
     userName: string | null
     birthDate: string | null
     displayMode: string | null
-    pageTitle: string | null
-    pageSubtitle: string | null
     _count: RecordCountAggregateOutputType | null
     _avg: RecordAvgAggregateOutputType | null
     _sum: RecordSumAggregateOutputType | null
@@ -9510,8 +9496,6 @@ export namespace Prisma {
     userName?: boolean
     birthDate?: boolean
     displayMode?: boolean
-    pageTitle?: boolean
-    pageSubtitle?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
     recordItems?: boolean | Record$recordItemsArgs<ExtArgs>
     _count?: boolean | RecordCountOutputTypeDefaultArgs<ExtArgs>
@@ -9532,8 +9516,6 @@ export namespace Prisma {
     userName?: boolean
     birthDate?: boolean
     displayMode?: boolean
-    pageTitle?: boolean
-    pageSubtitle?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
   }, ExtArgs["result"]["record"]>
 
@@ -9552,8 +9534,6 @@ export namespace Prisma {
     userName?: boolean
     birthDate?: boolean
     displayMode?: boolean
-    pageTitle?: boolean
-    pageSubtitle?: boolean
     user?: boolean | Record$userArgs<ExtArgs>
   }, ExtArgs["result"]["record"]>
 
@@ -9572,11 +9552,9 @@ export namespace Prisma {
     userName?: boolean
     birthDate?: boolean
     displayMode?: boolean
-    pageTitle?: boolean
-    pageSubtitle?: boolean
   }
 
-  export type RecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "coverUrl" | "name" | "subName" | "description" | "bgm" | "color" | "userId" | "userName" | "birthDate" | "displayMode" | "pageTitle" | "pageSubtitle", ExtArgs["result"]["record"]>
+  export type RecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "coverUrl" | "name" | "subName" | "description" | "bgm" | "color" | "userId" | "userName" | "birthDate" | "displayMode", ExtArgs["result"]["record"]>
   export type RecordInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | Record$userArgs<ExtArgs>
     recordItems?: boolean | Record$recordItemsArgs<ExtArgs>
@@ -9610,8 +9588,6 @@ export namespace Prisma {
       userName: string | null
       birthDate: string | null
       displayMode: string | null
-      pageTitle: string | null
-      pageSubtitle: string | null
     }, ExtArgs["result"]["record"]>
     composites: {}
   }
@@ -10051,8 +10027,6 @@ export namespace Prisma {
     readonly userName: FieldRef<"Record", 'String'>
     readonly birthDate: FieldRef<"Record", 'String'>
     readonly displayMode: FieldRef<"Record", 'String'>
-    readonly pageTitle: FieldRef<"Record", 'String'>
-    readonly pageSubtitle: FieldRef<"Record", 'String'>
   }
     
 
@@ -11725,6 +11699,7 @@ export namespace Prisma {
     profileBirthDate: string | null
     profileBirthPlace: string | null
     profileBiography: string | null
+    profileRecordFormat: string | null
     userId: number | null
   }
 
@@ -11738,6 +11713,7 @@ export namespace Prisma {
     profileBirthDate: string | null
     profileBirthPlace: string | null
     profileBiography: string | null
+    profileRecordFormat: string | null
     userId: number | null
   }
 
@@ -11751,6 +11727,7 @@ export namespace Prisma {
     profileBirthDate: number
     profileBirthPlace: number
     profileBiography: number
+    profileRecordFormat: number
     lifestoryProgress: number
     userId: number
     _all: number
@@ -11777,6 +11754,7 @@ export namespace Prisma {
     profileBirthDate?: true
     profileBirthPlace?: true
     profileBiography?: true
+    profileRecordFormat?: true
     userId?: true
   }
 
@@ -11790,6 +11768,7 @@ export namespace Prisma {
     profileBirthDate?: true
     profileBirthPlace?: true
     profileBiography?: true
+    profileRecordFormat?: true
     userId?: true
   }
 
@@ -11803,6 +11782,7 @@ export namespace Prisma {
     profileBirthDate?: true
     profileBirthPlace?: true
     profileBiography?: true
+    profileRecordFormat?: true
     lifestoryProgress?: true
     userId?: true
     _all?: true
@@ -11904,6 +11884,7 @@ export namespace Prisma {
     profileBirthDate: string | null
     profileBirthPlace: string | null
     profileBiography: string | null
+    profileRecordFormat: string | null
     lifestoryProgress: JsonValue | null
     userId: number | null
     _count: SceneCountAggregateOutputType | null
@@ -11937,6 +11918,7 @@ export namespace Prisma {
     profileBirthDate?: boolean
     profileBirthPlace?: boolean
     profileBiography?: boolean
+    profileRecordFormat?: boolean
     lifestoryProgress?: boolean
     userId?: boolean
     user?: boolean | Scene$userArgs<ExtArgs>
@@ -11954,6 +11936,7 @@ export namespace Prisma {
     profileBirthDate?: boolean
     profileBirthPlace?: boolean
     profileBiography?: boolean
+    profileRecordFormat?: boolean
     lifestoryProgress?: boolean
     userId?: boolean
     user?: boolean | Scene$userArgs<ExtArgs>
@@ -11969,6 +11952,7 @@ export namespace Prisma {
     profileBirthDate?: boolean
     profileBirthPlace?: boolean
     profileBiography?: boolean
+    profileRecordFormat?: boolean
     lifestoryProgress?: boolean
     userId?: boolean
     user?: boolean | Scene$userArgs<ExtArgs>
@@ -11984,11 +11968,12 @@ export namespace Prisma {
     profileBirthDate?: boolean
     profileBirthPlace?: boolean
     profileBiography?: boolean
+    profileRecordFormat?: boolean
     lifestoryProgress?: boolean
     userId?: boolean
   }
 
-  export type SceneOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "profilePhoto" | "profileName" | "profileBirthDate" | "profileBirthPlace" | "profileBiography" | "lifestoryProgress" | "userId", ExtArgs["result"]["scene"]>
+  export type SceneOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "profilePhoto" | "profileName" | "profileBirthDate" | "profileBirthPlace" | "profileBiography" | "profileRecordFormat" | "lifestoryProgress" | "userId", ExtArgs["result"]["scene"]>
   export type SceneInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | Scene$userArgs<ExtArgs>
     items?: boolean | Scene$itemsArgs<ExtArgs>
@@ -12017,6 +12002,7 @@ export namespace Prisma {
       profileBirthDate: string | null
       profileBirthPlace: string | null
       profileBiography: string | null
+      profileRecordFormat: string | null
       lifestoryProgress: Prisma.JsonValue | null
       userId: number | null
     }, ExtArgs["result"]["scene"]>
@@ -12453,6 +12439,7 @@ export namespace Prisma {
     readonly profileBirthDate: FieldRef<"Scene", 'String'>
     readonly profileBirthPlace: FieldRef<"Scene", 'String'>
     readonly profileBiography: FieldRef<"Scene", 'String'>
+    readonly profileRecordFormat: FieldRef<"Scene", 'String'>
     readonly lifestoryProgress: FieldRef<"Scene", 'Json'>
     readonly userId: FieldRef<"Scene", 'Int'>
   }
@@ -15308,9 +15295,7 @@ export namespace Prisma {
     userId: 'userId',
     userName: 'userName',
     birthDate: 'birthDate',
-    displayMode: 'displayMode',
-    pageTitle: 'pageTitle',
-    pageSubtitle: 'pageSubtitle'
+    displayMode: 'displayMode'
   };
 
   export type RecordScalarFieldEnum = (typeof RecordScalarFieldEnum)[keyof typeof RecordScalarFieldEnum]
@@ -15344,6 +15329,7 @@ export namespace Prisma {
     profileBirthDate: 'profileBirthDate',
     profileBirthPlace: 'profileBirthPlace',
     profileBiography: 'profileBiography',
+    profileRecordFormat: 'profileRecordFormat',
     lifestoryProgress: 'lifestoryProgress',
     userId: 'userId'
   };
@@ -15993,8 +15979,6 @@ export namespace Prisma {
     userName?: StringNullableFilter<"Record"> | string | null
     birthDate?: StringNullableFilter<"Record"> | string | null
     displayMode?: StringNullableFilter<"Record"> | string | null
-    pageTitle?: StringNullableFilter<"Record"> | string | null
-    pageSubtitle?: StringNullableFilter<"Record"> | string | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     recordItems?: RecordItemListRelationFilter
   }
@@ -16014,8 +15998,6 @@ export namespace Prisma {
     userName?: SortOrderInput | SortOrder
     birthDate?: SortOrderInput | SortOrder
     displayMode?: SortOrderInput | SortOrder
-    pageTitle?: SortOrderInput | SortOrder
-    pageSubtitle?: SortOrderInput | SortOrder
     user?: UserOrderByWithRelationInput
     recordItems?: RecordItemOrderByRelationAggregateInput
   }
@@ -16038,8 +16020,6 @@ export namespace Prisma {
     userName?: StringNullableFilter<"Record"> | string | null
     birthDate?: StringNullableFilter<"Record"> | string | null
     displayMode?: StringNullableFilter<"Record"> | string | null
-    pageTitle?: StringNullableFilter<"Record"> | string | null
-    pageSubtitle?: StringNullableFilter<"Record"> | string | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
     recordItems?: RecordItemListRelationFilter
   }, "id" | "identifier">
@@ -16059,8 +16039,6 @@ export namespace Prisma {
     userName?: SortOrderInput | SortOrder
     birthDate?: SortOrderInput | SortOrder
     displayMode?: SortOrderInput | SortOrder
-    pageTitle?: SortOrderInput | SortOrder
-    pageSubtitle?: SortOrderInput | SortOrder
     _count?: RecordCountOrderByAggregateInput
     _avg?: RecordAvgOrderByAggregateInput
     _max?: RecordMaxOrderByAggregateInput
@@ -16086,8 +16064,6 @@ export namespace Prisma {
     userName?: StringNullableWithAggregatesFilter<"Record"> | string | null
     birthDate?: StringNullableWithAggregatesFilter<"Record"> | string | null
     displayMode?: StringNullableWithAggregatesFilter<"Record"> | string | null
-    pageTitle?: StringNullableWithAggregatesFilter<"Record"> | string | null
-    pageSubtitle?: StringNullableWithAggregatesFilter<"Record"> | string | null
   }
 
   export type RecordItemWhereInput = {
@@ -16195,6 +16171,7 @@ export namespace Prisma {
     profileBirthDate?: StringNullableFilter<"Scene"> | string | null
     profileBirthPlace?: StringNullableFilter<"Scene"> | string | null
     profileBiography?: StringNullableFilter<"Scene"> | string | null
+    profileRecordFormat?: StringNullableFilter<"Scene"> | string | null
     lifestoryProgress?: JsonNullableFilter<"Scene">
     userId?: IntNullableFilter<"Scene"> | number | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
@@ -16211,6 +16188,7 @@ export namespace Prisma {
     profileBirthDate?: SortOrderInput | SortOrder
     profileBirthPlace?: SortOrderInput | SortOrder
     profileBiography?: SortOrderInput | SortOrder
+    profileRecordFormat?: SortOrderInput | SortOrder
     lifestoryProgress?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
     user?: UserOrderByWithRelationInput
@@ -16230,6 +16208,7 @@ export namespace Prisma {
     profileBirthDate?: StringNullableFilter<"Scene"> | string | null
     profileBirthPlace?: StringNullableFilter<"Scene"> | string | null
     profileBiography?: StringNullableFilter<"Scene"> | string | null
+    profileRecordFormat?: StringNullableFilter<"Scene"> | string | null
     lifestoryProgress?: JsonNullableFilter<"Scene">
     userId?: IntNullableFilter<"Scene"> | number | null
     user?: XOR<UserNullableScalarRelationFilter, UserWhereInput> | null
@@ -16246,6 +16225,7 @@ export namespace Prisma {
     profileBirthDate?: SortOrderInput | SortOrder
     profileBirthPlace?: SortOrderInput | SortOrder
     profileBiography?: SortOrderInput | SortOrder
+    profileRecordFormat?: SortOrderInput | SortOrder
     lifestoryProgress?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
     _count?: SceneCountOrderByAggregateInput
@@ -16268,6 +16248,7 @@ export namespace Prisma {
     profileBirthDate?: StringNullableWithAggregatesFilter<"Scene"> | string | null
     profileBirthPlace?: StringNullableWithAggregatesFilter<"Scene"> | string | null
     profileBiography?: StringNullableWithAggregatesFilter<"Scene"> | string | null
+    profileRecordFormat?: StringNullableWithAggregatesFilter<"Scene"> | string | null
     lifestoryProgress?: JsonNullableWithAggregatesFilter<"Scene">
     userId?: IntNullableWithAggregatesFilter<"Scene"> | number | null
   }
@@ -16909,8 +16890,6 @@ export namespace Prisma {
     userName?: string | null
     birthDate?: string | null
     displayMode?: string | null
-    pageTitle?: string | null
-    pageSubtitle?: string | null
     user?: UserCreateNestedOneWithoutRecordsInput
     recordItems?: RecordItemCreateNestedManyWithoutRecordInput
   }
@@ -16930,8 +16909,6 @@ export namespace Prisma {
     userName?: string | null
     birthDate?: string | null
     displayMode?: string | null
-    pageTitle?: string | null
-    pageSubtitle?: string | null
     recordItems?: RecordItemUncheckedCreateNestedManyWithoutRecordInput
   }
 
@@ -16948,8 +16925,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     user?: UserUpdateOneWithoutRecordsNestedInput
     recordItems?: RecordItemUpdateManyWithoutRecordNestedInput
   }
@@ -16969,8 +16944,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     recordItems?: RecordItemUncheckedUpdateManyWithoutRecordNestedInput
   }
 
@@ -16989,8 +16962,6 @@ export namespace Prisma {
     userName?: string | null
     birthDate?: string | null
     displayMode?: string | null
-    pageTitle?: string | null
-    pageSubtitle?: string | null
   }
 
   export type RecordUpdateManyMutationInput = {
@@ -17006,8 +16977,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type RecordUncheckedUpdateManyInput = {
@@ -17025,8 +16994,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type RecordItemCreateInput = {
@@ -17139,6 +17106,7 @@ export namespace Prisma {
     profileBirthDate?: string | null
     profileBirthPlace?: string | null
     profileBiography?: string | null
+    profileRecordFormat?: string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     user?: UserCreateNestedOneWithoutScenesInput
     items?: SceneItemCreateNestedManyWithoutSceneInput
@@ -17154,6 +17122,7 @@ export namespace Prisma {
     profileBirthDate?: string | null
     profileBirthPlace?: string | null
     profileBiography?: string | null
+    profileRecordFormat?: string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     userId?: number | null
     items?: SceneItemUncheckedCreateNestedManyWithoutSceneInput
@@ -17168,6 +17137,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     user?: UserUpdateOneWithoutScenesNestedInput
     items?: SceneItemUpdateManyWithoutSceneNestedInput
@@ -17183,6 +17153,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     userId?: NullableIntFieldUpdateOperationsInput | number | null
     items?: SceneItemUncheckedUpdateManyWithoutSceneNestedInput
@@ -17198,6 +17169,7 @@ export namespace Prisma {
     profileBirthDate?: string | null
     profileBirthPlace?: string | null
     profileBiography?: string | null
+    profileRecordFormat?: string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     userId?: number | null
   }
@@ -17211,6 +17183,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
   }
 
@@ -17224,6 +17197,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     userId?: NullableIntFieldUpdateOperationsInput | number | null
   }
@@ -17975,8 +17949,6 @@ export namespace Prisma {
     userName?: SortOrder
     birthDate?: SortOrder
     displayMode?: SortOrder
-    pageTitle?: SortOrder
-    pageSubtitle?: SortOrder
   }
 
   export type RecordAvgOrderByAggregateInput = {
@@ -17999,8 +17971,6 @@ export namespace Prisma {
     userName?: SortOrder
     birthDate?: SortOrder
     displayMode?: SortOrder
-    pageTitle?: SortOrder
-    pageSubtitle?: SortOrder
   }
 
   export type RecordMinOrderByAggregateInput = {
@@ -18018,8 +17988,6 @@ export namespace Prisma {
     userName?: SortOrder
     birthDate?: SortOrder
     displayMode?: SortOrder
-    pageTitle?: SortOrder
-    pageSubtitle?: SortOrder
   }
 
   export type RecordSumOrderByAggregateInput = {
@@ -18126,6 +18094,7 @@ export namespace Prisma {
     profileBirthDate?: SortOrder
     profileBirthPlace?: SortOrder
     profileBiography?: SortOrder
+    profileRecordFormat?: SortOrder
     lifestoryProgress?: SortOrder
     userId?: SortOrder
   }
@@ -18145,6 +18114,7 @@ export namespace Prisma {
     profileBirthDate?: SortOrder
     profileBirthPlace?: SortOrder
     profileBiography?: SortOrder
+    profileRecordFormat?: SortOrder
     userId?: SortOrder
   }
 
@@ -18158,6 +18128,7 @@ export namespace Prisma {
     profileBirthDate?: SortOrder
     profileBirthPlace?: SortOrder
     profileBiography?: SortOrder
+    profileRecordFormat?: SortOrder
     userId?: SortOrder
   }
 
@@ -19228,8 +19199,6 @@ export namespace Prisma {
     userName?: string | null
     birthDate?: string | null
     displayMode?: string | null
-    pageTitle?: string | null
-    pageSubtitle?: string | null
     recordItems?: RecordItemCreateNestedManyWithoutRecordInput
   }
 
@@ -19247,8 +19216,6 @@ export namespace Prisma {
     userName?: string | null
     birthDate?: string | null
     displayMode?: string | null
-    pageTitle?: string | null
-    pageSubtitle?: string | null
     recordItems?: RecordItemUncheckedCreateNestedManyWithoutRecordInput
   }
 
@@ -19314,6 +19281,7 @@ export namespace Prisma {
     profileBirthDate?: string | null
     profileBirthPlace?: string | null
     profileBiography?: string | null
+    profileRecordFormat?: string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     items?: SceneItemCreateNestedManyWithoutSceneInput
   }
@@ -19328,6 +19296,7 @@ export namespace Prisma {
     profileBirthDate?: string | null
     profileBirthPlace?: string | null
     profileBiography?: string | null
+    profileRecordFormat?: string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     items?: SceneItemUncheckedCreateNestedManyWithoutSceneInput
   }
@@ -19376,8 +19345,6 @@ export namespace Prisma {
     userName?: StringNullableFilter<"Record"> | string | null
     birthDate?: StringNullableFilter<"Record"> | string | null
     displayMode?: StringNullableFilter<"Record"> | string | null
-    pageTitle?: StringNullableFilter<"Record"> | string | null
-    pageSubtitle?: StringNullableFilter<"Record"> | string | null
   }
 
   export type ReelUpsertWithWhereUniqueWithoutUserInput = {
@@ -19442,6 +19409,7 @@ export namespace Prisma {
     profileBirthDate?: StringNullableFilter<"Scene"> | string | null
     profileBirthPlace?: StringNullableFilter<"Scene"> | string | null
     profileBiography?: StringNullableFilter<"Scene"> | string | null
+    profileRecordFormat?: StringNullableFilter<"Scene"> | string | null
     lifestoryProgress?: JsonNullableFilter<"Scene">
     userId?: IntNullableFilter<"Scene"> | number | null
   }
@@ -20419,8 +20387,6 @@ export namespace Prisma {
     userName?: string | null
     birthDate?: string | null
     displayMode?: string | null
-    pageTitle?: string | null
-    pageSubtitle?: string | null
     user?: UserCreateNestedOneWithoutRecordsInput
   }
 
@@ -20439,8 +20405,6 @@ export namespace Prisma {
     userName?: string | null
     birthDate?: string | null
     displayMode?: string | null
-    pageTitle?: string | null
-    pageSubtitle?: string | null
   }
 
   export type RecordCreateOrConnectWithoutRecordItemsInput = {
@@ -20472,8 +20436,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     user?: UserUpdateOneWithoutRecordsNestedInput
   }
 
@@ -20492,8 +20454,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type UserCreateWithoutScenesInput = {
@@ -20624,6 +20584,7 @@ export namespace Prisma {
     profileBirthDate?: string | null
     profileBirthPlace?: string | null
     profileBiography?: string | null
+    profileRecordFormat?: string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     user?: UserCreateNestedOneWithoutScenesInput
   }
@@ -20638,6 +20599,7 @@ export namespace Prisma {
     profileBirthDate?: string | null
     profileBirthPlace?: string | null
     profileBiography?: string | null
+    profileRecordFormat?: string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     userId?: number | null
   }
@@ -20692,6 +20654,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     user?: UserUpdateOneWithoutScenesNestedInput
   }
@@ -20706,6 +20669,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     userId?: NullableIntFieldUpdateOperationsInput | number | null
   }
@@ -20810,8 +20774,6 @@ export namespace Prisma {
     userName?: string | null
     birthDate?: string | null
     displayMode?: string | null
-    pageTitle?: string | null
-    pageSubtitle?: string | null
   }
 
   export type ReelCreateManyUserInput = {
@@ -20837,6 +20799,7 @@ export namespace Prisma {
     profileBirthDate?: string | null
     profileBirthPlace?: string | null
     profileBiography?: string | null
+    profileRecordFormat?: string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
   }
 
@@ -20853,8 +20816,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     recordItems?: RecordItemUpdateManyWithoutRecordNestedInput
   }
 
@@ -20872,8 +20833,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     recordItems?: RecordItemUncheckedUpdateManyWithoutRecordNestedInput
   }
 
@@ -20891,8 +20850,6 @@ export namespace Prisma {
     userName?: NullableStringFieldUpdateOperationsInput | string | null
     birthDate?: NullableStringFieldUpdateOperationsInput | string | null
     displayMode?: NullableStringFieldUpdateOperationsInput | string | null
-    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
-    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type ReelUpdateWithoutUserInput = {
@@ -20950,6 +20907,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     items?: SceneItemUpdateManyWithoutSceneNestedInput
   }
@@ -20964,6 +20922,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
     items?: SceneItemUncheckedUpdateManyWithoutSceneNestedInput
   }
@@ -20978,6 +20937,7 @@ export namespace Prisma {
     profileBirthDate?: NullableStringFieldUpdateOperationsInput | string | null
     profileBirthPlace?: NullableStringFieldUpdateOperationsInput | string | null
     profileBiography?: NullableStringFieldUpdateOperationsInput | string | null
+    profileRecordFormat?: NullableStringFieldUpdateOperationsInput | string | null
     lifestoryProgress?: NullableJsonNullValueInput | InputJsonValue
   }
 

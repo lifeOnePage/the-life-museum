@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import TooltipPortal from "./TooltipPortal";
 import {
   DndContext,
   closestCenter,
@@ -35,7 +37,9 @@ export default function Pannel({
   onItemClick,
   onToggleMode,
   sceneId,
-  currentItem
+  currentItem,
+  lockedItemId,
+  onToggleLock
 }) {
   const [savedItems, setSavedItems] = useState(items);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -48,8 +52,11 @@ export default function Pannel({
   const [isLifestoryGuideMode, setIsLifestoryGuideMode] = useState(false);
   const [lifestoryProgressData, setLifestoryProgressData] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showNewItemTooltip, setShowNewItemTooltip] = useState(false);
+  const [newItemTooltipPosition, setNewItemTooltipPosition] = useState({ top: 0, left: 0 });
 
   const detailEditRef = useRef(null);
+  const newItemButtonRef = useRef(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -88,13 +95,35 @@ export default function Pannel({
   };
 
   const handleItemClick = (item) => {
-    // 프로필 아이템 클릭 시 프로필 뷰로 이동
+    // 프로필 아이템 클릭 시
     if (item.isProfile) {
-      setIsProfileView(true);
-      setSelectedItem(null);
-      setEditedData(null);
-      setOriginalData(null);
+      // 편집 모드에서는 프로필 뷰로 이동
+      if (mode === 'edit') {
+        setIsProfileView(true);
+        setSelectedItem(null);
+        setEditedData(null);
+        setOriginalData(null);
+        setHasChanges(false);
+        return;
+      }
+
+      // 보기 모드에서는 프로필을 아이템 형식으로 변환해서 DetailView 사용
+      const profileAsItem = {
+        id: 'profile',
+        title: profile.name,
+        date: profile.birthDate,
+        desc: profile.biography,
+        isProfile: true
+      };
+      setSelectedItem(profileAsItem);
+      setEditedData(profileAsItem);
+      setOriginalData(JSON.parse(JSON.stringify(profileAsItem)));
       setHasChanges(false);
+      setIsProfileView(false);
+
+      if (onItemClick) {
+        onItemClick(item);
+      }
       return;
     }
 
@@ -138,6 +167,32 @@ export default function Pannel({
     setIsProfileView(false);
   };
 
+  const calculateNewItemTooltipPosition = (element, tooltipWidth = 250) => {
+    if (!element) return { top: 0, left: 0 };
+    const rect = element.getBoundingClientRect();
+    const elementCenterX = rect.left + rect.width / 2;
+
+    // 툴팁이 화면 왼쪽/오른쪽 밖으로 나가는지 확인
+    const tooltipLeft = elementCenterX - tooltipWidth / 2;
+    const tooltipRight = elementCenterX + tooltipWidth / 2;
+
+    let adjustedLeft = elementCenterX;
+
+    // 왼쪽으로 넘어가는 경우
+    if (tooltipLeft < 10) {
+      adjustedLeft = tooltipWidth / 2 + 10;
+    }
+    // 오른쪽으로 넘어가는 경우
+    else if (tooltipRight > window.innerWidth - 10) {
+      adjustedLeft = window.innerWidth - tooltipWidth / 2 - 10;
+    }
+
+    return {
+      top: rect.bottom + 8,
+      left: adjustedLeft,
+    };
+  };
+
   const handleBack = () => {
     // hasChanges는 handleChange에서 이미 정확하게 계산되었으므로
     // 여기서는 추가로 unsavedItemIds를 설정하지 않음
@@ -156,19 +211,29 @@ export default function Pannel({
       return;
     }
 
-    // 프로필 아이템은 무시
-    if (currentItem.isProfile) {
-      return;
-    }
-
     // 현재 선택된 아이템과 슬라이더의 currentItem이 다르면 자동 전환
     if (selectedItem.id !== currentItem.id) {
-      setSelectedItem(currentItem);
-      setEditedData(currentItem);
-      setOriginalData(JSON.parse(JSON.stringify(currentItem)));
-      setHasChanges(false);
+      // 프로필 아이템인 경우 변환
+      if (currentItem.isProfile) {
+        const profileAsItem = {
+          id: 'profile',
+          title: profile.name,
+          date: profile.birthDate,
+          desc: profile.biography,
+          isProfile: true
+        };
+        setSelectedItem(profileAsItem);
+        setEditedData(profileAsItem);
+        setOriginalData(JSON.parse(JSON.stringify(profileAsItem)));
+        setHasChanges(false);
+      } else {
+        setSelectedItem(currentItem);
+        setEditedData(currentItem);
+        setOriginalData(JSON.parse(JSON.stringify(currentItem)));
+        setHasChanges(false);
+      }
     }
-  }, [currentItem, selectedItem, mode, isProfileView]);
+  }, [currentItem, selectedItem, mode, isProfileView, profile]);
 
   const handleProfileChange = (newData) => {
     setProfile(newData);
@@ -417,7 +482,7 @@ export default function Pannel({
 
     // 일반 프로필 뷰
     return (
-      <div className="w-full max-h-[540px] bg-black-100/20 backdrop-blur-2xl  rounded-tl-[20px] rounded-tr-[20px]  overflow-hidden flex flex-col">
+      <div className="w-full max-h-[540px] bg-black-100/20 backdrop-blur-2xl  rounded-tl-[20px] rounded-tr-[20px] flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
@@ -451,7 +516,7 @@ export default function Pannel({
               });
 
               setHasChanges(false);
-              alert("프로필이 저장되었습니다.");
+              alert("대표 타이틀이 저장되었습니다.");
             } catch (error) {
               console.error("Failed to save profile:", error);
               alert("저장 중 오류가 발생했습니다.");
@@ -481,6 +546,8 @@ export default function Pannel({
           onSave={handleSaveItem}
           onBack={handleBack}
           onToggleMode={onToggleMode}
+          isLocked={lockedItemId === selectedItem?.id}
+          onToggleLock={onToggleLock}
         />
         <div className="flex-1 overflow-y-auto">
           {mode === "view" ? (
@@ -531,26 +598,57 @@ export default function Pannel({
         />
         <div className="flex flex-col flex-1 overflow-y-auto">
           {mode === "edit" && (
-            <button
-              onClick={handleAddNew}
-              className="flex items-center gap-2 py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+            <div className="relative z-50">
+              <button
+                ref={newItemButtonRef}
+                onClick={handleAddNew}
+                onMouseEnter={(e) => {
+                  setNewItemTooltipPosition(calculateNewItemTooltipPosition(e.currentTarget));
+                  setShowNewItemTooltip(true);
+                }}
+                onMouseLeave={() => setShowNewItemTooltip(false)}
+                className="flex items-center gap-2 py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10 w-full cursor-pointer"
               >
-                <path
-                  d="M10 5V15M5 10H15"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="text-white text-base">새로 만들기</span>
-            </button>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M10 5V15M5 10H15"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="text-white text-base">새로 만들기</span>
+              </button>
+
+              {/* 툴팁 */}
+              <AnimatePresence>
+                {showNewItemTooltip && (
+                  <TooltipPortal>
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      style={{
+                        position: 'fixed',
+                        top: `${newItemTooltipPosition.top}px`,
+                        left: `${newItemTooltipPosition.left}px`,
+                        transform: 'translateX(-50%)',
+                      }}
+                      className="z-[9999] pointer-events-none bg-black px-4 py-2.5 whitespace-nowrap"
+                    >
+                      <p className="text-white text-xs">새로운 기억을 추가하고 사진을 추가합니다.</p>
+                    </motion.div>
+                  </TooltipPortal>
+                )}
+              </AnimatePresence>
+            </div>
           )}
           <DndContext
             sensors={sensors}
@@ -559,7 +657,7 @@ export default function Pannel({
           >
             <SortableContext
               items={items.map((item) => {
-                console.log("[Pannel View Mode] Item ID:", item.id, "isProfile:", item.isProfile, "title:", item.title);
+                // console.log("[Pannel View Mode] Item ID:", item.id, "isProfile:", item.isProfile, "title:", item.title);
                 return item.id;
               })}
               strategy={verticalListSortingStrategy}
@@ -588,7 +686,7 @@ export default function Pannel({
 
     if (type === "list"&& (mode !== "view")) {
     return (
-      <div className="w-full max-h-[400px] bg-black-100/20 backdrop-blur-2xl rounded-[20px] overflow-hidden flex flex-col">
+      <div className="w-full bg-black-100/20 backdrop-blur-2xl rounded-[20px] overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}
@@ -597,26 +695,57 @@ export default function Pannel({
         />
         <div className="flex flex-col flex-1 overflow-y-auto">
           {mode === "edit" && (
-            <button
-              onClick={handleAddNew}
-              className="flex items-center gap-2 py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 20 20"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+            <div className="relative z-50">
+              <button
+                ref={newItemButtonRef}
+                onClick={handleAddNew}
+                onMouseEnter={(e) => {
+                  setNewItemTooltipPosition(calculateNewItemTooltipPosition(e.currentTarget));
+                  setShowNewItemTooltip(true);
+                }}
+                onMouseLeave={() => setShowNewItemTooltip(false)}
+                className="flex items-center gap-2 py-3 px-4 hover:bg-white/5 transition-colors border-b border-white/10 w-full cursor-pointer"
               >
-                <path
-                  d="M10 5V15M5 10H15"
-                  stroke="white"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="text-white text-base">새로 만들기</span>
-            </button>
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M10 5V15M5 10H15"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <span className="text-white text-base">새로 만들기</span>
+              </button>
+
+              {/* 툴팁 */}
+              <AnimatePresence>
+                {showNewItemTooltip && (
+                  <TooltipPortal>
+                    <motion.div
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 5 }}
+                      transition={{ duration: 0.2, ease: "easeOut" }}
+                      style={{
+                        position: 'fixed',
+                        top: `${newItemTooltipPosition.top}px`,
+                        left: `${newItemTooltipPosition.left}px`,
+                        transform: 'translateX(-50%)',
+                      }}
+                      className="z-[9999] pointer-events-none bg-black px-4 py-2.5 whitespace-nowrap"
+                    >
+                      <p className="text-white text-xs">새로운 기억을 추가하고 사진을 추가합니다.</p>
+                    </motion.div>
+                  </TooltipPortal>
+                )}
+              </AnimatePresence>
+            </div>
           )}
           <DndContext
             sensors={sensors}

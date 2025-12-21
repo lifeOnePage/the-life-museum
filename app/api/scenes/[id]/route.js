@@ -74,6 +74,7 @@ export async function PUT(req, { params }) {
           profileBirthDate: profile?.birthDate || null,
           profileBirthPlace: profile?.birthPlace || null,
           profileBiography: profile?.biography || null,
+          profileRecordFormat: profile?.recordFormat || "entire-life",
           lifestoryProgress: lifestoryProgress || null,
         },
       });

@@ -31,12 +31,7 @@ export default function ViewRecordsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [autoSlideEnabled, setAutoSlideEnabled] = useState(() => {
-    if (typeof window !== "undefined") {
-      return window.innerWidth > 1000 ? true : false;
-    }
-    return false; // SSR fallback
-  });
+  const [autoSlideEnabled, setAutoSlideEnabled] = useState(false);
   const isInitializedRef = useRef(false);
   const prevWidthRef = useRef(width);
 
@@ -67,6 +62,14 @@ export default function ViewRecordsPage() {
     })();
   }, [identifier]);
 
+  useEffect(() => {
+    if (!isInitializedRef.current && width > 0) {
+      isInitializedRef.current = true;
+      setAutoSlideEnabled(false);
+      prevWidthRef.current = width;
+    }
+  }, [width]);
+
   if (loading) {
     return (
       <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
@@ -87,15 +90,6 @@ export default function ViewRecordsPage() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!isInitializedRef.current && width > 0) {
-      isInitializedRef.current = true;
-      const initialValue = width > 1000 ? true : false;
-      setAutoSlideEnabled(initialValue);
-      prevWidthRef.current = width;
-    }
-  }, [width]);
 
   return (
     <>

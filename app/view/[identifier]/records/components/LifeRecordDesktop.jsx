@@ -249,10 +249,10 @@ export default function LifeRecordDesktop({
 
   const [rotation, setRotation] = useState(0);
   const [activeIdx, setActiveIdx] = useState(0);
-  // 자동재생 기본값: edit 미리보기 off, desktop view on
+  // 자동재생 기본값: 항상 off
   // 부모에서 prop으로 전달되면 그것을 사용, 없으면 내부 상태 사용
   const [internalAutoSlideEnabled, setInternalAutoSlideEnabled] =
-    useState(!isEditing);
+    useState(false);
   const autoSlideEnabled =
     propAutoSlideEnabled !== undefined
       ? propAutoSlideEnabled
@@ -273,8 +273,13 @@ export default function LifeRecordDesktop({
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
   const activeItemIdRef = useRef(null); // 현재 활성화된 항목의 ID 추적
   const editingDateItemIdRef = useRef(null); // 날짜 입력 중인 항목의 ID 추적 (useMemo에서 사용)
+  const originalDateRef = useRef(null); // 날짜 입력 시작 시 원래 날짜 저장
+  const editingItemIdRef = useRef(null); // 현재 날짜를 수정 중인 항목의 ID 저장
+  const pendingSortItemIdRef = useRef(null); // 정렬 후 이동할 항목의 ID 저장
+  const latestItemsRef = useRef(null); // onChange에서 업데이트한 최신 items 저장
   const activeIdxRef = useRef(0); // 자동 슬라이드를 위한 ref
   const rotationRef = useRef(0); // 자동 슬라이드를 위한 rotation ref
+  const currentImageIndexRef = useRef(0); // 자동 슬라이드를 위한 currentImageIndex ref
 
   // activeIdx와 rotation이 변경될 때 ref 업데이트
   useEffect(() => {
@@ -284,6 +289,54 @@ export default function LifeRecordDesktop({
   useEffect(() => {
     rotationRef.current = rotation;
   }, [rotation]);
+
+  useEffect(() => {
+    if (!editingDateItemId && data.items && data.items.length > 0) {
+      const itemsWithYear = data.items.map((item) => {
+        const [y] = (item.date || "").split(".");
+        const year = y ? parseInt(y, 10) : 0;
+        return { ...item, year };
+      });
+
+      const isSorted = itemsWithYear.every((item, index) => {
+        if (index === 0) return true;
+        const prev = itemsWithYear[index - 1];
+        if (!prev.year && !item.year) return true;
+        if (!prev.year) return false;
+        if (!item.year) return true;
+        return prev.year <= item.year;
+      });
+
+      if (!isSorted) {
+        itemsWithYear.sort((a, b) => {
+          if (!a.year && !b.year) return 0;
+          if (!a.year) return 1;
+          if (!b.year) return -1;
+          return a.year - b.year;
+        });
+
+        const sortedItems = itemsWithYear.map(({ year, ...item }) => item);
+        onDataChange?.({ ...data, items: sortedItems });
+      }
+    }
+  }, [data.items, editingDateItemId]);
+
+  useEffect(() => {
+    if (pendingSortItemIdRef.current && !editingDateItemId) {
+      const itemId = pendingSortItemIdRef.current;
+      const targetIdx = timeline.findIndex((item) => item.id === itemId);
+      if (targetIdx !== -1 && targetIdx !== activeIdx) {
+        setActiveIdx(targetIdx);
+        const targetAngle = angleForIndex(targetIdx);
+        setRotation(targetAngle - getAnchor());
+      }
+      pendingSortItemIdRef.current = null;
+    }
+  }, [timeline, editingDateItemId, activeIdx]);
+
+  useEffect(() => {
+    currentImageIndexRef.current = currentImageIndex;
+  }, [currentImageIndex]);
 
   const activeItem = timeline[activeIdx] || {};
 
@@ -355,7 +408,7 @@ export default function LifeRecordDesktop({
     }
   };
 
-  const isMobile = useIsMobile();
+  const isMobile = useIsMobile(1000);
   const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 200, ANCHOR: 0 };
   const MOBILE = { START: 110, SWEEP: 180, RADIUS: 140, ANCHOR: 110 };
   const CFG = isMobile ? MOBILE : DESKTOP;
@@ -371,8 +424,7 @@ export default function LifeRecordDesktop({
   }, [isEditing]);
 
   const angleForIndex = (i) => {
-    // 타임라인 항목 수와 관계없이 고정된 각도 간격 사용하기
-    const FIXED_STEP = 25;
+    const FIXED_STEP = 23;
     return CFG.START + FIXED_STEP * i;
   };
 
@@ -381,7 +433,7 @@ export default function LifeRecordDesktop({
     if (diff > 180) diff = 360 - diff;
 
     const normalizedDiff = Math.min(diff / 90, 1);
-    const opacity = 1 - normalizedDiff * normalizedDiff * 1;
+    const opacity = 1 - normalizedDiff * normalizedDiff * 1.5;
     return Math.max(opacity, 0);
   };
 
@@ -523,7 +575,7 @@ export default function LifeRecordDesktop({
     setActiveIdx(best);
   };
 
-  const STEP = 3;
+  const STEP = 1;
   const handleWheel = (e) => {
     const dir = e.deltaY > 0 ? -1 : 1;
     const next = rotation + dir * STEP;
@@ -550,7 +602,7 @@ export default function LifeRecordDesktop({
       const validImages = (currentItem?.images || []).filter((img) => img);
 
       if (validImages.length > 1) {
-        const currentImgIdx = currentImageIndex;
+        const currentImgIdx = currentImageIndexRef.current;
         if (currentImgIdx < validImages.length - 1) {
           setCurrentImageIndex(currentImgIdx + 1);
         } else {
@@ -574,7 +626,7 @@ export default function LifeRecordDesktop({
     }, 5000);
 
     return () => clearInterval(autoSlideInterval);
-  }, [isEditing, autoSlideEnabled, timeline.length, currentImageIndex]);
+  }, [isEditing, autoSlideEnabled, timeline.length]);
 
   const safeIdx = Math.min(activeIdx, Math.max(0, (timeline?.length || 1) - 1));
   const mainTitle = useMemo(() => {
@@ -1610,11 +1662,11 @@ export default function LifeRecordDesktop({
                             onDataChange?.(newData);
                           }}
                           className="lr-desc-input"
-                          maxLength={80}
-                          placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 80자)"
+                          maxLength={150}
+                          placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 150자)"
                         />
                         <div className="lr-char-count">
-                          {(data.record?.description || "").length} / 80
+                          {(data.record?.description || "").length} / 150
                         </div>
                       </>
                     ) : (
@@ -1692,7 +1744,19 @@ export default function LifeRecordDesktop({
                             : "최아텍"}
                         </div>
                       )}
-                      <div className="lr-date-location">
+                      <div
+                        className="lr-date-location"
+                        onMouseDown={(e) => {
+                          if (e.target.tagName === "INPUT") {
+                            e.stopPropagation();
+                          }
+                        }}
+                        onClick={(e) => {
+                          if (e.target.tagName === "INPUT") {
+                            e.stopPropagation();
+                          }
+                        }}
+                      >
                         {isEditing ? (
                           <>
                             <input
@@ -1702,56 +1766,194 @@ export default function LifeRecordDesktop({
                                   (item) => item.id === activeItem.id,
                                 )?.date || ""
                               }
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                console.log("=== INPUT BOX CLICK ===");
+                                console.log(
+                                  "data.items:",
+                                  data.items?.map((item) => ({
+                                    id: item.id,
+                                    date: item.date,
+                                  })),
+                                );
+                                console.log(
+                                  "latestItemsRef.current:",
+                                  latestItemsRef.current?.map((item) => ({
+                                    id: item.id,
+                                    date: item.date,
+                                  })),
+                                );
+
+                                const allItems = data.items || [];
+                                const latestItems =
+                                  latestItemsRef.current || [];
+                                const itemsMap = new Map();
+                                allItems.forEach((item) => {
+                                  itemsMap.set(item.id, item);
+                                });
+                                latestItems.forEach((item) => {
+                                  itemsMap.set(item.id, item);
+                                });
+                                const mergedItems = Array.from(
+                                  itemsMap.values(),
+                                );
+                                console.log(
+                                  "mergedItems:",
+                                  mergedItems.map((item) => ({
+                                    id: item.id,
+                                    date: item.date,
+                                  })),
+                                );
+
+                                const sortedCheck = [...mergedItems].map(
+                                  (item) => {
+                                    const [y] = (item.date || "").split(".");
+                                    const year = y ? parseInt(y, 10) : 0;
+                                    return { ...item, year };
+                                  },
+                                );
+                                sortedCheck.sort((a, b) => {
+                                  if (!a.year && !b.year) return 0;
+                                  if (!a.year) return 1;
+                                  if (!b.year) return -1;
+                                  return a.year - b.year;
+                                });
+                                console.log(
+                                  "should be sorted as:",
+                                  sortedCheck.map((item) => ({
+                                    id: item.id,
+                                    date: item.date,
+                                    year: item.year,
+                                  })),
+                                );
+
+                                if (activeItem?.id) {
+                                  const currentItem = data.items?.find(
+                                    (item) => item.id === activeItem.id,
+                                  );
+                                  originalDateRef.current =
+                                    currentItem?.date || "";
+                                  editingItemIdRef.current = activeItem.id;
+                                }
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                              }}
+                              onMouseUp={(e) => {
+                                e.stopPropagation();
+                              }}
                               onChange={(e) => {
                                 const newItems = data.items.map((item) =>
                                   item.id === activeItem.id
                                     ? { ...item, date: e.target.value }
                                     : item,
                                 );
+                                latestItemsRef.current = newItems;
                                 onDataChange?.({ ...data, items: newItems });
                               }}
-                              onFocus={() => {
-                                // 날짜 입력 시작
-                                if (activeItem?.id) {
-                                  setEditingDateItemId(activeItem.id);
-                                  editingDateItemIdRef.current = activeItem.id;
+                              onFocus={(e) => {
+                                e.stopPropagation();
+                                if (
+                                  activeItem?.id &&
+                                  editingItemIdRef.current
+                                ) {
+                                  setEditingDateItemId(
+                                    editingItemIdRef.current,
+                                  );
+                                  editingDateItemIdRef.current =
+                                    editingItemIdRef.current;
                                 }
                               }}
                               onBlur={() => {
-                                // 날짜 입력 완료 - 정렬하고 새 위치로 이동
-                                if (activeItem?.id) {
-                                  setEditingDateItemId(null);
-                                  editingDateItemIdRef.current = null;
+                                const editingItemId = editingItemIdRef.current;
+                                console.log("=== DATE INPUT BLUR ===");
 
-                                  // 정렬된 위치 계산
-                                  const sortedItems = [
-                                    ...(data.items || []),
-                                  ].map((item) => {
-                                    const [y] = (item.date || "").split(".");
-                                    return {
-                                      ...item,
-                                      year: y ? parseInt(y, 10) : 0,
-                                    };
-                                  });
-
-                                  sortedItems.sort((a, b) => {
-                                    if (!a.year && !b.year) return 0;
-                                    if (!a.year) return 1;
-                                    if (!b.year) return -1;
-                                    return a.year - b.year;
-                                  });
-
-                                  // 정렬된 위치에서 현재 항목의 인덱스 찾기 (main 제외)
-                                  const sortedIdx = sortedItems.findIndex(
-                                    (item) => item.id === activeItem.id,
+                                if (editingItemId) {
+                                  const itemsToCheck =
+                                    latestItemsRef.current || data.items || [];
+                                  const currentItem = itemsToCheck.find(
+                                    (item) => item.id === editingItemId,
                                   );
-                                  if (sortedIdx !== -1) {
-                                    // main이 첫 번째이므로 +1
-                                    const targetIdx = sortedIdx + 1;
-                                    setActiveIdx(targetIdx);
-                                    const targetAngle =
-                                      angleForIndex(targetIdx);
-                                    setRotation(targetAngle - getAnchor());
+                                  const currentDate = currentItem?.date || "";
+                                  const originalDate =
+                                    originalDateRef.current || "";
+
+                                  if (currentDate !== originalDate) {
+                                    setEditingDateItemId(null);
+                                    editingDateItemIdRef.current = null;
+                                    originalDateRef.current = null;
+                                    editingItemIdRef.current = null;
+                                    console.log("=== SORTING ON BLUR ===");
+
+                                    const latestItems =
+                                      latestItemsRef.current || [];
+                                    const allItems = data.items || [];
+                                    const itemsMap = new Map();
+
+                                    allItems.forEach((item) => {
+                                      itemsMap.set(item.id, item);
+                                    });
+
+                                    latestItems.forEach((item) => {
+                                      itemsMap.set(item.id, item);
+                                    });
+
+                                    const itemsToSort = Array.from(
+                                      itemsMap.values(),
+                                    );
+                                    console.log(
+                                      "itemsToSort:",
+                                      itemsToSort.map((item) => ({
+                                        id: item.id,
+                                        date: item.date,
+                                      })),
+                                    );
+
+                                    const sortedItems = [...itemsToSort].map(
+                                      (item) => {
+                                        const [y] = (item.date || "").split(
+                                          ".",
+                                        );
+                                        const year = y ? parseInt(y, 10) : 0;
+                                        return {
+                                          ...item,
+                                          year: year,
+                                        };
+                                      },
+                                    );
+
+                                    sortedItems.sort((a, b) => {
+                                      if (!a.year && !b.year) return 0;
+                                      if (!a.year) return 1;
+                                      if (!b.year) return -1;
+                                      return a.year - b.year;
+                                    });
+
+                                    const sortedItemsWithoutYear =
+                                      sortedItems.map(
+                                        ({ year, ...item }) => item,
+                                      );
+
+                                    pendingSortItemIdRef.current =
+                                      editingItemId;
+
+                                    console.log(
+                                      "sortedItems:",
+                                      sortedItems.map((item) => ({
+                                        id: item.id,
+                                        date: item.date,
+                                        year: item.year,
+                                      })),
+                                    );
+
+                                    onDataChange?.({
+                                      ...data,
+                                      items: sortedItemsWithoutYear,
+                                    });
+                                  } else {
+                                    setEditingDateItemId(null);
+                                    originalDateRef.current = null;
+                                    editingItemIdRef.current = null;
                                   }
                                 }
                               }}
@@ -1800,37 +2002,129 @@ export default function LifeRecordDesktop({
               </div>
 
               {activeItem.kind === "main" && (
-                <div className="lr-highlight-grid" role="list">
-                  {timeline
-                    .filter((it) => it.isHighlight)
-                    .slice(0, 10)
-                    .map((it) => (
-                      <div
-                        key={it.id}
-                        className="lr-highlight-item"
-                        role="listitem"
-                        title={
-                          (it.kind === "year" ? it.event : it.title) ||
-                          "하이라이트"
-                        }
-                        onClick={() => {
-                          const i = timeline.findIndex((x) => x.id === it.id);
-                          if (i >= 0) snapToIndex(i);
-                        }}
-                      >
-                        <img
-                          src={it.cover || "/images/records/No image.png"}
-                          alt={
-                            (it.kind === "year" ? it.event : it.title) ||
-                            "highlight"
+                <>
+                  <div className="lr-highlight-grid" role="list">
+                    {timeline
+                      .filter((it) => it.isHighlight)
+                      .slice(0, 10)
+                      .map((it) => {
+                        let dateLabel = "";
+                        if (it.date) {
+                          if (displayMode === "age" && data.record?.birthDate) {
+                            const age = calculateAge(
+                              data.record.birthDate,
+                              it.date,
+                            );
+                            if (age !== null) {
+                              dateLabel = `${age}세`;
+                            }
+                          } else {
+                            const year = getYear(it.date);
+                            if (year) {
+                              dateLabel = year.trim();
+                            }
                           }
-                        />
-                        <span className="lr-highlight-title">
-                          {it.kind === "year" ? it.event : it.title}
-                        </span>
-                      </div>
-                    ))}
-                </div>
+                        }
+                        return (
+                          <div
+                            key={it.id}
+                            className="lr-highlight-item"
+                            role="listitem"
+                            title={
+                              (it.kind === "year" ? it.event : it.title) ||
+                              "하이라이트"
+                            }
+                            onClick={() => {
+                              const i = timeline.findIndex(
+                                (x) => x.id === it.id,
+                              );
+                              if (i >= 0) snapToIndex(i);
+                            }}
+                          >
+                            <div className="lr-highlight-image-wrapper">
+                              <img
+                                src={it.cover || "/images/records/No image.png"}
+                                alt={
+                                  (it.kind === "year" ? it.event : it.title) ||
+                                  "highlight"
+                                }
+                              />
+                            </div>
+                            <span className="lr-highlight-title">
+                              {it.kind === "year" ? it.event : it.title}
+                            </span>
+                          </div>
+                        );
+                      })}
+                  </div>
+                  <div className="lr-highlight-timeline">
+                    <div className="lr-timeline-line"></div>
+                    <div className="lr-timeline-markers">
+                      {timeline
+                        .filter((it) => it.isHighlight)
+                        .slice(0, 10)
+                        .map((it, index) => {
+                          const colIndex = index % 5;
+
+                          let dateLabel = "";
+                          if (it.date) {
+                            if (
+                              displayMode === "age" &&
+                              data.record?.birthDate
+                            ) {
+                              const age = calculateAge(
+                                data.record.birthDate,
+                                it.date,
+                              );
+                              if (age !== null) {
+                                dateLabel = `${age}세`;
+                              }
+                            } else {
+                              const year = getYear(it.date);
+                              if (year) {
+                                dateLabel = year.trim();
+                              }
+                            }
+                          }
+                          return (
+                            <div
+                              key={it.id}
+                              className="lr-timeline-marker"
+                              style={{
+                                gridColumn: colIndex + 1,
+                              }}
+                              onClick={() => {
+                                const i = timeline.findIndex(
+                                  (x) => x.id === it.id,
+                                );
+                                if (i >= 0) snapToIndex(i);
+                              }}
+                            >
+                              <div className="lr-timeline-connector"></div>
+                              <div className="lr-timeline-dot"></div>
+                              {it.date && (
+                                <div className="lr-timeline-date">
+                                  {displayMode === "age" &&
+                                  data.record?.birthDate
+                                    ? (() => {
+                                        const age = calculateAge(
+                                          data.record.birthDate,
+                                          it.date,
+                                        );
+                                        return age !== null ? `${age}세` : "";
+                                      })()
+                                    : (() => {
+                                        const year = getYear(it.date);
+                                        return year ? year.trim() : "";
+                                      })()}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
           </article>
@@ -1848,9 +2142,6 @@ export default function LifeRecordDesktop({
               {timeline.map((item, i) => {
                 const baseAngle = angleForIndex(i);
                 const phi = baseAngle + rotation;
-                // anchor 위치(0도)에서의 거리를 기준으로 opacity 계산
-                // rotation이 변경되어도 각 항목의 baseAngle은 고정이므로,
-                // rotation을 고려한 실제 화면상 위치를 계산
                 const anchor = getAnchor();
                 const relativeAngle = norm360(phi - anchor);
                 const opacity = getOpacityForAngle(relativeAngle, 0);

@@ -930,7 +930,7 @@ export default function EditRecords() {
         isPreview={isPreview}
         isSaving={isSaving}
       />
-      {width <= 768 ? (
+      {width <= 1000 ? (
         <LifeRecordMobile
           data={data}
           isEditing={!isPreview}

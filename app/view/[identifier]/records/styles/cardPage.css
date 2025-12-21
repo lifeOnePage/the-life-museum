@@ -29,45 +29,57 @@ body,
 
 .lr-page {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 0px 28px;
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  background: var(--bg);
 }
 
 .lr-grid {
-  width: min(1250px, 100%);
+  width: 100%;
+  max-width: 900px;
   height: 95vh;
   display: grid;
-  grid-template-columns: 1fr minmax(300px, 450px) 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   align-items: center;
   position: relative;
-  margin-top: 1rem;
+  margin-left: calc((100vw - 900px) / 4);
+  margin-right: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .lr-grid {
+    margin-left: 0;
+  }
 }
 
 .lr-left {
   align-self: center;
-  min-width: 300px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: left;
+
+  margin-right: 60px;
 }
 
 .lr-title {
-  font-size: 96px;
+  font-size: 70px;
   font-weight: 700;
   font-style: italic;
   letter-spacing: 0.5px;
   font-family: "Cormorant Garamond";
   line-height: 100%;
   opacity: 0.7;
-  margin-bottom: 2rem;
+  margin-bottom: 10px;
 }
 
 .lr-sub {
   margin: 0;
   line-height: 1.7;
-  font-size: 18px;
+  font-size: 15px;
   font-family: "Pretendard Variable";
   font-style: normal;
   font-weight: 300;
@@ -82,24 +94,21 @@ body,
 }
 
 .lr-card {
-  background: #f2f2f2;
-  /* background: color-mix(in srgb, var(--bg) 85%, white);  */
-  color: var(--ink);
-  /* border: 1px solid var(--text); */
+  background: color-mix(in srgb, var(--bg) 90%, white);
+  border: 1px solid var(--text);
   border-radius: 14px;
   overflow: hidden;
-  padding: 1.5rem;
-  height: 100%;
+  padding: 20px;
+  width: 600px;
 }
 
 .lr-card-media {
   position: relative;
+  aspect-ratio: 4 / 3;
   width: 100%;
-  aspect-ratio: 1 / 1;
-  height: 100%;
-  border-radius: 0.6rem;
-  margin-bottom: 0.8rem;
-  background-color: #f5f5f5;
+  height: 40vh;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 .lr-card-media > img {
@@ -119,11 +128,11 @@ body,
   object-fit: cover;
 }
 .lr-cover {
+  aspect-ratio: 4 / 3;
   width: 100%;
-  height: 320px;
-  object-fit: cover;
-  border-radius: 8px;
-  display: block;
+  height: 40vh;
+  border-radius: 10px;
+  margin-bottom: 10px;
 }
 
 .lr-image-change-badge {
@@ -147,7 +156,7 @@ body,
     opacity 0.2s ease,
     background 0.2s ease;
   z-index: 10;
-  font-size: 0.75rem;
+  font-size: 15px;
   font-family: "Pretendard Variable";
   white-space: nowrap;
 }
@@ -170,7 +179,7 @@ body,
 }
 
 .lr-image-change-badge span {
-  font-size: 0.75rem;
+  font-size: 10px;
   font-weight: 500;
 }
 
@@ -218,24 +227,23 @@ body,
 }
 
 .lr-image-delete-badge span {
-  font-size: 0.75rem;
+  font-size: 10px;
   font-weight: 500;
 }
 
 .lr-card-desc {
-  /* border-bottom: 1px solid #121212; */
-  font-size: 14px;
+  color: var(--text);
   line-height: 1.75;
 }
 .lr-card-desc p {
-  border-top: 1px solid #121212;
+  border-top: 1px solid var(--text);
   font-family: "Pretendard Variable";
-  font-size: 1rem;
+  font-size: 16px;
   font-style: normal;
   font-weight: 200;
   line-height: 130%;
   letter-spacing: -0.05rem;
-  height: 7rem;
+  height: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: pre-line;
@@ -243,7 +251,7 @@ body,
 }
 
 .lr-meta {
-  border-top: 1.2px solid #121212;
+  border-top: 1.2px solid var(--text);
   display: flex;
   align-items: flex-start;
   padding-top: 15px;
@@ -287,7 +295,7 @@ body,
   height: auto;
   min-height: 6rem;
   margin-bottom: 0.8rem;
-  border-bottom: 1.2px solid #121212;
+  border-bottom: 1.2px solid var(--text);
   white-space: pre-line;
   overflow: visible;
   text-overflow: clip;
@@ -335,9 +343,12 @@ body,
 .lr-right {
   position: relative;
   min-height: 520px;
-  display: grid;
-  align-content: start;
-  gap: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  overflow: visible;
+  transform: translateX(-60%);
 }
 
 .lr-right-header {
@@ -348,21 +359,24 @@ body,
 }
 
 .lp-wrap {
-  position: absolute;
-  top: 50%;
-  left: -70%;
-  transform: translateY(-50%);
+  position: relative;
   z-index: 1;
   cursor: pointer;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
 }
 
 .year-circle {
   position: absolute;
   top: 50%;
-  left: 50%;
+  left: 60%;
   width: 0;
   height: 0;
-  transform: translate(-50%, -50%) translateX(-60px);
+  transform: translate(-50%, -50%);
 }
 
 .year-item {
@@ -399,8 +413,9 @@ body,
 
 .lp-disc {
   transition: transform 160ms ease-out;
-  width: 70%;
-  min-width: 400px; /* 최소 너비 설정으로 창 크기가 줄어들어도 작아지지 않음 */
+  scale: 1.2;
+  min-width: 400px;
+  height: auto;
   display: block;
   will-change: transform;
   pointer-events: none;
@@ -548,7 +563,7 @@ body,
   right: 8px;
   bottom: 6px;
   font-size: 12px;
-  color: #9a9a9a;
+  color: var(--text);
   user-select: none;
 }
 
@@ -738,8 +753,6 @@ body,
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 10px;
-  border-radius: 10px;
-  /* background: #dfdfdf; */
 }
 
 .lr-highlight-item {
@@ -754,7 +767,7 @@ body,
 .lr-highlight-empty {
   grid-column: 1 / -1;
   padding: 12px;
-  border: 1px dashed rgba(0, 0, 0, 0.15);
+  border: 1px dashed var(--text);
   border-radius: 8px;
   background: #f7f7f7;
   color: #555;
@@ -764,19 +777,29 @@ body,
 
 .lr-highlight-grid {
   display: grid !important;
-  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
-  grid-auto-rows: 92px;
-  gap: 12px;
+  grid-template-columns: repeat(5, minmax(100px, 1fr)) !important;
+  grid-auto-rows: auto;
+  gap: 8px;
   justify-content: start !important;
   align-content: start;
+  width: 100%;
 }
 
 .lr-highlight-item {
   width: 100%;
-  border-radius: 10px;
-  position: relative;
-  background: #000;
+  display: flex;
+  flex-direction: column;
   cursor: pointer;
+}
+
+.lr-highlight-image-wrapper {
+  width: 100%;
+  height: 50px;
+  position: relative;
+  border-radius: 8px;
+  background: #000;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
 .lr-highlight-item img {
@@ -788,38 +811,122 @@ body,
   transition:
     transform 160ms ease,
     opacity 160ms ease;
-  border-radius: 10px;
 }
-.lr-highlight-item:hover img {
+
+.lr-highlight-item:hover .lr-highlight-image-wrapper img {
   transform: scale(1.02);
 }
 
 .lr-highlight-title {
+  margin-top: 8px;
   width: 100%;
-  position: absolute;
-  padding: 0;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: calc(100% - 20px);
-  padding: 0 8px;
   text-align: center;
-  color: #fff;
-  font-size: 0.82rem;
-  line-height: 1.25;
+  color: var(--text);
+  font-size: 0.75rem;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  z-index: 1;
-  font-family: "Pretendard Variable";
-  font-size: 0.75rem;
+  font-family: "Yde street";
   font-style: normal;
-  font-weight: 600;
-  text-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.9),
-    0 2px 6px rgba(0, 0, 0, 0.8),
-    0 0 12px rgba(0, 0, 0, 0.7),
-    0 0 20px rgba(0, 0, 0, 0.5);
+  font-weight: 500;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.lr-highlight-date {
+  margin-top: 4px;
+  color: var(--text);
+  font-family: "Yde street";
+  font-size: 0.7rem;
+  font-style: normal;
+  font-weight: 500;
+  text-align: center;
+  opacity: 0.7;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.lr-highlight-timeline {
+  position: relative;
+  width: 100%;
+  height: 60px;
+  margin-top: 20px;
+  padding: 0;
+  overflow: visible;
+}
+
+.lr-timeline-line {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--text);
+  opacity: 0.3;
+}
+
+.lr-timeline-markers {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(100px, 1fr));
+  gap: 8px;
+  width: 100%;
+  position: relative;
+  height: 100%;
+}
+
+.lr-timeline-marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.lr-timeline-connector {
+  position: absolute;
+  top: -10px;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 1px;
+  background: repeating-linear-gradient(
+    to top,
+    var(--text) 0,
+    var(--text) 4px,
+    transparent 4px,
+    transparent 8px
+  );
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.lr-timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text);
+  margin: 0 auto;
+  margin-top: 14px;
+  transition: transform 0.2s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.lr-timeline-marker:hover .lr-timeline-dot {
+  transform: scale(1.3);
+}
+
+.lr-timeline-date {
+  margin-top: 8px;
+  font-family: "Yde street";
+  font-size: 0.65rem;
+  color: var(--text);
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0.7;
 }
 
 @media (min-width: 601px) {
@@ -924,7 +1031,7 @@ body,
 
 .lr-desc-input {
   background: transparent;
-  border: 1px dashed rgba(8, 8, 8, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
@@ -932,7 +1039,7 @@ body,
   height: 7rem;
   margin-bottom: 8px;
   overflow-y: auto;
-  overflow-x: hidden;
+  overflow-x: auto;
   margin-top: 0.5rem;
   resize: none;
   font-family: "Pretendard Variable";
@@ -952,7 +1059,7 @@ body,
 .lr-char-count {
   text-align: right;
   font-size: 0.75rem;
-  color: rgba(0, 0, 0, 0.5);
+  color: var(--text);
   font-family: "Pretendard Variable";
   margin-bottom: 16px;
   margin-top: -8px;
@@ -973,7 +1080,7 @@ body,
 
 textarea.lr-name {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 10px 8px;
   color: inherit;
@@ -996,7 +1103,7 @@ textarea.lr-name {
 }
 
 input.lr-name {
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 10px 8px;
 }
@@ -1020,7 +1127,7 @@ textarea.lr-name::placeholder {
 
 input.lr-subtitle {
   background: transparent;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
   color: inherit;
@@ -1042,7 +1149,7 @@ input.lr-subtitle::placeholder {
 .lr-location-input {
   background: transparent;
   text-align: right;
-  border: 1px dashed rgba(0, 0, 0, 0.4);
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 6px 8px 6px 8px;
   color: inherit;
@@ -1060,7 +1167,7 @@ input.lr-subtitle::placeholder {
 
 .lr-date-input::placeholder,
 .lr-location-input::placeholder {
-  color: #9a9a9a;
+  color: var(--text);
   opacity: 0.5;
 }
 
@@ -1085,7 +1192,7 @@ input.lr-subtitle::placeholder {
   font-family: "Pretendard Variable";
   font-size: 0.85rem;
   font-weight: 400;
-  color: #0f0f0f;
+  color: var(--text);
   opacity: 0.7;
 }
 
@@ -1093,7 +1200,7 @@ input.lr-subtitle::placeholder {
   position: relative;
   width: 44px;
   height: 24px;
-  border: 1px dashed #0f0f0f;
+  border: 1px dashed var(--text);
   border-radius: 12px;
   background: transparent;
   cursor: pointer;
@@ -1110,7 +1217,7 @@ input.lr-subtitle::placeholder {
 .lr-mode-switch.active {
   background: none;
   opacity: 0.8;
-  border-color: #0f0f0f;
+  border-color: var(--text);
 }
 
 .lr-mode-switch.active:hover {
@@ -1123,7 +1230,7 @@ input.lr-subtitle::placeholder {
   left: 2px;
   width: 18px;
   height: 18px;
-  background: #0f0f0f;
+  background: var(--text);
   border-radius: 50%;
   transition: all 0.2s ease;
   opacity: 0.5;
@@ -1138,10 +1245,10 @@ input.lr-subtitle::placeholder {
   flex: 1;
   min-width: 200px;
   background: transparent;
-  border: 1px dashed #0f0f0f;
+  border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 6px 10px;
-  color: #0f0f0f;
+  color: var(--text);
   font-family: "Pretendard Variable";
   font-size: 0.9rem;
   font-weight: 400;
@@ -1153,12 +1260,12 @@ input.lr-subtitle::placeholder {
 
 .lr-birthdate-input-inline:focus {
   outline: none;
-  border-color: #0f0f0f;
+  border-color: var(--text);
   opacity: 1;
 }
 
 .lr-birthdate-input-inline::placeholder {
-  color: #9a9a9a;
+  color: var(--text);
   opacity: 0.5;
 }
 

@@ -4,7 +4,7 @@ import prisma from "@/app/generated/prisma";
 /**
  * PATCH /api/scenes/[id]/profile
  * 프로필 정보만 업데이트
- * body: { photo, name, birthDate, birthPlace, biography }
+ * body: { photo, name, birthDate, birthPlace, biography, recordFormat }
  */
 export async function PATCH(req, { params }) {
   try {
@@ -19,6 +19,7 @@ export async function PATCH(req, { params }) {
         profileBirthDate: body.birthDate !== undefined ? body.birthDate : undefined,
         profileBirthPlace: body.birthPlace !== undefined ? body.birthPlace : undefined,
         profileBiography: body.biography !== undefined ? body.biography : undefined,
+        profileRecordFormat: body.recordFormat !== undefined ? body.recordFormat : undefined,
       },
     });
 

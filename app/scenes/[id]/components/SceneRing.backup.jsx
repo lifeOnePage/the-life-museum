@@ -237,7 +237,7 @@ function SpriteVideoMat({ url, isDesktop = false }) {
 }
 
 // ===== 투영선 =====
-function ProjectionLines({ planePosition, planeRotation, spritePosition, isDesktop = false, planeSize = { width: PLANE_W, height: PLANE_H } }) {
+function ProjectionLines({ planePosition, planeRotation, spritePosition, isDesktop = false }) {
   // 플레인의 상단 좌우 꼭짓점 계산
   const planeCorners = useMemo(() => {
     if (!planePosition || !planeRotation) return null;
@@ -247,15 +247,15 @@ function ProjectionLines({ planePosition, planeRotation, spritePosition, isDeskt
     planeMatrix.setPosition(planePosition[0], planePosition[1], planePosition[2]);
 
     // 플레인의 로컬 좌표계에서 상단 좌우 꼭짓점
-    const topLeft = new THREE.Vector3(-planeSize.width / 2, planeSize.height / 2, 0);
-    const topRight = new THREE.Vector3(planeSize.width / 2, planeSize.height / 2, 0);
+    const topLeft = new THREE.Vector3(-PLANE_W / 2, PLANE_H / 2, 0);
+    const topRight = new THREE.Vector3(PLANE_W / 2, PLANE_H / 2, 0);
 
     // 월드 좌표로 변환
     topLeft.applyMatrix4(planeMatrix);
     topRight.applyMatrix4(planeMatrix);
 
     return { topLeft, topRight };
-  }, [planePosition, planeRotation, planeSize]);
+  }, [planePosition, planeRotation]);
 
   // 스프라이트의 하단 좌우 꼭짓점 계산
   const spriteCorners = useMemo(() => {
@@ -306,13 +306,13 @@ function ProjectionLines({ planePosition, planeRotation, spritePosition, isDeskt
 }
 
 // ===== 개별 플레인 =====
-const MediaPlane = React.forwardRef(function MediaPlane({ slot, isSelected, planeSize }, ref) {
+const MediaPlane = React.forwardRef(function MediaPlane({ slot, isSelected }, ref) {
   const kind = slot?.kind ?? slot?.type ?? "empty";
   const url = slot?.url ?? null;
 
   return (
     <mesh ref={ref}>
-      <planeGeometry args={[planeSize.width, planeSize.height]} />
+      <planeGeometry args={[PLANE_W, PLANE_H]} />
       {kind === "image" && url ? (
         <Suspense fallback={<EmptyMat opacity={0.18} />}>
           <ImageMat url={url} isSelected={isSelected} />
@@ -366,10 +366,6 @@ function RingInner({
   isExhibitionMode = false,
   items = [],
   itemRanges = {},
-  lockedItemId = null,
-  planeSize = { width: PLANE_W, height: PLANE_H },
-  radius = RADIUS,
-  planeRotationX = -0.3,
 }) {
   const N = Math.max(1, slots.length);
   const step = useMemo(() => (Math.PI * 2) / N, [N]);
@@ -381,10 +377,6 @@ function RingInner({
   if (planeRefs.current.length !== N) planeRefs.current = Array(N).fill(null);
   const weightsRef = useRef(new Array(N).fill(0));
   if (weightsRef.current.length !== N) weightsRef.current = Array(N).fill(0);
-
-  // 잠금 모드 Y 오프셋 애니메이션
-  const yOffsetsRef = useRef(new Array(N).fill(0));
-  if (yOffsetsRef.current.length !== N) yOffsetsRef.current = Array(N).fill(0);
 
   // 선택된 아이템 추적
   const selectedItemIdRef = useRef(null);
@@ -434,23 +426,20 @@ function RingInner({
     baseAnglesRef.current = newBaseAngles;
 
     // 3. leftIndex에 해당하는 슬롯이 Math.PI에 오도록 목표 각도 계산
-    // 카메라 시점을 고려하여 약간 앞쪽으로 조정 (Math.PI * 0.85 ≈ 153도)
     const targetSlotAngle = newBaseAngles[leftIndex] || 0;
-    targetAngle.current = Math.PI * 0.92 - targetSlotAngle;
+    targetAngle.current = Math.PI - targetSlotAngle;
 
     // 4. 최단 경로로 회전
     const diff = wrapPi(targetAngle.current - ringAngle.current);
     ringAngle.current += diff * Math.min(1, Math.max(1, snapSpeed) * dt);
 
     // 5. bestIdx 계산 (현재 leftmost 슬롯)
-    // 카메라 시점을 고려한 목표 위치와 일치시킴
     let bestIdx = 0;
     let bestD = Infinity;
     const dSlotsArr = new Array(N);
-    const TARGET_POSITION = Math.PI * 0.92;  // 목표 각도와 동일
     for (let i = 0; i < N; i++) {
       const worldAngle = newBaseAngles[i] + ringAngle.current;
-      const dAngle = Math.abs(wrapPi(worldAngle - TARGET_POSITION));
+      const dAngle = Math.abs(wrapPi(worldAngle - Math.PI));
       const dSlots = dAngle / step;
       dSlotsArr[i] = dSlots;
       if (dSlots < bestD) {
@@ -480,35 +469,16 @@ function RingInner({
       weightsRef.current[i] = lerpExp(prev, next, Math.min(1, wSpeed * dt));
     }
 
-    // Y 오프셋 애니메이션 (잠금 모드)
-    const yOffsetSpeed = 8;
-    const lockedUpOffset = 0;    // 잠긴 아이템은 위로
-    const unlockedDownOffset = -1.5;  // 다른 아이템은 아래로
+    // 플레인 회전 각도 (데스크탑과 모바일에서 다르게 설정)
+    const planeRotationX = isDesktop ? -0 : -0.3;  // X축 회전 (위아래 기울기)
 
-    for (let i = 0; i < N; i++) {
-      let targetYOffset = 0;
-
-      if (lockedItemId) {
-        const slotItemId = slots[i]?.itemId;
-        if (slotItemId === lockedItemId) {
-          targetYOffset = lockedUpOffset;
-        } else {
-          targetYOffset = unlockedDownOffset;
-        }
-      }
-
-      const prevYOffset = yOffsetsRef.current[i] ?? 0;
-      yOffsetsRef.current[i] = lerpExp(prevYOffset, targetYOffset, Math.min(1, yOffsetSpeed * dt));
-    }
-
-    // 플레인 회전 각도 (prop으로 받음)
     for (let i = 0; i < N; i++) {
       const a = newBaseAngles[i] + ringAngle.current;
       const w = weightsRef.current[i] ?? 0;
-      const r = radius + bulge * w;
+      const r = RADIUS + bulge * w;
 
       const x = Math.cos(a) * r;
-      const y = yOffsetsRef.current[i] ?? 0;  // Y 오프셋 적용
+      const y = 0;
       const z = Math.sin(a) * r;
 
       const m = planeRefs.current[i];
@@ -551,7 +521,7 @@ function RingInner({
         if (baseAngle === undefined) return;
 
         const worldAngle = baseAngle + ringAngle.current;
-        const labelRadius = radius + 2;
+        const labelRadius = RADIUS + 2;
         const x = Math.cos(worldAngle) * labelRadius;
         const z = Math.sin(worldAngle) * labelRadius;
         const y = 0;
@@ -601,7 +571,6 @@ function RingInner({
             ref={(el) => (planeRefs.current[i] = el)}
             slot={slot}
             isSelected={isSelected}
-            planeSize={planeSize}
           />
         );
       })}
@@ -652,11 +621,6 @@ export default function SceneRing({
   isExhibitionMode = false,
   items = [],
   itemRanges = {},
-  lockedItemId = null,
-  cameraPosition = { y: CAM_Y, z: CAM_Z },
-  planeSize = { width: PLANE_W, height: PLANE_H },
-  radius = RADIUS,
-  planeRotationX = -0.3,
 }) {
   useEffect(() => {
     const LM = THREE.DefaultLoadingManager;
@@ -680,10 +644,10 @@ export default function SceneRing({
   }, []);
 
   // 전시 모드일 때는 카메라를 더 뒤로 배치
-  const finalCameraPosition = isExhibitionMode ? [0, cameraPosition.y, cameraPosition.z + 5] : [0, cameraPosition.y, cameraPosition.z];
+  const cameraPosition = isExhibitionMode ? [0, CAM_Y, CAM_Z + 5] : [0, CAM_Y, CAM_Z];
 
   return (
-    <Canvas camera={{ position: finalCameraPosition, fov: 50 }} gl={{ antialias: true }}>
+    <Canvas camera={{ position: cameraPosition, fov: 50 }} gl={{ antialias: true }}>
       <ambientLight intensity={0.95} />
       <directionalLight position={[6, 10, 6]} intensity={0.7} />
       <Suspense fallback={null}>
@@ -699,10 +663,6 @@ export default function SceneRing({
           isExhibitionMode={isExhibitionMode}
           items={items}
           itemRanges={itemRanges}
-          lockedItemId={lockedItemId}
-          planeSize={planeSize}
-          radius={radius}
-          planeRotationX={planeRotationX}
         />
       </Suspense>
     </Canvas>

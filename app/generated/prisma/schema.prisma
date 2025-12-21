@@ -141,11 +141,12 @@ model Scene {
   identifier String @unique
 
   // 프로필 정보
-  profilePhoto      String?
-  profileName       String?
-  profileBirthDate  String?
-  profileBirthPlace String?
-  profileBiography  String?
+  profilePhoto        String?
+  profileName         String?
+  profileBirthDate    String?
+  profileBirthPlace   String?
+  profileBiography    String?
+  profileRecordFormat String? @default("entire-life")
 
   // 생애문 진행 상황
   lifestoryProgress Json?

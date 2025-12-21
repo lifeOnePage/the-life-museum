@@ -172,14 +172,14 @@ export default function RingSlider({
 
   return (
     <div className="w-full  border-white/10">
-      {/* 데스크탑 - 프로필 버튼만 표시 */}
+      {/* 데스크탑 - 대표 타이틀 버튼만 표시 */}
       {isDesktop && (
         <div className="flex justify-end items-center px-4 py-2 border-b border-white/10">
           <button
             onClick={onOpenProfileCurtain}
             className="flex flex-row items-center gap-2 text-white/70 hover:text-white transition-colors"
           >
-            <span className="text-xs">프로필 보기</span>
+            <span className="text-xs">대표 타이틀 보기</span>
             <svg
               width="16"
               height="16"
@@ -257,12 +257,12 @@ export default function RingSlider({
             )}
           </button>
 
-          {/* 프로필 보기 버튼 - 오른쪽 */}
+          {/* 대표 타이틀 보기 버튼 - 오른쪽 */}
           <button
             onClick={onOpenProfileCurtain}
             className="flex flex-row items-center gap-2 text-white/70 hover:text-white transition-colors"
           >
-            <span className="text-xs">프로필 보기</span>
+            <span className="text-xs">대표 타이틀 보기</span>
             <svg
               width="16"
               height="16"

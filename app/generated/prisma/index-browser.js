@@ -230,6 +230,7 @@ exports.Prisma.SceneScalarFieldEnum = {
   profileBirthDate: 'profileBirthDate',
   profileBirthPlace: 'profileBirthPlace',
   profileBiography: 'profileBiography',
+  profileRecordFormat: 'profileRecordFormat',
   lifestoryProgress: 'lifestoryProgress',
   userId: 'userId'
 };

@@ -362,7 +362,10 @@ export default function ViewPage() {
     lastX: 0,
     lastY: 0,
     startIndex: 0,
+    lastTime: 0,        // 마지막 이동 시간
+    velocity: 0,        // 현재 속도
   });
+  const isRingDraggingRef = useRef(false); // 링 드래그 중 플래그 (타임라인 간섭 방지용)
 
   // 프로그래매틱 스크롤 중인지 추적 (순환 참조 방지)
   const isTimelineScrollingRef = useRef(false);
@@ -407,9 +410,10 @@ export default function ViewPage() {
 
       setItemOpacities(newOpacities);
 
-      // 프로그래매틱 스크롤 중이 아닐 때만 아이템 선택 (순환 참조 방지)
+      // 프로그래매틱 스크롤 중이 아니고 링 드래그 중이 아닐 때만 아이템 선택
       if (
         !isTimelineScrollingRef.current &&
+        !isRingDraggingRef.current &&
         closestItem &&
         closestItem.id !== currentItem?.id
       ) {
@@ -465,6 +469,7 @@ export default function ViewPage() {
 
   // 3D 링 드래그 핸들러 (모바일)
   const handleRingPointerDown = (e) => {
+    isRingDraggingRef.current = true; // 드래그 시작 플래그
     dragStateRef.current = {
       isDragging: true,
       startX: e.clientX,
@@ -472,15 +477,37 @@ export default function ViewPage() {
       lastX: e.clientX,
       lastY: e.clientY,
       startIndex: leftIndex,
+      lastTime: Date.now(),
+      velocity: 0,
     };
   };
 
   const handleRingPointerMove = (e) => {
     if (!dragStateRef.current.isDragging) return;
 
+    // 속도 계산 (픽셀/밀리초)
+    const currentTime = Date.now();
+    const timeDelta = currentTime - dragStateRef.current.lastTime;
+
+    if (timeDelta === 0) return; // 동일 시간에 호출된 경우 무시
+
+    const distanceX = e.clientX - dragStateRef.current.lastX;
+    const distanceY = e.clientY - dragStateRef.current.lastY;
+    const totalDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+    const velocity = totalDistance / timeDelta; // 픽셀/ms
+
+    // 속도에 따른 민감도 배율 (빠를수록 더 많이 회전)
+    // 이전 속도와 부드럽게 블렌딩하여 급격한 변화 방지
+    const smoothedVelocity = dragStateRef.current.velocity * 0.7 + velocity * 0.3;
+    const velocityMultiplier = Math.min(1 + smoothedVelocity * 0.3, 1.8); // 최대 1.8배로 제한
+
     // 드래그 민감도: 화면 너비/높이의 10% 이동 시 한 슬롯 이동
-    const sensitivityX = window.innerWidth * 0.1;
-    const sensitivityY = window.innerHeight * 0.025;
+    const baseSensitivityX = window.innerWidth * 0.1;
+    const baseSensitivityY = window.innerHeight * 0.04;
+
+    // 속도 배율 적용
+    const sensitivityX = baseSensitivityX / velocityMultiplier;
+    const sensitivityY = baseSensitivityY / velocityMultiplier;
 
     // X축 델타 (좌우)
     const deltaX = e.clientX - dragStateRef.current.startX;
@@ -494,6 +521,12 @@ export default function ViewPage() {
     const totalSlotsDelta = slotsDeltaX + slotsDeltaY;
     const slotsDelta = Math.round(totalSlotsDelta);
 
+    // 상태 업데이트
+    dragStateRef.current.lastX = e.clientX;
+    dragStateRef.current.lastY = e.clientY;
+    dragStateRef.current.lastTime = currentTime;
+    dragStateRef.current.velocity = velocity;
+
     let newIndex = dragStateRef.current.startIndex - slotsDelta;
 
     // 잠금 상태일 때 범위 제한
@@ -506,9 +539,10 @@ export default function ViewPage() {
         );
       }
     } else {
+      // console.log(textureData, textureData.textures)
       newIndex = Math.max(
         0,
-        Math.min(textureData.textures.length - 1, newIndex),
+        Math.min(lastContentIndex, newIndex),
       );
     }
 
@@ -519,6 +553,12 @@ export default function ViewPage() {
 
   const handleRingPointerUp = () => {
     dragStateRef.current.isDragging = false;
+
+    // 드래그 종료 후 약간의 지연을 두고 플래그 해제
+    // (타임라인 애니메이션 완료 대기)
+    setTimeout(() => {
+      isRingDraggingRef.current = false;
+    }, 300);
   };
 
   // 수동 네비게이션 중인지 추적

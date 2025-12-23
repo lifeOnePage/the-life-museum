@@ -61,7 +61,7 @@ export function buildTextureData(profile, items) {
     });
 
     itemRanges[item.id] = { start: startIndex, end: currentIndex - 1 };
-    console.log(`Item ${item.id} (${item.title}): range [${startIndex}, ${currentIndex - 1}]`);
+    // console.log(`Item ${item.id} (${item.title}): range [${startIndex}, ${currentIndex - 1}]`);
   });
 
   console.log('Total textures:', textures.length);

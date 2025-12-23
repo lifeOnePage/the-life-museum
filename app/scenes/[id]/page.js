@@ -242,7 +242,7 @@ export default function ViewPage() {
   // 마지막 컨텐츠 인덱스 찾기 (empty가 아닌 마지막)
   const lastContentIndex = useMemo(() => {
     for (let i = textureData.textures.length - 1; i >= 0; i--) {
-      if (textureData.textures[i].kind !== 'empty') {
+      if (textureData.textures[i].kind !== "empty") {
         return i;
       }
     }
@@ -362,23 +362,173 @@ export default function ViewPage() {
     lastX: 0,
     lastY: 0,
     startIndex: 0,
-    lastTime: 0,        // 마지막 이동 시간
-    velocity: 0,        // 현재 속도
+    lastTime: 0, // 마지막 이동 시간
+    velocity: 0, // 현재 속도
   });
   const isRingDraggingRef = useRef(false); // 링 드래그 중 플래그 (타임라인 간섭 방지용)
 
   // 프로그래매틱 스크롤 중인지 추적 (순환 참조 방지)
   const isTimelineScrollingRef = useRef(false);
   const scrollTimeoutRef = useRef(null);
+  const isTimelineAnimatingRef = useRef(false); // 단계별 애니메이션 중
+
+  // 단계별 애니메이션 상태
+  const [animationState, setAnimationState] = useState(null);
+  const animationTimerRef = useRef(null);
+
+  // 햅틱/사운드 피드백 헬퍼
+  const playFeedback = useCallback(() => {
+    // 햅틱 시도
+    if (navigator.vibrate) {
+      navigator.vibrate(50); // 50ms 진동
+    }
+
+    // 사운드 재생 - 빠른 연속 재생을 위해 매번 새 인스턴스 생성
+    try {
+      const audio = new Audio("/sounds/paper.mp3");
+      audio.volume = 0.5; // 볼륨 50%
+      audio.play().catch((err) => {
+        // 오디오 재생 실패 무시 (사용자 인터랙션 전일 수 있음)
+        console.debug("Audio play failed:", err.message);
+      });
+    } catch (err) {
+      console.debug("Audio creation failed:", err);
+    }
+  }, []);
+
+  // 단계별 애니메이션 실행 useEffect
+  useEffect(() => {
+    if (!animationState) return;
+
+    const { itemsToVisit, currentStep } = animationState;
+
+    if (currentStep >= itemsToVisit.length) {
+      // 애니메이션 완료
+      console.log("Animation complete");
+      isTimelineAnimatingRef.current = false;
+      setTimeout(() => {
+        isTimelineScrollingRef.current = false;
+      }, 300);
+      setAnimationState(null);
+      return;
+    }
+
+    const item = itemsToVisit[currentStep];
+    console.log(
+      `Step ${currentStep + 1}/${itemsToVisit.length}: Visiting item ${item.title}`,
+    );
+
+    // leftIndex 변경
+    const itemRange = textureData.itemRanges[item.id];
+    if (itemRange) {
+      setLeftIndex(itemRange.start);
+    }
+
+    // 타임라인 스크롤
+    const itemElement = itemRefs.current[item.id];
+    const timelineElement = timelineRef.current;
+    if (itemElement && timelineElement) {
+      const timelineRect = timelineElement.getBoundingClientRect();
+      const itemRect = itemElement.getBoundingClientRect();
+      const timelineCenterY = timelineRect.top + timelineRect.height / 2;
+      const itemCenterY = itemRect.top + itemRect.height / 2;
+      const scrollOffset = itemCenterY - timelineCenterY;
+
+      timelineElement.scrollBy({
+        top: scrollOffset,
+        behavior: "auto",
+      });
+    }
+
+    // 햅틱/사운드 피드백
+    playFeedback();
+
+    // 다음 단계로 진행
+    animationTimerRef.current = setTimeout(() => {
+      setAnimationState({
+        itemsToVisit,
+        currentStep: currentStep + 1,
+      });
+    }, 150);
+
+    return () => {
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current);
+      }
+    };
+  }, [animationState, textureData, playFeedback]);
+
+  // 중간 아이템들을 순차적으로 거쳐가는 타임라인 스크롤
+  const scrollToItemWithSteps = useCallback(
+    (targetItem) => {
+      if (!targetItem) {
+        console.log("No target item");
+        return;
+      }
+
+      const currentIndex = items.findIndex(
+        (item) => item.id === currentItem?.id,
+      );
+      const targetIndex = items.findIndex((item) => item.id === targetItem.id);
+
+      console.log("scrollToItemWithSteps:", {
+        currentIndex,
+        targetIndex,
+        currentItem: currentItem?.title,
+        target: targetItem.title,
+      });
+
+      if (
+        currentIndex === -1 ||
+        targetIndex === -1 ||
+        currentIndex === targetIndex
+      ) {
+        console.log("Early return: invalid indices or same item");
+        return;
+      }
+
+      // 애니메이션 플래그 설정
+      isTimelineAnimatingRef.current = true;
+      isTimelineScrollingRef.current = true;
+
+      const direction = targetIndex > currentIndex ? 1 : -1;
+      const itemsToVisit = [];
+
+      for (
+        let i = currentIndex + direction;
+        direction > 0 ? i <= targetIndex : i >= targetIndex;
+        i += direction
+      ) {
+        itemsToVisit.push(items[i]);
+      }
+
+      console.log(
+        "Starting animation with",
+        itemsToVisit.length,
+        "items to visit",
+      );
+
+      // 애니메이션 시작
+      setAnimationState({
+        itemsToVisit,
+        currentStep: 0,
+      });
+    },
+    [items, currentItem],
+  );
+
+  // 타임라인 스크롤 중 이전 중앙 아이템 추적
+  const prevScrollClosestItemRef = useRef(null);
+  const rafIdRef = useRef(null);
+  const scrollScheduledRef = useRef(false);
 
   useEffect(() => {
     const timeline = timelineRef.current;
     if (!timeline) return;
 
-    const handleScroll = () => {
+    const updateScrollState = () => {
       const timelineRect = timeline.getBoundingClientRect();
       const centerY = timelineRect.top + timelineRect.height / 2;
-      const maxDistance = Math.max(timelineRect.height / 2, 1); // 최소값 1로 보장하여 NaN 방지
 
       let closestItem = null;
       let closestDistance = Infinity;
@@ -392,74 +542,135 @@ export default function ViewPage() {
         const itemCenterY = itemRect.top + itemRect.height / 2;
         const distance = Math.abs(centerY - itemCenterY);
 
-        // 프로필 아이템은 opacity 계산 제외 (고정값 사용)
-        if (!item.isProfile) {
-          // 거리 기반 opacity 계산 (공기 원근) - 매우 강하게 적용
-          const normalizedDistance = Math.min(distance / maxDistance, 1);
-          // 거리에 따라 매우 급격하게 페이드: 낮은 지수로 중앙 외에는 거의 투명하게
-          const fadeAmount = Math.pow(normalizedDistance, 0.4); // 0.4 지수로 매우 급격한 감소
-          const opacity = Math.max(0.02, 1 - fadeAmount * 0.98);
-          newOpacities[item.id] = opacity;
-        }
-
+        // 중앙 아이템 찾기 및 opacity 설정을 한 번에 처리
         if (distance < closestDistance) {
           closestDistance = distance;
           closestItem = item;
         }
+
+        newOpacities[item.id] = 0.4; // 기본값
       });
+
+      // 중앙 아이템만 opacity 1.0
+      if (closestItem) {
+        newOpacities[closestItem.id] = 1.0;
+      }
 
       setItemOpacities(newOpacities);
 
-      // 프로그래매틱 스크롤 중이 아니고 링 드래그 중이 아닐 때만 아이템 선택
-      if (
+      // 사용자가 타임라인을 스크롤하는 경우 (프로그래매틱 스크롤/애니메이션/링 드래그가 아닐 때)
+      const isUserScrolling =
         !isTimelineScrollingRef.current &&
-        !isRingDraggingRef.current &&
+        !isTimelineAnimatingRef.current &&
+        !isRingDraggingRef.current;
+
+      // 중앙 아이템이 변경되었는지 확인
+      if (
         closestItem &&
-        closestItem.id !== currentItem?.id
+        prevScrollClosestItemRef.current?.id !== closestItem.id
       ) {
-        handleItemClick(closestItem);
+        // 거리 임계값: 중앙에서 50px 이내일 때만 변경으로 인정 (감도 낮춤)
+        const DISTANCE_THRESHOLD = 200;
+
+        if (closestDistance < DISTANCE_THRESHOLD) {
+          playFeedback();
+          console.log("타임라인 스크롤: 중앙 아이템 변경:", closestItem.title);
+
+          if (isUserScrolling) {
+            // leftIndex 직접 업데이트 (링 회전)
+            const itemRange = textureData.itemRanges[closestItem.id];
+            if (itemRange) {
+              setLeftIndex(itemRange.start);
+            }
+          }
+
+          prevScrollClosestItemRef.current = closestItem;
+        }
+      }
+
+      scrollScheduledRef.current = false;
+    };
+
+    const handleScroll = () => {
+      // requestAnimationFrame으로 쓰로틀링 - 브라우저 렌더링 주기에 맞춰 실행
+      if (!scrollScheduledRef.current) {
+        scrollScheduledRef.current = true;
+        rafIdRef.current = requestAnimationFrame(updateScrollState);
       }
     };
 
-    timeline.addEventListener("scroll", handleScroll);
-    handleScroll(); // 초기 실행
+    timeline.addEventListener("scroll", handleScroll, { passive: true });
+    updateScrollState(); // 초기 실행
 
-    return () => timeline.removeEventListener("scroll", handleScroll);
-  }, [items, currentItem, handleItemClick]);
+    return () => {
+      timeline.removeEventListener("scroll", handleScroll);
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
+  }, [items, currentItem, playFeedback, textureData]);
 
-  // currentItem이 변경되면 타임라인 자동 스크롤 (드래그로 인한 변경 시)
+  // 링 드래그 중 leftIndex 변화 감지 → 햅틱 발생
+  const prevLeftIndexRef = useRef(leftIndex);
+  useEffect(() => {
+    if (prevLeftIndexRef.current === leftIndex) return;
+
+    // 이전과 현재의 아이템이 다른지 확인
+    const prevItem = items.find((item) => {
+      const range = textureData.itemRanges[item.id];
+      return (
+        range &&
+        prevLeftIndexRef.current >= range.start &&
+        prevLeftIndexRef.current <= range.end
+      );
+    });
+
+    const currentItemFromIndex = items.find((item) => {
+      const range = textureData.itemRanges[item.id];
+      return range && leftIndex >= range.start && leftIndex <= range.end;
+    });
+
+    // 링 드래그 중이고, 아이템이 변경되었으면 햅틱 발생
+    if (
+      isRingDraggingRef.current &&
+      prevItem &&
+      currentItemFromIndex &&
+      prevItem.id !== currentItemFromIndex.id
+    ) {
+      playFeedback();
+    }
+
+    prevLeftIndexRef.current = leftIndex;
+  }, [leftIndex, items, textureData, playFeedback]);
+
+  // currentItem이 변경되면 타임라인 자동 스크롤
   const prevItemRef = useRef(currentItem);
   useEffect(() => {
     if (
       currentItem &&
       prevItemRef.current?.id !== currentItem.id &&
-      !currentItem.isProfile
+      !currentItem.isProfile &&
+      !isTimelineAnimatingRef.current // 애니메이션 중이 아닐 때만
     ) {
       const itemElement = itemRefs.current[currentItem.id];
       const timelineElement = timelineRef.current;
 
       if (itemElement && timelineElement) {
-        // 스크롤 시작 플래그
-        isTimelineScrollingRef.current = true;
-
-        // 기존 타임아웃 클리어
-        if (scrollTimeoutRef.current) {
-          clearTimeout(scrollTimeoutRef.current);
-        }
-
+        // 링 드래그로 인한 변경인 경우, 즉시 스크롤 (애니메이션 없이)
         const timelineRect = timelineElement.getBoundingClientRect();
         const itemRect = itemElement.getBoundingClientRect();
         const timelineCenterY = timelineRect.top + timelineRect.height / 2;
         const itemCenterY = itemRect.top + itemRect.height / 2;
         const scrollOffset = itemCenterY - timelineCenterY;
 
+        isTimelineScrollingRef.current = true;
+
         timelineElement.scrollBy({
           top: scrollOffset,
           behavior: "smooth",
         });
 
-        // 스크롤 애니메이션 완료 후 플래그 해제
-        scrollTimeoutRef.current = setTimeout(() => {
+        setTimeout(() => {
           isTimelineScrollingRef.current = false;
         }, 600);
       }
@@ -493,12 +704,15 @@ export default function ViewPage() {
 
     const distanceX = e.clientX - dragStateRef.current.lastX;
     const distanceY = e.clientY - dragStateRef.current.lastY;
-    const totalDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+    const totalDistance = Math.sqrt(
+      distanceX * distanceX + distanceY * distanceY,
+    );
     const velocity = totalDistance / timeDelta; // 픽셀/ms
 
     // 속도에 따른 민감도 배율 (빠를수록 더 많이 회전)
     // 이전 속도와 부드럽게 블렌딩하여 급격한 변화 방지
-    const smoothedVelocity = dragStateRef.current.velocity * 0.7 + velocity * 0.3;
+    const smoothedVelocity =
+      dragStateRef.current.velocity * 0.7 + velocity * 0.3;
     const velocityMultiplier = Math.min(1 + smoothedVelocity * 0.3, 1.8); // 최대 1.8배로 제한
 
     // 드래그 민감도: 화면 너비/높이의 10% 이동 시 한 슬롯 이동
@@ -540,10 +754,7 @@ export default function ViewPage() {
       }
     } else {
       // console.log(textureData, textureData.textures)
-      newIndex = Math.max(
-        0,
-        Math.min(lastContentIndex, newIndex),
-      );
+      newIndex = Math.max(0, Math.min(lastContentIndex, newIndex));
     }
 
     if (newIndex !== leftIndex) {
@@ -661,7 +872,8 @@ export default function ViewPage() {
     // 민감도 증가: 2.5배로 설정하여 더 가볍게 느껴지도록
     const deltaPercent = (deltaY / curtainHeight) * 100 * 2.5;
 
-    let newCurtainY = desktopCurtainDragRef.current.startCurtainY + deltaPercent;
+    let newCurtainY =
+      desktopCurtainDragRef.current.startCurtainY + deltaPercent;
 
     // 범위 제한: -100% (완전히 올라감) ~ 0% (완전히 내려옴)
     newCurtainY = Math.max(-100, Math.min(0, newCurtainY));
@@ -910,7 +1122,7 @@ export default function ViewPage() {
       )}
 
       {/* 모바일 레이아웃 (< 700px) */}
-      <div className="pt-10 from-black-100 via-black-200 to-black-300 flex h-full w-full flex-col bg-gradient-to-br lg:hidden">
+      <div className="from-black-100 via-black-200 to-black-300 flex h-full w-full flex-col bg-gradient-to-br pt-10 lg:hidden">
         {/* 상단 헤더 - The Life Museum + Login/Logout/Mypage */}
         <div className="z-30 flex items-center justify-between px-4 py-3">
           <h1 className="font-serif text-xl font-bold tracking-tight text-white">
@@ -921,14 +1133,14 @@ export default function ViewPage() {
               <>
                 <button
                   onClick={handleLogout}
-                  className="text-white text-sm font-medium cursor-pointer hover:text-white/70 transition-colors"
+                  className="cursor-pointer text-sm font-medium text-white transition-colors hover:text-white/70"
                 >
                   Logout
                 </button>
                 <span className="text-white/40">|</span>
                 <button
                   onClick={handleMypage}
-                  className="text-white text-sm font-medium cursor-pointer hover:text-white/70 transition-colors"
+                  className="cursor-pointer text-sm font-medium text-white transition-colors hover:text-white/70"
                 >
                   Mypage
                 </button>
@@ -936,7 +1148,7 @@ export default function ViewPage() {
             ) : (
               <button
                 onClick={handleLogin}
-                className="text-white text-sm font-medium cursor-pointer hover:text-white/70 transition-colors"
+                className="cursor-pointer text-sm font-medium text-white transition-colors hover:text-white/70"
               >
                 Login
               </button>
@@ -955,7 +1167,7 @@ export default function ViewPage() {
               setShowCurtain(true);
               setCurtainY(0);
             }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 z-30 flex-shrink-0 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20"
+            className="absolute bottom-8 left-1/2 z-30 flex-shrink-0 -translate-x-1/2 rounded-full bg-white/10 px-4 py-2 text-sm font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20"
           >
             프로필 보기
           </motion.button>
@@ -1053,7 +1265,7 @@ export default function ViewPage() {
         {/* 타임라인 - 모바일 전용 */}
         <div
           ref={timelineRef}
-          className="absolute top-auto bottom-0 left-4 z-20 max-h-[45vh] snap-y snap-proximity overflow-y-auto py-10 [&::-webkit-scrollbar]:hidden"
+          className="absolute top-auto bottom-0 left-4 z-20 max-h-[45vh] overflow-y-auto py-10 [&::-webkit-scrollbar]:hidden"
           style={{
             scrollbarWidth: "none", // Firefox
             msOverflowStyle: "none", // IE/Edge
@@ -1069,17 +1281,15 @@ export default function ViewPage() {
               const isLocked = lockedItemId === item.id;
               const isCurrentItem = currentItem?.id === item.id;
 
-              // 프로필 아이템은 고정 투명도
-              const itemOpacity = item.isProfile
-                ? 0.5
-                : (itemOpacities[item.id] ?? 0.15);
+              // 모든 아이템에 동일한 거리 기반 투명도 적용
+              const itemOpacity = itemOpacities[item.id] ?? 0.15;
 
               return (
                 <button
                   key={item.id}
                   ref={(el) => (itemRefs.current[item.id] = el)}
-                  onClick={() => handleItemClick(item)}
-                  className="relative cursor-pointer snap-center px-2 py-2 text-left text-white transition-opacity duration-200"
+                  onClick={() => scrollToItemWithSteps(item)}
+                  className="relative cursor-pointer px-2 py-2 text-left text-white transition-opacity duration-200"
                   style={{
                     opacity: itemOpacity,
                   }}
@@ -1089,7 +1299,7 @@ export default function ViewPage() {
                       {item.isProfile ? (
                         // 프로필 아이템: {이름}\n{생년} 형식
                         <>
-                          <div className="text-sm leading-tight font-medium">
+                          <div className={`text-sm leading-tight ${isCurrentItem ? 'font-bold' : 'font-normal'}`}>
                             {profile.name || "대표 타이틀"}
                           </div>
                           {profile.birthDate && (
@@ -1102,7 +1312,7 @@ export default function ViewPage() {
                       ) : (
                         // 일반 아이템
                         <>
-                          <div className="text-sm leading-tight font-medium">
+                          <div className={`text-sm leading-tight ${isCurrentItem ? 'font-bold' : 'font-normal'}`}>
                             {item.title || "제목 없음"}
                           </div>
                           {year && (
@@ -1217,14 +1427,14 @@ export default function ViewPage() {
             <>
               <button
                 onClick={handleLogout}
-                className="text-white text-sm font-medium cursor-pointer hover:text-white/70 transition-colors"
+                className="cursor-pointer text-sm font-medium text-white transition-colors hover:text-white/70"
               >
                 Logout
               </button>
               <span className="text-white/40">|</span>
               <button
                 onClick={handleMypage}
-                className="text-white text-sm font-medium cursor-pointer hover:text-white/70 transition-colors"
+                className="cursor-pointer text-sm font-medium text-white transition-colors hover:text-white/70"
               >
                 Mypage
               </button>
@@ -1232,7 +1442,7 @@ export default function ViewPage() {
           ) : (
             <button
               onClick={handleLogin}
-              className="text-white text-sm font-medium cursor-pointer hover:text-white/70 transition-colors"
+              className="cursor-pointer text-sm font-medium text-white transition-colors hover:text-white/70"
             >
               Login
             </button>
@@ -1290,7 +1500,9 @@ export default function ViewPage() {
         {mode !== "edit" && (
           <div className="absolute top-40 right-8 z-30">
             <button
-              onClick={() => setDesktopCurtainY(desktopCurtainY === 0 ? -100 : 0)}
+              onClick={() =>
+                setDesktopCurtainY(desktopCurtainY === 0 ? -100 : 0)
+              }
               onMouseEnter={() => setShowProfileTooltip(true)}
               onMouseLeave={() => setShowProfileTooltip(false)}
               className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-white bg-transparent text-white transition-all hover:scale-110 hover:bg-white/10"
@@ -1332,9 +1544,7 @@ export default function ViewPage() {
                   className="absolute top-1/2 right-full mr-4 -translate-y-1/2 overflow-hidden"
                 >
                   <div className="bg-black px-4 py-2.5 whitespace-nowrap">
-                    <p className="text-xs text-white">
-                      프로필을 확인합니다.
-                    </p>
+                    <p className="text-xs text-white">프로필을 확인합니다.</p>
                   </div>
                 </motion.div>
               )}
@@ -1396,13 +1606,13 @@ export default function ViewPage() {
           </div>
         )}
 
-        <div className="flex h-full w-[86vw] min-w-[700px] px-10 flex-col items-stretch justify-end overflow-hidden bg-transparent">
+        <div className="flex h-full w-[86vw] min-w-[700px] flex-col items-stretch justify-end overflow-hidden bg-transparent px-10">
           {/* 선택된 이미지/비디오 - 패널 위에 왼쪽 정렬 - 데스크탑 */}
-          {selectedSlot && selectedSlot.url && mode !== 'edit' && (
+          {selectedSlot && selectedSlot.url && mode !== "edit" && (
             <div className="z-15 mt-20">
               {/* The Life Museum 텍스트 */}
               <div className="mb-4">
-                <h1 className="font-serif font-bold italic text-white text-4xl">
+                <h1 className="font-serif text-4xl font-bold text-white italic">
                   The Life Museum
                 </h1>
               </div>
@@ -1414,7 +1624,7 @@ export default function ViewPage() {
                   <img
                     src={proxify(selectedSlot.url)}
                     alt="Selected"
-                    className="h-full w-auto object-contain pointer-events-none select-none"
+                    className="pointer-events-none h-full w-auto object-contain select-none"
                     crossOrigin="anonymous"
                     onLoad={handleImageLoad}
                     draggable={false}
@@ -1425,7 +1635,7 @@ export default function ViewPage() {
                 <div className="h-[400px] w-auto">
                   <video
                     src={proxify(selectedSlot.url)}
-                    className="h-full w-auto object-contain pointer-events-none select-none"
+                    className="pointer-events-none h-full w-auto object-contain select-none"
                     autoPlay
                     loop
                     muted
@@ -1437,11 +1647,20 @@ export default function ViewPage() {
               ) : null}
 
               {/* 슬라이더 - 이미지 아래 패널 너비만큼 */}
-              <div className="w-[400px] mt-4">
+              <div className="mt-4 w-[400px]">
                 <input
                   type="range"
-                  min={lockedItemId && currentItem ? (textureData.itemRanges[lockedItemId]?.start || 0) : 0}
-                  max={lockedItemId && currentItem ? (textureData.itemRanges[lockedItemId]?.end || lastContentIndex) : lastContentIndex}
+                  min={
+                    lockedItemId && currentItem
+                      ? textureData.itemRanges[lockedItemId]?.start || 0
+                      : 0
+                  }
+                  max={
+                    lockedItemId && currentItem
+                      ? textureData.itemRanges[lockedItemId]?.end ||
+                        lastContentIndex
+                      : lastContentIndex
+                  }
                   value={leftIndex}
                   onChange={(e) => {
                     const newIndex = parseInt(e.target.value, 10);
@@ -1458,9 +1677,9 @@ export default function ViewPage() {
                       isManualNavigationRef.current = false;
                     }, 1000);
                   }}
-                  className="w-full h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                  className="slider h-2 w-full cursor-pointer appearance-none rounded-lg bg-white/20"
                   style={{
-                    WebkitAppearance: 'none',
+                    WebkitAppearance: "none",
                   }}
                 />
                 <style jsx>{`
@@ -1488,9 +1707,13 @@ export default function ViewPage() {
           )}
 
           {/* 링 + 패널 영역 */}
-          <div className={`relative flex flex-1 items-start ${mode === 'edit' ? 'mt-0 mb-0' : 'mb-10 mt-0'}`}>
+          <div
+            className={`relative flex flex-1 items-start ${mode === "edit" ? "mt-0 mb-0" : "mt-0 mb-10"}`}
+          >
             {/* 패널 - 왼쪽 */}
-            <div className={`relative z-20 w-[400px] shrink-0 ${mode === 'edit' ? 'mt-30 mb-30 h-[calc(100vh-240px)]' : ''}`}>
+            <div
+              className={`relative z-20 w-[400px] shrink-0 ${mode === "edit" ? "mt-30 mb-30 h-[calc(100vh-240px)]" : ""}`}
+            >
               <Pannel
                 type="list"
                 mode={mode}
@@ -1550,7 +1773,7 @@ export default function ViewPage() {
             items={items}
             itemRanges={textureData.itemRanges}
             lockedItemId={lockedItemId}
-            cameraPosition={{ y: 8, z: 24}}
+            cameraPosition={{ y: 8, z: 24 }}
             planeSize={{ width: 3.6, height: 2.4 }}
             radius={10}
             planeRotationX={-0.3}
@@ -1573,7 +1796,7 @@ export default function ViewPage() {
             animate={{ y: `${desktopCurtainY}%` }}
             exit={{ y: "-100%" }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="fixed inset-0 z-50 bg-black hidden lg:block"
+            className="fixed inset-0 z-50 hidden bg-black lg:block"
             style={{ touchAction: "none" }}
             onPointerDown={handleDesktopCurtainPointerDown}
             onPointerMove={handleDesktopCurtainPointerMove}
@@ -1608,7 +1831,9 @@ export default function ViewPage() {
                   strokeLinejoin="round"
                 />
               </svg>
-              <span className="text-xs text-white/60">위로 드래그하여 닫기</span>
+              <span className="text-xs text-white/60">
+                위로 드래그하여 닫기
+              </span>
             </motion.div>
           </motion.div>
         )}

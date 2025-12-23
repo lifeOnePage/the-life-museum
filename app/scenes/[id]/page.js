@@ -558,34 +558,34 @@ export default function ViewPage() {
 
       setItemOpacities(newOpacities);
 
-      // 사용자가 타임라인을 스크롤하는 경우 (프로그래매틱 스크롤/애니메이션/링 드래그가 아닐 때)
-      const isUserScrolling =
-        !isTimelineScrollingRef.current &&
-        !isTimelineAnimatingRef.current &&
-        !isRingDraggingRef.current;
-
       // 중앙 아이템이 변경되었는지 확인
       if (
         closestItem &&
         prevScrollClosestItemRef.current?.id !== closestItem.id
       ) {
-        // 거리 임계값: 중앙에서 50px 이내일 때만 변경으로 인정 (감도 낮춤)
-        const DISTANCE_THRESHOLD = 200;
+        playFeedback();
+        console.log("타임라인 스크롤: 중앙 아이템 변경:", closestItem.title);
 
-        if (closestDistance < DISTANCE_THRESHOLD) {
-          playFeedback();
-          console.log("타임라인 스크롤: 중앙 아이템 변경:", closestItem.title);
-
-          if (isUserScrolling) {
-            // leftIndex 직접 업데이트 (링 회전)
-            const itemRange = textureData.itemRanges[closestItem.id];
-            if (itemRange) {
-              setLeftIndex(itemRange.start);
-            }
-          }
-
-          prevScrollClosestItemRef.current = closestItem;
+        // leftIndex 직접 업데이트 (링 회전) - 항상 수행하여 타임라인과 링 일치 보장
+        const itemRange = textureData.itemRanges[closestItem.id];
+        if (itemRange) {
+          setLeftIndex(itemRange.start);
         }
+
+        // 사용자가 직접 스크롤하는 경우에만 햅틱/사운드 재생
+        const isUserScrolling =
+          !isTimelineScrollingRef.current &&
+          !isTimelineAnimatingRef.current &&
+          !isRingDraggingRef.current;
+
+        if (isUserScrolling) {
+          // 거리 임계값: 중앙에서 200px 이내일 때만 햅틱/사운드 재생
+          const DISTANCE_THRESHOLD = 200;
+          if (closestDistance < DISTANCE_THRESHOLD) {
+          }
+        }
+
+        prevScrollClosestItemRef.current = closestItem;
       }
 
       scrollScheduledRef.current = false;
@@ -1209,8 +1209,20 @@ export default function ViewPage() {
 
           {/* 아이템 설명 텍스트 */}
           {currentItem && !currentItem.isProfile && currentItem.desc && (
-            <div className="px-1.5 py-3">
-              <p className="text-sm leading-relaxed text-white/80">
+            <div className="px-3 py-3">
+              <div className="flex items-center gap-3">
+                <p className="text-black-100 w-fit bg-white px-3 text-lg leading-tight font-medium">
+                  {currentItem.title}
+                </p>
+                <div className="flex-1 border-b border-white/30"></div>
+                <p className="text-sm leading-tight text-white/60">
+                  {currentItem.date}
+                </p>
+              </div>
+              {/* <p className="text-sm leading-relaxed text-white">
+                
+              </p> */}
+              <p className="mt-3 text-sm leading-relaxed text-white">
                 {currentItem.desc}
               </p>
             </div>
@@ -1265,7 +1277,7 @@ export default function ViewPage() {
         {/* 타임라인 - 모바일 전용 */}
         <div
           ref={timelineRef}
-          className="absolute top-auto bottom-0 left-4 z-20 max-h-[45vh] overflow-y-auto py-10 [&::-webkit-scrollbar]:hidden"
+          className="absolute top-auto bottom-0 left-4 z-20 max-h-[36vh] overflow-y-auto py-10 [&::-webkit-scrollbar]:hidden"
           style={{
             scrollbarWidth: "none", // Firefox
             msOverflowStyle: "none", // IE/Edge
@@ -1288,7 +1300,16 @@ export default function ViewPage() {
                 <button
                   key={item.id}
                   ref={(el) => (itemRefs.current[item.id] = el)}
-                  onClick={() => scrollToItemWithSteps(item)}
+                  onClick={() => {
+                    // 이미 선택된 아이템을 다시 클릭하면 잠금 토글
+                    if (isCurrentItem) {
+                      handleItemClick(item);
+                    } else {
+                      // 다른 아이템 클릭 시 잠금 해제 후 애니메이션과 함께 이동
+                      setLockedItemId(null);
+                      scrollToItemWithSteps(item);
+                    }
+                  }}
                   className="relative cursor-pointer px-2 py-2 text-left text-white transition-opacity duration-200"
                   style={{
                     opacity: itemOpacity,
@@ -1299,7 +1320,9 @@ export default function ViewPage() {
                       {item.isProfile ? (
                         // 프로필 아이템: {이름}\n{생년} 형식
                         <>
-                          <div className={`text-sm leading-tight ${isCurrentItem ? 'font-bold' : 'font-normal'}`}>
+                          <div
+                            className={`text-sm leading-tight ${isCurrentItem ? "font-bold" : "font-normal"}`}
+                          >
                             {profile.name || "대표 타이틀"}
                           </div>
                           {profile.birthDate && (
@@ -1312,7 +1335,9 @@ export default function ViewPage() {
                       ) : (
                         // 일반 아이템
                         <>
-                          <div className={`text-sm leading-tight ${isCurrentItem ? 'font-bold' : 'font-normal'}`}>
+                          <div
+                            className={`text-sm leading-tight ${isCurrentItem ? "font-bold" : "font-normal"}`}
+                          >
                             {item.title || "제목 없음"}
                           </div>
                           {year && (

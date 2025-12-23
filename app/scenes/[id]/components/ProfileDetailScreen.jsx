@@ -61,7 +61,7 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
               letterSpacing: "0.4em"
             }}
           >
-            ARCHIVE YOUR MEMORY
+            ARCHIVE YOUR LIFE
           </p>
         </motion.div>
 

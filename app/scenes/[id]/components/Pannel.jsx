@@ -153,7 +153,7 @@ export default function Pannel({
 
     // 삭제 확인 대화상자
     const confirmed = window.confirm(
-      "정말 삭제하시겠습니까?\n\n아이템 안의 사진과 내용이 모두 삭제됩니다."
+      "정말 삭제하시겠습니까?\n\이벤트 안의 사진과 내용이 모두 삭제됩니다."
     );
 
     if (!confirmed) return;
@@ -165,6 +165,7 @@ export default function Pannel({
       newSet.delete(itemId);
       return newSet;
     });
+    alert("삭제되었습니다.")
   };
 
   const handleAddNew = () => {
@@ -555,7 +556,7 @@ export default function Pannel({
 
   if (selectedItem && (mode === "view")) {
     return (
-      <div className="w-full rounded-[20px] overflow-hidden flex flex-col">
+      <div className="w-full overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
@@ -578,7 +579,7 @@ export default function Pannel({
 
   if (selectedItem && (mode !== "view")) {
     return (
-      <div className="w-full h-full bg-black-100/20 backdrop-blur-2xl rounded-[20px] overflow-hidden flex flex-col">
+      <div className="w-full h-full bg-black-100/20 backdrop-blur-2xl overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
@@ -605,7 +606,7 @@ export default function Pannel({
 
   if (type === "list"&& (mode === "view")) {
     return (
-      <div className="w-full h-full rounded-[20px] overflow-hidden flex flex-col">
+      <div className="w-full h-full overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}
@@ -702,7 +703,7 @@ export default function Pannel({
 
     if (type === "list"&& (mode !== "view")) {
     return (
-      <div className="w-full bg-black-100/20 backdrop-blur-2xl rounded-[20px] overflow-hidden flex flex-col">
+      <div className="w-full bg-black-100/20 backdrop-blur-2xl overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}

@@ -494,8 +494,9 @@ export default function ViewPage() {
     const velocity = totalDistance / timeDelta; // 픽셀/ms
 
     // 속도에 따른 민감도 배율 (빠를수록 더 많이 회전)
-    // 속도가 0.5 픽셀/ms 이상일 때 배율 증가
-    const velocityMultiplier = Math.min(1 + velocity * 0.5, 3); // 최대 3배
+    // 이전 속도와 부드럽게 블렌딩하여 급격한 변화 방지
+    const smoothedVelocity = dragStateRef.current.velocity * 0.7 + velocity * 0.3;
+    const velocityMultiplier = Math.min(1 + smoothedVelocity * 0.3, 1.8); // 최대 1.8배로 제한
 
     // 드래그 민감도: 화면 너비/높이의 10% 이동 시 한 슬롯 이동
     const baseSensitivityX = window.innerWidth * 0.1;

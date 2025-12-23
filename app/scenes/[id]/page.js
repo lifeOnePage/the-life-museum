@@ -480,7 +480,7 @@ export default function ViewPage() {
 
     // 드래그 민감도: 화면 너비/높이의 10% 이동 시 한 슬롯 이동
     const sensitivityX = window.innerWidth * 0.1;
-    const sensitivityY = window.innerHeight * 0.1;
+    const sensitivityY = window.innerHeight * 0.025;
 
     // X축 델타 (좌우)
     const deltaX = e.clientX - dragStateRef.current.startX;
@@ -494,7 +494,7 @@ export default function ViewPage() {
     const totalSlotsDelta = slotsDeltaX + slotsDeltaY;
     const slotsDelta = Math.round(totalSlotsDelta);
 
-    let newIndex = dragStateRef.current.startIndex + slotsDelta;
+    let newIndex = dragStateRef.current.startIndex - slotsDelta;
 
     // 잠금 상태일 때 범위 제한
     if (lockedItemId) {

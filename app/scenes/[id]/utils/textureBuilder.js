@@ -67,7 +67,24 @@ export function buildTextureData(profile, items) {
   console.log('Total textures:', textures.length);
   console.log('Item ranges:', itemRanges);
 
-  return { textures, itemRanges };
+  // 텍스처 배열을 반대로 뒤집기
+  const reversedTextures = [...textures].reverse();
+
+  // itemRanges도 반대로 계산
+  const reversedItemRanges = {};
+  const totalLength = textures.length;
+
+  Object.keys(itemRanges).forEach((itemId) => {
+    const originalRange = itemRanges[itemId];
+    reversedItemRanges[itemId] = {
+      start: totalLength - 1 - originalRange.end,
+      end: totalLength - 1 - originalRange.start,
+    };
+  });
+
+  console.log('Reversed item ranges:', reversedItemRanges);
+
+  return { textures: reversedTextures, itemRanges: reversedItemRanges };
 }
 
 /**

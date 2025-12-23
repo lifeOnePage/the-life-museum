@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 const RADIUS = 6;
 const PLANE_W = 1;
 const PLANE_H = 0.8;
-const CAM_Y = 2;
+const CAM_Y = 4;
 const CAM_Z = 20;
 
 // 프록시 함수
@@ -173,6 +173,7 @@ function ExhibitionRingInner({
   currentIndex = 0,
   onCurrentIndexChange,
   exhibitionScreen = "ring",
+  isPaused = false,
 }) {
   const N = Math.max(1, slots.length);
   const step = useMemo(() => (Math.PI * 2) / N, [N]);
@@ -212,10 +213,10 @@ function ExhibitionRingInner({
   //   prevExhibitionScreen.current = exhibitionScreen;
   // }, [exhibitionScreen]);
 
-  // 다음 컨텐츠가 있는 슬롯 찾기 (빈 슬롯 건너뛰기)
+  // 다음 컨텐츠가 있는 슬롯 찾기 (빈 슬롯 건너뛰기) - 역방향 회전
   const findNextContentSlot = (currentIdx) => {
     for (let offset = 1; offset < N; offset++) {
-      const nextIdx = (currentIdx + offset) % N;
+      const nextIdx = (currentIdx - offset + N) % N; // 역방향으로 변경
       const nextSlot = slots[nextIdx];
 
       // 컨텐츠가 있는 슬롯인지 확인
@@ -259,7 +260,8 @@ function ExhibitionRingInner({
 
     // 자동 회전: interval마다 다음 컨텐츠 슬롯으로 이동 (빈 슬롯 건너뛰기)
     // 애니메이션 중에는 자동 회전 중지 - 항상 회전하도록 변경
-    if (exhibitionScreen === "ring") {
+    // isPaused가 true일 때는 회전 중지 (편집 패널이 열렸을 때)
+    if (exhibitionScreen === "ring" && !isPaused) {
       const now = Date.now();
       if (now - lastUpdateTime.current >= interval) {
         const nextIndex = findNextContentSlot(currentIndex);
@@ -565,6 +567,7 @@ export default function ExhibitionRing({
   currentIndex = 0,
   onCurrentIndexChange,
   exhibitionScreen = "ring",
+  isPaused = false,
 }) {
   console.log(profile)
   const [labelPositions, setLabelPositions] = useState([]);
@@ -631,6 +634,7 @@ export default function ExhibitionRing({
             currentIndex={currentIndex}
             onCurrentIndexChange={onCurrentIndexChange}
             exhibitionScreen={exhibitionScreen}
+            isPaused={isPaused}
           />
         </Suspense>
       </Canvas>
@@ -644,19 +648,19 @@ export default function ExhibitionRing({
           <div className="flex flex-col items-center gap-6">
             {/* 선택된 이미지/비디오 - 고정 크기 영역 */}
             {selectedSlot.url && (
-              <div className="w-[600px] h-[340px] flex items-center justify-center">
+              <div className="h-[50vh] aspect-[25/17] flex items-center justify-center">
                 {selectedSlot.kind === "image" || selectedSlot.type === "image" ? (
                   <img
                     src={proxify(selectedSlot.url)}
                     alt={selectedItem.title || ""}
-                    className="max-w-full max-h-full object-contain"
+                    className="w-full h-full object-contain"
                     crossOrigin="anonymous"
                     style={{ filter: 'drop-shadow(0px 40px 40px rgba(0, 0, 0, 0.2))' }}
                   />
                 ) : selectedSlot.kind === "video" || selectedSlot.type === "video" ? (
                   <video
                     src={proxify(selectedSlot.url)}
-                    className="max-w-full max-h-full object-contain"
+                    className="w-full h-full object-contain"
                     autoPlay
                     loop
                     muted
@@ -670,7 +674,7 @@ export default function ExhibitionRing({
 
             {/* 아이템 상세 정보 - 항상 같은 높이에 표시 */}
             <div
-              className={`w-[600px] text-center px-8 rounded-xl transition-colors duration-300 ${
+              className={`w-[calc(50vh*25/17)] text-center mt-4 px-8 rounded-xl transition-colors duration-300 ${
                 isDarkMode ? " text-white" : " text-black"
               }`}
             >
@@ -679,10 +683,13 @@ export default function ExhibitionRing({
                 <div className="relative inline-block px-4">
                   {/* 기본 텍스트 */}
                   <h2
-                    className={`text-2xl font-medium ${
+                    className={`font-medium ${
                       isDarkMode ? "text-white" : "text-black"
                     }`}
-                    style={{ letterSpacing: "-0.05rem" }}
+                    style={{
+                      letterSpacing: "-0.05rem",
+                      fontSize: "clamp(1.25rem, 2.8vh, 4rem)"
+                    }}
                   >
                     {selectedItem.title}
                   </h2>
@@ -698,10 +705,13 @@ export default function ExhibitionRing({
                     }`}
                   >
                     <h2
-                      className={`text-2xl font-medium whitespace-nowrap ${
+                      className={`font-medium whitespace-nowrap ${
                         isDarkMode ? "text-black" : "text-white"
                       }`}
-                      style={{ letterSpacing: "-0.05rem" }}
+                      style={{
+                        letterSpacing: "-0.05rem",
+                        fontSize: "clamp(1.25rem, 2.8vh, 4rem)"
+                      }}
                     >
                       {selectedItem.title}
                     </h2>
@@ -712,10 +722,13 @@ export default function ExhibitionRing({
               {/* 날짜 */}
               {selectedItem.date && (
                 <p
-                  className={`text-sm mt-2 ${
+                  className={`mt-2 ${
                     isDarkMode ? "text-white/70" : "text-black/70"
                   }`}
-                  style={{ letterSpacing: "-0.05rem" }}
+                  style={{
+                    letterSpacing: "-0.05rem",
+                    fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
+                  }}
                 >
                   {selectedItem.date}
                 </p>
@@ -724,10 +737,13 @@ export default function ExhibitionRing({
               {/* 설명 */}
               {selectedItem.desc && (
                 <p
-                  className={`text-base leading-relaxed mt-2 ${
+                  className={`leading-relaxed mt-2 ${
                     isDarkMode ? "text-white/80" : "text-black/80"
                   }`}
-                  style={{ letterSpacing: "-0.05rem" }}
+                  style={{
+                    letterSpacing: "-0.05rem",
+                    fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
+                  }}
                 >
                   {selectedItem.desc}
                 </p>
@@ -829,15 +845,19 @@ export default function ExhibitionRing({
           isDarkMode ? "border-white/20" : "border-black/20"
         }`}>
           <div className="flex flex-col gap-1">
-            <div className={`text-sm font-bold ${isDarkMode ? "text-white" : "text-black"}`}>
+            <div
+              className={`font-bold ${isDarkMode ? "text-white" : "text-black"}`}
+              style={{ fontSize: "clamp(0.75rem, 1.5vh, 1.25rem)" }}
+            >
               {profile?.recordFormat === "entire-life" ? "NAME" : "TITLE"}
             </div>
             <div
-              className={`text-sm leading-tight whitespace-nowrap ${
+              className={`leading-tight whitespace-nowrap ${
                 isDarkMode ? "text-white" : "text-black"
               }`}
               style={{
                 letterSpacing: "-0.05rem",
+                fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
               }}
             >
               {profile?.name || "-"}
@@ -850,14 +870,18 @@ export default function ExhibitionRing({
           isDarkMode ? "border-white/20" : "border-black/20"
         }`}>
           <div className="flex flex-col gap-1">
-            <div className={`text-sm font-bold ${isDarkMode ? "text-white/90" : "text-black/90"}`}>
+            <div
+              className={`font-bold ${isDarkMode ? "text-white/90" : "text-black/90"}`}
+              style={{ fontSize: "clamp(0.75rem, 1.5vh, 1.25rem)" }}
+            >
               {profile?.recordFormat === "entire-life" ? "BIRTH" : "DATE"}
             </div>
             <div
-              className={`text-sm flex flex-col whitespace-nowrap ${isDarkMode ? "text-white/90" : "text-black/90"}`}
+              className={`flex flex-col whitespace-nowrap ${isDarkMode ? "text-white/90" : "text-black/90"}`}
               style={{
                 letterSpacing: "-0.05rem",
-                lineHeight: "1.2"
+                lineHeight: "1.2",
+                fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
               }}
             >
               {profile?.recordFormat === "entire-life" ? (
@@ -877,12 +901,18 @@ export default function ExhibitionRing({
         {/* 생애문 - 나머지 공간 */}
         <div className="flex-1 h-full flex items-start justify-center pl-4">
           <div className="flex flex-col gap-1 w-full">
-            <div className={`text-sm font-bold ${isDarkMode ? "text-white/80" : "text-black/80"}`}>
+            <div
+              className={`font-bold ${isDarkMode ? "text-white/80" : "text-black/80"}`}
+              style={{ fontSize: "clamp(0.75rem, 1.5vh, 1.25rem)" }}
+            >
               {profile?.recordFormat === "entire-life" ? "BIOGRAPHY" : "DESCRIPTION"}
             </div>
             <div
-              className={`text-sm leading-relaxed ${isDarkMode ? "text-white/80" : "text-black/80"} break-words line-clamp-4`}
-              style={{ letterSpacing: "-0.05rem" }}
+              className={`leading-relaxed ${isDarkMode ? "text-white/80" : "text-black/80"} break-words line-clamp-4`}
+              style={{
+                letterSpacing: "-0.05rem",
+                fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
+              }}
             >
               {profile?.biography || "-"}
             </div>

@@ -365,6 +365,7 @@ export default function ViewPage() {
     lastTime: 0,        // 마지막 이동 시간
     velocity: 0,        // 현재 속도
   });
+  const isRingDraggingRef = useRef(false); // 링 드래그 중 플래그 (타임라인 간섭 방지용)
 
   // 프로그래매틱 스크롤 중인지 추적 (순환 참조 방지)
   const isTimelineScrollingRef = useRef(false);
@@ -409,9 +410,10 @@ export default function ViewPage() {
 
       setItemOpacities(newOpacities);
 
-      // 프로그래매틱 스크롤 중이 아닐 때만 아이템 선택 (순환 참조 방지)
+      // 프로그래매틱 스크롤 중이 아니고 링 드래그 중이 아닐 때만 아이템 선택
       if (
         !isTimelineScrollingRef.current &&
+        !isRingDraggingRef.current &&
         closestItem &&
         closestItem.id !== currentItem?.id
       ) {
@@ -467,6 +469,7 @@ export default function ViewPage() {
 
   // 3D 링 드래그 핸들러 (모바일)
   const handleRingPointerDown = (e) => {
+    isRingDraggingRef.current = true; // 드래그 시작 플래그
     dragStateRef.current = {
       isDragging: true,
       startX: e.clientX,
@@ -500,7 +503,7 @@ export default function ViewPage() {
 
     // 드래그 민감도: 화면 너비/높이의 10% 이동 시 한 슬롯 이동
     const baseSensitivityX = window.innerWidth * 0.1;
-    const baseSensitivityY = window.innerHeight * 0.025;
+    const baseSensitivityY = window.innerHeight * 0.04;
 
     // 속도 배율 적용
     const sensitivityX = baseSensitivityX / velocityMultiplier;
@@ -550,6 +553,12 @@ export default function ViewPage() {
 
   const handleRingPointerUp = () => {
     dragStateRef.current.isDragging = false;
+
+    // 드래그 종료 후 약간의 지연을 두고 플래그 해제
+    // (타임라인 애니메이션 완료 대기)
+    setTimeout(() => {
+      isRingDraggingRef.current = false;
+    }, 300);
   };
 
   // 수동 네비게이션 중인지 추적

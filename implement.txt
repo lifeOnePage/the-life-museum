@@ -1,0 +1,522 @@
+# 모바일 링 조작 시스템 구현 문서
+
+## 1. 개요
+
+모바일 3D 링 회전 시스템은 사용자의 터치 드래그 입력을 3D 링의 회전으로 변환하는 인터랙션 시스템입니다.
+속도 기반 민감도 조절, 아이템 잠금 범위 제한, 햅틱/사운드 피드백 등의 기능을 포함합니다.
+
+**주요 특징:**
+- 2D 터치 입력(X, Y축)을 모두 활용한 직관적인 회전 제어
+- 드래그 속도에 따른 동적 민감도 조절
+- 아이템 잠금 시 해당 아이템 내에서만 회전 제한
+- 타임라인과의 실시간 동기화
+
+---
+
+## 2. 핵심 상태 관리
+
+### 2.1 드래그 상태 (dragStateRef)
+
+```javascript
+const dragStateRef = useRef({
+  isDragging: false,      // 드래그 진행 여부
+  startX: 0,              // 드래그 시작 X 좌표
+  startY: 0,              // 드래그 시작 Y 좌표
+  lastX: 0,               // 이전 프레임 X 좌표
+  lastY: 0,               // 이전 프레임 Y 좌표
+  startIndex: 0,          // 드래그 시작 시점의 leftIndex
+  lastTime: 0,            // 이전 프레임 시간 (ms)
+  velocity: 0,            // 현재 드래그 속도 (픽셀/ms)
+});
+```
+
+**왜 useRef를 사용하나?**
+- 매 프레임마다 업데이트되는 값들이므로 리렌더링 방지
+- 빠른 접근과 업데이트가 필요한 실시간 인터랙션에 적합
+
+### 2.2 플래그 관리
+
+```javascript
+const isRingDraggingRef = useRef(false);           // 링 드래그 중 플래그
+const isTimelineAnimatingRef = useRef(false);      // 타임라인 애니메이션 중 플래그
+const isTimelineScrollingRef = useRef(false);      // 타임라인 스크롤 중 플래그
+```
+
+**역할:**
+- 순환 참조 방지: 링 회전 → 타임라인 업데이트 → 링 회전 무한 루프 차단
+- 각 인터랙션 소스를 구분하여 적절한 피드백만 실행
+
+---
+
+## 3. 이벤트 핸들러
+
+### 3.1 PointerDown - 드래그 시작 (lines 682-694)
+
+```javascript
+const handleRingPointerDown = (e) => {
+  isRingDraggingRef.current = true; // 드래그 시작 플래그
+  dragStateRef.current = {
+    isDragging: true,
+    startX: e.clientX,
+    startY: e.clientY,
+    lastX: e.clientX,
+    lastY: e.clientY,
+    startIndex: leftIndex,           // 현재 표시 중인 텍스처 인덱스 저장
+    lastTime: Date.now(),
+    velocity: 0,
+  };
+};
+```
+
+**동작:**
+1. 사용자가 화면을 터치하면 현재 좌표와 시간을 기록
+2. `startIndex`에 현재 `leftIndex` 저장 → 이 값을 기준으로 회전량 계산
+3. `isRingDraggingRef` 플래그 설정 → 다른 시스템에서 링 드래그 중임을 인지
+
+### 3.2 PointerMove - 드래그 중 회전 (lines 696-763)
+
+#### 3.2.1 속도 계산
+
+```javascript
+const currentTime = Date.now();
+const timeDelta = currentTime - dragStateRef.current.lastTime;
+
+if (timeDelta === 0) return; // 동일 시간 호출 무시
+
+const distanceX = e.clientX - dragStateRef.current.lastX;
+const distanceY = e.clientY - dragStateRef.current.lastY;
+const totalDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+const velocity = totalDistance / timeDelta; // 픽셀/ms
+```
+
+**계산 과정:**
+1. 이전 프레임과 현재 프레임 간의 시간차 계산
+2. X, Y 이동거리로 유클리드 거리 계산
+3. 거리 / 시간 = 속도 (픽셀/밀리초)
+
+**왜 속도를 계산하나?**
+- 빠른 스와이프 → 더 민감하게 반응 (한 번에 많이 회전)
+- 느린 드래그 → 정밀하게 제어 가능
+
+#### 3.2.2 속도 기반 민감도 배율
+
+```javascript
+const smoothedVelocity = dragStateRef.current.velocity * 0.7 + velocity * 0.3;
+const velocityMultiplier = Math.min(1 + smoothedVelocity * 0.3, 1.8);
+```
+
+**부드러운 블렌딩 (Smoothing):**
+- 이전 속도 70% + 현재 속도 30% 혼합
+- 급격한 속도 변화 방지 → 자연스러운 가속/감속
+
+**배율 제한:**
+- 기본 1배에서 최대 1.8배까지만 증가
+- 너무 과도한 회전 방지
+
+#### 3.2.3 기본 민감도 설정
+
+```javascript
+const baseSensitivityX = window.innerWidth * 0.1;   // 화면 너비의 10%
+const baseSensitivityY = window.innerHeight * 0.04; // 화면 높이의 4%
+
+const sensitivityX = baseSensitivityX / velocityMultiplier;
+const sensitivityY = baseSensitivityY / velocityMultiplier;
+```
+
+**의미:**
+- **X축 (좌우)**: 화면 너비의 10%를 드래그하면 1슬롯 이동
+- **Y축 (상하)**: 화면 높이의 4%를 드래그하면 1슬롯 이동
+- 속도가 빠르면 민감도가 높아짐 (나누기 때문에 더 작은 이동으로도 1슬롯 회전)
+
+**왜 Y축이 더 민감한가?**
+- 모바일은 세로로 길기 때문에 상하 스와이프가 더 자주 발생
+- Y축 민감도를 높여서 수직 스와이프에 더 잘 반응
+
+#### 3.2.4 회전량 계산
+
+```javascript
+const deltaX = e.clientX - dragStateRef.current.startX;
+const slotsDeltaX = -deltaX / sensitivityX;
+
+const deltaY = e.clientY - dragStateRef.current.startY;
+const slotsDeltaY = -deltaY / sensitivityY;
+
+const totalSlotsDelta = slotsDeltaX + slotsDeltaY;
+const slotsDelta = Math.round(totalSlotsDelta);
+```
+
+**계산 흐름:**
+1. 시작점으로부터의 총 이동거리 계산 (deltaX, deltaY)
+2. 각 축별로 슬롯 이동량 계산 (이동거리 / 민감도)
+3. X축과 Y축 회전량을 **합산** → 대각선 드래그도 반영
+4. 정수로 반올림 → 실제 슬롯은 정수 단위
+
+**왜 음수(-)를 곱하나?**
+- 오른쪽으로 드래그 → 링은 왼쪽으로 회전 (자연스러운 물리적 반응)
+- 아래로 드래그 → 링은 위로 회전
+
+#### 3.2.5 인덱스 계산 및 범위 제한
+
+```javascript
+dragStateRef.current.lastX = e.clientX;
+dragStateRef.current.lastY = e.clientY;
+dragStateRef.current.lastTime = currentTime;
+dragStateRef.current.velocity = velocity;
+
+let newIndex = dragStateRef.current.startIndex - slotsDelta;
+
+// 잠금 상태일 때 범위 제한
+if (lockedItemId) {
+  const lockedRange = textureData.itemRanges[lockedItemId];
+  if (lockedRange) {
+    newIndex = Math.max(
+      lockedRange.start,
+      Math.min(lockedRange.end, newIndex)
+    );
+  }
+} else {
+  // 잠금 해제 상태: 전체 텍스처 범위 내에서만 이동
+  newIndex = Math.max(0, Math.min(lastContentIndex, newIndex));
+}
+
+if (newIndex !== leftIndex) {
+  setLeftIndex(newIndex);
+}
+```
+
+**동작:**
+1. 현재 프레임 정보를 `lastX`, `lastY`, `lastTime`에 저장 → 다음 프레임 속도 계산에 사용
+2. 시작 인덱스에서 회전량을 뺀 값이 새 인덱스
+3. **잠금 모드**: 해당 아이템의 시작~끝 범위 내로만 제한
+4. **일반 모드**: 0 ~ 마지막 콘텐츠 인덱스 범위 내로만 제한
+5. 인덱스가 실제로 변경된 경우에만 `setLeftIndex` 호출 → 불필요한 리렌더링 방지
+
+### 3.3 PointerUp - 드래그 종료 (lines 765-773)
+
+```javascript
+const handleRingPointerUp = () => {
+  dragStateRef.current.isDragging = false;
+
+  // 드래그 종료 후 약간의 지연을 두고 플래그 해제
+  setTimeout(() => {
+    isRingDraggingRef.current = false;
+  }, 300);
+};
+```
+
+**왜 300ms 지연?**
+- 드래그 종료 직후 타임라인 애니메이션이 트리거될 수 있음
+- 애니메이션이 완료될 때까지 "링 드래그 중" 플래그 유지
+- 타임라인이 링 드래그에 의한 변경임을 인지하도록 함
+
+---
+
+## 4. SceneRing 컴포넌트와의 통합
+
+### 4.1 드래그 영역 설정 (lines 1252-1260)
+
+```javascript
+{/* 드래그 영역 - SceneRing 위에 투명하게 */}
+<div
+  className="absolute inset-0 z-5"
+  onPointerDown={handleRingPointerDown}
+  onPointerMove={handleRingPointerMove}
+  onPointerUp={handleRingPointerUp}
+  onPointerLeave={handleRingPointerUp}
+  style={{ touchAction: "none" }}
+/>
+```
+
+**구조:**
+- SceneRing 위에 투명한 레이어를 배치
+- 모든 터치/마우스 이벤트를 이 레이어에서 캡처
+- `touchAction: "none"` → 브라우저 기본 스크롤/줌 동작 차단
+
+**왜 SceneRing에 직접 붙이지 않나?**
+- SceneRing은 Three.js Canvas → 이벤트 처리가 복잡
+- 별도의 DOM 레이어로 분리하여 이벤트 핸들링 단순화
+
+### 4.2 SceneRing에 leftIndex 전달 (lines 1237-1249)
+
+```javascript
+<SceneRing
+  slots={textureData.textures}
+  leftIndex={leftIndex}                    // 현재 표시할 텍스처 인덱스
+  onLeftmostChange={handleLeftmostChange}  // 링 자체 회전 시 콜백
+  snapSpeed={15}
+  popMode="band"
+  popSpanSlots={1.2}
+  bulge={1.2}
+  isDesktop={false}
+  lockedItemId={lockedItemId}
+  cameraPosition={{ y: 3, z: 8 }}
+  planeRotationX={-0.3}
+/>
+```
+
+**데이터 흐름:**
+1. 사용자 드래그 → `handleRingPointerMove` → `setLeftIndex(newIndex)`
+2. `leftIndex` 상태 변경 → SceneRing 리렌더링
+3. SceneRing이 `leftIndex`에 맞춰 3D 회전 애니메이션 실행
+
+---
+
+## 5. 타임라인과의 동기화
+
+### 5.1 leftIndex 변경 시 타임라인 업데이트 (lines 646-679)
+
+```javascript
+useEffect(() => {
+  if (
+    currentItem &&
+    prevItemRef.current?.id !== currentItem.id &&
+    !currentItem.isProfile &&
+    !isTimelineAnimatingRef.current
+  ) {
+    const itemElement = itemRefs.current[currentItem.id];
+    const timelineElement = timelineRef.current;
+
+    if (itemElement && timelineElement) {
+      const timelineRect = timelineElement.getBoundingClientRect();
+      const itemRect = itemElement.getBoundingClientRect();
+      const timelineCenterY = timelineRect.top + timelineRect.height / 2;
+      const itemCenterY = itemRect.top + itemRect.height / 2;
+      const scrollOffset = itemCenterY - timelineCenterY;
+
+      isTimelineScrollingRef.current = true;
+
+      timelineElement.scrollBy({
+        top: scrollOffset,
+        behavior: "smooth",
+      });
+
+      setTimeout(() => {
+        isTimelineScrollingRef.current = false;
+      }, 600);
+    }
+  }
+  prevItemRef.current = currentItem;
+}, [currentItem]);
+```
+
+**동작 순서:**
+1. 링 회전으로 `leftIndex` 변경 → `currentItem` 계산 → 새 아이템으로 변경
+2. `currentItem` 변경 감지 (useEffect 트리거)
+3. 타임라인 요소 위치 계산
+4. 타임라인을 스크롤하여 해당 아이템을 중앙으로 이동
+5. 600ms 후 스크롤 플래그 해제
+
+**순환 참조 방지:**
+- `!isTimelineAnimatingRef.current` 체크로 타임라인 애니메이션 중에는 실행 안 함
+
+### 5.2 링 회전 시 햅틱/사운드 피드백 (lines 630-644)
+
+```javascript
+useEffect(() => {
+  const prevIndex = prevLeftIndexRef.current;
+
+  if (prevIndex === null) {
+    prevLeftIndexRef.current = leftIndex;
+    return;
+  }
+
+  // leftIndex가 변경되고, 해당하는 currentItem도 변경되었을 때
+  const prevItem = items.find((item) => {
+    const range = textureData.itemRanges[item.id];
+    return range && prevIndex >= range.start && prevIndex <= range.end;
+  });
+
+  if (currentItem?.id !== prevItem?.id) {
+    console.log("아이템 변경 감지 → 햅틱/사운드");
+    playFeedback();
+  }
+
+  prevLeftIndexRef.current = leftIndex;
+}, [leftIndex, items, textureData, playFeedback]);
+```
+
+**피드백 조건:**
+- `leftIndex`가 변경되었고
+- 이전 아이템과 현재 아이템이 다를 때만 실행
+- 같은 아이템 내에서 이미지만 변경될 때는 피드백 없음
+
+**playFeedback 함수 (lines 380-397):**
+```javascript
+const playFeedback = useCallback(() => {
+  // 햅틱 시도
+  if (navigator.vibrate) {
+    navigator.vibrate(50); // 50ms 진동
+  }
+
+  // 사운드 재생
+  try {
+    const audio = new Audio("/sounds/paper.mp3");
+    audio.volume = 0.5;
+    audio.play().catch((err) => {
+      console.debug("Audio play failed:", err.message);
+    });
+  } catch (err) {
+    console.debug("Audio creation failed:", err);
+  }
+}, []);
+```
+
+---
+
+## 6. 아이템 잠금 기능
+
+### 6.1 잠금 토글 (lines 788-817)
+
+```javascript
+const handleToggleLock = useCallback(() => {
+  if (!currentItem || currentItem.isProfile) {
+    return;
+  }
+
+  if (manualNavigationTimeoutRef.current) {
+    clearTimeout(manualNavigationTimeoutRef.current);
+  }
+  isManualNavigationRef.current = true;
+
+  if (lockedItemId === currentItem.id) {
+    // 잠금 해제
+    setLockedItemId(null);
+  } else {
+    // 잠금 설정 - 현재 아이템의 시작으로 이동
+    const itemRange = textureData.itemRanges[currentItem.id];
+    if (itemRange && leftIndex < itemRange.start) {
+      setLeftIndex(itemRange.start);
+    } else if (itemRange && leftIndex > itemRange.end) {
+      setLeftIndex(itemRange.start);
+    }
+    setLockedItemId(currentItem.id);
+  }
+
+  // 플래그 해제
+  manualNavigationTimeoutRef.current = setTimeout(() => {
+    isManualNavigationRef.current = false;
+  }, 1000);
+}, [currentItem, lockedItemId, leftIndex, textureData.itemRanges]);
+```
+
+**동작:**
+1. 이미 잠긴 아이템을 다시 클릭 → 잠금 해제
+2. 다른 아이템 클릭 → 해당 아이템을 잠금, 범위 밖이면 시작점으로 이동
+3. `isManualNavigationRef` 플래그로 1초간 다른 자동 이동 차단
+
+### 6.2 드래그 중 잠금 범위 제한 (lines 747-754)
+
+```javascript
+if (lockedItemId) {
+  const lockedRange = textureData.itemRanges[lockedItemId];
+  if (lockedRange) {
+    newIndex = Math.max(
+      lockedRange.start,
+      Math.min(lockedRange.end, newIndex)
+    );
+  }
+}
+```
+
+**효과:**
+- 사용자가 아무리 드래그해도 잠긴 아이템의 이미지들만 보임
+- 다른 아이템으로 넘어가지 않음
+
+---
+
+## 7. 최적화 및 성능 고려사항
+
+### 7.1 useRef로 상태 관리
+- 매 프레임마다 업데이트되는 드래그 상태를 `useRef`로 관리
+- 리렌더링 없이 빠른 업데이트 가능
+
+### 7.2 속도 블렌딩
+```javascript
+const smoothedVelocity = dragStateRef.current.velocity * 0.7 + velocity * 0.3;
+```
+- 급격한 속도 변화를 부드럽게 처리
+- 자연스러운 가속/감속 느낌
+
+### 7.3 조건부 상태 업데이트
+```javascript
+if (newIndex !== leftIndex) {
+  setLeftIndex(newIndex);
+}
+```
+- 인덱스가 실제로 변경될 때만 `setState` 호출
+- 불필요한 리렌더링 방지
+
+### 7.4 타임아웃을 통한 플래그 관리
+- 드래그 종료 300ms 후 플래그 해제
+- 타임라인 애니메이션 완료 대기
+
+---
+
+## 8. 사용자 경험 (UX) 설계
+
+### 8.1 속도 기반 민감도
+- **느린 드래그**: 정밀한 제어, 이미지 하나씩 확인
+- **빠른 스와이프**: 빠르게 이동, 여러 아이템 건너뛰기
+
+### 8.2 2축 입력 통합
+- X축(좌우) + Y축(상하) 동시 활용
+- 대각선 드래그도 자연스럽게 처리
+
+### 8.3 햅틱/사운드 피드백
+- 아이템이 바뀔 때만 피드백
+- 과도한 피드백 방지 (같은 아이템 내 이미지 변경 시 무음)
+
+### 8.4 잠금 모드
+- 특정 아이템에 집중하고 싶을 때 사용
+- 실수로 다른 아이템으로 넘어가는 것 방지
+
+---
+
+## 9. 코드 위치 참조
+
+| 기능 | 함수/변수명 | 라인 |
+|-----|-----------|------|
+| 드래그 상태 관리 | `dragStateRef` | 376 |
+| 햅틱/사운드 재생 | `playFeedback` | 380-397 |
+| 순차 스크롤 애니메이션 | `scrollToItemWithSteps` | 462-518 |
+| 타임라인 스크롤 감지 | `useEffect (scroll)` | 525-611 |
+| 링 회전 시 피드백 | `useEffect (leftIndex)` | 630-644 |
+| 아이템 변경 시 타임라인 동기화 | `useEffect (currentItem)` | 648-679 |
+| 드래그 시작 | `handleRingPointerDown` | 682-694 |
+| 드래그 중 회전 계산 | `handleRingPointerMove` | 696-763 |
+| 드래그 종료 | `handleRingPointerUp` | 765-773 |
+| 잠금 토글 | `handleToggleLock` | 788-817 |
+| 드래그 영역 렌더링 | `<div onPointerDown...>` | 1252-1260 |
+| SceneRing 컴포넌트 | `<SceneRing>` | 1237-1249 |
+
+---
+
+## 10. 트러블슈팅
+
+### 문제: 드래그가 너무 민감하거나 둔감함
+**해결:** `baseSensitivityX`, `baseSensitivityY` 값 조정 (lines 719-720)
+
+### 문제: 속도 변화가 너무 급격함
+**해결:** 속도 블렌딩 비율 조정 (line 714-715)
+- 현재: 이전 70% + 현재 30%
+- 더 부드럽게: 이전 80% + 현재 20%
+
+### 문제: 타임라인과 링이 계속 왔다갔다 함 (순환 참조)
+**해결:** 플래그 확인
+- `isRingDraggingRef`
+- `isTimelineAnimatingRef`
+- `isTimelineScrollingRef`
+
+### 문제: 햅틱이 너무 자주 발생함
+**해결:** 아이템 변경 감지 로직 확인 (lines 630-644)
+- 현재는 아이템 변경 시에만 발생하도록 되어 있음
+
+---
+
+## 11. 향후 개선 가능 사항
+
+1. **관성 스크롤**: 드래그 종료 후 속도에 따라 계속 회전
+2. **스냅 포인트**: 특정 지점에서 자석처럼 붙는 효과
+3. **제스처 인식**: 더블 탭, 롱 프레스 등 추가 제스처
+4. **접근성**: 키보드/스크린 리더 지원
+5. **분석**: 사용자 드래그 패턴 수집 및 민감도 자동 조정

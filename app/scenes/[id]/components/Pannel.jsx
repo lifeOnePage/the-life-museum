@@ -39,7 +39,8 @@ export default function Pannel({
   sceneId,
   currentItem,
   lockedItemId,
-  onToggleLock
+  onToggleLock,
+  onHasChangesChange
 }) {
   const [savedItems, setSavedItems] = useState(items);
   const [selectedItem, setSelectedItem] = useState(null);
@@ -57,6 +58,14 @@ export default function Pannel({
 
   const detailEditRef = useRef(null);
   const newItemButtonRef = useRef(null);
+
+  // hasChanges 상태 변경을 부모 컴포넌트에 전달
+  useEffect(() => {
+    if (onHasChangesChange) {
+      const totalHasChanges = hasChanges || listHasChanges || unsavedItemIds.size > 0;
+      onHasChangesChange(totalHasChanges);
+    }
+  }, [hasChanges, listHasChanges, unsavedItemIds, onHasChangesChange]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -141,6 +150,13 @@ export default function Pannel({
   const handleDeleteItem = (itemId) => {
     // 프로필 아이템은 삭제 불가
     if (itemId === "profile") return;
+
+    // 삭제 확인 대화상자
+    const confirmed = window.confirm(
+      "정말 삭제하시겠습니까?\n\n아이템 안의 사진과 내용이 모두 삭제됩니다."
+    );
+
+    if (!confirmed) return;
 
     setItems(prev => prev.filter(item => item.id !== itemId));
     setListHasChanges(true);
@@ -482,7 +498,7 @@ export default function Pannel({
 
     // 일반 프로필 뷰
     return (
-      <div className="w-full max-h-[540px] bg-black-100/20 backdrop-blur-2xl  rounded-tl-[20px] rounded-tr-[20px] flex flex-col">
+      <div className="w-full h-full bg-black-100/20 backdrop-blur-2xl  rounded-tl-[20px] rounded-tr-[20px] flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
@@ -562,7 +578,7 @@ export default function Pannel({
 
   if (selectedItem && (mode !== "view")) {
     return (
-      <div className="w-full max-h-[600px] bg-black-100/20 backdrop-blur-2xl rounded-[20px] overflow-hidden flex flex-col">
+      <div className="w-full h-full bg-black-100/20 backdrop-blur-2xl rounded-[20px] overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={hasChanges}
@@ -589,7 +605,7 @@ export default function Pannel({
 
   if (type === "list"&& (mode === "view")) {
     return (
-      <div className="w-full max-h-[240px] rounded-[20px] overflow-hidden flex flex-col">
+      <div className="w-full h-full rounded-[20px] overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}

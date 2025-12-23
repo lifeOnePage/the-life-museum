@@ -65,24 +65,26 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
           </p>
         </motion.div>
 
-        {/* 오른쪽 장식 텍스트 (90도 회전) */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
-          className={`absolute top-1/2 -translate-y-1/ translate-x-1/2 ${isMobile ? 'right-6' : 'right-10'}`}
-        >
-          <p
-            className={`font-bold text-white/40 whitespace-nowrap ${isMobile ? 'text-[0.65rem]' : 'text-xs'}`}
-            style={{
-              transform: "rotate(90deg)",
-              transformOrigin: "center center",
-              letterSpacing: "0.4em"
-            }}
+        {/* 오른쪽 장식 텍스트 (90도 회전) - PC 전시모드에서만 표시 */}
+        {!isMobile && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
+            className={`absolute top-1/2 -translate-y-1/ translate-x-1/2 ${isMobile ? 'right-6' : 'right-10'}`}
           >
-            CHRONICLE YOUR STORY
-          </p>
-        </motion.div>
+            <p
+              className={`font-bold text-white/40 whitespace-nowrap ${isMobile ? 'text-[0.65rem]' : 'text-xs'}`}
+              style={{
+                transform: "rotate(90deg)",
+                transformOrigin: "center center",
+                letterSpacing: "0.4em"
+              }}
+            >
+              CHRONICLE YOUR STORY
+            </p>
+          </motion.div>
+        )}
 
         {/* 우하단 텍스트 오버레이 */}
         <motion.div

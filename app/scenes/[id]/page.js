@@ -801,7 +801,7 @@ export default function ViewPage() {
 
     // 드래그 민감도: 화면 너비/높이의 10% 이동 시 한 슬롯 이동
     const baseSensitivityX = window.innerWidth * 0.1;
-    const baseSensitivityY = window.innerHeight * 0.04;
+    const baseSensitivityY = window.innerHeight * 0.025;
 
     // 속도 배율 적용
     const sensitivityX = baseSensitivityX / velocityMultiplier;

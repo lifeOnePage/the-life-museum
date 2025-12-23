@@ -362,6 +362,8 @@ export default function ViewPage() {
     lastX: 0,
     lastY: 0,
     startIndex: 0,
+    lastTime: 0,        // 마지막 이동 시간
+    velocity: 0,        // 현재 속도
   });
 
   // 프로그래매틱 스크롤 중인지 추적 (순환 참조 방지)
@@ -472,15 +474,36 @@ export default function ViewPage() {
       lastX: e.clientX,
       lastY: e.clientY,
       startIndex: leftIndex,
+      lastTime: Date.now(),
+      velocity: 0,
     };
   };
 
   const handleRingPointerMove = (e) => {
     if (!dragStateRef.current.isDragging) return;
 
+    // 속도 계산 (픽셀/밀리초)
+    const currentTime = Date.now();
+    const timeDelta = currentTime - dragStateRef.current.lastTime;
+
+    if (timeDelta === 0) return; // 동일 시간에 호출된 경우 무시
+
+    const distanceX = e.clientX - dragStateRef.current.lastX;
+    const distanceY = e.clientY - dragStateRef.current.lastY;
+    const totalDistance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+    const velocity = totalDistance / timeDelta; // 픽셀/ms
+
+    // 속도에 따른 민감도 배율 (빠를수록 더 많이 회전)
+    // 속도가 0.5 픽셀/ms 이상일 때 배율 증가
+    const velocityMultiplier = Math.min(1 + velocity * 0.5, 3); // 최대 3배
+
     // 드래그 민감도: 화면 너비/높이의 10% 이동 시 한 슬롯 이동
-    const sensitivityX = window.innerWidth * 0.1;
-    const sensitivityY = window.innerHeight * 0.025;
+    const baseSensitivityX = window.innerWidth * 0.1;
+    const baseSensitivityY = window.innerHeight * 0.025;
+
+    // 속도 배율 적용
+    const sensitivityX = baseSensitivityX / velocityMultiplier;
+    const sensitivityY = baseSensitivityY / velocityMultiplier;
 
     // X축 델타 (좌우)
     const deltaX = e.clientX - dragStateRef.current.startX;
@@ -494,6 +517,12 @@ export default function ViewPage() {
     const totalSlotsDelta = slotsDeltaX + slotsDeltaY;
     const slotsDelta = Math.round(totalSlotsDelta);
 
+    // 상태 업데이트
+    dragStateRef.current.lastX = e.clientX;
+    dragStateRef.current.lastY = e.clientY;
+    dragStateRef.current.lastTime = currentTime;
+    dragStateRef.current.velocity = velocity;
+
     let newIndex = dragStateRef.current.startIndex - slotsDelta;
 
     // 잠금 상태일 때 범위 제한
@@ -506,9 +535,10 @@ export default function ViewPage() {
         );
       }
     } else {
+      // console.log(textureData, textureData.textures)
       newIndex = Math.max(
         0,
-        Math.min(textureData.textures.length - 1, newIndex),
+        Math.min(lastContentIndex, newIndex),
       );
     }
 

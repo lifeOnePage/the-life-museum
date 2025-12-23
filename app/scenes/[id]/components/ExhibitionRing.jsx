@@ -8,11 +8,11 @@ import { useVideoTexture } from "@react-three/drei";
 import { motion } from "framer-motion";
 
 // ▶︎ 고정 파라미터
-const RADIUS = 6;
+const RADIUS = 7.5;
 const PLANE_W = 1;
 const PLANE_H = 0.8;
-const CAM_Y = 4;
-const CAM_Z = 20;
+const CAM_Y = 2;
+const CAM_Z = 22;
 
 // 프록시 함수
 function proxify(u) {
@@ -613,7 +613,7 @@ export default function ExhibitionRing({
   }, []);
 
   return (
-    <div className="abolute h-[92vh] w-full">
+    <div className="abolute h-[88vh] w-full">
       <Canvas
         camera={{
           position: [0, CAM_Y, CAM_Z],
@@ -674,7 +674,7 @@ export default function ExhibitionRing({
 
             {/* 아이템 상세 정보 - 항상 같은 높이에 표시 */}
             <div
-              className={`w-[calc(50vh*25/17)] text-center mt-4 px-8 rounded-xl transition-colors duration-300 ${
+              className={`w-[calc(50vh*25/17)] text-center mt-3 px-8 rounded-xl transition-colors duration-300 ${
                 isDarkMode ? " text-white" : " text-black"
               }`}
             >

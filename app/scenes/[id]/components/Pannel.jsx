@@ -308,9 +308,8 @@ export default function Pannel({
         updatedItems = items.map(item =>
           item.isProfile ? item : item
         );
-        // 프로필 다음에 새 아이템 추가
-        const profileIndex = updatedItems.findIndex(item => item.isProfile);
-        updatedItems.splice(profileIndex + 1, 0, newItem);
+        // 맨 뒤에 새 아이템 추가
+        updatedItems.push(newItem);
         setItems(updatedItems);
       } else if (selectedItem) {
         // 기존 아이템 업데이트

@@ -7,7 +7,8 @@ import { TbRefresh, TbRefreshOff } from "react-icons/tb";
 import { MdLock, MdLockOpen } from "react-icons/md";
 import Pannel from "./components/Pannel";
 import SceneRing from "./components/SceneRing";
-import ExhibitionRing from "./components/ExhibitionRing";
+// import ExhibitionRing from "./components/ExhibitionRing"; // 원래 버전 (왼쪽 선택)
+import ExhibitionRing from "./components/ExhibitionRingFront"; // 새 버전 (앞쪽 선택)
 import ProfileDetailScreen from "./components/ProfileDetailScreen";
 import RingSlider from "./components/RingSlider";
 import ProfileCurtain from "./components/ProfileCurtain";
@@ -36,6 +37,7 @@ export default function ViewPage() {
   const [enableProfileSwitch, setEnableProfileSwitch] = useState(false); // 프로필 전환 활성화 여부 - 회전 기반 로직 사용
   const [isExhibitionPanelOpen, setIsExhibitionPanelOpen] = useState(false); // 전시 모드 패널 표시 여부
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 전시 모드 패널 저장되지 않은 변경사항
+  const [isSlowRotation, setIsSlowRotation] = useState(false); // 한 바퀴 완료 후 느린 회전
   const [lockedItemId, setLockedItemId] = useState(null); // 잠금된 아이템 ID (모바일 타임라인용)
   const [curtainY, setCurtainY] = useState(0); // 모바일 커튼 Y 위치 (0 = 내려옴, -100 = 올라감)
   const [desktopCurtainY, setDesktopCurtainY] = useState(-100); // 데스크탑 프로필 커튼 Y 위치 (0 = 내려옴, -100 = 올라감)
@@ -267,9 +269,10 @@ export default function ViewPage() {
   }, [isExhibitionMode, profileIndex]);
 
   // 링 회전 추적 (한 바퀴 돌면 프로필 커튼 표시)
-  const visitedItemsRef = useRef(new Set());
+  const prevExhibitionIndexRef = useRef(exhibitionCurrentIndex);
   const rotationCompleteRef = useRef(false);
   const profileCurtainTimerRef = useRef(null);
+  const slowRotationTimerRef = useRef(null); // 느린 회전 후 커튼 표시 타이머
   const hasLeftProfileRef = useRef(false); // 프로필에서 벗어났는지 추적
 
   // 전시 모드에서 인덱스 변경 시 회전 추적
@@ -277,61 +280,71 @@ export default function ViewPage() {
     if (!isExhibitionMode || exhibitionScreen !== "ring") return;
 
     const currentSlot = textureData.textures[exhibitionCurrentIndex];
+    const prevIndex = prevExhibitionIndexRef.current;
+
+    // 이전 인덱스 업데이트
+    prevExhibitionIndexRef.current = exhibitionCurrentIndex;
+
     if (!currentSlot || !currentSlot.itemId) return;
 
-    // 컨텐츠가 있는 슬롯만 카운트
-    const hasContent =
-      (currentSlot.kind === "image" || currentSlot.kind === "video") &&
-      currentSlot.url;
-
-    // 프로필이 아닌 아이템을 방문했다면 플래그 설정
-    if (hasContent && currentSlot.itemId !== "profile") {
-      visitedItemsRef.current.add(currentSlot.itemId);
-      hasLeftProfileRef.current = true; // 프로필에서 벗어남
+    // 프로필이 아닌 슬롯을 지나갔다면 플래그 설정
+    if (currentSlot.itemId !== "profile") {
+      hasLeftProfileRef.current = true;
     }
 
-    // 프로필로 돌아왔고, 실제로 다른 아이템들을 거쳐왔고, 모든 아이템을 방문했다면 한 바퀴 완료
+    // 프로필로 돌아왔고, 이전에 프로필이 아닌 곳에서 왔고, 프로필을 벗어난 적이 있다면 한 바퀴 완료
+    // (마지막 컨텐츠 -> 프로필로 넘어가는 순간 감지)
+    // OFF 모드(exhibitionInterval === 0)일 때는 프로필 커튼 표시 안 함
     if (
       currentSlot.itemId === "profile" &&
-      hasLeftProfileRef.current && // 프로필에서 벗어났다가 돌아온 경우만
-      visitedItemsRef.current.size > 0 &&
-      !rotationCompleteRef.current
+      hasLeftProfileRef.current &&
+      prevIndex < profileIndex && // 이전 인덱스가 프로필보다 앞에 있었다면 (루프 완료, 0 -> 59 같은 점프)
+      !rotationCompleteRef.current &&
+      exhibitionInterval !== 0 // OFF 모드가 아닐 때만
     ) {
-      // 전체 아이템 개수 확인 (프로필 제외)
-      const totalItems = items.filter(item => !item.isProfile).length;
+      rotationCompleteRef.current = true;
+      hasLeftProfileRef.current = false; // 다음 회전을 위해 리셋
 
-      // 모든 아이템을 방문했는지 확인
-      if (visitedItemsRef.current.size >= totalItems) {
-        console.log("한 바퀴 회전 완료 - 프로필 커튼 표시");
-        rotationCompleteRef.current = true;
-        visitedItemsRef.current.clear();
-        hasLeftProfileRef.current = false; // 다음 회전을 위해 리셋
-
-        // 프로필 커튼 표시
-        setExhibitionScreen("profile-detail");
-      }
+      // 느린 회전 시작
+      setIsSlowRotation(true);
     }
-  }, [exhibitionCurrentIndex, isExhibitionMode, exhibitionScreen, textureData, items]);
+  }, [exhibitionCurrentIndex, isExhibitionMode, exhibitionScreen, textureData, profileIndex, exhibitionInterval]);
+
+  // 느린 회전 시작 시 2초 후 프로필 커튼 표시
+  useEffect(() => {
+    if (!isExhibitionMode || exhibitionScreen !== "ring" || !isSlowRotation) return;
+
+    slowRotationTimerRef.current = setTimeout(() => {
+      setExhibitionScreen("profile-detail");
+      // 느린 회전 속도는 커튼이 닫힐 때까지 유지
+    }, 2000);
+
+    return () => {
+      if (slowRotationTimerRef.current) {
+        clearTimeout(slowRotationTimerRef.current);
+        slowRotationTimerRef.current = null;
+      }
+    };
+  }, [isExhibitionMode, exhibitionScreen, isSlowRotation]);
 
   // 프로필 커튼 자동 닫기 (25초 후)
   useEffect(() => {
     if (!isExhibitionMode || exhibitionScreen !== "profile-detail") return;
 
-    console.log("프로필 커튼 표시 - 25초 후 자동 닫기 타이머 시작");
-
     profileCurtainTimerRef.current = setTimeout(() => {
-      console.log("프로필 커튼 자동 닫기");
       setExhibitionScreen("ring");
       rotationCompleteRef.current = false;
+      setIsSlowRotation(false); // 느린 회전 종료
+      // 처음(프로필)으로 리셋하여 다시 시작
+      setExhibitionCurrentIndex(profileIndex);
     }, 25000);
 
     return () => {
       if (profileCurtainTimerRef.current) {
-        console.log("프로필 커튼 타이머 정리");
         clearTimeout(profileCurtainTimerRef.current);
       }
     };
-  }, [isExhibitionMode, exhibitionScreen]);
+  }, [isExhibitionMode, exhibitionScreen, profileIndex]);
 
   // 이미지 aspect ratio 상태
   const [imageAspectRatio, setImageAspectRatio] = useState(null);
@@ -1000,7 +1013,7 @@ export default function ViewPage() {
       {/* 전시 모드 - 데스크탑 전용 */}
       {isExhibitionMode && (
         <div
-          className={`absolute inset-0 bottom-8 z-50 hidden transition-colors duration-500 lg:block ${
+          className={`h-screen absolute inset-0 bottom-8 z-50 hidden transition-colors duration-500 lg:block ${
             isDarkMode ? "bg-black" : "bg-white"
           }`}
         >
@@ -1022,6 +1035,9 @@ export default function ViewPage() {
                   : "border-black/20 bg-black/10 text-black hover:bg-black/20"
               }`}
             >
+              <option value={0} className="bg-gray-800">
+                OFF
+              </option>
               <option value={1000} className="bg-gray-800">
                 1초
               </option>
@@ -1168,6 +1184,7 @@ export default function ViewPage() {
                 onCurrentIndexChange={setExhibitionCurrentIndex}
                 exhibitionScreen={exhibitionScreen}
                 isPaused={isExhibitionPanelOpen}
+                isSlowRotation={isSlowRotation}
               />
             </div>
 
@@ -1243,42 +1260,40 @@ export default function ViewPage() {
                   className="w-[92vw] max-w-[600px] h-[92vh] flex flex-col bg-black rounded-2xl shadow-2xl overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  {/* 커스텀 헤더 - 닫기 또는 저장 버튼 */}
+                  {/* 커스텀 헤더 - 닫기 버튼 */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 bg-black shrink-0">
                     <h2 className="text-lg font-bold text-white">편집</h2>
-                    {hasUnsavedChanges ? (
-                      <button
-                        onClick={() => setMode("view")}
-                        className="px-4 py-2 bg-white text-black rounded-lg text-sm font-medium hover:bg-white/90 transition-colors"
-                      >
-                        저장하기
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => {
+                    <button
+                      onClick={() => {
+                        if (!hasUnsavedChanges) {
                           setMode("view");
                           setHasUnsavedChanges(false);
                           setIsExhibitionPanelOpen(false);
-                        }}
-                        className="text-white hover:text-white/70 transition-colors"
+                        }
+                      }}
+                      disabled={hasUnsavedChanges}
+                      className={`transition-colors ${
+                        hasUnsavedChanges
+                          ? 'text-white/30 cursor-not-allowed'
+                          : 'text-white hover:text-white/70'
+                      }`}
+                    >
+                      <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
                       >
-                        <svg
-                          width="24"
-                          height="24"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <path
-                            d="M18 6L6 18M6 6l12 12"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      </button>
-                    )}
+                        <path
+                          d="M18 6L6 18M6 6l12 12"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </button>
                   </div>
 
                   {/* 패널 내용 */}

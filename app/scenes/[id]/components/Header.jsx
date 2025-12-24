@@ -7,8 +7,8 @@ export default function Header({ mode, hasChanges, onSave, onBack, onToggleMode,
   const [showLockTooltip, setShowLockTooltip] = useState(false);
 
   const handleBackClick = () => {
+    // 변경사항이 있으면 뒤로가기 막기 (alert 없이)
     if (mode === "edit" && hasChanges) {
-      alert("변경사항을 먼저 저장해주세요.");
       return;
     }
     if (onBack) {
@@ -23,8 +23,12 @@ export default function Header({ mode, hasChanges, onSave, onBack, onToggleMode,
         <div className="flex items-center justify-between" style={{ width: mode === "view" && onToggleLock !== undefined ? '100%' : 'auto' }}>
           <button
             onClick={handleBackClick}
-            disabled={isDisabled}
-            className="text-white hover:text-white/70 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isDisabled || (mode === "edit" && hasChanges)}
+            className={`transition-colors ${
+              mode === "edit" && hasChanges
+                ? 'text-white/30 cursor-not-allowed'
+                : 'text-white hover:text-white/70'
+            } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             <svg
               width="24"

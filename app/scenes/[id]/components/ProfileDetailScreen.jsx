@@ -7,12 +7,18 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
   // console.log(profile)
   // console.groupEnd()
   return (
-    <div className={`w-full h-full flex items-center justify-center transition-colors duration-500 ${isMobile ? 'bg-black/50' : 'bg-white'}`}>
+    <div className={`w-full h-full flex items-center justify-center transition-colors duration-500 ${
+      isMobile
+        ? 'bg-black/50'
+        : isDarkMode
+          ? 'bg-black'
+          : 'bg-white'
+    }`}>
       {/* 프로필 이미지 컨테이너 - 정방형 */}
       <motion.div
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 1, ease: "easeOut" }}
+        transition={{ duration: 2, ease: "easeOut" }}
         className={`relative ${isMobile ? 'w-screen aspect-[2/3]' : 'aspect-square h-screen'}`}
       >
         {/* 배경 이미지 */}
@@ -23,8 +29,8 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
               alt={profile?.name || "대표 타이틀"}
               className="w-full h-full object-cover object-top"
             />
-            {/* 어두운 오버레이 (명도 20% 감소) */}
-            <div className="absolute inset-0 bg-black/20" />
+            {/* 오버레이 (다크모드: 어둡게, 라이트모드: 밝게) */}
+            <div className={`absolute inset-0 ${isDarkMode ? 'bg-black/20' : 'bg-white/15'}`} />
           </>
         ) : (
           <div className={`w-full h-full flex items-center justify-center ${
@@ -38,7 +44,7 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.2 }}
+          transition={{ duration: 2, ease: "easeOut", delay: 0.4 }}
           className={`absolute top-0 left-0 right-0 flex justify-center ${isMobile ? 'pt-8 px-4' : 'pt-12'}`}
         >
           <h2 className={`font-serif font-bold text-white tracking-tight ${isMobile ? 'text-5xl' : 'text-8xl'}`}>
@@ -50,7 +56,7 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
+          transition={{ duration: 2, ease: "easeOut", delay: 1 }}
           className={`absolute top-1/2 -translate-y-1/2 -translate-x-1/2 ${isMobile ? 'left-6' : 'left-10'}`}
         >
           <p
@@ -70,7 +76,7 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 1, ease: "easeOut", delay: 0.5 }}
+            transition={{ duration: 2, ease: "easeOut", delay: 1 }}
             className={`absolute top-1/2 -translate-y-1/ translate-x-1/2 ${isMobile ? 'right-6' : 'right-10'}`}
           >
             <p
@@ -90,7 +96,7 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
         <motion.div
           initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
-          transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
+          transition={{ duration: 2, ease: "easeOut", delay: 0.6 }}
           className={`absolute left-0 right-0 bottom-0 text-right ${isMobile ? 'px-6 pb-6' : 'p-12'}`}
         >
           {/* 이름/제목 */}

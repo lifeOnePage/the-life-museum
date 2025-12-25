@@ -546,9 +546,21 @@ export default function LifeRecordDesktop({
         }
 
         snapToIndex(nextIdx);
+      } else if (e.key === "Home" || e.key === "h" || e.key === "H") {
+        // Home 키 또는 H 키로 main 이벤트로 이동
+        e.preventDefault();
+
+        const mainIdx = timeline.findIndex((it) => it.kind === "main");
+        if (mainIdx !== -1 && mainIdx !== activeIdx) {
+          if (scrollSound.current) {
+            scrollSound.current.currentTime = 0;
+            scrollSound.current.play();
+          }
+          snapToIndex(mainIdx);
+        }
       }
     },
-    [isEditing, activeIdx, timeline.length, snapToIndex],
+    [isEditing, activeIdx, timeline, snapToIndex],
   );
 
   useEffect(() => {
@@ -604,6 +616,20 @@ export default function LifeRecordDesktop({
     return mainItem?.title || "사용자의 이야기";
   }, [timeline]);
 
+  // Home 버튼 클릭 핸들러
+  const handleHomeClick = () => {
+    const mainIdx = timeline.findIndex((it) => it.kind === "main");
+    if (mainIdx !== -1 && mainIdx !== activeIdx) {
+      if (scrollSound.current) {
+        scrollSound.current.currentTime = 0;
+        scrollSound.current.play();
+      }
+      snapToIndex(mainIdx);
+    }
+  };
+
+  const isAtHome = activeItem?.kind === "main";
+
   return (
     <main
       className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
@@ -618,6 +644,8 @@ export default function LifeRecordDesktop({
         onBgmToggle={handleBgmToggle}
         theme={theme}
         isMobile={isMobile}
+        onHomeClick={handleHomeClick}
+        isAtHome={isAtHome}
       />
 
       <div className="lr-grid">

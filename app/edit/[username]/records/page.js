@@ -397,7 +397,7 @@ export default function EditRecords() {
       // 삭제는 별도로 처리하거나, handleDataChange에서 관리
 
       setIsSaved(true);
-      alert("저장되었습니다.");
+      window.alert("저장되었습니다.");
     } catch (e) {
       console.error("[edit records] save error:", e);
       setError(e.message || "저장 중 오류가 발생했습니다.");

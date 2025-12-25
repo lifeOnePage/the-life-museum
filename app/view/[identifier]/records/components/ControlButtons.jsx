@@ -1,5 +1,11 @@
 "use client";
-import { HiPlay, HiStop, HiVolumeUp, HiVolumeOff } from "react-icons/hi";
+import {
+  HiPlay,
+  HiStop,
+  HiVolumeUp,
+  HiVolumeOff,
+  HiHome,
+} from "react-icons/hi";
 
 export default function ControlButtons({
   isEditing,
@@ -10,6 +16,8 @@ export default function ControlButtons({
   onBgmToggle,
   theme,
   isMobile = false,
+  onHomeClick,
+  isAtHome = false,
 }) {
   if (isEditing) return null;
 
@@ -99,6 +107,41 @@ export default function ControlButtons({
           <HiPlay size={iconSize} />
         )}
       </button>
+      {onHomeClick && (
+        <button
+          onClick={onHomeClick}
+          style={{
+            width: buttonSize,
+            height: buttonSize,
+            borderRadius: "50%",
+            background: isAtHome
+              ? "rgba(255, 255, 255, 0.2)"
+              : "rgba(255, 255, 255, 0.1)",
+            border: "1px solid rgba(255, 255, 255, 0.2)",
+            color: theme.text,
+            cursor: isAtHome ? "default" : "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "all 0.2s",
+            opacity: isAtHome ? 0.5 : 1,
+          }}
+          onMouseEnter={(e) => {
+            if (!isAtHome) {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = isAtHome
+              ? "rgba(255, 255, 255, 0.2)"
+              : "rgba(255, 255, 255, 0.1)";
+          }}
+          title="Home으로 이동"
+          disabled={isAtHome}
+        >
+          <HiHome size={iconSize} />
+        </button>
+      )}
     </div>
   );
 }

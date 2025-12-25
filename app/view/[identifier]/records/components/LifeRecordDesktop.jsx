@@ -1,97 +1,30 @@
 "use client";
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import { useRouter } from "next/navigation";
 import ImageCropOverlay from "@/app/edit/[username]/records/components/ImageCropOverlay";
-import {
-  HiPlay,
-  HiStop,
-  HiStar,
-  HiOutlineStar,
-  HiTrash,
-  HiHome,
-} from "react-icons/hi";
-import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
+import { HiStar, HiHome, HiOutlineStar, HiTrash } from "react-icons/hi";
 import {
   IoIosArrowDropleftCircle,
   IoIosArrowDroprightCircle,
 } from "react-icons/io";
 import "../styles/cardPage.css";
 import "../styles/cardPage-mobile.css";
-
-const MONTHS = [
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MAY",
-  "JUN",
-  "JUL",
-  "AUG",
-  "SEP",
-  "OCT",
-  "NOV",
-  "DEC",
-];
-
-const BG_THEME_PALETTE = [
-  { name: "Coal", bg: "#121212", text: "#F2F2F2" },
-  { name: "Rose", bg: "#aa747dff", text: "#ffffffff" },
-  { name: "Olive", bg: "#7B7341", text: "#f2f2f2ff" },
-  { name: "Warm Gray", bg: "#746F6F", text: "#F2F2F2" },
-  { name: "Blue", bg: "#6C8E98", text: "#F2F2F2" },
-  { name: "BlackPink", bg: "#212121", text: "#AA747D" },
-  { name: "Parchment", bg: "#F5F1E6", text: "#111111" },
-  { name: "Cloud", bg: "#ECECEC", text: "#111111" },
-];
-
-const toMonthDay = (str) => {
-  if (!str) return "";
-  const parts = str.split(".").map((s) => parseInt(s, 10));
-  const [y, m, d] = parts;
-
-  if (!y) return "";
-  if (!m) return "";
-  if (!d) return ` ${MONTHS[m - 1]}`;
-
-  return ` ${MONTHS[m - 1]} ${String(d).padStart(2, "0")}`;
-};
-
-const getYear = (str) => {
-  if (!str) return "";
-  const [y] = str.split(".");
-  return y ? y + " " : "";
-};
-
-const norm360 = (a) => ((a % 360) + 360) % 360;
-const wrapTo180 = (d) => ((d + 540) % 360) - 180;
-const angDist = (a, b) => {
-  const d = Math.abs(norm360(a) - norm360(b));
-  return Math.min(d, 360 - d);
-};
-
-// 생년월일과 이벤트 날짜로 나이 계산
-const calculateAge = (birthDate, eventDate) => {
-  if (!birthDate || !eventDate) return null;
-
-  const [birthY, birthM, birthD] = birthDate.split(".").map(Number);
-  const [eventY, eventM, eventD] = eventDate.split(".").map(Number);
-
-  if (!birthY || !eventY) return null;
-
-  let age = eventY - birthY;
-
-  // 월과 일이 있으면 더 정확하게 계산
-  if (birthM && eventM) {
-    if (
-      eventM < birthM ||
-      (eventM === birthM && eventD && birthD && eventD < birthD)
-    ) {
-      age--;
-    }
-  }
-
-  return age >= 0 ? age : null;
-};
+import { DEFAULT_THEME, BG_THEME_PALETTE } from "../utils/constants";
+import { calculateAge, getYear, toMonthDay } from "../utils/dateUtils";
+import { norm360, wrapTo180, angDist } from "../utils/mathUtils";
+import ControlButtons from "./ControlButtons";
+import ImageSlider from "./ImageSlider";
+import EditControls from "./EditControls";
+import CardContent from "./CardContent";
+import HighlightTimeline from "./HighlightTimeline";
+import TimelineWheel from "./TimelineWheel";
+import UploadingOverlay from "./UploadingOverlay";
 
 function useIsMobile(bp = 768) {
   const [m, setM] = React.useState(
@@ -267,7 +200,6 @@ export default function LifeRecordDesktop({
   const [currentImageIndex, setCurrentImageIndex] = useState(0); // 현재 이미지 인덱스
   const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null); // 이미지를 추가할 슬롯 인덱스
   const targetImageSlotIndexRef = useRef(null);
-  const DEFAULT_THEME = BG_THEME_PALETTE[0];
   const mainImageInputRef = useRef(null);
   const itemImageInputRef = useRef(null);
   const isNavigatingRef = useRef(false); // 외부에서 명시적으로 이동 중인지 추적
@@ -409,7 +341,7 @@ export default function LifeRecordDesktop({
   };
 
   const isMobile = useIsMobile(1000);
-  const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 200, ANCHOR: 0 };
+  const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 205, ANCHOR: 0 };
   const MOBILE = { START: 110, SWEEP: 180, RADIUS: 140, ANCHOR: 110 };
   const CFG = isMobile ? MOBILE : DESKTOP;
   const RADIUS = CFG.RADIUS;
@@ -575,7 +507,7 @@ export default function LifeRecordDesktop({
     setActiveIdx(best);
   };
 
-  const STEP = 1;
+  const STEP = 8;
   const handleWheel = (e) => {
     const dir = e.deltaY > 0 ? -1 : 1;
     const next = rotation + dir * STEP;
@@ -588,9 +520,47 @@ export default function LifeRecordDesktop({
     wheelTimer.current = setTimeout(() => snapToClosest(next), 140);
   };
 
+  const handleKeyDown = useCallback(
+    (e) => {
+      if (
+        isEditing ||
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA"
+      ) {
+        return;
+      }
+
+      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+        e.preventDefault();
+
+        let nextIdx;
+        if (e.key === "ArrowUp") {
+          nextIdx = activeIdx > 0 ? activeIdx - 1 : timeline.length - 1;
+        } else {
+          nextIdx = activeIdx < timeline.length - 1 ? activeIdx + 1 : 0;
+        }
+
+        if (scrollSound.current) {
+          scrollSound.current.currentTime = 0;
+          scrollSound.current.play();
+        }
+
+        snapToIndex(nextIdx);
+      }
+    },
+    [isEditing, activeIdx, timeline.length, snapToIndex],
+  );
+
   useEffect(() => {
     scrollSound.current = new Audio("/sounds/scroll.m4a");
   }, []);
+
+  useEffect(() => {
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   useEffect(() => {
     if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
@@ -639,84 +609,16 @@ export default function LifeRecordDesktop({
       className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
-      {!isEditing && (
-        <div
-          style={{
-            position: "fixed",
-            top: "24px",
-            right: "24px",
-            zIndex: 10000,
-            display: "flex",
-            gap: "12px",
-            flexDirection: "column",
-          }}
-        >
-          {data.record?.bgm && (
-            <button
-              onClick={handleBgmToggle}
-              style={{
-                width: "48px",
-                height: "48px",
-                borderRadius: "50%",
-                background: isBgmPlaying
-                  ? "rgba(255, 255, 255, 0.2)"
-                  : "rgba(255, 255, 255, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                color: theme.text,
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                transition: "all 0.2s",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = isBgmPlaying
-                  ? "rgba(255, 255, 255, 0.2)"
-                  : "rgba(255, 255, 255, 0.1)";
-              }}
-              title={isBgmPlaying ? "음악 정지" : "음악 재생"}
-            >
-              {isBgmPlaying ? (
-                <HiVolumeUp size={24} />
-              ) : (
-                <HiVolumeOff size={24} />
-              )}
-            </button>
-          )}
-          <button
-            onClick={() => setAutoSlideEnabled(!autoSlideEnabled)}
-            style={{
-              width: "48px",
-              height: "48px",
-              borderRadius: "50%",
-              background: autoSlideEnabled
-                ? "rgba(255, 255, 255, 0.2)"
-                : "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              color: theme.text,
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              transition: "all 0.2s",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = "rgba(255, 255, 255, 0.25)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = autoSlideEnabled
-                ? "rgba(255, 255, 255, 0.2)"
-                : "rgba(255, 255, 255, 0.1)";
-            }}
-            title={autoSlideEnabled ? "자동재생 끄기" : "자동재생 켜기"}
-          >
-            {autoSlideEnabled ? <HiStop size={24} /> : <HiPlay size={24} />}
-          </button>
-        </div>
-      )}
+      <ControlButtons
+        isEditing={isEditing}
+        autoSlideEnabled={autoSlideEnabled}
+        onAutoSlideEnabledChange={setAutoSlideEnabled}
+        bgmUrl={data.record?.bgm}
+        isBgmPlaying={isBgmPlaying}
+        onBgmToggle={handleBgmToggle}
+        theme={theme}
+        isMobile={isMobile}
+      />
 
       <div className="lr-grid">
         <section className="lr-left">

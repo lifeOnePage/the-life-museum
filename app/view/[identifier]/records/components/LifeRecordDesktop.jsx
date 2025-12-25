@@ -400,28 +400,21 @@ export default function LifeRecordDesktop({
 
   // 외부에서 인덱스 변경 요청 처리
   useEffect(() => {
-    if (onNavigateToItem !== undefined && onNavigateToItem !== null) {
+    if (
+      onNavigateToItem !== undefined &&
+      onNavigateToItem !== null &&
+      timeline.length > 0
+    ) {
       isNavigatingRef.current = true; // 외부 이동 시작
       const targetIdx = Math.max(
         0,
         Math.min(onNavigateToItem, timeline.length - 1),
       );
-      if (targetIdx !== activeIdx) {
-        setActiveIdx(targetIdx);
-        // 회전도 함께 업데이트
-        const targetAngle = angleForIndex(targetIdx);
-        setRotation(targetAngle - getAnchor());
-      }
-      // 사용 후 리셋 (무한 루프 방지)
-      if (onActiveItemChangeRef.current) {
-        onActiveItemChangeRef.current({
-          id: timeline[targetIdx]?.id,
-          kind: timeline[targetIdx]?.kind,
-          color: timeline[targetIdx]?.color || data.record?.color || "#121212",
-          index: targetIdx,
-          event: timeline[targetIdx]?.event,
-          date: timeline[targetIdx]?.date,
-        });
+
+      // timeline에 해당 인덱스의 항목이 있는지 확인
+      if (timeline[targetIdx] && targetIdx !== activeIdx) {
+        // snapToIndex를 사용하여 제대로 스냅되도록 함
+        snapToIndex(targetIdx);
       }
       // 이동 완료 후 플래그 리셋
       setTimeout(() => {

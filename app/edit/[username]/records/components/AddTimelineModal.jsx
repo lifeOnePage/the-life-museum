@@ -9,124 +9,66 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
   const [date, setDate] = useState("");
   const [location, setLocation] = useState("");
   const [description, setDescription] = useState("");
-  const [images, setImages] = useState(Array(5).fill(null)); // 최대 5장
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [images, setImages] = useState([]); // 이미지 URL 배열 (최대 5장)
   const [isUploading, setIsUploading] = useState(false);
-  const [targetImageSlotIndex, setTargetImageSlotIndex] = useState(null);
+  const [draggedIndex, setDraggedIndex] = useState(null);
   const fileInputRef = useRef(null);
 
   const handleImageChange = async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0 || !token) return;
 
-    const isMultipleFiles = files.length > 1;
-    const currentTargetSlot = isMultipleFiles ? null : targetImageSlotIndex;
+    // 현재 이미지 개수 확인
+    const currentCount = images.length;
+    const availableSlots = 5 - currentCount;
 
-    if (files.length > 5) {
-      alert("최대 5장까지 선택할 수 있습니다.");
-      e.target.value = "";
-      return;
-    }
-
-    // 이미지가 5장이 모두 채워져 있는지 확인
-    const validImageCount = images.filter((img) => img).length;
-    const availableSlots = 5 - validImageCount;
-
-    if (availableSlots <= 0 && currentTargetSlot === null) {
+    if (availableSlots <= 0) {
       alert("이미지는 최대 5장까지 추가할 수 있습니다.");
       e.target.value = "";
       return;
     }
 
-    const filesToProcess =
-      currentTargetSlot !== null
-        ? files.slice(0, 1)
-        : files.slice(0, Math.min(files.length, availableSlots));
-
-    const imageFiles = filesToProcess.filter((f) =>
-      f.type.startsWith("image/"),
-    );
-    const videoFiles = filesToProcess.filter((f) =>
-      f.type.startsWith("video/"),
+    // 선택한 파일 중 처리할 파일만 추출 (최대 5장까지)
+    const filesToProcess = files.slice(
+      0,
+      Math.min(files.length, availableSlots),
     );
 
-    console.log("Files to process:", filesToProcess.length);
-    console.log("Image files:", imageFiles.length);
-    console.log("Available slots:", availableSlots);
+    // 이미지/동영상 파일만 필터링
+    const validFiles = filesToProcess.filter(
+      (file) =>
+        file.type.startsWith("image/") || file.type.startsWith("video/"),
+    );
+
+    if (validFiles.length === 0) {
+      alert("이미지 또는 동영상 파일만 업로드할 수 있습니다.");
+      e.target.value = "";
+      return;
+    }
+
+    // 5장 초과 시 경고
+    if (files.length > availableSlots) {
+      alert(
+        `최대 ${availableSlots}장까지 추가할 수 있습니다. ${availableSlots}장만 추가됩니다.`,
+      );
+    }
 
     try {
       setIsUploading(true);
 
-      // 모든 미디어 파일을 하나의 newImages 배열에 처리
-      const newImages = [...images];
-      let lastAddedIndex = null;
-
-      // 비디오 파일 처리 (첫 번째 슬롯에만)
-      if (
-        videoFiles.length > 0 &&
-        (currentTargetSlot === null || currentTargetSlot === 0)
-      ) {
+      // 모든 파일을 순차적으로 업로드
+      const uploadedUrls = [];
+      for (const file of validFiles) {
         const url = await uploadRecordFile({
           token,
-          file: videoFiles[0],
+          file,
           prefix: "records/timeline",
         });
-        newImages[0] = url;
-        lastAddedIndex = 0;
+        uploadedUrls.push(url);
       }
 
-      // 이미지 파일 처리 - 크롭 없이 바로 업로드
-      if (imageFiles.length > 0) {
-        console.log("Processing", imageFiles.length, "image files");
-        for (let i = 0; i < imageFiles.length; i++) {
-          const file = imageFiles[i];
-          console.log(`Uploading image ${i + 1}/${imageFiles.length}`);
-
-          const url = await uploadRecordFile({
-            token,
-            file,
-            prefix: "records/timeline",
-          });
-
-          console.log(`Image ${i + 1} uploaded:`, url);
-
-          if (currentTargetSlot !== null) {
-            // 특정 슬롯에 추가
-            newImages[currentTargetSlot] = url;
-            lastAddedIndex = currentTargetSlot;
-            break; // 특정 슬롯이면 하나만 추가
-          } else {
-            // 첫 번째 빈 슬롯에 추가
-            const firstNullIndex = newImages.findIndex((img) => !img);
-            console.log(`Found empty slot at index:`, firstNullIndex);
-            if (firstNullIndex !== -1) {
-              newImages[firstNullIndex] = url;
-              lastAddedIndex = firstNullIndex; // 마지막으로 추가된 인덱스 업데이트
-              console.log(
-                `Added image to slot ${firstNullIndex}, newImages:`,
-                newImages,
-              );
-            } else {
-              // 빈 슬롯이 없으면 alert 후 초기화
-              alert("이미지는 최대 5장까지 추가할 수 있습니다.");
-              e.target.value = "";
-              setIsUploading(false);
-              return;
-            }
-          }
-        }
-      }
-
-      console.log("Final newImages:", newImages);
-      console.log("Last added index:", lastAddedIndex);
-
-      setImages(newImages);
-      setTargetImageSlotIndex(null);
-
-      const firstValidIndex = newImages.findIndex((img) => img);
-      if (firstValidIndex !== -1) {
-        setCurrentImageIndex(firstValidIndex);
-      }
+      // 이미지 배열에 추가 (순서대로)
+      setImages((prev) => [...prev, ...uploadedUrls]);
     } catch (error) {
       console.error("미디어 업로드 실패:", error);
       alert("미디어 업로드에 실패했습니다.");
@@ -136,14 +78,48 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
     }
   };
 
+  // 드래그 앤 드롭 핸들러
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      return;
+    }
+
+    const newImages = [...images];
+    const draggedItem = newImages[draggedIndex];
+    newImages.splice(draggedIndex, 1);
+    newImages.splice(dropIndex, 0, draggedItem);
+    setImages(newImages);
+    setDraggedIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+  };
+
   const handleSave = () => {
     if (!title.trim()) {
       alert("제목을 입력해주세요.");
       return;
     }
 
-    const validImages = images.filter((img) => img);
-    const coverUrl = validImages[0] || null;
+    const coverUrl = images[0] || null;
+    // images 배열을 5개로 채우기 (null로 패딩)
+    const paddedImages = [...images];
+    while (paddedImages.length < 5) {
+      paddedImages.push(null);
+    }
 
     onSave({
       id: null,
@@ -152,7 +128,7 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
       location: location.trim(),
       description: description.trim(),
       coverUrl: coverUrl,
-      images: images,
+      images: paddedImages,
       color: "",
       isHighlight: false,
     });
@@ -165,26 +141,14 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
     setDate("");
     setLocation("");
     setDescription("");
-    setImages(Array(5).fill(null));
-    setCurrentImageIndex(0);
-    setTargetImageSlotIndex(null);
+    setImages([]);
+    setDraggedIndex(null);
     onClose();
   };
 
   const handleImageDelete = (index) => {
-    if (!confirm("이 이미지를 삭제하시겠습니까?")) return;
-    const newImages = images.filter((_, idx) => idx !== index);
-    while (newImages.length < 5) {
-      newImages.push(null);
-    }
-    setImages(newImages);
-    if (currentImageIndex >= index) {
-      const newIndex = Math.max(0, currentImageIndex - 1);
-      setCurrentImageIndex(newIndex);
-    }
+    setImages((prev) => prev.filter((_, idx) => idx !== index));
   };
-
-  const validImages = images.filter((img) => img);
 
   if (!isOpen) return null;
 
@@ -198,172 +162,95 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
         onClick={(e) => e.stopPropagation()}
         style={{ WebkitOverflowScrolling: "touch" }}
       >
-        <div className="w-full flex-shrink-0 md:w-1/2 md:border-r md:border-gray-200">
-          <div className="p-6 md:p-8">
+        <div className="w-full flex-shrink-0 md:w-1/2 md:overflow-y-auto md:border-r md:border-gray-200">
+          <div
+            className="p-6 md:p-8"
+            style={{ WebkitOverflowScrolling: "touch" }}
+          >
             <h2 className="mb-6 text-2xl font-bold text-black md:hidden">
               새 타임라인 만들기
             </h2>
-            <div className="mb-6">
-              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-200">
-                {validImages.length > 0 ? (
-                  <div className="relative h-full w-full">
-                    {/* 이미지 슬라이더 */}
-                    <div className="relative h-full w-full overflow-hidden">
-                      <div
-                        className="flex h-full transition-transform duration-300 ease-in-out"
-                        style={{
-                          width: `${images.length * 100}%`,
-                          transform: `translateX(-${currentImageIndex * (100 / images.length)}%)`,
-                        }}
-                      >
-                        {images.map((img, idx) => (
-                          <div
-                            key={idx}
-                            className="relative h-full"
-                            style={{ width: `${100 / images.length}%` }}
-                          >
-                            {img ? (
-                              img.match(/\.(mp4|webm)$/i) ? (
-                                <video
-                                  src={img}
-                                  className="h-full w-full object-cover"
-                                  controls
-                                />
-                              ) : (
-                                <img
-                                  src={img}
-                                  alt={`이미지 ${idx + 1}`}
-                                  className="h-full w-full object-cover"
-                                />
-                              )
-                            ) : (
-                              <div
-                                onClick={() => {
-                                  setTargetImageSlotIndex(idx);
-                                  fileInputRef.current?.click();
-                                }}
-                                className="flex h-full w-full cursor-pointer items-center justify-center border-2 border-dashed border-gray-300 bg-gray-100 text-gray-400 hover:border-gray-400 hover:text-gray-500"
-                              >
-                                <div className="text-center">
-                                  <div className="mb-1 text-2xl">+</div>
-                                  <div className="text-sm">이미지 추가</div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* 좌우 화살표 */}
-                    {validImages.length > 1 && (
-                      <>
-                        {images
-                          .slice(0, currentImageIndex)
-                          .some((img) => img) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const prevValidIndex = images
-                                .slice(0, currentImageIndex)
-                                .map((img, idx) => ({ img, idx }))
-                                .filter(({ img }) => img)
-                                .pop()?.idx;
-                              if (prevValidIndex !== undefined) {
-                                setCurrentImageIndex(prevValidIndex);
-                              }
-                            }}
-                            className="absolute top-1/2 left-2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
-                          >
-                            ←
-                          </button>
-                        )}
-                        {images
-                          .slice(currentImageIndex + 1)
-                          .some((img) => img) && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const nextValidIndex = images
-                                .slice(currentImageIndex + 1)
-                                .findIndex((img) => img);
-                              if (nextValidIndex !== -1) {
-                                setCurrentImageIndex(
-                                  currentImageIndex + 1 + nextValidIndex,
-                                );
-                              }
-                            }}
-                            className="absolute top-1/2 right-2 -translate-y-1/2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
-                          >
-                            →
-                          </button>
-                        )}
-                      </>
-                    )}
-
-                    {/* 인디케이터 */}
-                    {validImages.length > 1 && (
-                      <div className="absolute bottom-2 left-1/2 flex -translate-x-1/2 gap-1">
-                        {images.map((img, idx) => {
-                          if (!img) return null;
-                          const validIndex =
-                            images.slice(0, idx + 1).filter((img) => img)
-                              .length - 1;
-                          return (
-                            <button
-                              key={idx}
-                              type="button"
-                              onClick={() => setCurrentImageIndex(idx)}
-                              className={`h-2 w-2 rounded-full ${
-                                idx === currentImageIndex
-                                  ? "bg-white"
-                                  : "bg-white/50"
-                              }`}
-                            />
-                          );
-                        })}
-                      </div>
-                    )}
-
-                    {/* 이미지 삭제 버튼 */}
-                    {images[currentImageIndex] && (
+            추{" "}
+            <div className="mb-6 flex flex-col gap-4">
+              {/* 이미지 그리드 (상단) */}
+              {images.length > 0 && (
+                <div className="grid grid-cols-2 gap-3">
+                  {images.map((img, idx) => (
+                    <div
+                      key={idx}
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, idx)}
+                      onDragOver={handleDragOver}
+                      onDrop={(e) => handleDrop(e, idx)}
+                      onDragEnd={handleDragEnd}
+                      className={`relative aspect-square overflow-hidden rounded-lg bg-gray-200 ${
+                        draggedIndex === idx ? "opacity-50" : ""
+                      } cursor-move`}
+                    >
+                      {img.match(/\.(mp4|webm)$/i) ? (
+                        <video
+                          src={img}
+                          className="h-full w-full object-cover"
+                          controls
+                        />
+                      ) : (
+                        <img
+                          src={img}
+                          alt={`이미지 ${idx + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                      {/* 삭제 버튼 */}
                       <button
                         type="button"
-                        onClick={() => handleImageDelete(currentImageIndex)}
-                        className="absolute top-2 right-2 rounded-full bg-black/50 p-2 text-white hover:bg-black/70"
+                        onClick={() => handleImageDelete(idx)}
+                        className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-black/70 text-white hover:bg-black/90"
+                        title="삭제"
                       >
                         ×
                       </button>
-                    )}
-                  </div>
-                ) : (
-                  <div
-                    onClick={() => {
-                      setTargetImageSlotIndex(0);
-                      fileInputRef.current?.click();
-                    }}
-                    className="flex h-full w-full cursor-pointer items-center justify-center border-2 border-dashed border-gray-300 bg-gray-100 text-gray-400 hover:border-gray-400 hover:text-gray-500"
-                  >
-                    <div className="text-center">
-                      <div className="mb-1 text-2xl">+</div>
-                      <div className="text-sm">이미지 추가 (최대 5장)</div>
                     </div>
-                  </div>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
-                  multiple
-                  onChange={handleImageChange}
-                  className="hidden"
-                />
-              </div>
-              {validImages.length > 0 && (
-                <div className="mt-2 text-center text-xs text-gray-500">
-                  {validImages.length} / 5
+                  ))}
                 </div>
               )}
+
+              {/* 이미지 추가 버튼 (하단) */}
+              {images.length < 5 && (
+                <div
+                  onClick={() => fileInputRef.current?.click()}
+                  className={`flex aspect-square w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-100 text-gray-400 transition-colors hover:border-gray-400 hover:text-gray-500 ${
+                    isUploading ? "pointer-events-none opacity-50" : ""
+                  }`}
+                >
+                  <div className="text-center">
+                    <div className="mb-1 text-2xl">+</div>
+                    <div className="text-sm">
+                      {isUploading ? "업로드 중..." : "이미지 추가"}
+                    </div>
+                    {images.length > 0 && (
+                      <div className="mt-1 text-xs text-gray-400">
+                        ({images.length} / 5)
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* 이미지 개수 표시 */}
+              {images.length > 0 && images.length >= 5 && (
+                <div className="text-center text-xs text-gray-500">
+                  {images.length} / 5
+                </div>
+              )}
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/jpg,video/mp4,video/webm"
+                multiple
+                onChange={handleImageChange}
+                className="hidden"
+              />
             </div>
           </div>
         </div>

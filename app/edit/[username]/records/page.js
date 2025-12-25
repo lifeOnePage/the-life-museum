@@ -453,15 +453,30 @@ export default function EditRecords() {
       items: newItems,
     });
 
-    if (createdItemIndex !== -1) {
-      const targetIndex = createdItemIndex + 1;
-      setTimeout(() => {
-        setNavigateToItem(targetIndex);
-        setTimeout(() => setNavigateToItem(null), 100);
-      }, 100);
-    }
-
     setIsSaved(false);
+
+    // timeline이 업데이트된 후에 해당 인덱스로 이동
+    // timeline[0]은 main 항목이므로 +1 필요
+    if (createdItemIndex !== -1) {
+      const targetIndex = createdItemIndex + 1; // main 항목(0) + 정렬된 인덱스
+      console.log(
+        "[AddTimeline] Created item index:",
+        createdItemIndex,
+        "Target timeline index:",
+        targetIndex,
+      );
+
+      // 데이터 업데이트 후 timeline이 재계산될 시간을 주기 위해 약간의 지연
+      setTimeout(() => {
+        console.log("[AddTimeline] Setting navigateToItem to:", targetIndex);
+        setNavigateToItem(targetIndex);
+        // navigateToItem이 처리된 후 리셋
+        setTimeout(() => {
+          console.log("[AddTimeline] Resetting navigateToItem");
+          setNavigateToItem(null);
+        }, 1000);
+      }, 300);
+    }
   };
 
   const handleDataChange = (newData) => {

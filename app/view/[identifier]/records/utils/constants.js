@@ -26,3 +26,4 @@ export const BG_THEME_PALETTE = [
 
 export const DEFAULT_THEME = BG_THEME_PALETTE[0];
 
+

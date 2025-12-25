@@ -348,7 +348,7 @@ body,
   justify-content: center;
   width: 100%;
   overflow: visible;
-  transform: translateX(-60%);
+  transform: translateX(-65%);
 }
 
 .lr-right-header {
@@ -373,7 +373,7 @@ body,
 .year-circle {
   position: absolute;
   top: 50%;
-  left: 60%;
+  left: 70%;
   width: 0;
   height: 0;
   transform: translate(-50%, -50%);
@@ -413,7 +413,7 @@ body,
 
 .lp-disc {
   transition: transform 160ms ease-out;
-  scale: 1.2;
+  scale: 1.5;
   min-width: 400px;
   height: auto;
   display: block;

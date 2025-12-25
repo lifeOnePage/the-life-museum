@@ -365,7 +365,7 @@ export default function LifeRecordDesktop({
     if (diff > 180) diff = 360 - diff;
 
     const normalizedDiff = Math.min(diff / 90, 1);
-    const opacity = 1 - normalizedDiff * normalizedDiff * 1.5;
+    const opacity = 1 - normalizedDiff * normalizedDiff * 2;
     return Math.max(opacity, 0);
   };
 
@@ -411,9 +411,7 @@ export default function LifeRecordDesktop({
         Math.min(onNavigateToItem, timeline.length - 1),
       );
 
-      // timeline에 해당 인덱스의 항목이 있는지 확인
       if (timeline[targetIdx] && targetIdx !== activeIdx) {
-        // snapToIndex를 사용하여 제대로 스냅되도록 함
         snapToIndex(targetIdx);
       }
       // 이동 완료 후 플래그 리셋
@@ -424,7 +422,6 @@ export default function LifeRecordDesktop({
   }, [onNavigateToItem, timeline.length]);
 
   useEffect(() => {
-    // activeIdx나 activeItem.id가 실제로 변경된 경우에만 호출
     if (
       onActiveItemChangeRef.current &&
       activeItem &&
@@ -460,11 +457,14 @@ export default function LifeRecordDesktop({
     isAutoSlide = false,
   ) => {
     const base = angleForIndex(i);
+    const currentBase = angleForIndex(activeIdx);
     const currentRotation = rotationRef.current || rotation;
-    const cur = norm360(base + currentRotation);
-    let delta = wrapTo180(anchor - cur);
+
+    const angleDiff = base - currentBase;
+    let delta = -angleDiff;
 
     if (reverse) delta = -delta;
+
     const newRotation = currentRotation + delta;
 
     if (scrollSound.current) {

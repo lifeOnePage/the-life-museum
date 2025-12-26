@@ -493,7 +493,7 @@ export default function ExhibitionRingFront({
 
   // 드래그 핸들러 (OFF 모드일 때만 작동)
   const handlePointerDown = useCallback((e) => {
-    if (interval !== 0) return; // OFF 모드가 아니면 무시
+    // if (interval !== 0) return; // OFF 모드가 아니면 무시
 
     setIsDragging(true);
     dragStateRef.current = {
@@ -503,7 +503,8 @@ export default function ExhibitionRingFront({
   }, [interval, currentIndex]);
 
   const handlePointerMove = useCallback((e) => {
-    if (!isDragging || interval !== 0) return;
+    // if (!isDragging || interval !== 0) return;
+    if (!isDragging) return;
 
     const deltaX = e.clientX - dragStateRef.current.startX;
     const sensitivity = 0.05; // 드래그 민감도
@@ -575,7 +576,8 @@ export default function ExhibitionRingFront({
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
       style={{
-        cursor: interval === 0 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+        // cursor: interval === 0 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+        cursor: isDragging ? 'grabbing' : 'grab',
         userSelect: 'none'
       }}
     >

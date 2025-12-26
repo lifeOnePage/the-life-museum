@@ -1435,6 +1435,7 @@ export default function ViewPage() {
               <button
                 onClick={() => {
                   setMode("edit");
+                  setHasUnsavedChanges(false); // 패널 열 때 초기화
                   setIsPanelOpen(true);
                 }}
                 className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors w-full justify-center backdrop-blur-sm"

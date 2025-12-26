@@ -314,7 +314,7 @@ function ExhibitionRingInner({
       const z = Math.sin(a) * adjustedRadius + bulge * w;
 
       // 원근감: z 좌표에 따라 y 좌표 조정
-      const depthOffset = -z * 0.365;
+      const depthOffset = -z * 0.5;
       // const y = bulge * w + depthOffset;
       const y = depthOffset;
       // const y = 0;

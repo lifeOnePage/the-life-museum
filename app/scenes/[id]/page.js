@@ -1130,13 +1130,14 @@ export default function ViewPage() {
               )}
             </button>
 
-            {/* 편집 버튼 */}
-            <button
-              onClick={() => {
-                setMode("edit");
-                setHasUnsavedChanges(false);
-                setIsExhibitionPanelOpen(true);
-              }}
+            {/* 편집 버튼 - 소유자만 */}
+            {isOwner && (
+              <button
+                onClick={() => {
+                  setMode("edit");
+                  setHasUnsavedChanges(false);
+                  setIsExhibitionPanelOpen(true);
+                }}
               className={`flex h-16 w-16 items-center justify-center rounded-full backdrop-blur-sm transition-all hover:scale-110 ${
                 isDarkMode
                   ? "bg-white/10 text-white hover:bg-white/20"
@@ -1167,6 +1168,7 @@ export default function ViewPage() {
                 />
               </svg>
             </button>
+            )}
           </div>
 
           {/* 화면 전환: 링 + 블러 오버레이 + 프로필 상세 */}
@@ -1426,6 +1428,44 @@ export default function ViewPage() {
               </p>
             </div>
           )}
+
+          {/* 편집 버튼 - 소유자만, 텍스트와 타임라인 사이 */}
+          {isOwner && (
+            <div className="px-3 py-4">
+              <button
+                onClick={() => {
+                  setMode("edit");
+                  setIsPanelOpen(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors w-full justify-center backdrop-blur-sm"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="text-white"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                <span className="text-sm font-medium text-white">편집하기</span>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* SceneRing - 배경 */}
@@ -1575,30 +1615,74 @@ export default function ViewPage() {
           </div>
         </div>
 
-        {/* Pannel - 슬라이드 애니메이션과 함께 배치 */}
-        <div
-          className="absolute left-1/2 z-10 w-[92%] max-w-[450px] -translate-x-1/2 transition-all duration-500 ease-in-out"
-          style={{
-            bottom: isPanelOpen ? "170px" : "-600px",
-          }}
-        >
-          <Pannel
-            type="list"
-            mode={mode}
-            items={items}
-            setItems={setItems}
-            profile={profile}
-            setProfile={setProfile}
-            onItemClick={handleItemClick}
-            onToggleMode={
-              isOwner ? () => setMode(mode === "view" ? "edit" : "view") : null
-            }
-            sceneId={id}
-            currentItem={currentItem}
-            lockedItemId={lockedItemId}
-            onToggleLock={handleToggleLock}
-          />
-        </div>
+        {/* Pannel - 모바일 전용 모달 스타일 */}
+        <AnimatePresence>
+          {isPanelOpen && (
+            <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/50">
+            <motion.div
+              initial={{ y: "100%" }}
+              animate={{ y: 0 }}
+              exit={{ y: "100%" }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              className="w-full max-h-[90vh] bg-black rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
+            >
+              {/* 커스텀 헤더 - 닫기 버튼 */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 bg-black shrink-0">
+                <h2 className="text-lg font-bold text-white">편집</h2>
+                <button
+                  onClick={() => {
+                    if (hasUnsavedChanges) {
+                      alert("변경사항을 먼저 저장해주세요.");
+                      return;
+                    }
+                    setIsPanelOpen(false);
+                    setMode("view");
+                    setHasUnsavedChanges(false);
+                  }}
+                  className="text-white hover:text-white/70 transition-colors"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M18 6L6 18M6 6l12 12"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              {/* 패널 내용 */}
+              <div className="flex-1 overflow-hidden">
+                <Pannel
+                  type="list"
+                  mode={mode}
+                  items={items}
+                  setItems={setItems}
+                  profile={profile}
+                  setProfile={setProfile}
+                  onItemClick={handleItemClick}
+                  onToggleMode={
+                    isOwner ? () => setMode(mode === "view" ? "edit" : "view") : null
+                  }
+                  sceneId={id}
+                  currentItem={currentItem}
+                  lockedItemId={lockedItemId}
+                  onToggleLock={handleToggleLock}
+                  onHasChangesChange={setHasUnsavedChanges}
+                />
+              </div>
+            </motion.div>
+          </div>
+          )}
+        </AnimatePresence>
 
         {/* 프로필 디테일 커튼 - 모바일 전용 */}
         <AnimatePresence>

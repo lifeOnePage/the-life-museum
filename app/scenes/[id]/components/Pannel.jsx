@@ -702,7 +702,7 @@ export default function Pannel({
 
     if (type === "list"&& (mode !== "view")) {
     return (
-      <div className="w-full bg-black-100/20 backdrop-blur-2xl overflow-hidden flex flex-col">
+      <div className="w-full bg-black-100 backdrop-blur-2xl overflow-hidden flex flex-col">
         <Header
           mode={mode}
           hasChanges={listHasChanges || unsavedItemIds.size > 0}

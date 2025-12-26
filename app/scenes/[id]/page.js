@@ -729,7 +729,6 @@ export default function ViewPage() {
 
     // 링 드래그 중이고, 아이템이 변경되었으면 햅틱 발생
     if (
-      isRingDraggingRef.current &&
       prevItem &&
       currentItemFromIndex &&
       prevItem.id !== currentItemFromIndex.id

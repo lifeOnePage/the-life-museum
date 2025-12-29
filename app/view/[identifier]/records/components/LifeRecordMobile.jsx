@@ -1823,8 +1823,8 @@ export default function LifeRecordMobile({
                     onDataChange?.({ ...data, items: newItems });
                   }}
                   className="lr-mobile-meta-desc lr-mobile-edit-input"
-                  maxLength={150}
-                  placeholder="이 순간에 대한 이야기를 자유롭게 적어보세요 (최대 150자)"
+                  maxLength={250}
+                  placeholder="이 순간에 대한 이야기를 자유롭게 적어보세요 (최대 250자)"
                 />
                 <div className="lr-mobile-char-count">
                   {
@@ -1833,7 +1833,7 @@ export default function LifeRecordMobile({
                         ?.description || ""
                     ).length
                   }{" "}
-                  / 150
+                  / 250
                 </div>
                 <div className="lr-mobile-meta-info">
                   <textarea

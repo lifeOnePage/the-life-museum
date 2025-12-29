@@ -138,12 +138,12 @@ export default function EditTimeline({
                   handleUpdateItem(item.id, "description", e.target.value)
                 }
                 rows={3}
-                maxLength={150}
+                maxLength={250}
                 className="bg-black-300 w-full resize-none rounded border border-white/20 px-3 py-2 text-sm focus:border-white/40 focus:outline-none"
                 placeholder="설명을 입력하세요"
               />
               <div className="mt-1 text-right text-xs text-white/60">
-                {(item.description || "").length}/150
+                {(item.description || "").length}/250
               </div>
             </div>
           ))}

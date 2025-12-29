@@ -522,17 +522,39 @@ export default function LifeRecordMobile({
   useEffect(() => {
     if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
 
-    const autoSlideInterval = setInterval(() => {
+    let timeoutId = null;
+
+    const scheduleNext = () => {
       const currentIdx = activeIdxRef.current;
       const currentItem = timeline[currentIdx];
+      
+      // main일 때는 7초, 그 외에는 5초
+      const delay = currentItem?.kind === "main" ? 7000 : 5000;
 
-      // 현재 이벤트의 유효한 이미지 개수 확인
-      const validImages = (currentItem?.images || []).filter((img) => img);
+      timeoutId = setTimeout(() => {
+        const currentIdx = activeIdxRef.current;
+        const currentItem = timeline[currentIdx];
 
-      if (validImages.length > 1) {
-        const currentImgIdx = currentImageIndexRef.current;
-        if (currentImgIdx < validImages.length - 1) {
-          setCurrentImageIndex(currentImgIdx + 1);
+        // 현재 이벤트의 유효한 이미지 개수 확인
+        const validImages = (currentItem?.images || []).filter((img) => img);
+
+        if (validImages.length > 1) {
+          const currentImgIdx = currentImageIndexRef.current;
+          if (currentImgIdx < validImages.length - 1) {
+            setCurrentImageIndex(currentImgIdx + 1);
+          } else {
+            let newIdx;
+            if (currentIdx >= timeline.length - 1) {
+              newIdx = 0;
+            } else {
+              newIdx = currentIdx + 1;
+            }
+            setIsTransitioning(true);
+            setTimeout(() => {
+              setActiveIdx(newIdx);
+              setIsTransitioning(false);
+            }, 150);
+          }
         } else {
           let newIdx;
           if (currentIdx >= timeline.length - 1) {
@@ -546,22 +568,20 @@ export default function LifeRecordMobile({
             setIsTransitioning(false);
           }, 150);
         }
-      } else {
-        let newIdx;
-        if (currentIdx >= timeline.length - 1) {
-          newIdx = 0;
-        } else {
-          newIdx = currentIdx + 1;
-        }
-        setIsTransitioning(true);
-        setTimeout(() => {
-          setActiveIdx(newIdx);
-          setIsTransitioning(false);
-        }, 150);
-      }
-    }, 5000);
 
-    return () => clearInterval(autoSlideInterval);
+        // 다음 슬라이드를 위해 재귀 호출
+        scheduleNext();
+      }, delay);
+    };
+
+    // 첫 번째 슬라이드 시작
+    scheduleNext();
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isEditing, autoSlideEnabled, timeline.length, timeline]);
 
   const handleMenuClick = () => {

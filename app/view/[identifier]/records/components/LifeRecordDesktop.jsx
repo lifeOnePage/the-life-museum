@@ -570,16 +570,34 @@ export default function LifeRecordDesktop({
   useEffect(() => {
     if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
 
-    const autoSlideInterval = setInterval(() => {
+    let timeoutId = null;
+
+    const scheduleNext = () => {
       const currentIdx = activeIdxRef.current;
       const currentItem = timeline[currentIdx];
 
-      const validImages = (currentItem?.images || []).filter((img) => img);
+      // main일 때는 7초, 그 외에는 5초
+      const delay = currentItem?.kind === "main" ? 7000 : 5000;
 
-      if (validImages.length > 1) {
-        const currentImgIdx = currentImageIndexRef.current;
-        if (currentImgIdx < validImages.length - 1) {
-          setCurrentImageIndex(currentImgIdx + 1);
+      timeoutId = setTimeout(() => {
+        const currentIdx = activeIdxRef.current;
+        const currentItem = timeline[currentIdx];
+
+        const validImages = (currentItem?.images || []).filter((img) => img);
+
+        if (validImages.length > 1) {
+          const currentImgIdx = currentImageIndexRef.current;
+          if (currentImgIdx < validImages.length - 1) {
+            setCurrentImageIndex(currentImgIdx + 1);
+          } else {
+            let newIdx;
+            if (currentIdx >= timeline.length - 1) {
+              newIdx = 0;
+            } else {
+              newIdx = currentIdx + 1;
+            }
+            snapToIndex(newIdx, getAnchor(), false, true);
+          }
         } else {
           let newIdx;
           if (currentIdx >= timeline.length - 1) {
@@ -589,18 +607,20 @@ export default function LifeRecordDesktop({
           }
           snapToIndex(newIdx, getAnchor(), false, true);
         }
-      } else {
-        let newIdx;
-        if (currentIdx >= timeline.length - 1) {
-          newIdx = 0;
-        } else {
-          newIdx = currentIdx + 1;
-        }
-        snapToIndex(newIdx, getAnchor(), false, true);
-      }
-    }, 5000);
 
-    return () => clearInterval(autoSlideInterval);
+        // 다음 슬라이드를 위해 재귀 호출
+        scheduleNext();
+      }, delay);
+    };
+
+    // 첫 번째 슬라이드 시작
+    scheduleNext();
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isEditing, autoSlideEnabled, timeline.length]);
 
   const safeIdx = Math.min(activeIdx, Math.max(0, (timeline?.length || 1) - 1));

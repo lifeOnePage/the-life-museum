@@ -55,6 +55,7 @@ export default function LifeRecordDesktop({
   aspectRatio = 1,
   autoSlideEnabled: propAutoSlideEnabled,
   onAutoSlideEnabledChange,
+  onImageModalOpen,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -867,43 +868,52 @@ export default function LifeRecordDesktop({
                                       if (!cropState.isActive && isEditing) {
                                         e.stopPropagation();
                                         e.preventDefault();
-                                        console.log(
-                                          "[CLICK] === IMAGE CHANGE CLICKED ===",
-                                        );
-                                        console.log(
-                                          "[CLICK] Setting targetImageSlotIndex to:",
-                                          idx,
-                                          "type:",
-                                          typeof idx,
-                                        );
-                                        // ref에 먼저 저장 (동기적)
-                                        targetImageSlotIndexRef.current = idx;
-                                        setTargetImageSlotIndex(idx);
-                                        // 파일 입력에 data attribute로도 저장
-                                        if (itemImageInputRef.current) {
-                                          itemImageInputRef.current.setAttribute(
-                                            "data-target-slot",
-                                            String(idx),
-                                          );
-                                          console.log(
-                                            "[CLICK] Set data-target-slot to:",
-                                            itemImageInputRef.current.getAttribute(
-                                              "data-target-slot",
-                                            ),
-                                          );
+                                        // 이미지 추가 모달 열기
+                                        if (
+                                          onImageModalOpen &&
+                                          activeItem.kind !== "main"
+                                        ) {
+                                          onImageModalOpen(activeItem.id);
                                         } else {
+                                          // 모달이 없으면 기존 방식 사용
                                           console.log(
-                                            "[CLICK] ERROR: itemImageInputRef.current is null!",
+                                            "[CLICK] === IMAGE CHANGE CLICKED ===",
                                           );
+                                          console.log(
+                                            "[CLICK] Setting targetImageSlotIndex to:",
+                                            idx,
+                                            "type:",
+                                            typeof idx,
+                                          );
+                                          // ref에 먼저 저장 (동기적)
+                                          targetImageSlotIndexRef.current = idx;
+                                          setTargetImageSlotIndex(idx);
+                                          // 파일 입력에 data attribute로도 저장
+                                          if (itemImageInputRef.current) {
+                                            itemImageInputRef.current.setAttribute(
+                                              "data-target-slot",
+                                              String(idx),
+                                            );
+                                            console.log(
+                                              "[CLICK] Set data-target-slot to:",
+                                              itemImageInputRef.current.getAttribute(
+                                                "data-target-slot",
+                                              ),
+                                            );
+                                          } else {
+                                            console.log(
+                                              "[CLICK] ERROR: itemImageInputRef.current is null!",
+                                            );
+                                          }
+                                          // 약간의 지연 후 클릭 (상태 업데이트 보장)
+                                          requestAnimationFrame(() => {
+                                            console.log(
+                                              "[CLICK] Opening file dialog, ref value:",
+                                              targetImageSlotIndexRef.current,
+                                            );
+                                            itemImageInputRef.current?.click();
+                                          });
                                         }
-                                        // 약간의 지연 후 클릭 (상태 업데이트 보장)
-                                        requestAnimationFrame(() => {
-                                          console.log(
-                                            "[CLICK] Opening file dialog, ref value:",
-                                            targetImageSlotIndexRef.current,
-                                          );
-                                          itemImageInputRef.current?.click();
-                                        });
                                       }
                                     }}
                                     style={{
@@ -973,27 +983,36 @@ export default function LifeRecordDesktop({
                                 ) : (
                                   <div
                                     onClick={(e) => {
-                                      if (!cropState.isActive) {
+                                      if (!cropState.isActive && isEditing) {
                                         e.stopPropagation();
                                         e.preventDefault();
-                                        console.log(
-                                          "[CLICK] === EMPTY SLOT CLICKED ===",
-                                        );
-                                        console.log(
-                                          "[CLICK] Setting targetImageSlotIndex to:",
-                                          idx,
-                                        );
-                                        targetImageSlotIndexRef.current = idx;
-                                        setTargetImageSlotIndex(idx);
-                                        if (itemImageInputRef.current) {
-                                          itemImageInputRef.current.setAttribute(
-                                            "data-target-slot",
-                                            String(idx),
+                                        // 이미지 추가 모달 열기
+                                        if (
+                                          onImageModalOpen &&
+                                          activeItem.kind !== "main"
+                                        ) {
+                                          onImageModalOpen(activeItem.id);
+                                        } else {
+                                          // 모달이 없으면 기존 방식 사용
+                                          console.log(
+                                            "[CLICK] === EMPTY SLOT CLICKED ===",
                                           );
+                                          console.log(
+                                            "[CLICK] Setting targetImageSlotIndex to:",
+                                            idx,
+                                          );
+                                          targetImageSlotIndexRef.current = idx;
+                                          setTargetImageSlotIndex(idx);
+                                          if (itemImageInputRef.current) {
+                                            itemImageInputRef.current.setAttribute(
+                                              "data-target-slot",
+                                              String(idx),
+                                            );
+                                          }
+                                          requestAnimationFrame(() => {
+                                            itemImageInputRef.current?.click();
+                                          });
                                         }
-                                        requestAnimationFrame(() => {
-                                          itemImageInputRef.current?.click();
-                                        });
                                       }
                                     }}
                                     style={{
@@ -1385,8 +1404,7 @@ export default function LifeRecordDesktop({
                         </button>
                       </>
                     )}
-                    {/* 이미지가 있을 때만 이미지 변경/삭제 버튼 표시 */}
-                    {((activeItem.kind === "main" && activeItem.cover) ||
+                    {/* {((activeItem.kind === "main" && activeItem.cover) ||
                       (activeItem.kind !== "main" &&
                         activeItem.images &&
                         activeItem.images[currentImageIndex])) && (
@@ -1479,7 +1497,7 @@ export default function LifeRecordDesktop({
                             </button>
                           )}
                       </>
-                    )}
+                    )} */}
                   </>
                 )}
               </div>

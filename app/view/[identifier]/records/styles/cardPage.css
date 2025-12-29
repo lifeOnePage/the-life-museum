@@ -1053,7 +1053,7 @@ body,
 }
 
 .lr-desc-input::placeholder {
-  color: #9a9a9a;
+  color: var(--text);
   opacity: 0.5;
 }
 
@@ -1111,7 +1111,7 @@ input.lr-name {
 
 input.lr-name::placeholder,
 textarea.lr-name::placeholder {
-  color: #9a9a9a;
+  color: var(--text);
   opacity: 0.5;
 }
 
@@ -1142,7 +1142,7 @@ input.lr-subtitle {
 }
 
 input.lr-subtitle::placeholder {
-  color: #9a9a9a;
+  color: var(--text);
   opacity: 0.5;
 }
 

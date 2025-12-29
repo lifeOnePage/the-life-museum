@@ -98,6 +98,7 @@ export default function LifeRecordMobile({
   cropState = { isActive: false, imageFile: null, type: null, itemId: null },
   autoSlideEnabled: propAutoSlideEnabled,
   onAutoSlideEnabledChange,
+  onImageModalOpen,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -1083,12 +1084,17 @@ export default function LifeRecordMobile({
                 <div
                   style={{
                     position: "absolute",
-                    bottom: "10px",
+                    bottom: "16px",
                     left: "50%",
                     transform: "translateX(-50%)",
                     display: "flex",
-                    gap: "6px",
-                    zIndex: 2,
+                    gap: "8px",
+                    zIndex: 100,
+                    pointerEvents: "auto",
+                    padding: "4px 8px",
+                    borderRadius: "12px",
+                    background: "rgba(0, 0, 0, 0.3)",
+                    backdropFilter: "blur(4px)",
                   }}
                 >
                   {(activeItem.images || Array(5).fill(null)).map((_, idx) => (
@@ -1099,18 +1105,20 @@ export default function LifeRecordMobile({
                         setCurrentImageIndex(idx);
                       }}
                       style={{
-                        width: "6px",
-                        height: "6px",
+                        width: "10px",
+                        height: "10px",
                         borderRadius: "50%",
                         border: "none",
                         background:
                           idx === currentImageIndex
-                            ? `color-mix(in srgb, var(--text) 90%, transparent)`
+                            ? "rgba(255, 255, 255, 0.95)"
                             : _ === null
-                              ? `color-mix(in srgb, var(--text) 20%, transparent)`
-                              : `color-mix(in srgb, var(--text) 40%, transparent)`,
+                              ? "rgba(255, 255, 255, 0.3)"
+                              : "rgba(255, 255, 255, 0.6)",
                         cursor: "pointer",
                         padding: 0,
+                        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.5)",
+                        transition: "background 0.2s ease",
                       }}
                       aria-label={`이미지 ${idx + 1}`}
                     />
@@ -1200,13 +1208,17 @@ export default function LifeRecordMobile({
                       <div
                         style={{
                           position: "absolute",
-                          bottom: "12px",
+                          bottom: "16px",
                           left: "50%",
                           transform: "translateX(-50%)",
                           display: "flex",
-                          gap: "6px",
-                          zIndex: 10,
+                          gap: "8px",
+                          zIndex: 100,
                           pointerEvents: "auto",
+                          padding: "4px 8px",
+                          borderRadius: "12px",
+                          background: "rgba(0, 0, 0, 0.3)",
+                          backdropFilter: "blur(4px)",
                         }}
                       >
                         {validImages.map((_, idx) => (
@@ -1217,16 +1229,17 @@ export default function LifeRecordMobile({
                               setCurrentImageIndex(idx);
                             }}
                             style={{
-                              width: "8px",
-                              height: "8px",
+                              width: "10px",
+                              height: "10px",
                               borderRadius: "50%",
                               border: "none",
                               background:
                                 idx === currentImageIndex
-                                  ? `color-mix(in srgb, var(--text) 90%, transparent)`
-                                  : `color-mix(in srgb, var(--text) 50%, transparent)`,
+                                  ? "rgba(255, 255, 255, 0.95)"
+                                  : "rgba(255, 255, 255, 0.6)",
                               cursor: "pointer",
                               padding: 0,
+                              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.5)",
                               transition: "background 0.2s ease",
                             }}
                             aria-label={`이미지 ${idx + 1}`}
@@ -1346,8 +1359,8 @@ export default function LifeRecordMobile({
                 </button>
               </>
             )}
-            {/* 이미지가 있을 때만 이미지 변경/삭제 버튼 표시 */}
-            {((activeItem.kind === "main" && activeItem.cover) ||
+            {/* 이미지가 있을 때만 이미지 변경/삭제 버튼 표시 - 팝업 모달에서 처리하므로 주석처리 */}
+            {/* {((activeItem.kind === "main" && activeItem.cover) ||
               (activeItem.kind !== "main" &&
                 activeItem.images &&
                 activeItem.images[currentImageIndex])) && (
@@ -1433,7 +1446,7 @@ export default function LifeRecordMobile({
                     </button>
                   )}
               </>
-            )}
+            )} */}
           </>
         )}
       </div>

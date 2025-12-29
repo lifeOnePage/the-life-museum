@@ -238,11 +238,9 @@ export default function EditRecords() {
     // debounce: 3초 후에 자동저장
     const autoSaveTimer = setTimeout(async () => {
       try {
-        console.log("[AutoSave] 자동저장 시작...");
         await save();
         // save 함수 내부에서 이미 "저장되었습니다." 토스트를 표시함
       } catch (e) {
-        console.error("[AutoSave] 자동저장 실패:", e);
         // 자동저장 실패는 조용히 처리 (사용자에게 알리지 않음)
       }
     }, 3000); // 3초 대기
@@ -259,7 +257,6 @@ export default function EditRecords() {
         await save();
       } catch (e) {
         // 저장 실패해도 이동 가능하도록 (사용자가 선택할 수 있게)
-        console.error("자동저장 실패:", e);
         if (
           !confirm("저장하지 않은 변경사항이 있습니다. 정말 나가시겠습니까?")
         ) {
@@ -277,7 +274,6 @@ export default function EditRecords() {
         await save();
       } catch (e) {
         // 저장 실패해도 preview 모드로 전환
-        console.error("자동저장 실패:", e);
       }
     }
     setIsPreview((p) => !p);

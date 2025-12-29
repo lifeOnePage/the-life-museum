@@ -475,8 +475,12 @@ export default function LifeRecordDesktop({
     const currentBase = angleForIndex(activeIdx);
     const currentRotation = rotationRef.current || rotation;
 
+    // 각도 차이를 계산
     const angleDiff = base - currentBase;
-    let delta = -angleDiff;
+    // -180~180 범위로 정규화하여 가장 짧은 경로 선택
+    const normalizedDiff = wrapTo180(angleDiff);
+    // 원래 로직대로 delta는 -angleDiff이지만, 정규화된 값을 사용
+    let delta = -normalizedDiff;
 
     if (reverse) delta = -delta;
 
@@ -538,13 +542,20 @@ export default function LifeRecordDesktop({
         return;
       }
 
-      if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+      if (
+        e.key === "ArrowUp" ||
+        e.key === "ArrowDown" ||
+        e.key === "ArrowLeft" ||
+        e.key === "ArrowRight"
+      ) {
         e.preventDefault();
 
         let nextIdx;
-        if (e.key === "ArrowUp") {
+        if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+          // 위/좌: 이전 항목
           nextIdx = activeIdx > 0 ? activeIdx - 1 : timeline.length - 1;
         } else {
+          // 아래/우: 다음 항목
           nextIdx = activeIdx < timeline.length - 1 ? activeIdx + 1 : 0;
         }
 

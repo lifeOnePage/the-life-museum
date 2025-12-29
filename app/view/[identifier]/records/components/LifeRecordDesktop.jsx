@@ -113,17 +113,24 @@ export default function LifeRecordDesktop({
       const year = y ? parseInt(y, 10) : 0;
 
       // displayMode에 따라 label 결정 (입력 중이 아닐 때만 나이 계산)
-      let label = y || item.id.toString();
-      if (
-        displayMode === "age" &&
-        !isEditingBirthDate &&
-        data.record?.birthDate &&
-        item.date
-      ) {
-        const age = calculateAge(data.record.birthDate, item.date);
-        if (age !== null) {
-          label = `${age}세`;
+      // 임시 ID인 경우 label을 빈 문자열로 설정 (연도가 없으면 표시 안 함)
+      let label = "";
+      if (y) {
+        label = y;
+        if (
+          displayMode === "age" &&
+          !isEditingBirthDate &&
+          data.record?.birthDate &&
+          item.date
+        ) {
+          const age = calculateAge(data.record.birthDate, item.date);
+          if (age !== null) {
+            label = `${age}세`;
+          }
         }
+      } else if (!item.id?.toString().startsWith("temp-")) {
+        // 임시 ID가 아닌 경우에만 ID 표시
+        label = item.id.toString();
       }
 
       // images 배열이 있으면 사용, 없으면 coverUrl 사용 (하위 호환성)
@@ -148,11 +155,18 @@ export default function LifeRecordDesktop({
         images = Array(5).fill(null);
       }
 
+      // 임시 ID인 경우 또는 title이 비어있는 경우 "새로운 이벤트"로 표시
+      const eventTitle = item.title?.trim() || "";
+      const displayEvent =
+        item.id?.toString().startsWith("temp-") || !eventTitle
+          ? "새로운 이벤트"
+          : eventTitle;
+
       return {
         id: item.id,
         kind: "year",
         label: label,
-        event: item.title || "",
+        event: displayEvent,
         date: item.date || "",
         location: item.location || "",
         cover: images.find((img) => img) || "/images/records/No image.png", // 첫 번째 유효한 이미지를 기본으로

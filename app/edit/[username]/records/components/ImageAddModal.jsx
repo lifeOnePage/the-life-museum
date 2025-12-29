@@ -188,8 +188,8 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
           </h2>
 
           <div className="mb-6 flex flex-col gap-4">
-            {/* 이미지 그리드 - 더 작게 표시 (3열) */}
-            <div className="grid grid-cols-3 gap-3 max-w-md mx-auto">
+            {/* 이미지 그리드 - 3열 2행 */}
+            <div className="grid grid-cols-3 gap-3">
               {Array.from({ length: 5 }).map((_, idx) => {
                 const img = images[idx];
                 return (

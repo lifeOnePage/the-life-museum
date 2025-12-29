@@ -159,17 +159,24 @@ export default function LifeRecordMobile({
       const isVideo = coverUrl.match(/\.(mp4|mov|webm|m4v|avi)$/i);
 
       // displayMode에 따라 label 결정 (입력 중이 아닐 때만 나이 계산)
-      let label = y || item.id.toString();
-      if (
-        displayMode === "age" &&
-        !isEditingBirthDate &&
-        data.record?.birthDate &&
-        item.date
-      ) {
-        const age = calculateAge(data.record.birthDate, item.date);
-        if (age !== null) {
-          label = `${age}세`;
+      // 임시 ID인 경우 label을 빈 문자열로 설정 (연도가 없으면 표시 안 함)
+      let label = "";
+      if (y) {
+        label = y;
+        if (
+          displayMode === "age" &&
+          !isEditingBirthDate &&
+          data.record?.birthDate &&
+          item.date
+        ) {
+          const age = calculateAge(data.record.birthDate, item.date);
+          if (age !== null) {
+            label = `${age}세`;
+          }
         }
+      } else if (!item.id?.toString().startsWith("temp-")) {
+        // 임시 ID가 아닌 경우에만 ID 표시
+        label = item.id.toString();
       }
 
       // images 배열이 있으면 사용, 없으면 coverUrl 사용 (하위 호환성)
@@ -196,11 +203,18 @@ export default function LifeRecordMobile({
         images = Array(5).fill(null);
       }
 
+      // 임시 ID인 경우 또는 title이 비어있는 경우 "새로운 이벤트"로 표시
+      const eventTitle = item.title?.trim() || "";
+      const displayEvent =
+        item.id?.toString().startsWith("temp-") || !eventTitle
+          ? "새로운 이벤트"
+          : eventTitle;
+
       return {
         id: item.id,
         kind: "year",
         label: label,
-        event: item.title || "",
+        event: displayEvent,
         date: item.date || "",
         location: item.location || "",
         cover: images.find((img) => img) || "/images/records/No image.png",
@@ -872,43 +886,49 @@ export default function LifeRecordMobile({
                               if (!cropState.isActive && isEditing) {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                console.log(
-                                  "[CLICK] === IMAGE CHANGE CLICKED ===",
-                                );
-                                console.log(
-                                  "[CLICK] Setting targetImageSlotIndex to:",
-                                  idx,
-                                  "type:",
-                                  typeof idx,
-                                );
-
-                                targetImageSlotIndexRef.current = idx;
-                                setTargetImageSlotIndex(idx);
-
-                                if (itemImageInputRef.current) {
-                                  itemImageInputRef.current.setAttribute(
-                                    "data-target-slot",
-                                    String(idx),
-                                  );
-                                  console.log(
-                                    "[CLICK] Set data-target-slot to:",
-                                    itemImageInputRef.current.getAttribute(
-                                      "data-target-slot",
-                                    ),
-                                  );
+                                // 이미지 추가 모달 열기
+                                if (onImageModalOpen && activeItem.kind !== "main") {
+                                  onImageModalOpen(activeItem.id);
                                 } else {
+                                  // 모달이 없으면 기존 방식 사용
                                   console.log(
-                                    "[CLICK] ERROR: itemImageInputRef.current is null!",
+                                    "[CLICK] === IMAGE CHANGE CLICKED ===",
                                   );
-                                }
+                                  console.log(
+                                    "[CLICK] Setting targetImageSlotIndex to:",
+                                    idx,
+                                    "type:",
+                                    typeof idx,
+                                  );
 
-                                requestAnimationFrame(() => {
-                                  console.log(
-                                    "[CLICK] Opening file dialog, ref value:",
-                                    targetImageSlotIndexRef.current,
-                                  );
-                                  itemImageInputRef.current?.click();
-                                });
+                                  targetImageSlotIndexRef.current = idx;
+                                  setTargetImageSlotIndex(idx);
+
+                                  if (itemImageInputRef.current) {
+                                    itemImageInputRef.current.setAttribute(
+                                      "data-target-slot",
+                                      String(idx),
+                                    );
+                                    console.log(
+                                      "[CLICK] Set data-target-slot to:",
+                                      itemImageInputRef.current.getAttribute(
+                                        "data-target-slot",
+                                      ),
+                                    );
+                                  } else {
+                                    console.log(
+                                      "[CLICK] ERROR: itemImageInputRef.current is null!",
+                                    );
+                                  }
+
+                                  requestAnimationFrame(() => {
+                                    console.log(
+                                      "[CLICK] Opening file dialog, ref value:",
+                                      targetImageSlotIndexRef.current,
+                                    );
+                                    itemImageInputRef.current?.click();
+                                  });
+                                }
                               }
                             }}
                             style={{
@@ -974,27 +994,33 @@ export default function LifeRecordMobile({
                         ) : (
                           <div
                             onClick={(e) => {
-                              if (!cropState.isActive) {
+                              if (!cropState.isActive && isEditing) {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                console.log(
-                                  "[CLICK] === EMPTY SLOT CLICKED ===",
-                                );
-                                console.log(
-                                  "[CLICK] Setting targetImageSlotIndex to:",
-                                  idx,
-                                );
-                                targetImageSlotIndexRef.current = idx;
-                                setTargetImageSlotIndex(idx);
-                                if (itemImageInputRef.current) {
-                                  itemImageInputRef.current.setAttribute(
-                                    "data-target-slot",
-                                    String(idx),
+                                // 이미지 추가 모달 열기
+                                if (onImageModalOpen && activeItem.kind !== "main") {
+                                  onImageModalOpen(activeItem.id);
+                                } else {
+                                  // 모달이 없으면 기존 방식 사용
+                                  console.log(
+                                    "[CLICK] === EMPTY SLOT CLICKED ===",
                                   );
+                                  console.log(
+                                    "[CLICK] Setting targetImageSlotIndex to:",
+                                    idx,
+                                  );
+                                  targetImageSlotIndexRef.current = idx;
+                                  setTargetImageSlotIndex(idx);
+                                  if (itemImageInputRef.current) {
+                                    itemImageInputRef.current.setAttribute(
+                                      "data-target-slot",
+                                      String(idx),
+                                    );
+                                  }
+                                  requestAnimationFrame(() => {
+                                    itemImageInputRef.current?.click();
+                                  });
                                 }
-                                requestAnimationFrame(() => {
-                                  itemImageInputRef.current?.click();
-                                });
                               }
                             }}
                             style={{

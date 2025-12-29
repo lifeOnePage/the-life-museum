@@ -475,16 +475,67 @@ export default function LifeRecordDesktop({
     const currentBase = angleForIndex(activeIdx);
     const currentRotation = rotationRef.current || rotation;
 
+    // 인덱스가 증가하면 반시계 방향(음수), 감소하면 시계 방향(양수)
     // 각도 차이를 계산
     const angleDiff = base - currentBase;
+
+    // 인덱스 방향 확인
+    const isForward = i > activeIdx;
+
     // -180~180 범위로 정규화하여 가장 짧은 경로 선택
     const normalizedDiff = wrapTo180(angleDiff);
-    // 원래 로직대로 delta는 -angleDiff이지만, 정규화된 값을 사용
-    let delta = -normalizedDiff;
+
+    // 정규화된 값과 원래 값의 절댓값 비교
+    const absNormalized = Math.abs(normalizedDiff);
+    const absRaw = Math.abs(angleDiff);
+
+    // 더 작은 절댓값을 가진 방향 선택
+    let finalDiff;
+    if (absNormalized <= absRaw && absNormalized <= 180) {
+      finalDiff = normalizedDiff;
+    } else {
+      finalDiff = angleDiff;
+    }
+
+    // 인덱스 방향에 따라 delta 결정
+    // 인덱스 증가(앞으로): 반시계 방향(음수) → delta는 음수
+    // 인덱스 감소(뒤로): 시계 방향(양수) → delta는 양수
+    let delta;
+    if (isForward) {
+      // 앞으로: 반시계 방향 (음수)
+      delta = -Math.abs(finalDiff);
+    } else {
+      // 뒤로: 시계 방향 (양수)
+      delta = Math.abs(finalDiff);
+    }
 
     if (reverse) delta = -delta;
 
     const newRotation = currentRotation + delta;
+
+    // main과 event 간 이동 로그
+    const currentItem = timeline[activeIdx];
+    const targetItem = timeline[i];
+    const currentKind = currentItem?.kind || "unknown";
+    const targetKind = targetItem?.kind || "unknown";
+
+    if (
+      currentKind !== targetKind ||
+      currentKind === "main" ||
+      targetKind === "main"
+    ) {
+      console.log("[snapToIndex] 이동:", {
+        from: `${currentKind} (idx: ${activeIdx})`,
+        to: `${targetKind} (idx: ${i})`,
+        isForward,
+        angleDiff: angleDiff.toFixed(2),
+        normalizedDiff: normalizedDiff.toFixed(2),
+        finalDiff: finalDiff.toFixed(2),
+        delta: delta.toFixed(2),
+        currentRotation: currentRotation.toFixed(2),
+        newRotation: newRotation.toFixed(2),
+      });
+    }
 
     if (scrollSound.current) {
       scrollSound.current.currentTime = 0;

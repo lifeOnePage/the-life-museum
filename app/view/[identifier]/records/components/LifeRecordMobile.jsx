@@ -98,6 +98,7 @@ export default function LifeRecordMobile({
   cropState = { isActive: false, imageFile: null, type: null, itemId: null },
   autoSlideEnabled: propAutoSlideEnabled,
   onAutoSlideEnabledChange,
+  onImageModalOpen,
 }) {
   const router = useRouter();
   const [editingDateItemId, setEditingDateItemId] = useState(null); // 날짜 입력 중인 항목의 ID
@@ -158,17 +159,24 @@ export default function LifeRecordMobile({
       const isVideo = coverUrl.match(/\.(mp4|mov|webm|m4v|avi)$/i);
 
       // displayMode에 따라 label 결정 (입력 중이 아닐 때만 나이 계산)
-      let label = y || item.id.toString();
-      if (
-        displayMode === "age" &&
-        !isEditingBirthDate &&
-        data.record?.birthDate &&
-        item.date
-      ) {
-        const age = calculateAge(data.record.birthDate, item.date);
-        if (age !== null) {
-          label = `${age}세`;
+      // 임시 ID인 경우 label을 빈 문자열로 설정 (연도가 없으면 표시 안 함)
+      let label = "";
+      if (y) {
+        label = y;
+        if (
+          displayMode === "age" &&
+          !isEditingBirthDate &&
+          data.record?.birthDate &&
+          item.date
+        ) {
+          const age = calculateAge(data.record.birthDate, item.date);
+          if (age !== null) {
+            label = `${age}세`;
+          }
         }
+      } else if (!item.id?.toString().startsWith("temp-")) {
+        // 임시 ID가 아닌 경우에만 ID 표시
+        label = item.id.toString();
       }
 
       // images 배열이 있으면 사용, 없으면 coverUrl 사용 (하위 호환성)
@@ -195,11 +203,18 @@ export default function LifeRecordMobile({
         images = Array(5).fill(null);
       }
 
+      // 임시 ID인 경우 또는 title이 비어있는 경우 "새로운 이벤트"로 표시
+      const eventTitle = item.title?.trim() || "";
+      const displayEvent =
+        item.id?.toString().startsWith("temp-") || !eventTitle
+          ? "새로운 이벤트"
+          : eventTitle;
+
       return {
         id: item.id,
         kind: "year",
         label: label,
-        event: item.title || "",
+        event: displayEvent,
         date: item.date || "",
         location: item.location || "",
         cover: images.find((img) => img) || "/images/records/No image.png",
@@ -522,17 +537,39 @@ export default function LifeRecordMobile({
   useEffect(() => {
     if (isEditing || !autoSlideEnabled || timeline.length === 0) return;
 
-    const autoSlideInterval = setInterval(() => {
+    let timeoutId = null;
+
+    const scheduleNext = () => {
       const currentIdx = activeIdxRef.current;
       const currentItem = timeline[currentIdx];
+      
+      // main일 때는 7초, 그 외에는 5초
+      const delay = currentItem?.kind === "main" ? 7000 : 5000;
 
-      // 현재 이벤트의 유효한 이미지 개수 확인
-      const validImages = (currentItem?.images || []).filter((img) => img);
+      timeoutId = setTimeout(() => {
+        const currentIdx = activeIdxRef.current;
+        const currentItem = timeline[currentIdx];
 
-      if (validImages.length > 1) {
-        const currentImgIdx = currentImageIndexRef.current;
-        if (currentImgIdx < validImages.length - 1) {
-          setCurrentImageIndex(currentImgIdx + 1);
+        // 현재 이벤트의 유효한 이미지 개수 확인
+        const validImages = (currentItem?.images || []).filter((img) => img);
+
+        if (validImages.length > 1) {
+          const currentImgIdx = currentImageIndexRef.current;
+          if (currentImgIdx < validImages.length - 1) {
+            setCurrentImageIndex(currentImgIdx + 1);
+          } else {
+            let newIdx;
+            if (currentIdx >= timeline.length - 1) {
+              newIdx = 0;
+            } else {
+              newIdx = currentIdx + 1;
+            }
+            setIsTransitioning(true);
+            setTimeout(() => {
+              setActiveIdx(newIdx);
+              setIsTransitioning(false);
+            }, 150);
+          }
         } else {
           let newIdx;
           if (currentIdx >= timeline.length - 1) {
@@ -546,22 +583,20 @@ export default function LifeRecordMobile({
             setIsTransitioning(false);
           }, 150);
         }
-      } else {
-        let newIdx;
-        if (currentIdx >= timeline.length - 1) {
-          newIdx = 0;
-        } else {
-          newIdx = currentIdx + 1;
-        }
-        setIsTransitioning(true);
-        setTimeout(() => {
-          setActiveIdx(newIdx);
-          setIsTransitioning(false);
-        }, 150);
-      }
-    }, 5000);
 
-    return () => clearInterval(autoSlideInterval);
+        // 다음 슬라이드를 위해 재귀 호출
+        scheduleNext();
+      }, delay);
+    };
+
+    // 첫 번째 슬라이드 시작
+    scheduleNext();
+
+    return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+    };
   }, [isEditing, autoSlideEnabled, timeline.length, timeline]);
 
   const handleMenuClick = () => {
@@ -851,43 +886,49 @@ export default function LifeRecordMobile({
                               if (!cropState.isActive && isEditing) {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                console.log(
-                                  "[CLICK] === IMAGE CHANGE CLICKED ===",
-                                );
-                                console.log(
-                                  "[CLICK] Setting targetImageSlotIndex to:",
-                                  idx,
-                                  "type:",
-                                  typeof idx,
-                                );
-
-                                targetImageSlotIndexRef.current = idx;
-                                setTargetImageSlotIndex(idx);
-
-                                if (itemImageInputRef.current) {
-                                  itemImageInputRef.current.setAttribute(
-                                    "data-target-slot",
-                                    String(idx),
-                                  );
-                                  console.log(
-                                    "[CLICK] Set data-target-slot to:",
-                                    itemImageInputRef.current.getAttribute(
-                                      "data-target-slot",
-                                    ),
-                                  );
+                                // 이미지 추가 모달 열기
+                                if (onImageModalOpen && activeItem.kind !== "main") {
+                                  onImageModalOpen(activeItem.id);
                                 } else {
+                                  // 모달이 없으면 기존 방식 사용
                                   console.log(
-                                    "[CLICK] ERROR: itemImageInputRef.current is null!",
+                                    "[CLICK] === IMAGE CHANGE CLICKED ===",
                                   );
-                                }
+                                  console.log(
+                                    "[CLICK] Setting targetImageSlotIndex to:",
+                                    idx,
+                                    "type:",
+                                    typeof idx,
+                                  );
 
-                                requestAnimationFrame(() => {
-                                  console.log(
-                                    "[CLICK] Opening file dialog, ref value:",
-                                    targetImageSlotIndexRef.current,
-                                  );
-                                  itemImageInputRef.current?.click();
-                                });
+                                  targetImageSlotIndexRef.current = idx;
+                                  setTargetImageSlotIndex(idx);
+
+                                  if (itemImageInputRef.current) {
+                                    itemImageInputRef.current.setAttribute(
+                                      "data-target-slot",
+                                      String(idx),
+                                    );
+                                    console.log(
+                                      "[CLICK] Set data-target-slot to:",
+                                      itemImageInputRef.current.getAttribute(
+                                        "data-target-slot",
+                                      ),
+                                    );
+                                  } else {
+                                    console.log(
+                                      "[CLICK] ERROR: itemImageInputRef.current is null!",
+                                    );
+                                  }
+
+                                  requestAnimationFrame(() => {
+                                    console.log(
+                                      "[CLICK] Opening file dialog, ref value:",
+                                      targetImageSlotIndexRef.current,
+                                    );
+                                    itemImageInputRef.current?.click();
+                                  });
+                                }
                               }
                             }}
                             style={{
@@ -953,27 +994,33 @@ export default function LifeRecordMobile({
                         ) : (
                           <div
                             onClick={(e) => {
-                              if (!cropState.isActive) {
+                              if (!cropState.isActive && isEditing) {
                                 e.stopPropagation();
                                 e.preventDefault();
-                                console.log(
-                                  "[CLICK] === EMPTY SLOT CLICKED ===",
-                                );
-                                console.log(
-                                  "[CLICK] Setting targetImageSlotIndex to:",
-                                  idx,
-                                );
-                                targetImageSlotIndexRef.current = idx;
-                                setTargetImageSlotIndex(idx);
-                                if (itemImageInputRef.current) {
-                                  itemImageInputRef.current.setAttribute(
-                                    "data-target-slot",
-                                    String(idx),
+                                // 이미지 추가 모달 열기
+                                if (onImageModalOpen && activeItem.kind !== "main") {
+                                  onImageModalOpen(activeItem.id);
+                                } else {
+                                  // 모달이 없으면 기존 방식 사용
+                                  console.log(
+                                    "[CLICK] === EMPTY SLOT CLICKED ===",
                                   );
+                                  console.log(
+                                    "[CLICK] Setting targetImageSlotIndex to:",
+                                    idx,
+                                  );
+                                  targetImageSlotIndexRef.current = idx;
+                                  setTargetImageSlotIndex(idx);
+                                  if (itemImageInputRef.current) {
+                                    itemImageInputRef.current.setAttribute(
+                                      "data-target-slot",
+                                      String(idx),
+                                    );
+                                  }
+                                  requestAnimationFrame(() => {
+                                    itemImageInputRef.current?.click();
+                                  });
                                 }
-                                requestAnimationFrame(() => {
-                                  itemImageInputRef.current?.click();
-                                });
                               }
                             }}
                             style={{
@@ -1063,12 +1110,17 @@ export default function LifeRecordMobile({
                 <div
                   style={{
                     position: "absolute",
-                    bottom: "10px",
+                    bottom: "16px",
                     left: "50%",
                     transform: "translateX(-50%)",
                     display: "flex",
-                    gap: "6px",
-                    zIndex: 2,
+                    gap: "8px",
+                    zIndex: 100,
+                    pointerEvents: "auto",
+                    padding: "4px 8px",
+                    borderRadius: "12px",
+                    background: "rgba(0, 0, 0, 0.3)",
+                    backdropFilter: "blur(4px)",
                   }}
                 >
                   {(activeItem.images || Array(5).fill(null)).map((_, idx) => (
@@ -1079,18 +1131,20 @@ export default function LifeRecordMobile({
                         setCurrentImageIndex(idx);
                       }}
                       style={{
-                        width: "6px",
-                        height: "6px",
+                        width: "10px",
+                        height: "10px",
                         borderRadius: "50%",
                         border: "none",
                         background:
                           idx === currentImageIndex
-                            ? `color-mix(in srgb, var(--text) 90%, transparent)`
+                            ? "rgba(255, 255, 255, 0.95)"
                             : _ === null
-                              ? `color-mix(in srgb, var(--text) 20%, transparent)`
-                              : `color-mix(in srgb, var(--text) 40%, transparent)`,
+                              ? "rgba(255, 255, 255, 0.3)"
+                              : "rgba(255, 255, 255, 0.6)",
                         cursor: "pointer",
                         padding: 0,
+                        boxShadow: "0 2px 6px rgba(0, 0, 0, 0.5)",
+                        transition: "background 0.2s ease",
                       }}
                       aria-label={`이미지 ${idx + 1}`}
                     />
@@ -1180,13 +1234,17 @@ export default function LifeRecordMobile({
                       <div
                         style={{
                           position: "absolute",
-                          bottom: "12px",
+                          bottom: "16px",
                           left: "50%",
                           transform: "translateX(-50%)",
                           display: "flex",
-                          gap: "6px",
-                          zIndex: 10,
+                          gap: "8px",
+                          zIndex: 100,
                           pointerEvents: "auto",
+                          padding: "4px 8px",
+                          borderRadius: "12px",
+                          background: "rgba(0, 0, 0, 0.3)",
+                          backdropFilter: "blur(4px)",
                         }}
                       >
                         {validImages.map((_, idx) => (
@@ -1197,16 +1255,17 @@ export default function LifeRecordMobile({
                               setCurrentImageIndex(idx);
                             }}
                             style={{
-                              width: "8px",
-                              height: "8px",
+                              width: "10px",
+                              height: "10px",
                               borderRadius: "50%",
                               border: "none",
                               background:
                                 idx === currentImageIndex
-                                  ? `color-mix(in srgb, var(--text) 90%, transparent)`
-                                  : `color-mix(in srgb, var(--text) 50%, transparent)`,
+                                  ? "rgba(255, 255, 255, 0.95)"
+                                  : "rgba(255, 255, 255, 0.6)",
                               cursor: "pointer",
                               padding: 0,
+                              boxShadow: "0 2px 6px rgba(0, 0, 0, 0.5)",
                               transition: "background 0.2s ease",
                             }}
                             aria-label={`이미지 ${idx + 1}`}
@@ -1326,8 +1385,8 @@ export default function LifeRecordMobile({
                 </button>
               </>
             )}
-            {/* 이미지가 있을 때만 이미지 변경/삭제 버튼 표시 */}
-            {((activeItem.kind === "main" && activeItem.cover) ||
+            {/* 이미지가 있을 때만 이미지 변경/삭제 버튼 표시 - 팝업 모달에서 처리하므로 주석처리 */}
+            {/* {((activeItem.kind === "main" && activeItem.cover) ||
               (activeItem.kind !== "main" &&
                 activeItem.images &&
                 activeItem.images[currentImageIndex])) && (
@@ -1413,7 +1472,7 @@ export default function LifeRecordMobile({
                     </button>
                   )}
               </>
-            )}
+            )} */}
           </>
         )}
       </div>
@@ -1461,11 +1520,11 @@ export default function LifeRecordMobile({
                     onDataChange?.(newData);
                   }}
                   className="lr-mobile-meta-desc lr-mobile-edit-input"
-                  maxLength={150}
-                  placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 80자)"
+                  maxLength={250}
+                  placeholder="이 레코드에 대한 간단한 소개를 적어보세요 (최대 250자)"
                 />
                 <div className="lr-mobile-char-count">
-                  {(data.record?.description || "").length} / 150
+                  {(data.record?.description || "").length} / 250
                 </div>
                 {/* 연도/나이 표시 토글 및 생년월일 입력 */}
                 <div className="lr-mobile-display-mode-control">
@@ -1823,8 +1882,8 @@ export default function LifeRecordMobile({
                     onDataChange?.({ ...data, items: newItems });
                   }}
                   className="lr-mobile-meta-desc lr-mobile-edit-input"
-                  maxLength={150}
-                  placeholder="이 순간에 대한 이야기를 자유롭게 적어보세요 (최대 150자)"
+                  maxLength={250}
+                  placeholder="이 순간에 대한 이야기를 자유롭게 적어보세요 (최대 250자)"
                 />
                 <div className="lr-mobile-char-count">
                   {
@@ -1833,7 +1892,7 @@ export default function LifeRecordMobile({
                         ?.description || ""
                     ).length
                   }{" "}
-                  / 150
+                  / 250
                 </div>
                 <div className="lr-mobile-meta-info">
                   <textarea

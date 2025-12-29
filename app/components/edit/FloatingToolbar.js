@@ -17,10 +17,18 @@ const BG_THEME_PALETTE = [
   { name: "Olive", bg: "#7B7341", text: "#f2f2f2ff" },
   { name: "Warm Gray", bg: "#746F6F", text: "#F2F2F2" },
   { name: "Blue", bg: "#6C8E98", text: "#F2F2F2" },
-  { name: "BlackPink", bg: "#12121268", text: "#aa747dff" },
+  { name: "BlackPink", bg: "#212121", text: "#AA747D" },
   { name: "Parchment", bg: "#F5F1E6", text: "#111111" },
   { name: "Cloud", bg: "#ECECEC", text: "#111111" },
 ];
+
+// 색상 값을 정규화하는 함수 (알파 채널 제거, 대소문자 통일)
+const normalizeColor = (color) => {
+  if (!color) return "";
+  // 알파 채널이 있는 경우 제거 (#rrggbbaa -> #rrggbb)
+  const normalized = color.replace(/^#([0-9a-fA-F]{6})[0-9a-fA-F]{2}$/, "#$1");
+  return normalized.toLowerCase();
+};
 
 export default function FloatingToolbar({
   mypage,
@@ -240,48 +248,49 @@ export default function FloatingToolbar({
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {BG_THEME_PALETTE.map((theme) => (
-              <button
-                key={theme.name}
-                onClick={() => {
-                  if (onColorChange) {
-                    onColorChange(theme.bg);
-                  }
-                  setShowColorPicker(false);
-                }}
-                style={{
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "8px",
-                  background: theme.bg,
-                  border:
-                    currentColor === theme.bg
+            {BG_THEME_PALETTE.map((theme) => {
+              const isSelected =
+                normalizeColor(currentColor) === normalizeColor(theme.bg);
+              return (
+                <button
+                  key={theme.name}
+                  onClick={() => {
+                    if (onColorChange) {
+                      onColorChange(theme.bg);
+                    }
+                    setShowColorPicker(false);
+                  }}
+                  style={{
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "8px",
+                    background: theme.bg,
+                    border: isSelected
                       ? "2px solid #fff"
                       : "2px solid rgba(255,255,255,0.3)",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                  transform:
-                    currentColor === theme.bg ? "scale(1.1)" : "scale(1)",
-                  boxShadow:
-                    currentColor === theme.bg
+                    cursor: "pointer",
+                    transition: "all 0.2s",
+                    transform: isSelected ? "scale(1.1)" : "scale(1)",
+                    boxShadow: isSelected
                       ? "0 0 0 2px rgba(255,255,255,0.5)"
                       : "none",
-                }}
-                title={theme.name}
-                onMouseEnter={(e) => {
-                  if (currentColor !== theme.bg) {
-                    e.currentTarget.style.border =
-                      "2px solid rgba(255,255,255,0.6)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (currentColor !== theme.bg) {
-                    e.currentTarget.style.border =
-                      "2px solid rgba(255,255,255,0.3)";
-                  }
-                }}
-              />
-            ))}
+                  }}
+                  title={theme.name}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.border =
+                        "2px solid rgba(255,255,255,0.6)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) {
+                      e.currentTarget.style.border =
+                        "2px solid rgba(255,255,255,0.3)";
+                    }
+                  }}
+                />
+              );
+            })}
           </motion.div>
         )}
       </AnimatePresence>

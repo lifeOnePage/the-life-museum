@@ -314,13 +314,13 @@ export default function AddTimelineModal({ isOpen, onClose, onSave }) {
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="이벤트에 대한 설명을 입력해주세요.(최대 150자 입력 가능)"
+                placeholder="이벤트에 대한 설명을 입력해주세요.(최대 250자 입력 가능)"
                 rows={4}
-                maxLength={150}
+                maxLength={250}
                 className="w-full resize-none border-b border-gray-300 pb-2 text-black outline-none placeholder:text-gray-400 focus:border-gray-600"
               />
               <div className="mt-1 text-right text-xs text-gray-500">
-                {description.length} / 150
+                {description.length} / 250
               </div>
             </div>
 

@@ -113,12 +113,12 @@ export default function AddTimelineModal({ open, onClose, onCreate }) {
             <label>설명</label>
             <textarea
               rows={4}
-              maxLength={150}
+              maxLength={250}
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              placeholder="언제·어디서·누구와 있었는지, 그때의 감정까지 간단히 메모해 보세요. (최대 150자)"
+              placeholder="언제·어디서·누구와 있었는지, 그때의 감정까지 간단히 메모해 보세요. (최대 250자)"
             />
-            <div className="atl-count">{desc.length}/150</div>
+            <div className="atl-count">{desc.length}/250</div>
           </div>
 
           <div className="atl-actions">

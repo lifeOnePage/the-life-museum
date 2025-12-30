@@ -6,6 +6,7 @@ import React, { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useVideoTexture } from "@react-three/drei";
 import { motion } from "framer-motion";
+import SceneDescBlock from "./SceneDescBlock";
 
 // ▶︎ 고정 파라미터
 const RADIUS = 7.5;
@@ -148,12 +149,30 @@ const MediaPlane = React.forwardRef(function MediaPlane(
     <mesh ref={ref}>
       <planeGeometry args={[PLANE_W, PLANE_H]} />
       {kind === "image" && url ? (
-        <Suspense fallback={<EmptyMat opacity={0.18} animationOpacity={animationOpacity} />}>
-          <ImageMat url={url} isSelected={isSelected} isDarkMode={isDarkMode} animationOpacity={animationOpacity} />
+        <Suspense
+          fallback={
+            <EmptyMat opacity={0.18} animationOpacity={animationOpacity} />
+          }
+        >
+          <ImageMat
+            url={url}
+            isSelected={isSelected}
+            isDarkMode={isDarkMode}
+            animationOpacity={animationOpacity}
+          />
         </Suspense>
       ) : kind === "video" && url ? (
-        <Suspense fallback={<EmptyMat opacity={0.18} animationOpacity={animationOpacity} />}>
-          <VideoMat url={url} isSelected={isSelected} isDarkMode={isDarkMode} animationOpacity={animationOpacity} />
+        <Suspense
+          fallback={
+            <EmptyMat opacity={0.18} animationOpacity={animationOpacity} />
+          }
+        >
+          <VideoMat
+            url={url}
+            isSelected={isSelected}
+            isDarkMode={isDarkMode}
+            animationOpacity={animationOpacity}
+          />
         </Suspense>
       ) : (
         <EmptyMat animationOpacity={animationOpacity} />
@@ -197,7 +216,8 @@ function ExhibitionRingInner({
   // 각 플레인의 애니메이션 opacity 저장 - 더 이상 사용하지 않음
   // const [planeOpacities, setPlaneOpacities] = useState(new Array(N).fill(1));
   const planeOpacitiesRef = useRef(new Array(N).fill(1));
-  if (planeOpacitiesRef.current.length !== N) planeOpacitiesRef.current = Array(N).fill(1);
+  if (planeOpacitiesRef.current.length !== N)
+    planeOpacitiesRef.current = Array(N).fill(1);
 
   // 화면 전환 감지 - 주석처리 (백그라운드 블러 방식으로 변경)
   // useEffect(() => {
@@ -498,8 +518,7 @@ function ExhibitionRingInner({
         const textScreenPos = textWorldPos.project(camera);
 
         labelX = (textScreenPos.x * 0.5 + 0.5) * gl.domElement.clientWidth;
-        labelY =
-          (-(textScreenPos.y * 0.5) + 0.5) * gl.domElement.clientHeight;
+        labelY = (-(textScreenPos.y * 0.5) + 0.5) * gl.domElement.clientHeight;
 
         // 정렬용 normalizedX/Y 계산
         const planeWorldPos = new THREE.Vector3(planeX, labelY3D, planeZ);
@@ -569,7 +588,7 @@ export default function ExhibitionRing({
   exhibitionScreen = "ring",
   isPaused = false,
 }) {
-  console.log(profile)
+  console.log(profile);
   const [labelPositions, setLabelPositions] = useState([]);
   const [textOpacity, setTextOpacity] = useState(1); // 텍스트 레이블 opacity
 
@@ -581,10 +600,16 @@ export default function ExhibitionRing({
   // exhibitionScreen 변화에 따라 텍스트 opacity 조정
   const prevScreen = useRef(exhibitionScreen);
   useEffect(() => {
-    if (prevScreen.current === "ring" && exhibitionScreen === "profile-detail") {
+    if (
+      prevScreen.current === "ring" &&
+      exhibitionScreen === "profile-detail"
+    ) {
       // 링 → 프로필: 텍스트 감추기
       setTextOpacity(0);
-    } else if (prevScreen.current === "profile-detail" && exhibitionScreen === "ring") {
+    } else if (
+      prevScreen.current === "profile-detail" &&
+      exhibitionScreen === "ring"
+    ) {
       // 프로필 → 링: 텍스트 나타내기 (블러 사라진 후)
       setTimeout(() => setTextOpacity(1), 800);
     }
@@ -642,31 +667,37 @@ export default function ExhibitionRing({
       {/* 화면 중앙에 선택된 이미지와 아이템 정보 표시 */}
       {selectedSlot && selectedItem && (
         <div
-          className="pointer-events-none absolute inset-0 flex items-start justify-center pt-[4vh] z-10000 transition-opacity duration-300"
+          className="pointer-events-none absolute inset-0 z-10000 flex items-start justify-center pt-[4vh] transition-opacity duration-300"
           style={{ opacity: textOpacity }}
         >
           <div className="flex flex-col items-center gap-6">
             {/* 선택된 이미지/비디오 - 고정 크기 영역 */}
             {selectedSlot.url && (
-              <div className="h-[50vh] aspect-[25/17] flex items-center justify-center">
-                {selectedSlot.kind === "image" || selectedSlot.type === "image" ? (
+              <div className="flex aspect-[25/17] h-[50vh] items-center justify-center">
+                {selectedSlot.kind === "image" ||
+                selectedSlot.type === "image" ? (
                   <img
                     src={proxify(selectedSlot.url)}
                     alt={selectedItem.title || ""}
-                    className="w-full h-full object-contain"
+                    className="h-full w-full object-contain"
                     crossOrigin="anonymous"
-                    style={{ filter: 'drop-shadow(0px 40px 40px rgba(0, 0, 0, 0.2))' }}
+                    style={{
+                      filter: "drop-shadow(0px 40px 40px rgba(0, 0, 0, 0.2))",
+                    }}
                   />
-                ) : selectedSlot.kind === "video" || selectedSlot.type === "video" ? (
+                ) : selectedSlot.kind === "video" ||
+                  selectedSlot.type === "video" ? (
                   <video
                     src={proxify(selectedSlot.url)}
-                    className="w-full h-full object-contain"
+                    className="h-full w-full object-contain"
                     autoPlay
                     loop
                     muted
                     playsInline
                     crossOrigin="anonymous"
-                    style={{ filter: 'drop-shadow(0 30px 60px rgba(0, 0, 0, 0.6))' }}
+                    style={{
+                      filter: "drop-shadow(0 30px 60px rgba(0, 0, 0, 0.6))",
+                    }}
                   />
                 ) : null}
               </div>
@@ -674,7 +705,7 @@ export default function ExhibitionRing({
 
             {/* 아이템 상세 정보 - 항상 같은 높이에 표시 */}
             <div
-              className={`w-[calc(50vh*25/17)] text-center mt-3 px-8 rounded-xl transition-colors duration-300 ${
+              className={`mt-3 w-[calc(50vh*25/17)] rounded-xl px-8 text-center transition-colors duration-300 ${
                 isDarkMode ? " text-white" : " text-black"
               }`}
             >
@@ -688,7 +719,7 @@ export default function ExhibitionRing({
                     }`}
                     style={{
                       letterSpacing: "-0.05rem",
-                      fontSize: "clamp(1.25rem, 2.8vh, 4rem)"
+                      fontSize: "clamp(1.25rem, 2.8vh, 4rem)",
                     }}
                   >
                     {selectedItem.title}
@@ -710,7 +741,7 @@ export default function ExhibitionRing({
                       }`}
                       style={{
                         letterSpacing: "-0.05rem",
-                        fontSize: "clamp(1.25rem, 2.8vh, 4rem)"
+                        fontSize: "clamp(1.25rem, 2.8vh, 4rem)",
                       }}
                     >
                       {selectedItem.title}
@@ -727,7 +758,7 @@ export default function ExhibitionRing({
                   }`}
                   style={{
                     letterSpacing: "-0.05rem",
-                    fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
+                    fontSize: "clamp(0.875rem, 1.8vh, 2rem)",
                   }}
                 >
                   {selectedItem.date}
@@ -737,12 +768,12 @@ export default function ExhibitionRing({
               {/* 설명 */}
               {selectedItem.desc && (
                 <p
-                  className={`leading-relaxed mt-2 ${
+                  className={`mt-2 leading-relaxed ${
                     isDarkMode ? "text-white/80" : "text-black/80"
                   }`}
                   style={{
                     letterSpacing: "-0.05rem",
-                    fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
+                    fontSize: "clamp(0.875rem, 1.8vh, 2rem)",
                   }}
                 >
                   {selectedItem.desc}
@@ -813,37 +844,44 @@ export default function ExhibitionRing({
           );
         },
       )}
+      <SceneDescBlock />
 
       {/* 하단 프로필 정보 바 */}
       <div
-        className={`absolute bottom-0 left-1/2 flex w-[92vw] -translate-x-1/2 px-8 py-4 transition-colors duration-500 items-start ${
+        className={`absolute bottom-0 left-1/2 flex w-[92vw] -translate-x-1/2 items-start px-8 py-4 transition-colors duration-500 ${
           isDarkMode ? "bg-black/40 text-white" : "bg-white/40 text-black"
         } rounded-t-2xl backdrop-blur-md`}
         style={{ height: "calc(100vh / 8)" }}
       >
         {/* 프로필 이미지 썸네일 - 정방형 고정 */}
-        <div className={`flex-shrink-0 aspect-square h-full flex items-start justify-center  ${
-          isDarkMode ? "border-white/20" : "border-black/20"
-        }`}>
+        <div
+          className={`flex aspect-square h-full flex-shrink-0 items-start justify-center ${
+            isDarkMode ? "border-white/20" : "border-black/20"
+          }`}
+        >
           {profile?.photo ? (
             <img
               src={profile.photo}
               alt={profile?.name || "프로필"}
-              className="w-full h-full object-cover object-top"
+              className="h-full w-full object-cover object-top"
             />
           ) : (
-            <div className={`w-full h-full flex items-center justify-center ${
-              isDarkMode ? 'bg-white/10' : 'bg-black/10'
-            }`}>
+            <div
+              className={`flex h-full w-full items-center justify-center ${
+                isDarkMode ? "bg-white/10" : "bg-black/10"
+              }`}
+            >
               <span className="text-xs opacity-40">이미지</span>
             </div>
           )}
         </div>
 
         {/* 이름/제목 - 허그 너비 */}
-        <div className={`flex-shrink-0 h-full flex items-start justify-center px-4 pr-16 border-r ${
-          isDarkMode ? "border-white/20" : "border-black/20"
-        }`}>
+        <div
+          className={`flex h-full flex-shrink-0 items-start justify-center border-r px-4 pr-16 ${
+            isDarkMode ? "border-white/20" : "border-black/20"
+          }`}
+        >
           <div className="flex flex-col gap-1">
             <div
               className={`font-bold ${isDarkMode ? "text-white" : "text-black"}`}
@@ -857,7 +895,7 @@ export default function ExhibitionRing({
               }`}
               style={{
                 letterSpacing: "-0.05rem",
-                fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
+                fontSize: "clamp(0.875rem, 1.8vh, 2rem)",
               }}
             >
               {profile?.name || "-"}
@@ -866,9 +904,11 @@ export default function ExhibitionRing({
         </div>
 
         {/* 출생/일자 - 허그 너비 */}
-        <div className={`flex-shrink-0 h-full flex items-start justify-center px-4 pr-16 border-r ${
-          isDarkMode ? "border-white/20" : "border-black/20"
-        }`}>
+        <div
+          className={`flex h-full flex-shrink-0 items-start justify-center border-r px-4 pr-16 ${
+            isDarkMode ? "border-white/20" : "border-black/20"
+          }`}
+        >
           <div className="flex flex-col gap-1">
             <div
               className={`font-bold ${isDarkMode ? "text-white/90" : "text-black/90"}`}
@@ -881,15 +921,13 @@ export default function ExhibitionRing({
               style={{
                 letterSpacing: "-0.05rem",
                 lineHeight: "1.2",
-                fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
+                fontSize: "clamp(0.875rem, 1.8vh, 2rem)",
               }}
             >
               {profile?.recordFormat === "entire-life" ? (
                 <>
                   <div>{profile?.birthDate || "-"}</div>
-                  {profile?.birthPlace && (
-                    <div>{profile.birthPlace} 출생</div>
-                  )}
+                  {profile?.birthPlace && <div>{profile.birthPlace} 출생</div>}
                 </>
               ) : (
                 <div>{profile?.birthDate || "-"}</div>
@@ -899,19 +937,21 @@ export default function ExhibitionRing({
         </div>
 
         {/* 생애문 - 나머지 공간 */}
-        <div className="flex-1 h-full flex items-start justify-center pl-4">
-          <div className="flex flex-col gap-1 w-full">
+        <div className="flex h-full flex-1 items-start justify-center pl-4">
+          <div className="flex w-full flex-col gap-1">
             <div
               className={`font-bold ${isDarkMode ? "text-white/80" : "text-black/80"}`}
               style={{ fontSize: "clamp(0.75rem, 1.5vh, 1.25rem)" }}
             >
-              {profile?.recordFormat === "entire-life" ? "BIOGRAPHY" : "DESCRIPTION"}
+              {profile?.recordFormat === "entire-life"
+                ? "BIOGRAPHY"
+                : "DESCRIPTION"}
             </div>
             <div
-              className={`leading-relaxed ${isDarkMode ? "text-white/80" : "text-black/80"} break-words line-clamp-4`}
+              className={`leading-relaxed ${isDarkMode ? "text-white/80" : "text-black/80"} line-clamp-4 break-words`}
               style={{
                 letterSpacing: "-0.05rem",
-                fontSize: "clamp(0.875rem, 1.8vh, 2rem)"
+                fontSize: "clamp(0.875rem, 1.8vh, 2rem)",
               }}
             >
               {profile?.biography || "-"}

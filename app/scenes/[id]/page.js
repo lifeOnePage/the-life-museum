@@ -40,7 +40,7 @@ export default function ViewPage() {
   const [isSlowRotation, setIsSlowRotation] = useState(false); // 한 바퀴 완료 후 느린 회전
   const [lockedItemId, setLockedItemId] = useState(null); // 잠금된 아이템 ID (모바일 타임라인용)
   const [curtainY, setCurtainY] = useState(0); // 모바일 커튼 Y 위치 (0 = 내려옴, -100 = 올라감)
-  const [desktopCurtainY, setDesktopCurtainY] = useState(-100); // 데스크탑 프로필 커튼 Y 위치 (0 = 내려옴, -100 = 올라감)
+  const [desktopCurtainY, setDesktopCurtainY] = useState(0); // 데스크탑 프로필 커튼 Y 위치 (0 = 내려옴, -100 = 올라감)
   const [showPlayTooltip, setShowPlayTooltip] = useState(false); // 플레이 버튼 툴팁
   const [showProfileTooltip, setShowProfileTooltip] = useState(false); // 프로필 버튼 툴팁
   const [showCurtain, setShowCurtain] = useState(true); // 모바일 커튼 표시 여부
@@ -323,6 +323,7 @@ export default function ViewPage() {
       return;
 
     slowRotationTimerRef.current = setTimeout(() => {
+      setDesktopCurtainY(0); // 커튼 위치 리셋
       setExhibitionScreen("profile-detail");
       // 느린 회전 속도는 커튼이 닫힐 때까지 유지
     }, 2000);
@@ -335,24 +336,30 @@ export default function ViewPage() {
     };
   }, [isExhibitionMode, exhibitionScreen, isSlowRotation]);
 
-  // 프로필 커튼 자동 닫기 (25초 후)
+  // 프로필 커튼 자동 닫기 (20초 후)
   useEffect(() => {
     if (!isExhibitionMode || exhibitionScreen !== "profile-detail") return;
 
     profileCurtainTimerRef.current = setTimeout(() => {
-      setExhibitionScreen("ring");
-      rotationCompleteRef.current = false;
-      setIsSlowRotation(false); // 느린 회전 종료
-      // 처음(프로필)으로 리셋하여 다시 시작
-      setExhibitionCurrentIndex(profileIndex);
-    }, 25000);
+      setDesktopCurtainY(-100); // 커튼을 위로 올림
+      setTimeout(() => {
+        setExhibitionScreen("ring");
+        rotationCompleteRef.current = false;
+        // OFF 모드가 아닐 때만 회전 종료 (다시 시작)
+        if (exhibitionInterval !== 0) {
+          setIsSlowRotation(false);
+        }
+        // 처음(프로필)으로 리셋하여 다시 시작
+        setExhibitionCurrentIndex(profileIndex);
+      }, 800); // 커튼 애니메이션 시간
+    }, 20000);
 
     return () => {
       if (profileCurtainTimerRef.current) {
         clearTimeout(profileCurtainTimerRef.current);
       }
     };
-  }, [isExhibitionMode, exhibitionScreen, profileIndex]);
+  }, [isExhibitionMode, exhibitionScreen, profileIndex, exhibitionInterval]);
 
   // 이미지 aspect ratio 상태
   const [imageAspectRatio, setImageAspectRatio] = useState(null);
@@ -992,6 +999,16 @@ export default function ViewPage() {
     // 스냅: 25% 이상 올라갔으면 완전히 올리고, 아니면 다시 내림
     if (desktopCurtainY < -25) {
       setDesktopCurtainY(-100);
+      setTimeout(() => {
+        setExhibitionScreen("ring");
+        rotationCompleteRef.current = false;
+        // OFF 모드가 아닐 때만 회전 종료 (다시 시작)
+        if (exhibitionInterval !== 0) {
+          setIsSlowRotation(false);
+        }
+        // 처음(프로필)으로 리셋하여 다시 시작
+        setExhibitionCurrentIndex(profileIndex);
+      }, 800); // 커튼 애니메이션 시간
     } else {
       setDesktopCurtainY(0);
     }
@@ -1266,52 +1283,56 @@ export default function ViewPage() {
                 //     </span>
                 //   </motion.div>
                 // </motion.div>
-                <motion.div
-                  key="profile-detail"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="fixed inset-0 z-50 hidden bg-black lg:block"
-                  style={{ touchAction: "none" }}
-                  onPointerDown={handleDesktopCurtainPointerDown}
-                  onPointerMove={handleDesktopCurtainPointerMove}
-                  onPointerUp={handleDesktopCurtainPointerUp}
-                  onPointerLeave={handleDesktopCurtainPointerUp}
-                >
-                  <ProfileDetailScreen
-                    profile={profile}
-                    isDarkMode={isDarkMode}
-                    isFullScreen={true}
-                    isMobile={false}
-                  />
 
-                  {/* 드래그 힌트 */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1}}
-                    className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2"
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      className="text-white/60"
+                <AnimatePresence>
+                  {desktopCurtainY > -100 && (
+                    <motion.div
+                      initial={{ y: "-100%" }}
+                      animate={{ y: `${desktopCurtainY}%` }}
+                      exit={{ y: "-100%" }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className="fixed inset-0 z-50 hidden bg-black lg:block"
+                      style={{ touchAction: "none" }}
+                      onPointerDown={handleDesktopCurtainPointerDown}
+                      onPointerMove={handleDesktopCurtainPointerMove}
+                      onPointerUp={handleDesktopCurtainPointerUp}
+                      onPointerLeave={handleDesktopCurtainPointerUp}
                     >
-                      <path
-                        d="M12 19V5M12 5L5 12M12 5L19 12"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      <ProfileDetailScreen
+                        profile={profile}
+                        isDarkMode={isDarkMode}
+                        isFullScreen={true}
+                        isMobile={false}
                       />
-                    </svg>
-                    <span className="text-xs text-white/60">
-                      위로 드래그하여 닫기
-                    </span>
-                  </motion.div>
-                </motion.div>
+
+                      {/* 드래그 힌트 */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: desktopCurtainY === 0 ? 1 : 0 }}
+                        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2"
+                      >
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="text-white/60"
+                        >
+                          <path
+                            d="M12 19V5M12 5L5 12M12 5L19 12"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span className="text-xs text-white/60">
+                          위로 드래그하여 닫기
+                        </span>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               )}
             </AnimatePresence>
           </div>
@@ -2188,11 +2209,11 @@ export default function ViewPage() {
       </div>
 
       {/* 프로필 커튼 - 모바일과 데스크탑 모두 */}
-      <ProfileCurtain
+      {/* <ProfileCurtain
         open={isProfileCurtainOpen}
         onClose={() => setIsProfileCurtainOpen(false)}
         profile={profile}
-      />
+      /> */}
 
       {/* 데스크탑 프로필 커튼 */}
       <AnimatePresence>

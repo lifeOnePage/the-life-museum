@@ -1,5 +1,11 @@
 import TitleBlock from "./TitleBlock";
 
+/**
+ * Side navigation for record editing.
+ * 레코드 편집용 사이드 네비게이션.
+ * @param {{ desktopShowMenu: number, setDesktopShowMenu: Function, section: Array<{eng: string, kor: string}> }} props
+ * @returns {JSX.Element}
+ */
 export default function EditNavDrawer({
   desktopShowMenu,
   setDesktopShowMenu,
@@ -24,4 +30,3 @@ export default function EditNavDrawer({
     </div>
   );
 }
-

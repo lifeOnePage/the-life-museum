@@ -18,6 +18,11 @@ import ImageCropOverlay from "./components/ImageCropOverlay";
 import "@/app/view/[identifier]/records/styles/cardPage.css";
 import "@/app/view/[identifier]/records/styles/cardPage-mobile.css";
 
+/**
+ * Subscribes to window size changes.
+ * 현재 window 크기를 구독합니다.
+ * @returns {{ width: number, height: number }}
+ */
 function useWindowSize() {
   const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
@@ -31,6 +36,11 @@ function useWindowSize() {
   return size;
 }
 
+/**
+ * Record edit page.
+ * 레코드 편집 페이지.
+ * @returns {JSX.Element}
+ */
 export default function EditRecords() {
   const { width } = useWindowSize();
   const { username } = useParams();

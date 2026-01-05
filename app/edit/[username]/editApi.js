@@ -1,5 +1,11 @@
 import { makeDummyGalleryPayload, makeMixedPayloadWithIds } from "./dummyData";
 
+/**
+ * Fetches reel details.
+ * 리엘 상세 정보를 조회합니다.
+ * @param {{ token: string, identifier: string }} params
+ * @returns {Promise<any>}
+ */
 export async function fetchReelsDetails({ token, identifier }) {
   console.group("fetchReelsDetails");
   console.log("identifier: ", identifier);
@@ -18,6 +24,12 @@ export async function fetchReelsDetails({ token, identifier }) {
 }
 
 // ===== drop-in replacement =====
+/**
+ * Updates reel profile info.
+ * 리엘 프로필 정보를 업데이트합니다.
+ * @param {{ token?: string, id: string, data: object }} params
+ * @returns {Promise<any>}
+ */
 export async function updateReelsDetails({ token, id, data }) {
   // data: { profileImg?, name?, birthDate?, birthPlace?, motto? }
 
@@ -107,6 +119,12 @@ export async function updateReelsDetails({ token, id, data }) {
 }
 
 
+/**
+ * Updates gallery details (including dummy payload).
+ * 갤러리 상세(더미 포함)를 업데이트합니다.
+ * @param {{ token?: string, id: string, data?: object }} params
+ * @returns {Promise<any>}
+ */
 export async function updateReelsGalleryDetails({ token, id, data }) {
   const payload = makeMixedPayloadWithIds({
     memory: [3],
@@ -134,6 +152,12 @@ export async function updateReelsGalleryDetails({ token, id, data }) {
   return json;
 }
 
+/**
+ * Fetches lifestory data.
+ * 라이프스토리 데이터를 조회합니다.
+ * @param {{ token?: string, id: string, edit?: boolean }} params
+ * @returns {Promise<any>}
+ */
 export async function fetchLifestory({ token, id, edit = false }) {
   const url = `/api/reel/lifestory/${encodeURIComponent(id)}${edit ? "?edit=1" : ""}`;
   const res = await fetch(url, {
@@ -147,6 +171,12 @@ export async function fetchLifestory({ token, id, edit = false }) {
   if (!res.ok) throw new Error(json?.error || "fetch failed");
   return json.item; // { style, questions, answers, story, tokenUsage, ... }
 }
+/**
+ * Saves lifestory data.
+ * 라이프스토리 데이터를 저장합니다.
+ * @param {{ token?: string, id: string, data: object }} params
+ * @returns {Promise<any>}
+ */
 export async function saveLifestory({ token, id, data }) {
   const res = await fetch(`/api/reel/lifestory/${encodeURIComponent(id)}`, {
     method: "PATCH",
@@ -162,10 +192,22 @@ export async function saveLifestory({ token, id, data }) {
 }
 
 /** 사용량 +1 전용 */
+/**
+ * Increments lifestory usage by 1.
+ * 라이프스토리 사용량을 1회 증가시킵니다.
+ * @param {{ token?: string, id: string }} params
+ * @returns {Promise<any>}
+ */
 export async function incrementLifestoryUsage({ token, id }) {
   return saveLifestory({ token, id, data: { incUsage: true } });
 }
 
+/**
+ * Generates a story via GPT.
+ * GPT로 스토리를 생성합니다.
+ * @param {{ token?: string, style: string, messages: Array<any>, userName?: string }} params
+ * @returns {Promise<any>}
+ */
 export async function generateStory({ token, style, messages, userName }) {
   const res = await fetch("/api/gpt-story", {
     method: "POST",

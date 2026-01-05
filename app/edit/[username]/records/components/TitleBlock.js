@@ -1,3 +1,9 @@
+/**
+ * Section title block.
+ * 섹션 제목 블록.
+ * @param {{ kor: string, eng: string }} props
+ * @returns {JSX.Element}
+ */
 export default function TitleBlock({ kor, eng }) {
   return (
     <div className="flex items-baseline gap-2 w-full border-b border-white py-4 text-2xl font-bold font-serif italic">
@@ -8,4 +14,3 @@ export default function TitleBlock({ kor, eng }) {
     </div>
   );
 }
-

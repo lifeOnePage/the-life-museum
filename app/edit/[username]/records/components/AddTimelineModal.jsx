@@ -3,6 +3,12 @@ import { useState, useRef } from "react";
 import { uploadRecordFile } from "../services/editApi";
 import { useAuth } from "@/app/contexts/AuthContext";
 
+/**
+ * Timeline item creation modal.
+ * 타임라인 아이템 생성 모달.
+ * @param {{ isOpen: boolean, onClose: Function, onSave: Function }} props
+ * @returns {JSX.Element|null}
+ */
 export default function AddTimelineModal({ isOpen, onClose, onSave }) {
   const { token } = useAuth();
   const [title, setTitle] = useState("");

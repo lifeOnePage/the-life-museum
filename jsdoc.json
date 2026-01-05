@@ -1,0 +1,11 @@
+{
+  "source": {
+    "include": ["app", "scripts"],
+    "includePattern": ".+\\.(js|jsx|ts|tsx)$",
+    "excludePattern": "(^|\\/)_"
+  },
+  "opts": {
+    "destination": "docs/jsdoc",
+    "recurse": true
+  }
+}

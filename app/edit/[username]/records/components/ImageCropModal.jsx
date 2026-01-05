@@ -1,6 +1,12 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 
+/**
+ * Image crop modal.
+ * 이미지 크롭 모달.
+ * @param {{ isOpen: boolean, onClose: Function, imageFile: File, onCropComplete: Function, aspectRatio?: number|null, minWidth?: number, minHeight?: number }} props
+ * @returns {JSX.Element|null}
+ */
 export default function ImageCropModal({
   isOpen,
   onClose,

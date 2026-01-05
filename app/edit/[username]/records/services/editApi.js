@@ -1,5 +1,11 @@
 import { authedFetch } from "@/app/utils/authedFetch";
 
+/**
+ * Fetches record details.
+ * 레코드 상세 정보를 조회합니다.
+ * @param {{ token: string, identifier: string }} params
+ * @returns {Promise<any>}
+ */
 export async function fetchRecordDetails({ token, identifier }) {
   const res = await authedFetch(`/api/records/${identifier}`, {
     token,
@@ -12,6 +18,12 @@ export async function fetchRecordDetails({ token, identifier }) {
   return json;
 }
 
+/**
+ * Updates record metadata.
+ * 레코드 메타 정보를 업데이트합니다.
+ * @param {{ token: string, id: string, data: object }} params
+ * @returns {Promise<any>}
+ */
 export async function updateRecordDetails({ token, id, data }) {
   const res = await authedFetch(`/api/record/${id}`, {
     token,
@@ -25,6 +37,12 @@ export async function updateRecordDetails({ token, id, data }) {
   return json;
 }
 
+/**
+ * Creates a record timeline item.
+ * 레코드 타임라인 아이템을 생성합니다.
+ * @param {{ token: string, recordId: string, data: object }} params
+ * @returns {Promise<any>}
+ */
 export async function createRecordItem({ token, recordId, data }) {
   const res = await authedFetch(`/api/record/${recordId}`, {
     token,
@@ -37,6 +55,12 @@ export async function createRecordItem({ token, recordId, data }) {
   return json;
 }
 
+/**
+ * Updates a record timeline item.
+ * 레코드 타임라인 아이템을 업데이트합니다.
+ * @param {{ token: string, itemId: string, data: object }} params
+ * @returns {Promise<any>}
+ */
 export async function updateRecordItem({ token, itemId, data }) {
   const res = await authedFetch(`/api/record/item/${itemId}`, {
     token,
@@ -49,6 +73,12 @@ export async function updateRecordItem({ token, itemId, data }) {
   return json;
 }
 
+/**
+ * Deletes a record timeline item.
+ * 레코드 타임라인 아이템을 삭제합니다.
+ * @param {{ token: string, itemId: string }} params
+ * @returns {Promise<any>}
+ */
 export async function deleteRecordItem({ token, itemId }) {
   const res = await authedFetch(`/api/record/item/${itemId}`, {
     token,
@@ -60,6 +90,12 @@ export async function deleteRecordItem({ token, itemId }) {
   return json;
 }
 
+/**
+ * Uploads a record file via presign and returns a public URL.
+ * 레코드용 파일을 presign 후 업로드하고 공개 URL을 반환합니다.
+ * @param {{ token: string, file: File, prefix: string }} params
+ * @returns {Promise<string>}
+ */
 export async function uploadRecordFile({ token, file, prefix }) {
   try {
     console.log("[uploadRecordFile] Starting upload:", {

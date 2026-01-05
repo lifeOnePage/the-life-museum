@@ -1,6 +1,12 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
 
+/**
+ * Image crop overlay UI.
+ * 이미지 크롭 오버레이 UI.
+ * @param {{ imageFile: File, onCropComplete: Function, onCancel: Function, aspectRatio?: number|null, minWidth?: number, minHeight?: number }} props
+ * @returns {JSX.Element}
+ */
 export default function ImageCropOverlay({
   imageFile,
   onCropComplete,

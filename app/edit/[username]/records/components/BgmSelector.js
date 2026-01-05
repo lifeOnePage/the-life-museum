@@ -45,6 +45,12 @@ const BGM_LIST = [
   },
 ];
 
+/**
+ * Background music selector UI.
+ * 배경음악 선택 UI.
+ * @param {{ selectedBgm?: string, onSelect: Function }} props
+ * @returns {JSX.Element}
+ */
 export default function BgmSelector({ selectedBgm, onSelect }) {
   const [playingId, setPlayingId] = useState(null);
   const [loadingId, setLoadingId] = useState(null);

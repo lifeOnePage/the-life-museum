@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: scenes/[id]/components/RingSlider.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: scenes/[id]/components/RingSlider.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Lock, Unlock, ChevronLeft, ChevronRight } from "lucide-react";
+
+/**
+ * RingSlider - 링 조작을 위한 2단 슬라이더
+ * @param {Array} items - 아이템 배열
+ * @param {Object} textureData - { textures, itemRanges }
+ * @param {number} leftIndex - 현재 leftmost 인덱스
+ * @param {Function} onChangeLeftIndex - leftIndex 변경 콜백
+ * @param {Function} onItemClick - 아이템 클릭 콜백
+ */
+export default function RingSlider({
+  items = [],
+  textureData,
+  leftIndex = 0,
+  onChangeLeftIndex,
+  onItemClick,
+  isPanelOpen = false,
+  onTogglePanel,
+  isDesktop = false,
+  onOpenProfileCurtain,
+}) {
+  const [isLocked, setIsLocked] = useState(false);
+  const containerRef = useRef(null);
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const dragOffsetRef = useRef(0);
+  const wheelAccumulatorRef = useRef(0); // 휠 스크롤 누적값
+
+  // 현재 leftIndex가 속한 아이템 찾기
+  const currentItem = items.find((item) => {
+    const range = textureData.itemRanges[item.id];
+    if (!range) return false;
+    return leftIndex >= range.start &amp;&amp; leftIndex &lt;= range.end;
+  });
+
+  // 현재 아이템의 인덱스
+  const currentItemIndex = currentItem ? items.findIndex((item) => item.id === currentItem.id) : 0;
+
+  // 이전/다음 아이템
+  const prevItem = items[(currentItemIndex - 1 + items.length) % items.length];
+  const nextItem = items[(currentItemIndex + 1) % items.length];
+
+  // 잠금 상태에 따른 조작 가능 범위
+  const [minIndex, maxIndex] = isLocked &amp;&amp; currentItem
+    ? [textureData.itemRanges[currentItem.id]?.start || 0, textureData.itemRanges[currentItem.id]?.end || 0]
+    : [0, textureData.textures.length - 1];
+
+  // 아이템 클릭 핸들러
+  const handleItemClick = (item, direction) => {
+    if (item &amp;&amp; onItemClick) {
+      onItemClick(item);
+    }
+  };
+
+  // 잠금 토글
+  const handleLockToggle = () => {
+    setIsLocked((prev) => !prev);
+  };
+
+  const tickWidth = 20; // 각 눈금의 너비 (px) - 구 버전용
+  const filmFrameWidth = 40; // 필름 프레임 너비 (px)
+  const filmFrameHeight = 30; // 필름 프레임 높이 (px) - 4:3 비율
+
+  // clientX 좌표 가져오기 (마우스/터치 통합)
+  const getClientX = (e) => {
+    if (e.touches &amp;&amp; e.touches.length > 0) {
+      return e.touches[0].clientX;
+    }
+    if (e.changedTouches &amp;&amp; e.changedTouches.length > 0) {
+      return e.changedTouches[0].clientX;
+    }
+    return e.clientX;
+  };
+
+  // 슬라이더 드래그 핸들러 (마우스/터치 통합)
+  const handleStart = (e) => {
+    isDraggingRef.current = true;
+    startXRef.current = getClientX(e);
+    dragOffsetRef.current = 0;
+  };
+
+  const handleMove = (e) => {
+    if (!isDraggingRef.current) return;
+    e.preventDefault();
+
+    const deltaX = getClientX(e) - startXRef.current;
+    const framesDelta = Math.round(deltaX / filmFrameWidth);
+
+    // 드래그한 거리만큼 인덱스 변경
+    const newIndex = leftIndex - framesDelta;
+    if (newIndex >= minIndex &amp;&amp; newIndex &lt;= maxIndex &amp;&amp; newIndex !== leftIndex) {
+      onChangeLeftIndex?.(newIndex);
+      startXRef.current = getClientX(e);
+    }
+  };
+
+  const handleEnd = () => {
+    isDraggingRef.current = false;
+  };
+
+  // 휠 스크롤 핸들러 (데스크탑용)
+  const handleWheel = (e) => {
+    if (!isDesktop) return;
+
+    e.preventDefault();
+
+    // 가로 스크롤 우선 (트랙패드 두 손가락 좌우)
+    const deltaX = e.deltaX;
+    const deltaY = e.deltaY;
+
+    // 가로 스크롤이 세로보다 크면 가로 스크롤로 처리
+    const isHorizontalScroll = Math.abs(deltaX) > Math.abs(deltaY);
+    const scrollAmount = isHorizontalScroll ? deltaX : deltaY;
+
+    // 스크롤 값을 누적
+    wheelAccumulatorRef.current += scrollAmount;
+
+    // 임계값 설정 (이 값을 넘으면 한 프레임 이동)
+    const threshold = 40; // 값이 작을수록 민감, 클수록 둔감
+
+    // 누적값이 임계값을 넘으면 이동
+    if (Math.abs(wheelAccumulatorRef.current) >= threshold) {
+      const direction = wheelAccumulatorRef.current > 0 ? 1 : -1;
+      const newIndex = leftIndex + direction;
+
+      if (newIndex >= minIndex &amp;&amp; newIndex &lt;= maxIndex) {
+        onChangeLeftIndex?.(newIndex);
+        // 이동 후 누적값에서 임계값만큼 빼기 (나머지 유지)
+        wheelAccumulatorRef.current -= direction * threshold;
+      } else {
+        // 범위를 벗어나면 누적값 초기화
+        wheelAccumulatorRef.current = 0;
+      }
+    }
+  };
+
+  useEffect(() => {
+    const handleGlobalMove = (e) => handleMove(e);
+    const handleGlobalEnd = () => handleEnd();
+
+    // 마우스 이벤트
+    document.addEventListener("mousemove", handleGlobalMove);
+    document.addEventListener("mouseup", handleGlobalEnd);
+    // 터치 이벤트
+    document.addEventListener("touchmove", handleGlobalMove, { passive: false });
+    document.addEventListener("touchend", handleGlobalEnd);
+
+    return () => {
+      document.removeEventListener("mousemove", handleGlobalMove);
+      document.removeEventListener("mouseup", handleGlobalEnd);
+      document.removeEventListener("touchmove", handleGlobalMove);
+      document.removeEventListener("touchend", handleGlobalEnd);
+    };
+  }, [leftIndex, minIndex, maxIndex]);
+
+  // 휠 이벤트 리스너 등록 (passive: false로 설정하여 preventDefault 활성화)
+  useEffect(() => {
+    if (!isDesktop) return;
+
+    const sliderElement = containerRef.current?.parentElement;
+    if (!sliderElement) return;
+
+    sliderElement.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      sliderElement.removeEventListener("wheel", handleWheel);
+    };
+  }, [isDesktop, leftIndex, minIndex, maxIndex]);
+
+  return (
+    &lt;div className="w-full  border-white/10">
+      {/* 데스크탑 - 대표 타이틀 버튼만 표시 */}
+      {isDesktop &amp;&amp; (
+        &lt;div className="flex justify-end items-center px-4 py-2 border-b border-white/10">
+          &lt;button
+            onClick={onOpenProfileCurtain}
+            className="flex flex-row items-center gap-2 text-white/70 hover:text-white transition-colors"
+          >
+            &lt;span className="text-xs">대표 타이틀 보기&lt;/span>
+            &lt;svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              &lt;circle
+                cx="8"
+                cy="6"
+                r="2.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+              />
+              &lt;path
+                d="M3 13c0-2.5 2-4 5-4s5 1.5 5 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+            &lt;/svg>
+          &lt;/button>
+        &lt;/div>
+      )}
+
+      {/* 모바일 - 토글 버튼 양쪽 표시 */}
+      {!isDesktop &amp;&amp; (
+        &lt;div className="flex justify-between items-center px-4 py-2 border-b border-white/10">
+          {/* 전체 보기 / 닫기 버튼 - 왼쪽 */}
+          &lt;button
+            onClick={onTogglePanel}
+            className="flex flex-row items-center gap-2 text-white/70 hover:text-white transition-colors"
+          >
+            {isPanelOpen ? (
+              &lt;>
+                &lt;svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  &lt;path
+                    d="M4 6L8 10L12 6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                &lt;/svg>
+                &lt;span className="text-xs">닫기&lt;/span>
+              &lt;/>
+            ) : (
+              &lt;>
+                &lt;svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="transform rotate-180"
+                >
+                  &lt;path
+                    d="M4 6L8 10L12 6"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                &lt;/svg>
+                &lt;span className="text-xs">전체 보기&lt;/span>
+              &lt;/>
+            )}
+          &lt;/button>
+
+          {/* 대표 타이틀 보기 버튼 - 오른쪽 */}
+          &lt;button
+            onClick={onOpenProfileCurtain}
+            className="flex flex-row items-center gap-2 text-white/70 hover:text-white transition-colors"
+          >
+            &lt;span className="text-xs">대표 타이틀 보기&lt;/span>
+            &lt;svg
+              width="16"
+              height="16"
+              viewBox="0 0 16 16"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              &lt;circle
+                cx="8"
+                cy="6"
+                r="2.5"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+              />
+              &lt;path
+                d="M3 13c0-2.5 2-4 5-4s5 1.5 5 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                fill="none"
+              />
+            &lt;/svg>
+          &lt;/button>
+        &lt;/div>
+      )}
+
+      {/* 첫 번째 단: 아이템 네비게이션 */}
+      &lt;div className="relative bg-black/30 backdrop-blur-md py-3 border-b border-white/10" style={{ perspective: "1000px" }}>
+        {/* 이전 아이템 - 왼쪽 */}
+        &lt;button
+          onClick={() => handleItemClick(prevItem, "prev")}
+          className="absolute left-4 top-1/2 text-[14px] text-white/50 hover:text-white/80 transition-all truncate max-w-[25%]"
+          style={{
+            transform: "translateY(-50%) rotateY(15deg) scale(0.9)",
+            transformOrigin: "right center",
+          }}
+        >
+          {prevItem?.title || ""}
+        &lt;/button>
+
+        {/* 현재 아이템 (잠금 토글) - 중앙 */}
+        &lt;div className="flex justify-center">
+          &lt;button
+            onClick={handleLockToggle}
+            className="flex items-center gap-2 text-sm font-bold text-white truncate max-w-[40%] transition-all"
+            style={{
+              transform: "scale(1)",
+              zIndex: 10,
+            }}
+          >
+            {isLocked &amp;&amp; &lt;Lock className="w-4 h-4" />}
+            {currentItem?.title || ""}
+          &lt;/button>
+        &lt;/div>
+
+        {/* 다음 아이템 - 오른쪽 */}
+        &lt;button
+          onClick={() => handleItemClick(nextItem, "next")}
+          className="absolute right-4 top-1/2  text-[14px] text-white/50 hover:text-white/80 transition-all truncate max-w-[25%]"
+          style={{
+            transform: "translateY(-50%) rotateY(-15deg) scale(0.9)",
+            transformOrigin: "left center",
+          }}
+        >
+          {nextItem?.title || ""}
+        &lt;/button>
+      &lt;/div>
+
+      {/* 두 번째 단: 네비게이션 버튼 */}
+      {/* &lt;div className="flex items-center justify-center gap-6 px-4 py-2 border-b border-white/10">
+        &lt;button
+          onClick={() => {
+            const newIndex = leftIndex - 1;
+            if (newIndex >= minIndex) {
+              onChangeLeftIndex?.(newIndex);
+            }
+          }}
+          disabled={leftIndex &lt;= minIndex}
+          className="text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          &lt;ChevronLeft className="w-5 h-5" />
+        &lt;/button>
+
+        &lt;button
+          onClick={() => {
+            const newIndex = leftIndex + 1;
+            if (newIndex &lt;= maxIndex) {
+              onChangeLeftIndex?.(newIndex);
+            }
+          }}
+          disabled={leftIndex >= maxIndex}
+          className="text-white/70 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+        >
+          &lt;ChevronRight className="w-5 h-5" />
+        &lt;/button>
+      &lt;/div> */}
+
+      {/* 세 번째 단: 필름 스트립 슬라이더 */}
+      &lt;div
+        className="relative bg-black/30 backdrop-blur-md px-4 py-4 overflow-hidden"
+        style={{
+          maskImage: "radial-gradient(ellipse 100% 120% at 50% 50%, black 40%, transparent 70%)",
+          WebkitMaskImage: "radial-gradient(ellipse 100% 120% at 50% 50%, black 40%, transparent 70%)",
+        }}
+      >
+        {/* 필름 스트립 */}
+        &lt;div
+          ref={containerRef}
+          onMouseDown={handleStart}
+          onTouchStart={handleStart}
+          className="cursor-grab active:cursor-grabbing select-none relative z-10"
+        >
+          &lt;div
+            className="flex items-center gap-1"
+            style={{
+              // 잠금 상태일 때: minIndex를 기준으로 오프셋 계산
+              // 잠금 해제 상태일 때: 0을 기준으로 오프셋 계산
+              transform: `translateX(calc(50% - ${(leftIndex - minIndex) * filmFrameWidth}px - ${(leftIndex - minIndex) * 4}px - ${filmFrameWidth / 2}px))`,
+              transition: isDraggingRef.current ? "none" : "transform 0.2s ease-out",
+            }}
+          >
+            {Array.from({ length: maxIndex - minIndex + 1 }, (_, i) => {
+              const index = minIndex + i;
+              const isCurrent = index === leftIndex;
+              const texture = textureData?.textures?.[index];
+              const imageUrl = texture?.url || null;
+              const kind = texture?.kind || texture?.type || "empty";
+
+              // 중앙으로부터의 거리 계산 (왜곡 효과용)
+              const distanceFromCenter = index - leftIndex;
+              const absDistance = Math.abs(distanceFromCenter);
+
+              // 볼록한 곡선을 따라 Y축 이동 (중앙이 위로 올라감)
+              const curveY = -Math.pow(absDistance, 1.5) * 2;
+
+              // 거리에 따른 스케일 (중앙이 크고 양쪽이 작아짐)
+              const scale = isCurrent ? 1.2 : Math.max(0.75, 1 - absDistance * 0.12);
+
+              // 거리에 따른 밝기
+              const brightness = isCurrent ? 100 : Math.max(60, 100 - absDistance * 8);
+
+              // 거리에 따른 투명도
+              const opacity = Math.max(0.5, 1 - absDistance * 0.12);
+
+              return (
+                &lt;div
+                  key={index}
+                  className="flex-shrink-0 transition-all duration-200"
+                  style={{
+                    width: `${filmFrameWidth}px`,
+                    height: `${filmFrameHeight}px`,
+                    transform: `translateY(${curveY}px) scale(${scale})`,
+                    filter: `brightness(${brightness}%)`,
+                    opacity: opacity,
+                  }}
+                >
+                  &lt;div className="relative w-full h-full bg-black/80 border border-white/30 overflow-hidden">
+                    {/* 상단 필름 구멍 */}
+                    &lt;div className="absolute top-0.5 left-0 right-0 h-1 flex justify-around px-0.5">
+                      {Array.from({ length: 3 }).map((_, holeIdx) => (
+                        &lt;div key={`hole-top-${holeIdx}`} className="w-1 h-1 bg-white/20 rounded-[2px]" />
+                      ))}
+                    &lt;/div>
+                    {/* 하단 필름 구멍 */}
+                    &lt;div className="absolute bottom-0.5 left-0 right-0 h-1 flex justify-around px-0.5">
+                      {Array.from({ length: 3 }).map((_, holeIdx) => (
+                        &lt;div key={`hole-bottom-${holeIdx}`} className="w-1 h-1 bg-white/20 rounded-[2px]" />
+                      ))}
+                    &lt;/div>
+                    {imageUrl &amp;&amp; kind !== "empty" ? (
+                      kind === "video" ? (
+                        &lt;video
+                          src={imageUrl}
+                          className="w-full h-full object-cover"
+                          muted
+                          playsInline
+                        />
+                      ) : (
+                        &lt;img
+                          src={imageUrl}
+                          alt={`Frame ${index}`}
+                          className="w-full h-full object-cover"
+                        />
+                      )
+                    ) : (
+                      &lt;div className="w-full h-full flex items-center justify-center text-white/30 text-xs">
+                        {index}
+                      &lt;/div>
+                    )}
+                    {isCurrent &amp;&amp; (
+                      &lt;div className="absolute inset-0 border-2 border-white/60 pointer-events-none" />
+                    )}
+                  &lt;/div>
+                &lt;/div>
+              );
+            })}
+          &lt;/div>
+        &lt;/div>
+      &lt;/div>
+
+      {/* 구 버전: 눈금 슬라이더 (주석처리) */}
+      {/* &lt;div className="relative px-4 py-4 overflow-hidden">
+        &lt;div
+          ref={containerRef}
+          onMouseDown={handleStart}
+          onTouchStart={handleStart}
+          className="cursor-grab active:cursor-grabbing select-none"
+        >
+          &lt;div
+            className="flex items-center"
+            style={{
+              transform: `translateX(calc(50% - ${leftIndex * tickWidth}px))`,
+              transition: isDraggingRef.current ? "none" : "transform 0.2s ease-out",
+            }}
+          >
+            {Array.from({ length: maxIndex - minIndex + 1 }, (_, i) => {
+              const index = minIndex + i;
+              const isCurrent = index === leftIndex;
+              return (
+                &lt;div
+                  key={index}
+                  className={`flex-shrink-0 flex flex-col items-center transition-colors ${
+                    isCurrent ? "text-white" : "text-white/30"
+                  }`}
+                  style={{ width: `${tickWidth}px` }}
+                >
+                  &lt;div
+                    className={`transition-all ${
+                      isCurrent ? "h-6 w-1 bg-white" : "h-4 w-px bg-white/30"
+                    }`}
+                  />
+                  {i % 5 === 0 &amp;&amp; (
+                    &lt;span className="text-[10px] mt-1">{index}&lt;/span>
+                  )}
+                &lt;/div>
+              );
+            })}
+          &lt;/div>
+        &lt;/div>
+      &lt;/div> */}
+    &lt;/div>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#DELETE">DELETE</a></li><li><a href="global.html#DiscSystem">DiscSystem</a></li><li><a href="global.html#EmptyMat">EmptyMat</a></li><li><a href="global.html#GET">GET</a></li><li><a href="global.html#ImageMat">ImageMat</a></li><li><a href="global.html#MediaPlane">MediaPlane</a></li><li><a href="global.html#PATCH">PATCH</a></li><li><a href="global.html#POST">POST</a></li><li><a href="global.html#PUT">PUT</a></li><li><a href="global.html#RadialTextRing">RadialTextRing</a></li><li><a href="global.html#RingInner">RingInner</a></li><li><a href="global.html#RingPlane">RingPlane</a></li><li><a href="global.html#Scene">Scene</a></li><li><a href="global.html#VideoMat">VideoMat</a></li><li><a href="global.html#addItem">addItem</a></li><li><a href="global.html#buildTextureData">buildTextureData</a></li><li><a href="global.html#buildTexturesFromPreview">buildTexturesFromPreview</a></li><li><a href="global.html#createRecordItem">createRecordItem</a></li><li><a href="global.html#deleteItem">deleteItem</a></li><li><a href="global.html#deleteRecordItem">deleteRecordItem</a></li><li><a href="global.html#deleteScene">deleteScene</a></li><li><a href="global.html#detectMediaType">detectMediaType</a></li><li><a href="global.html#ensureMinimumTextures">ensureMinimumTextures</a></li><li><a href="global.html#fetchLifestory">fetchLifestory</a></li><li><a href="global.html#fetchRecordDetails">fetchRecordDetails</a></li><li><a href="global.html#fetchReelsDetails">fetchReelsDetails</a></li><li><a href="global.html#generateStory">generateStory</a></li><li><a href="global.html#getScene">getScene</a></li><li><a href="global.html#incrementLifestoryUsage">incrementLifestoryUsage</a></li><li><a href="global.html#inferSrcType">inferSrcType</a></li><li><a href="global.html#isEmail">isEmail</a></li><li><a href="global.html#isLikelyE164">isLikelyE164</a></li><li><a href="global.html#isYMD">isYMD</a></li><li><a href="global.html#iso">iso</a></li><li><a href="global.html#lerpExp">lerpExp</a></li><li><a href="global.html#makeDummyGalleryPayload">makeDummyGalleryPayload</a></li><li><a href="global.html#makeMixedPayloadWithIds">makeMixedPayloadWithIds</a></li><li><a href="global.html#patchReelsGallery">patchReelsGallery</a></li><li><a href="global.html#saveChildhood">saveChildhood</a></li><li><a href="global.html#saveExperience">saveExperience</a></li><li><a href="global.html#saveLifestory">saveLifestory</a></li><li><a href="global.html#saveLifestoryProgress">saveLifestoryProgress</a></li><li><a href="global.html#saveRelationship">saveRelationship</a></li><li><a href="global.html#smoothstep">smoothstep</a></li><li><a href="global.html#updateItem">updateItem</a></li><li><a href="global.html#updateProfile">updateProfile</a></li><li><a href="global.html#updateRecordDetails">updateRecordDetails</a></li><li><a href="global.html#updateRecordItem">updateRecordItem</a></li><li><a href="global.html#updateReelsDetails">updateReelsDetails</a></li><li><a href="global.html#updateReelsGalleryDetails">updateReelsGalleryDetails</a></li><li><a href="global.html#updateScene">updateScene</a></li><li><a href="global.html#uploadFile">uploadFile</a></li><li><a href="global.html#uploadMediaFiles">uploadMediaFiles</a></li><li><a href="global.html#uploadRecordFile">uploadRecordFile</a></li><li><a href="global.html#useWindowSize">useWindowSize</a></li><li><a href="global.html#wrapPi">wrapPi</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Jan 06 2026 01:55:27 GMT+0900 (대한민국 표준시)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

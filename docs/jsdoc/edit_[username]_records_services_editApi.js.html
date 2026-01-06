@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: edit/[username]/records/services/editApi.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: edit/[username]/records/services/editApi.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { authedFetch } from "@/app/utils/authedFetch";
+
+/**
+ * Fetches record details.
+ * 레코드 상세 정보를 조회합니다.
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.identifier
+ * @returns {Promise&lt;any>}
+ */
+export async function fetchRecordDetails({ token, identifier }) {
+  const res = await authedFetch(`/api/records/${identifier}`, {
+    token,
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  });
+  if (!res.ok) throw new Error("get record failed");
+  const json = await res.json();
+  if (!json.ok) throw new Error("get record failed");
+  return json;
+}
+
+/**
+ * Updates record metadata.
+ * 레코드 메타 정보를 업데이트합니다.
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.id
+ * @param {Object} params.data
+ * @returns {Promise&lt;any>}
+ */
+export async function updateRecordDetails({ token, id, data }) {
+  const res = await authedFetch(`/api/record/${id}`, {
+    token,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.ok)
+    throw new Error(json?.error || "update record failed");
+  return json;
+}
+
+/**
+ * Creates a record timeline item.
+ * 레코드 타임라인 아이템을 생성합니다.
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.recordId
+ * @param {Object} params.data
+ * @returns {Promise&lt;any>}
+ */
+export async function createRecordItem({ token, recordId, data }) {
+  const res = await authedFetch(`/api/record/${recordId}`, {
+    token,
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.ok) throw new Error(json?.error || "create item failed");
+  return json;
+}
+
+/**
+ * Updates a record timeline item.
+ * 레코드 타임라인 아이템을 업데이트합니다.
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.itemId
+ * @param {Object} params.data
+ * @returns {Promise&lt;any>}
+ */
+export async function updateRecordItem({ token, itemId, data }) {
+  const res = await authedFetch(`/api/record/item/${itemId}`, {
+    token,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  const json = await res.json();
+  if (!res.ok || !json.ok) throw new Error(json?.error || "update item failed");
+  return json;
+}
+
+/**
+ * Deletes a record timeline item.
+ * 레코드 타임라인 아이템을 삭제합니다.
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.itemId
+ * @returns {Promise&lt;any>}
+ */
+export async function deleteRecordItem({ token, itemId }) {
+  const res = await authedFetch(`/api/record/item/${itemId}`, {
+    token,
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+  });
+  const json = await res.json();
+  if (!res.ok || !json.ok) throw new Error(json?.error || "delete item failed");
+  return json;
+}
+
+/**
+ * Uploads a record file via presign and returns a public URL.
+ * 레코드용 파일을 presign 후 업로드하고 공개 URL을 반환합니다.
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {File} params.file
+ * @param {string} params.prefix
+ * @returns {Promise&lt;string>}
+ */
+export async function uploadRecordFile({ token, file, prefix }) {
+  try {
+    console.log("[uploadRecordFile] Starting upload:", {
+      prefix,
+      file: file,
+      fileName: file?.name,
+      fileType: file?.type,
+      fileSize: file?.size,
+      isFile: file instanceof File,
+    });
+
+    if (!file) {
+      throw new Error("파일이 제공되지 않았습니다.");
+    }
+
+    if (!(file instanceof File)) {
+      throw new Error("유효한 파일 객체가 아닙니다.");
+    }
+
+    if (!file.name || !file.type) {
+      throw new Error(
+        "유효하지 않은 파일입니다. 파일 이름과 타입이 필요합니다.",
+      );
+    }
+
+    // 1) Presign URL 요청 (파일 메타데이터만 전송)
+    console.log("[uploadRecordFile] Requesting presign URL...");
+    let presignRes;
+    try {
+      presignRes = await fetch("/api/storage/presign", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prefix,
+          files: [{ name: file.name, type: file.type }],
+        }),
+      });
+      console.log(
+        "[uploadRecordFile] Presign response status:",
+        presignRes.status,
+      );
+    } catch (fetchError) {
+      console.error(
+        "[uploadRecordFile] Fetch error during presign request:",
+        fetchError,
+      );
+      throw new Error(
+        `Presign 요청 실패: ${fetchError.message || "네트워크 오류"}`,
+      );
+    }
+
+    if (!presignRes.ok) {
+      const errorText = await presignRes.text();
+      console.error(
+        "[uploadRecordFile] presign failed:",
+        presignRes.status,
+        errorText,
+      );
+      let errorMessage = `Presign 실패: ${presignRes.status}`;
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.error || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const presignJson = await presignRes.json();
+    console.log("[uploadRecordFile] presign response:", presignJson);
+
+    if (
+      !presignJson.ok ||
+      !presignJson.items ||
+      !Array.isArray(presignJson.items) ||
+      presignJson.items.length === 0
+    ) {
+      throw new Error(presignJson.error || "Presign 응답 오류");
+    }
+
+    const firstItem = presignJson.items[0];
+    if (!firstItem) {
+      throw new Error("Presign 응답에 항목이 없습니다.");
+    }
+
+    const { uploadUrl, publicUrl, headers } = firstItem;
+
+    if (!uploadUrl || !publicUrl) {
+      console.error("[uploadRecordFile] Missing required fields:", {
+        uploadUrl: !!uploadUrl,
+        publicUrl: !!publicUrl,
+        headers: !!headers,
+        firstItem,
+      });
+      throw new Error("Presign 응답에 필수 필드가 없습니다.");
+    }
+
+    if (!headers || typeof headers !== "object") {
+      console.error("[uploadRecordFile] Invalid headers:", headers);
+      throw new Error("Presign 응답의 headers가 유효하지 않습니다.");
+    }
+
+    // 2) 클라이언트에서 직접 R2에 업로드 시도 (CORS 문제 시 서버를 통한 업로드로 폴백)
+    console.log("[uploadRecordFile] Uploading to R2:", {
+      uploadUrl: uploadUrl.substring(0, 100) + "...",
+      hasHeaders: !!headers,
+      fileSize: file.size,
+    });
+
+    let uploadRes;
+    try {
+      uploadRes = await fetch(uploadUrl, {
+        method: "PUT",
+        headers: headers,
+        body: file,
+      });
+      console.log(
+        "[uploadRecordFile] R2 upload response status:",
+        uploadRes.status,
+      );
+
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        console.error(
+          "[uploadRecordFile] R2 direct upload failed:",
+          uploadRes.status,
+          errorText,
+        );
+        throw new Error(`R2 직접 업로드 실패: ${uploadRes.status}`);
+      }
+
+      console.log(
+        "[uploadRecordFile] Upload successful, publicUrl:",
+        publicUrl,
+      );
+      return publicUrl;
+    } catch (fetchError) {
+      console.warn(
+        "[uploadRecordFile] R2 direct upload failed, falling back to server upload:",
+        fetchError,
+      );
+
+      // 폴백: 서버를 통한 업로드
+      try {
+        console.log("[uploadRecordFile] Using server upload fallback...");
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("prefix", prefix);
+
+        // FormData를 사용할 때는 Content-Type을 설정하지 않아야 브라우저가 자동으로 boundary를 설정함
+        const serverUploadRes = await authedFetch("/api/storage/upload", {
+          token,
+          method: "POST",
+          headers: {}, // Content-Type을 명시적으로 설정하지 않음 (FormData가 자동 설정)
+          body: formData,
+        });
+
+        if (!serverUploadRes.ok) {
+          const errorText = await serverUploadRes.text();
+          throw new Error(
+            `서버 업로드 실패: ${serverUploadRes.status} - ${errorText}`,
+          );
+        }
+
+        const serverUploadJson = await serverUploadRes.json();
+        if (!serverUploadJson.ok || !serverUploadJson.publicUrl) {
+          throw new Error(serverUploadJson.error || "서버 업로드 응답 오류");
+        }
+
+        console.log(
+          "[uploadRecordFile] Server upload successful, publicUrl:",
+          serverUploadJson.publicUrl,
+        );
+        return serverUploadJson.publicUrl;
+      } catch (fallbackError) {
+        console.error(
+          "[uploadRecordFile] Fallback upload also failed:",
+          fallbackError,
+        );
+        throw new Error(
+          `업로드 실패: ${fetchError.message || "네트워크 오류"}. 폴백 업로드도 실패: ${fallbackError.message}`,
+        );
+      }
+    }
+  } catch (error) {
+    console.error("[uploadRecordFile] error:", error);
+    console.error("[uploadRecordFile] error name:", error.name);
+    console.error("[uploadRecordFile] error message:", error.message);
+    console.error("[uploadRecordFile] error stack:", error.stack);
+
+    // TypeError인 경우 더 자세한 정보 제공
+    if (error.name === "TypeError") {
+      console.error("[uploadRecordFile] TypeError details:", {
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause,
+      });
+    }
+
+    throw error;
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#DELETE">DELETE</a></li><li><a href="global.html#DiscSystem">DiscSystem</a></li><li><a href="global.html#EmptyMat">EmptyMat</a></li><li><a href="global.html#GET">GET</a></li><li><a href="global.html#ImageMat">ImageMat</a></li><li><a href="global.html#MediaPlane">MediaPlane</a></li><li><a href="global.html#PATCH">PATCH</a></li><li><a href="global.html#POST">POST</a></li><li><a href="global.html#PUT">PUT</a></li><li><a href="global.html#RadialTextRing">RadialTextRing</a></li><li><a href="global.html#RingInner">RingInner</a></li><li><a href="global.html#RingPlane">RingPlane</a></li><li><a href="global.html#Scene">Scene</a></li><li><a href="global.html#VideoMat">VideoMat</a></li><li><a href="global.html#addItem">addItem</a></li><li><a href="global.html#buildTextureData">buildTextureData</a></li><li><a href="global.html#buildTexturesFromPreview">buildTexturesFromPreview</a></li><li><a href="global.html#createRecordItem">createRecordItem</a></li><li><a href="global.html#deleteItem">deleteItem</a></li><li><a href="global.html#deleteRecordItem">deleteRecordItem</a></li><li><a href="global.html#deleteScene">deleteScene</a></li><li><a href="global.html#detectMediaType">detectMediaType</a></li><li><a href="global.html#ensureMinimumTextures">ensureMinimumTextures</a></li><li><a href="global.html#fetchLifestory">fetchLifestory</a></li><li><a href="global.html#fetchRecordDetails">fetchRecordDetails</a></li><li><a href="global.html#fetchReelsDetails">fetchReelsDetails</a></li><li><a href="global.html#generateStory">generateStory</a></li><li><a href="global.html#getScene">getScene</a></li><li><a href="global.html#incrementLifestoryUsage">incrementLifestoryUsage</a></li><li><a href="global.html#inferSrcType">inferSrcType</a></li><li><a href="global.html#isEmail">isEmail</a></li><li><a href="global.html#isLikelyE164">isLikelyE164</a></li><li><a href="global.html#isYMD">isYMD</a></li><li><a href="global.html#iso">iso</a></li><li><a href="global.html#lerpExp">lerpExp</a></li><li><a href="global.html#makeDummyGalleryPayload">makeDummyGalleryPayload</a></li><li><a href="global.html#makeMixedPayloadWithIds">makeMixedPayloadWithIds</a></li><li><a href="global.html#patchReelsGallery">patchReelsGallery</a></li><li><a href="global.html#saveChildhood">saveChildhood</a></li><li><a href="global.html#saveExperience">saveExperience</a></li><li><a href="global.html#saveLifestory">saveLifestory</a></li><li><a href="global.html#saveLifestoryProgress">saveLifestoryProgress</a></li><li><a href="global.html#saveRelationship">saveRelationship</a></li><li><a href="global.html#smoothstep">smoothstep</a></li><li><a href="global.html#updateItem">updateItem</a></li><li><a href="global.html#updateProfile">updateProfile</a></li><li><a href="global.html#updateRecordDetails">updateRecordDetails</a></li><li><a href="global.html#updateRecordItem">updateRecordItem</a></li><li><a href="global.html#updateReelsDetails">updateReelsDetails</a></li><li><a href="global.html#updateReelsGalleryDetails">updateReelsGalleryDetails</a></li><li><a href="global.html#updateScene">updateScene</a></li><li><a href="global.html#uploadFile">uploadFile</a></li><li><a href="global.html#uploadMediaFiles">uploadMediaFiles</a></li><li><a href="global.html#uploadRecordFile">uploadRecordFile</a></li><li><a href="global.html#useWindowSize">useWindowSize</a></li><li><a href="global.html#wrapPi">wrapPi</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Jan 06 2026 01:55:27 GMT+0900 (대한민국 표준시)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

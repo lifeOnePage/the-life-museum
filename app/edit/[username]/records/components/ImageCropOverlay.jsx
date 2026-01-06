@@ -4,7 +4,13 @@ import { useState, useRef, useEffect } from "react";
 /**
  * Image crop overlay UI.
  * 이미지 크롭 오버레이 UI.
- * @param {{ imageFile: File, onCropComplete: Function, onCancel: Function, aspectRatio?: number|null, minWidth?: number, minHeight?: number }} props
+ * @param {Object} props
+ * @param {File} props.imageFile
+ * @param {Function} props.onCropComplete
+ * @param {Function} props.onCancel
+ * @param {number|null} [props.aspectRatio]
+ * @param {number} [props.minWidth]
+ * @param {number} [props.minHeight]
  * @returns {JSX.Element}
  */
 export default function ImageCropOverlay({

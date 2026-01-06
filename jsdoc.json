@@ -2,7 +2,7 @@
   "source": {
     "include": ["app", "scripts"],
     "includePattern": ".+\\.(js|jsx|ts|tsx)$",
-    "excludePattern": "(^|\\/)_"
+    "excludePattern": "(^|\\/)_|/app/generated/|\\.d\\.ts$"
   },
   "opts": {
     "destination": "docs/jsdoc",

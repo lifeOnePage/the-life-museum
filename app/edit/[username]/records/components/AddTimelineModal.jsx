@@ -6,7 +6,10 @@ import { useAuth } from "@/app/contexts/AuthContext";
 /**
  * Timeline item creation modal.
  * 타임라인 아이템 생성 모달.
- * @param {{ isOpen: boolean, onClose: Function, onSave: Function }} props
+ * @param {Object} props
+ * @param {boolean} props.isOpen
+ * @param {Function} props.onClose
+ * @param {Function} props.onSave
  * @returns {JSX.Element|null}
  */
 export default function AddTimelineModal({ isOpen, onClose, onSave }) {

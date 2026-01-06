@@ -5,7 +5,11 @@ import AddTimelineModal from "@/app/view/[identifier]/records/components/AddTime
 /**
  * Timeline items editor list.
  * 타임라인 아이템 편집 리스트.
- * @param {{ recordId?: string, items: Array<any>, setItems: Function, setIsSaved: Function }} props
+ * @param {Object} props
+ * @param {string} [props.recordId]
+ * @param {Array<Object>} props.items
+ * @param {Function} props.setItems
+ * @param {Function} props.setIsSaved
  * @returns {JSX.Element}
  */
 export default function EditTimeline({

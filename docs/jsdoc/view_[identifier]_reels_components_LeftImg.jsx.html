@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: view/[identifier]/reels/components/LeftImg.jsx</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: view/[identifier]/reels/components/LeftImg.jsx</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>"use client";
+
+import * as THREE from "three";
+import React, { Suspense, useEffect, useMemo, useRef } from "react";
+import { Canvas, useFrame, useLoader } from "@react-three/fiber";
+import { useVideoTexture } from "@react-three/drei";
+
+/**
+ * LeftImg
+ * - props:
+ *    kind: "image" | "video" | "empty"
+ *    url:  string | null
+ *
+ * - 왼쪽 슬롯이 바뀔 때마다 이미지/비디오가 살짝 오른쪽에서 미끄러져 들어오며
+ *   약간의 스케일/투명도 이징이 들어간다.
+ * - 이미지/비디오 비율을 읽어서 plane 크기를 자동 조정한다.
+ * - ring을 가리지 않도록 높이 상한(maxHUnits)으로 제한한다.
+ */
+
+function ImageMat({ url }) {
+  // crossOrigin 허용
+  const tex = useLoader(THREE.TextureLoader, url, (loader) => {
+    loader.setCrossOrigin("anonymous");
+  });
+  useEffect(() => {
+    if (!tex) return;
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 4;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.needsUpdate = true;
+  }, [tex]);
+  return &lt;meshBasicMaterial map={tex} toneMapped={false} transparent opacity={1} />;
+}
+
+function VideoMat({ url }) {
+  const vtex = useVideoTexture(url, {
+    crossOrigin: "anonymous",
+    muted: true,
+    loop: true,
+    start: true,
+    playsInline: true,
+    preload: "auto",
+  });
+  useEffect(() => {
+    if (!vtex) return;
+    vtex.colorSpace = THREE.SRGBColorSpace;
+    vtex.needsUpdate = true;
+  }, [vtex]);
+  return &lt;meshBasicMaterial map={vtex} toneMapped={false} transparent opacity={1} />;
+}
+
+function EmptyMat() {
+  return &lt;meshBasicMaterial color="#ffffff" transparent opacity={0.24} />;
+}
+
+function fitSizeByAspect(aspect, maxW, maxH) {
+  // aspect = w / h
+  if (!Number.isFinite(aspect) || aspect &lt;= 0) return { w: maxW * 0.9, h: maxH * 0.9 };
+  let w = maxW;
+  let h = w / aspect;
+  if (h > maxH) {
+    h = maxH;
+    w = h * aspect;
+  }
+  return { w, h };
+}
+
+function PlaneContent({ kind, url, maxWUnits = 9.0, maxHUnits = 3.6 }) {
+  const meshRef = useRef();
+  const scaleRef = useRef(0.9);
+  const alphaRef = useRef(0.0);
+  const slideRef = useRef(0.4); // +x에서 0으로 슬라이드 인
+  const prevKeyRef = useRef("");
+
+  // 리소스 로드(비율 추출)
+  const isImg = kind === "image" &amp;&amp; url;
+  const isVid = kind === "video" &amp;&amp; url;
+
+  const tex = useMemo(() => ({ current: null }), []);
+  let aspect = 16 / 9;
+
+  if (isImg) {
+    const t = useLoader(THREE.TextureLoader, url, (loader) => {
+      loader.setCrossOrigin("anonymous");
+    });
+    tex.current = t;
+    const iw = t?.image?.naturalWidth ?? t?.image?.width ?? 0;
+    const ih = t?.image?.naturalHeight ?? t?.image?.height ?? 0;
+    if (iw > 0 &amp;&amp; ih > 0) aspect = iw / ih;
+  } else if (isVid) {
+    // useVideoTexture는 훅이라 여기서 못씀 → 아래 머티리얼에서 처리
+    // 비율은 대략적으로 16:9로 두고, 실제 비율은 크게 어긋나지 않도록 상한으로 보정
+    aspect = 16 / 9;
+  }
+
+  const size = fitSizeByAspect(aspect, maxWUnits, maxHUnits);
+
+  // url이 바뀔 때마다 애니메이션 리셋
+  useEffect(() => {
+    const key = `${kind}|${url ?? "empty"}`;
+    if (prevKeyRef.current !== key) {
+      prevKeyRef.current = key;
+      scaleRef.current = 0.92;
+      alphaRef.current = 0.0;
+      slideRef.current = 0.36;
+    }
+  }, [kind, url]);
+
+  useFrame((_, dt) => {
+    // 부드러운 이징
+    const k = Math.min(1, 8 * dt);
+    scaleRef.current += (1.0 - scaleRef.current) * k;
+    alphaRef.current += (1.0 - alphaRef.current) * k;
+    slideRef.current += (0.0 - slideRef.current) * k;
+
+    if (meshRef.current) {
+      meshRef.current.position.set(slideRef.current, 0, 0);
+      meshRef.current.scale.setScalar(scaleRef.current);
+    }
+  });
+
+  return (
+    &lt;mesh ref={meshRef}>
+      &lt;planeGeometry args={[size.w, size.h]} />
+      {isImg ? (
+        &lt;meshBasicMaterial map={tex.current} toneMapped={false} transparent opacity={alphaRef.current} />
+      ) : isVid ? (
+        &lt;Suspense fallback={&lt;EmptyMat />}>
+          &lt;VideoMat url={url} />
+        &lt;/Suspense>
+      ) : (
+        &lt;EmptyMat />
+      )}
+    &lt;/mesh>
+  );
+}
+
+export default function LeftImg({
+  kind = "empty",
+  url = null,
+  // 레이아웃: 부모에서 크기/위치는 CSS로 제어
+  camZ = 3,
+}) {
+  return (
+    &lt;Canvas
+      // pointer-events 막아서 아래 UI 조작 불가 문제 방지
+      gl={{ antialias: true, alpha: true }}
+      camera={{ position: [0, 0, camZ], fov: 50 }}
+    >
+      &lt;ambientLight intensity={0.9} />
+      &lt;directionalLight position={[4, 6, 6]} intensity={0.6} />
+      &lt;Suspense fallback={null}>
+        &lt;PlaneContent kind={kind} url={url} />
+      &lt;/Suspense>
+    &lt;/Canvas>
+  );
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#DELETE">DELETE</a></li><li><a href="global.html#DiscSystem">DiscSystem</a></li><li><a href="global.html#EmptyMat">EmptyMat</a></li><li><a href="global.html#GET">GET</a></li><li><a href="global.html#ImageMat">ImageMat</a></li><li><a href="global.html#MediaPlane">MediaPlane</a></li><li><a href="global.html#PATCH">PATCH</a></li><li><a href="global.html#POST">POST</a></li><li><a href="global.html#PUT">PUT</a></li><li><a href="global.html#RadialTextRing">RadialTextRing</a></li><li><a href="global.html#RingInner">RingInner</a></li><li><a href="global.html#RingPlane">RingPlane</a></li><li><a href="global.html#Scene">Scene</a></li><li><a href="global.html#VideoMat">VideoMat</a></li><li><a href="global.html#addItem">addItem</a></li><li><a href="global.html#buildTextureData">buildTextureData</a></li><li><a href="global.html#buildTexturesFromPreview">buildTexturesFromPreview</a></li><li><a href="global.html#createRecordItem">createRecordItem</a></li><li><a href="global.html#deleteItem">deleteItem</a></li><li><a href="global.html#deleteRecordItem">deleteRecordItem</a></li><li><a href="global.html#deleteScene">deleteScene</a></li><li><a href="global.html#detectMediaType">detectMediaType</a></li><li><a href="global.html#ensureMinimumTextures">ensureMinimumTextures</a></li><li><a href="global.html#fetchLifestory">fetchLifestory</a></li><li><a href="global.html#fetchRecordDetails">fetchRecordDetails</a></li><li><a href="global.html#fetchReelsDetails">fetchReelsDetails</a></li><li><a href="global.html#generateStory">generateStory</a></li><li><a href="global.html#getScene">getScene</a></li><li><a href="global.html#incrementLifestoryUsage">incrementLifestoryUsage</a></li><li><a href="global.html#inferSrcType">inferSrcType</a></li><li><a href="global.html#isEmail">isEmail</a></li><li><a href="global.html#isLikelyE164">isLikelyE164</a></li><li><a href="global.html#isYMD">isYMD</a></li><li><a href="global.html#iso">iso</a></li><li><a href="global.html#lerpExp">lerpExp</a></li><li><a href="global.html#makeDummyGalleryPayload">makeDummyGalleryPayload</a></li><li><a href="global.html#makeMixedPayloadWithIds">makeMixedPayloadWithIds</a></li><li><a href="global.html#patchReelsGallery">patchReelsGallery</a></li><li><a href="global.html#saveChildhood">saveChildhood</a></li><li><a href="global.html#saveExperience">saveExperience</a></li><li><a href="global.html#saveLifestory">saveLifestory</a></li><li><a href="global.html#saveLifestoryProgress">saveLifestoryProgress</a></li><li><a href="global.html#saveRelationship">saveRelationship</a></li><li><a href="global.html#smoothstep">smoothstep</a></li><li><a href="global.html#updateItem">updateItem</a></li><li><a href="global.html#updateProfile">updateProfile</a></li><li><a href="global.html#updateRecordDetails">updateRecordDetails</a></li><li><a href="global.html#updateRecordItem">updateRecordItem</a></li><li><a href="global.html#updateReelsDetails">updateReelsDetails</a></li><li><a href="global.html#updateReelsGalleryDetails">updateReelsGalleryDetails</a></li><li><a href="global.html#updateScene">updateScene</a></li><li><a href="global.html#uploadFile">uploadFile</a></li><li><a href="global.html#uploadMediaFiles">uploadMediaFiles</a></li><li><a href="global.html#uploadRecordFile">uploadRecordFile</a></li><li><a href="global.html#useWindowSize">useWindowSize</a></li><li><a href="global.html#wrapPi">wrapPi</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Jan 06 2026 01:55:27 GMT+0900 (대한민국 표준시)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

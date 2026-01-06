@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: scenes/[id]/services/sceneService.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: scenes/[id]/services/sceneService.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>/**
+ * Scene 서비스 - API 호출 래퍼
+ */
+
+/**
+ * Scene 데이터 조회
+ * @param {string} sceneId - Scene identifier
+ * @returns {Promise&lt;Object>}
+ */
+export async function getScene(sceneId) {
+  const res = await fetch(`/api/scenes/${sceneId}`);
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to fetch scene");
+  }
+
+  return data.scene;
+}
+
+/**
+ * Scene 전체 업데이트
+ * @param {string} sceneId
+ * @param {Object} payload - { profile, items, lifestoryProgress }
+ * @returns {Promise&lt;Object>}
+ */
+export async function updateScene(sceneId, payload) {
+  const res = await fetch(`/api/scenes/${sceneId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to update scene");
+  }
+
+  return data.scene;
+}
+
+/**
+ * 프로필만 업데이트
+ * @param {string} sceneId
+ * @param {Object} profile - { photo, name, birthDate, birthPlace, biography }
+ * @returns {Promise&lt;Object>}
+ */
+export async function updateProfile(sceneId, profile) {
+  const res = await fetch(`/api/scenes/${sceneId}/profile`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(profile),
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to update profile");
+  }
+
+  return data.scene;
+}
+
+/**
+ * 생애문 진행상황 저장
+ * @param {string} sceneId
+ * @param {Object} progressData
+ * @returns {Promise&lt;Object>}
+ */
+export async function saveLifestoryProgress(sceneId, progressData) {
+  const res = await fetch(`/api/scenes/${sceneId}/lifestory`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ progressData }),
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to save lifestory progress");
+  }
+
+  return data.scene;
+}
+
+/**
+ * 아이템 추가
+ * @param {string} sceneId
+ * @param {Object} itemData - { title, date, images: [url] }
+ * @returns {Promise&lt;Object>}
+ */
+export async function addItem(sceneId, itemData) {
+  const res = await fetch(`/api/scenes/${sceneId}/items`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(itemData),
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to add item");
+  }
+
+  return data.item;
+}
+
+/**
+ * 아이템 업데이트
+ * @param {string} sceneId
+ * @param {number} itemId
+ * @param {Object} itemData - { title, date, images }
+ * @returns {Promise&lt;Object>}
+ */
+export async function updateItem(sceneId, itemId, itemData) {
+  const res = await fetch(`/api/scenes/${sceneId}/items/${itemId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(itemData),
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to update item");
+  }
+
+  return data.item;
+}
+
+/**
+ * 아이템 삭제
+ * @param {string} sceneId
+ * @param {number} itemId
+ * @returns {Promise&lt;void>}
+ */
+export async function deleteItem(sceneId, itemId) {
+  const res = await fetch(`/api/scenes/${sceneId}/items/${itemId}`, {
+    method: "DELETE",
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to delete item");
+  }
+}
+
+/**
+ * 이미지/비디오 업로드
+ * @param {File} file
+ * @returns {Promise&lt;string>} - 업로드된 파일의 public URL
+ */
+export async function uploadFile(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch("/api/scenes/upload", {
+    method: "POST",
+    body: formData,
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to upload file");
+  }
+
+  return data.publicUrl;
+}
+
+/**
+ * Scene 삭제
+ * @param {string} sceneId
+ * @returns {Promise&lt;void>}
+ */
+export async function deleteScene(sceneId) {
+  const res = await fetch(`/api/scenes/${sceneId}`, {
+    method: "DELETE",
+  });
+
+  const data = await res.json();
+
+  if (!data.ok) {
+    throw new Error(data.error || "Failed to delete scene");
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#DELETE">DELETE</a></li><li><a href="global.html#DiscSystem">DiscSystem</a></li><li><a href="global.html#EmptyMat">EmptyMat</a></li><li><a href="global.html#GET">GET</a></li><li><a href="global.html#ImageMat">ImageMat</a></li><li><a href="global.html#MediaPlane">MediaPlane</a></li><li><a href="global.html#PATCH">PATCH</a></li><li><a href="global.html#POST">POST</a></li><li><a href="global.html#PUT">PUT</a></li><li><a href="global.html#RadialTextRing">RadialTextRing</a></li><li><a href="global.html#RingInner">RingInner</a></li><li><a href="global.html#RingPlane">RingPlane</a></li><li><a href="global.html#Scene">Scene</a></li><li><a href="global.html#VideoMat">VideoMat</a></li><li><a href="global.html#addItem">addItem</a></li><li><a href="global.html#buildTextureData">buildTextureData</a></li><li><a href="global.html#buildTexturesFromPreview">buildTexturesFromPreview</a></li><li><a href="global.html#createRecordItem">createRecordItem</a></li><li><a href="global.html#deleteItem">deleteItem</a></li><li><a href="global.html#deleteRecordItem">deleteRecordItem</a></li><li><a href="global.html#deleteScene">deleteScene</a></li><li><a href="global.html#detectMediaType">detectMediaType</a></li><li><a href="global.html#ensureMinimumTextures">ensureMinimumTextures</a></li><li><a href="global.html#fetchLifestory">fetchLifestory</a></li><li><a href="global.html#fetchRecordDetails">fetchRecordDetails</a></li><li><a href="global.html#fetchReelsDetails">fetchReelsDetails</a></li><li><a href="global.html#generateStory">generateStory</a></li><li><a href="global.html#getScene">getScene</a></li><li><a href="global.html#incrementLifestoryUsage">incrementLifestoryUsage</a></li><li><a href="global.html#inferSrcType">inferSrcType</a></li><li><a href="global.html#isEmail">isEmail</a></li><li><a href="global.html#isLikelyE164">isLikelyE164</a></li><li><a href="global.html#isYMD">isYMD</a></li><li><a href="global.html#iso">iso</a></li><li><a href="global.html#lerpExp">lerpExp</a></li><li><a href="global.html#makeDummyGalleryPayload">makeDummyGalleryPayload</a></li><li><a href="global.html#makeMixedPayloadWithIds">makeMixedPayloadWithIds</a></li><li><a href="global.html#patchReelsGallery">patchReelsGallery</a></li><li><a href="global.html#saveChildhood">saveChildhood</a></li><li><a href="global.html#saveExperience">saveExperience</a></li><li><a href="global.html#saveLifestory">saveLifestory</a></li><li><a href="global.html#saveLifestoryProgress">saveLifestoryProgress</a></li><li><a href="global.html#saveRelationship">saveRelationship</a></li><li><a href="global.html#smoothstep">smoothstep</a></li><li><a href="global.html#updateItem">updateItem</a></li><li><a href="global.html#updateProfile">updateProfile</a></li><li><a href="global.html#updateRecordDetails">updateRecordDetails</a></li><li><a href="global.html#updateRecordItem">updateRecordItem</a></li><li><a href="global.html#updateReelsDetails">updateReelsDetails</a></li><li><a href="global.html#updateReelsGalleryDetails">updateReelsGalleryDetails</a></li><li><a href="global.html#updateScene">updateScene</a></li><li><a href="global.html#uploadFile">uploadFile</a></li><li><a href="global.html#uploadMediaFiles">uploadMediaFiles</a></li><li><a href="global.html#uploadRecordFile">uploadRecordFile</a></li><li><a href="global.html#useWindowSize">useWindowSize</a></li><li><a href="global.html#wrapPi">wrapPi</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Jan 06 2026 01:55:27 GMT+0900 (대한민국 표준시)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

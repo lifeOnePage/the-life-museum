@@ -19,7 +19,8 @@ export function inferSrcType(fileOrUrl) {
  * Uploads files via presigned URLs and returns upload results.
  * presign 후 PUT 업로드를 수행하고 업로드 결과를 반환합니다.
  * @param {File[]} files
- * @param {{ prefix: string }} options
+ * @param {Object} options
+ * @param {string} options.prefix
  * @returns {Promise<Array<{url: string, key: string, srcType: number}>>}
  */
 export async function uploadMediaFiles(files, { prefix }) {
@@ -64,7 +65,10 @@ export async function uploadMediaFiles(files, { prefix }) {
 /**
  * Partially updates gallery sections via PATCH.
  * 갤러리 섹션을 PATCH로 부분 업데이트합니다.
- * @param {{ token?: string, reelId: string, payload: object }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Object} params.payload
  * @returns {Promise<any>}
  */
 export async function patchReelsGallery({ token, reelId, payload }) {
@@ -94,7 +98,10 @@ export async function patchReelsGallery({ token, reelId, payload }) {
 /**
  * Saves the childhood section.
  * childhood 섹션을 저장합니다.
- * @param {{ token?: string, reelId: string, items: Array<any> }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array<Object>} params.items
  * @returns {Promise<any>}
  */
 export async function saveChildhood({ token, reelId, items }) {
@@ -155,7 +162,10 @@ export async function saveChildhood({ token, reelId, items }) {
 /**
  * Saves the memory section.
  * memory 섹션을 저장합니다.
- * @param {{ token?: string, reelId: string, items: Array<any> }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array<Object>} params.items
  * @returns {Promise<any>}
  */
 export async function saveExperience({ token, reelId, items }) {
@@ -204,7 +214,10 @@ export async function saveExperience({ token, reelId, items }) {
 /**
  * Saves the relationship section.
  * relationship 섹션을 저장합니다.
- * @param {{ token?: string, reelId: string, items: Array<any> }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array<Object>} params.items
  * @returns {Promise<any>}
  */
 export async function saveRelationship({ token, reelId, items }) {

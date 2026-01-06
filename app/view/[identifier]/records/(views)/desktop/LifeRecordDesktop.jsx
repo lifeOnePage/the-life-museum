@@ -13,18 +13,18 @@ import {
   IoIosArrowDropleftCircle,
   IoIosArrowDroprightCircle,
 } from "react-icons/io";
-import "../styles/cardPage.css";
-import "../styles/cardPage-mobile.css";
-import { DEFAULT_THEME, BG_THEME_PALETTE } from "../utils/constants";
-import { calculateAge, getYear, toMonthDay } from "../utils/dateUtils";
-import { norm360, wrapTo180, angDist } from "../utils/mathUtils";
-import ControlButtons from "./ControlButtons";
-import ImageSlider from "./ImageSlider";
-import EditControls from "./EditControls";
-import CardContent from "./CardContent";
-import HighlightTimeline from "./HighlightTimeline";
-import TimelineWheel from "./TimelineWheel";
-import UploadingOverlay from "./UploadingOverlay";
+import "../../styles/cardPage.css";
+import "../../styles/cardPage-mobile.css";
+import { DEFAULT_THEME, BG_THEME_PALETTE } from "../../utils/constants";
+import { calculateAge, getYear, toMonthDay } from "../../utils/dateUtils";
+import { norm360, wrapTo180, angDist } from "../../utils/mathUtils";
+import ControlButtons from "../../components/ControlButtons";
+import ImageSlider from "../../components/ImageSlider";
+import EditControls from "../../components/EditControls";
+import CardContent from "../../components/CardContent";
+import HighlightTimeline from "../../components/HighlightTimeline";
+import TimelineWheel from "../../components/TimelineWheel";
+import UploadingOverlay from "../../components/UploadingOverlay";
 
 function useIsMobile(bp = 768) {
   const [m, setM] = React.useState(

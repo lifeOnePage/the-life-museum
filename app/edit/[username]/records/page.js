@@ -3,8 +3,8 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import FloatingToolbar from "@/app/components/edit/FloatingToolbar";
-import LifeRecordDesktop from "@/app/view/[identifier]/records/components/LifeRecordDesktop";
-import LifeRecordMobile from "@/app/view/[identifier]/records/components/LifeRecordMobile";
+import LifeRecordDesktop from "@/app/view/[identifier]/records/(views)/desktop/LifeRecordDesktop";
+import LifeRecordMobile from "@/app/view/[identifier]/records/(views)/mobile/LifeRecordMobile";
 import {
   fetchRecordDetails,
   updateRecordDetails,

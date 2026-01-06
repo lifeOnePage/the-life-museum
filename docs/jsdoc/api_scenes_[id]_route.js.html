@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: api/scenes/[id]/route.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: api/scenes/[id]/route.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>import { NextResponse } from "next/server";
+import client from "@/app/client";
+
+/**
+ * GET /api/scenes/[id]
+ * Scene 데이터 조회 (identifier 기준)
+ */
+export async function GET(req, { params }) {
+  try {
+    const { id } = await params;
+
+    const scene = await client.scene.findUnique({
+      where: { identifier: id },
+      include: {
+        items: {
+          include: {
+            images: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    if (!scene) {
+      return NextResponse.json(
+        { ok: false, error: "Scene not found" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ ok: true, scene });
+  } catch (error) {
+    console.error("[GET /api/scenes/[id]]", error);
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * PUT /api/scenes/[id]
+ * Scene 전체 업데이트
+ * body: { profile, items, lifestoryProgress }
+ */
+export async function PUT(req, { params }) {
+  try {
+    const { id } = await params;;
+    const body = await req.json();
+    const { profile, items, lifestoryProgress } = body;
+
+    // Scene 존재 확인
+    const existingScene = await client.scene.findUnique({
+      where: { identifier: id },
+    });
+
+    if (!existingScene) {
+      return NextResponse.json(
+        { ok: false, error: "Scene not found" },
+        { status: 404 }
+      );
+    }
+
+    // Transaction으로 전체 업데이트 (타임아웃과 재시도 설정)
+    const updatedScene = await client.$transaction(async (tx) => {
+      // 1. Scene 기본 정보 업데이트
+      const scene = await tx.scene.update({
+        where: { identifier: id },
+        data: {
+          profilePhoto: profile?.photo || null,
+          profileName: profile?.name || null,
+          profileBirthDate: profile?.birthDate || null,
+          profileBirthPlace: profile?.birthPlace || null,
+          profileBiography: profile?.biography || null,
+          profileRecordFormat: profile?.recordFormat || "entire-life",
+          lifestoryProgress: lifestoryProgress || null,
+        },
+      });
+
+      // 2. 기존 items 삭제 (CASCADE로 images도 삭제됨)
+      await tx.sceneItem.deleteMany({
+        where: { sceneId: scene.id },
+      });
+
+      // 3. 새 items 생성
+      if (items &amp;&amp; items.length > 0) {
+        console.log("[PUT /api/scenes/[id]] Saving items:", JSON.stringify(items, null, 2));
+        for (let i = 0; i &lt; items.length; i++) {
+          const item = items[i];
+
+          // 프로필 아이템은 건너뛰기
+          if (item.isProfile) continue;
+
+          const createdItem = await tx.sceneItem.create({
+            data: {
+              sceneId: scene.id,
+              title: item.title || null,
+              date: item.date || null,
+              desc: item.desc || null,
+              order: i,
+            },
+          });
+
+          console.log(`[PUT /api/scenes/[id]] Created item ${createdItem.id}, images:`, item.img);
+
+          // 이미지 추가 - createMany로 배치 생성
+          if (item.img &amp;&amp; Array.isArray(item.img) &amp;&amp; item.img.length > 0) {
+            console.log(`[PUT /api/scenes/[id]] Processing ${item.img.length} images for item ${createdItem.id}`);
+
+            const imagesToCreate = item.img
+              .map((img, j) => {
+                const imgUrl = typeof img === "string" ? img : img?.url;
+                if (imgUrl) {
+                  return {
+                    itemId: createdItem.id,
+                    url: imgUrl,
+                    order: j,
+                  };
+                }
+                return null;
+              })
+              .filter(Boolean);
+
+            if (imagesToCreate.length > 0) {
+              const result = await tx.sceneImage.createMany({
+                data: imagesToCreate,
+              });
+              console.log(`[PUT /api/scenes/[id]] Created ${result.count} images for item ${createdItem.id}`);
+            }
+          } else {
+            console.log(`[PUT /api/scenes/[id]] No images for item ${createdItem.id}`);
+          }
+        }
+      }
+
+      return scene;
+    });
+
+    // 업데이트된 전체 데이터 반환
+    const result = await client.scene.findUnique({
+      where: { id: updatedScene.id },
+      include: {
+        items: {
+          include: {
+            images: {
+              orderBy: { order: "asc" },
+            },
+          },
+          orderBy: { order: "asc" },
+        },
+      },
+    });
+
+    return NextResponse.json({ ok: true, scene: result });
+  } catch (error) {
+    console.error("[PUT /api/scenes/[id]] Error:", error);
+
+    // Prisma Transaction 관련 에러 처리
+    if (error.message?.includes("Transaction")) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "데이터베이스 트랜잭션 오류가 발생했습니다. 다시 시도해주세요.",
+          details: error.message
+        },
+        { status: 503 }
+      );
+    }
+
+    return NextResponse.json(
+      { ok: false, error: error.message || "저장 중 오류가 발생했습니다." },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * DELETE /api/scenes/[id]
+ * Scene 삭제
+ */
+export async function DELETE(req, { params }) {
+  try {
+    const { id } = await params;;
+
+    await client.scene.delete({
+      where: { identifier: id },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[DELETE /api/scenes/[id]]", error);
+    return NextResponse.json(
+      { ok: false, error: error.message },
+      { status: 500 }
+    );
+  }
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#DELETE">DELETE</a></li><li><a href="global.html#DiscSystem">DiscSystem</a></li><li><a href="global.html#EmptyMat">EmptyMat</a></li><li><a href="global.html#GET">GET</a></li><li><a href="global.html#ImageMat">ImageMat</a></li><li><a href="global.html#MediaPlane">MediaPlane</a></li><li><a href="global.html#PATCH">PATCH</a></li><li><a href="global.html#POST">POST</a></li><li><a href="global.html#PUT">PUT</a></li><li><a href="global.html#RadialTextRing">RadialTextRing</a></li><li><a href="global.html#RingInner">RingInner</a></li><li><a href="global.html#RingPlane">RingPlane</a></li><li><a href="global.html#Scene">Scene</a></li><li><a href="global.html#VideoMat">VideoMat</a></li><li><a href="global.html#addItem">addItem</a></li><li><a href="global.html#buildTextureData">buildTextureData</a></li><li><a href="global.html#buildTexturesFromPreview">buildTexturesFromPreview</a></li><li><a href="global.html#createRecordItem">createRecordItem</a></li><li><a href="global.html#deleteItem">deleteItem</a></li><li><a href="global.html#deleteRecordItem">deleteRecordItem</a></li><li><a href="global.html#deleteScene">deleteScene</a></li><li><a href="global.html#detectMediaType">detectMediaType</a></li><li><a href="global.html#ensureMinimumTextures">ensureMinimumTextures</a></li><li><a href="global.html#fetchLifestory">fetchLifestory</a></li><li><a href="global.html#fetchRecordDetails">fetchRecordDetails</a></li><li><a href="global.html#fetchReelsDetails">fetchReelsDetails</a></li><li><a href="global.html#generateStory">generateStory</a></li><li><a href="global.html#getScene">getScene</a></li><li><a href="global.html#incrementLifestoryUsage">incrementLifestoryUsage</a></li><li><a href="global.html#inferSrcType">inferSrcType</a></li><li><a href="global.html#isEmail">isEmail</a></li><li><a href="global.html#isLikelyE164">isLikelyE164</a></li><li><a href="global.html#isYMD">isYMD</a></li><li><a href="global.html#iso">iso</a></li><li><a href="global.html#lerpExp">lerpExp</a></li><li><a href="global.html#makeDummyGalleryPayload">makeDummyGalleryPayload</a></li><li><a href="global.html#makeMixedPayloadWithIds">makeMixedPayloadWithIds</a></li><li><a href="global.html#patchReelsGallery">patchReelsGallery</a></li><li><a href="global.html#saveChildhood">saveChildhood</a></li><li><a href="global.html#saveExperience">saveExperience</a></li><li><a href="global.html#saveLifestory">saveLifestory</a></li><li><a href="global.html#saveLifestoryProgress">saveLifestoryProgress</a></li><li><a href="global.html#saveRelationship">saveRelationship</a></li><li><a href="global.html#smoothstep">smoothstep</a></li><li><a href="global.html#updateItem">updateItem</a></li><li><a href="global.html#updateProfile">updateProfile</a></li><li><a href="global.html#updateRecordDetails">updateRecordDetails</a></li><li><a href="global.html#updateRecordItem">updateRecordItem</a></li><li><a href="global.html#updateReelsDetails">updateReelsDetails</a></li><li><a href="global.html#updateReelsGalleryDetails">updateReelsGalleryDetails</a></li><li><a href="global.html#updateScene">updateScene</a></li><li><a href="global.html#uploadFile">uploadFile</a></li><li><a href="global.html#uploadMediaFiles">uploadMediaFiles</a></li><li><a href="global.html#uploadRecordFile">uploadRecordFile</a></li><li><a href="global.html#useWindowSize">useWindowSize</a></li><li><a href="global.html#wrapPi">wrapPi</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Jan 06 2026 01:55:27 GMT+0900 (대한민국 표준시)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

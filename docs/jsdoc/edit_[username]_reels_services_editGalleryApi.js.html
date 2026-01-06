@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: edit/[username]/reels/services/editGalleryApi.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: edit/[username]/reels/services/editGalleryApi.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>// services/galleryService.js
+// 업로드 &amp; API 호출 유틸 (Storage 교체/확장 용이)
+
+/**
+ * Infers media type from a file or URL.
+ * 파일/URL에서 미디어 타입을 추론합니다.
+ * @param {File|string} fileOrUrl
+ * @returns {number} 0=image, 1=video
+ */
+export function inferSrcType(fileOrUrl) {
+  // 0 = image, 1 = video
+  const isFile = typeof fileOrUrl !== "string";
+  if (isFile) return fileOrUrl.type?.startsWith("video") ? 1 : 0;
+  const url = String(fileOrUrl).toLowerCase();
+  return url.match(/\.(mp4|mov|webm|m4v|avi)$/) ? 1 : 0;
+}
+
+/**
+ * Uploads files via presigned URLs and returns upload results.
+ * presign 후 PUT 업로드를 수행하고 업로드 결과를 반환합니다.
+ * @param {File[]} files
+ * @param {Object} options
+ * @param {string} options.prefix
+ * @returns {Promise&lt;Array&lt;{url: string, key: string, srcType: number}>>}
+ */
+export async function uploadMediaFiles(files, { prefix }) {
+  // 1) 프리사인 URL들 요청
+  const res = await fetch("/api/storage/presign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prefix, // 예: `reel/${identifier}/childhood`
+      files: files.map((f) => ({ name: f.name, type: f.type })),
+    }),
+  });
+  const { items } = await res.json();
+  if (!res.ok) throw new Error("presign failed");
+
+  // 2) 각각 PUT 업로드
+  //   fetch는 업로드 진행률 콜백이 없어 필요하면 axios/XHR 사용
+  await Promise.all(
+    items.map((it, i) =>
+      fetch(it.uploadUrl, {
+        method: "PUT",
+        headers: it.headers,
+        body: files[i],
+      }).then((r) => {
+        if (!r.ok) throw new Error(`upload failed: ${files[i].name}`);
+      }),
+    ),
+  );
+
+  // 3) 최종 URL 반환 (DB에 저장할 값)
+  return items.map((it, i) => ({
+    url: it.publicUrl, // 여기 저장
+    key: it.key, // 필요 시 보관(삭제/이동용)
+    srcType: inferSrcType(files[i]),
+  }));
+}
+
+/**
+ * 서버로 PATCH 호출
+ * payload는 부분 업데이트 허용: { childhood?, memory?, relationship? }
+ */
+/**
+ * Partially updates gallery sections via PATCH.
+ * 갤러리 섹션을 PATCH로 부분 업데이트합니다.
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Object} params.payload
+ * @returns {Promise&lt;any>}
+ */
+export async function patchReelsGallery({ token, reelId, payload }) {
+  console.log("payload:", payload);
+  const res = await fetch(`/api/reel/gallery/${encodeURIComponent(reelId)}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      `HTTP ${res.status}: ${json?.error || json?.message || "patch failed"}`,
+    );
+  }
+  return json;
+}
+
+/**
+ * 공통 저장 헬퍼들 (각 섹션 전용)
+ */
+
+// items: [{ id?, url?, file?, caption? }]
+/**
+ * Saves the childhood section.
+ * childhood 섹션을 저장합니다.
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array&lt;Object>} params.items
+ * @returns {Promise&lt;any>}
+ */
+export async function saveChildhood({ token, reelId, items }) {
+  // 1) 파일만 먼저 업로드해서 URL/타입 확보
+  const fileIdx = []; // items에서 파일 항목들의 인덱스 기록
+  const files = [];
+  items.forEach((it, i) => {
+    if (it.file) {
+      fileIdx.push(i);
+      files.push(it.file);
+    }
+  });
+
+  let uploaded = [];
+  if (files.length) {
+    // [{ url, key, srcType }, ...]
+    uploaded = await uploadMediaFiles(files, {
+      prefix: `reel/${reelId}/childhood`,
+    });
+  }
+
+  // 2) 업로드 결과를 원래 자리로 주입하고,
+  //    서버가 기대하는 형태({ id?, data: { srcUrl, srcType, caption } })로 정규화
+  let up = 0;
+  const normalized = items.map((it) => {
+    if (it.file) {
+      const u = uploaded[up++];
+      return {
+        id: it.id,
+        data: {
+          srcUrl: u.url,
+          srcType: u.srcType,
+          caption: it.caption || "",
+        },
+      };
+    }
+    return {
+      id: it.id,
+      data: {
+        srcUrl: it.url,
+        srcType: inferSrcType(it.url),
+        caption: it.caption || "",
+      },
+    };
+  });
+
+  // 3) 절대 `map(async ...)` 하지 마세요 — Promise 배열이 되면 JSON 직렬화가 망가집니다.
+  //    순수 객체 배열을 payload로 보냅니다.
+  return patchReelsGallery({
+    token,
+    reelId,
+    payload: { childhood: normalized },
+  });
+}
+
+// services/galleryService.js (수정본의 핵심 라인만)
+
+/**
+ * Saves the memory section.
+ * memory 섹션을 저장합니다.
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array&lt;Object>} params.items
+ * @returns {Promise&lt;any>}
+ */
+export async function saveExperience({ token, reelId, items }) {
+  // 1) 업로드 대상 추출
+  const uploadTargets = [];
+  items.forEach((mem, mi) => {
+    mem.media.forEach((m, pi) => {
+      if (m.file) uploadTargets.push({ mi, pi, file: m.file });
+    });
+  });
+
+  // 2) presign + PUT (공통 prefix)
+  let uploaded = [];
+  if (uploadTargets.length) {
+    uploaded = await uploadMediaFiles(
+      uploadTargets.map((u) => u.file),
+      { prefix: `reel/${reelId}/memory` } // ✅ prefix 통일
+    );
+  }
+
+  // 3) 업로드 결과를 media에 주입 + 서버 기대 포맷({ id?, data: {...}, media: [...] })
+  let upIdx = 0;
+  const normalized = items.map((mem) => {
+    const media = mem.media.map((m) => {
+      if (m.file) {
+        const { url, srcType } = uploaded[upIdx++];
+        return { srcUrl: url, srcType, caption: m.caption || "" };
+      }
+      return { srcUrl: m.url, srcType: inferSrcType(m.url), caption: m.caption || "" };
+    });
+    return {
+      id: mem.id,
+      data: {
+        title: mem.title ?? "",
+        subTitle: mem.subTitle ?? null,
+        date: mem.date ?? null,
+        comment: mem.comment ?? null,
+      },
+      media,
+    };
+  });
+
+  return patchReelsGallery({ token, reelId, payload: { memory: normalized } });
+}
+
+/**
+ * Saves the relationship section.
+ * relationship 섹션을 저장합니다.
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array&lt;Object>} params.items
+ * @returns {Promise&lt;any>}
+ */
+export async function saveRelationship({ token, reelId, items }) {
+  const uploadTargets = [];
+  items.forEach((rel, ri) => {
+    rel.media.forEach((m, pi) => {
+      if (m.file) uploadTargets.push({ ri, pi, file: m.file });
+    });
+  });
+
+  let uploaded = [];
+  if (uploadTargets.length) {
+    uploaded = await uploadMediaFiles(
+      uploadTargets.map((u) => u.file),
+      { prefix: `reel/${reelId}/relationship` } // ✅ prefix 통일
+    );
+  }
+
+  let upIdx = 0;
+  const normalized = items.map((rel) => {
+    const media = rel.media.map((m) => {
+      if (m.file) {
+        const { url, srcType } = uploaded[upIdx++];
+        return { srcUrl: url, srcType, caption: m.caption || "" };
+      }
+      return { srcUrl: m.url, srcType: inferSrcType(m.url), caption: m.caption || "" };
+    });
+    return {
+      id: rel.id,
+      data: {
+        name: rel.name ?? "",
+        relation: rel.relation ?? "",
+        comment: rel.comment ?? null,
+      },
+      media,
+    };
+  });
+
+  return patchReelsGallery({ token, reelId, payload: { relationship: normalized } });
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Global</h3><ul><li><a href="global.html#DELETE">DELETE</a></li><li><a href="global.html#DiscSystem">DiscSystem</a></li><li><a href="global.html#EmptyMat">EmptyMat</a></li><li><a href="global.html#GET">GET</a></li><li><a href="global.html#ImageMat">ImageMat</a></li><li><a href="global.html#MediaPlane">MediaPlane</a></li><li><a href="global.html#PATCH">PATCH</a></li><li><a href="global.html#POST">POST</a></li><li><a href="global.html#PUT">PUT</a></li><li><a href="global.html#RadialTextRing">RadialTextRing</a></li><li><a href="global.html#RingInner">RingInner</a></li><li><a href="global.html#RingPlane">RingPlane</a></li><li><a href="global.html#Scene">Scene</a></li><li><a href="global.html#VideoMat">VideoMat</a></li><li><a href="global.html#addItem">addItem</a></li><li><a href="global.html#buildTextureData">buildTextureData</a></li><li><a href="global.html#buildTexturesFromPreview">buildTexturesFromPreview</a></li><li><a href="global.html#createRecordItem">createRecordItem</a></li><li><a href="global.html#deleteItem">deleteItem</a></li><li><a href="global.html#deleteRecordItem">deleteRecordItem</a></li><li><a href="global.html#deleteScene">deleteScene</a></li><li><a href="global.html#detectMediaType">detectMediaType</a></li><li><a href="global.html#ensureMinimumTextures">ensureMinimumTextures</a></li><li><a href="global.html#fetchLifestory">fetchLifestory</a></li><li><a href="global.html#fetchRecordDetails">fetchRecordDetails</a></li><li><a href="global.html#fetchReelsDetails">fetchReelsDetails</a></li><li><a href="global.html#generateStory">generateStory</a></li><li><a href="global.html#getScene">getScene</a></li><li><a href="global.html#incrementLifestoryUsage">incrementLifestoryUsage</a></li><li><a href="global.html#inferSrcType">inferSrcType</a></li><li><a href="global.html#isEmail">isEmail</a></li><li><a href="global.html#isLikelyE164">isLikelyE164</a></li><li><a href="global.html#isYMD">isYMD</a></li><li><a href="global.html#iso">iso</a></li><li><a href="global.html#lerpExp">lerpExp</a></li><li><a href="global.html#makeDummyGalleryPayload">makeDummyGalleryPayload</a></li><li><a href="global.html#makeMixedPayloadWithIds">makeMixedPayloadWithIds</a></li><li><a href="global.html#patchReelsGallery">patchReelsGallery</a></li><li><a href="global.html#saveChildhood">saveChildhood</a></li><li><a href="global.html#saveExperience">saveExperience</a></li><li><a href="global.html#saveLifestory">saveLifestory</a></li><li><a href="global.html#saveLifestoryProgress">saveLifestoryProgress</a></li><li><a href="global.html#saveRelationship">saveRelationship</a></li><li><a href="global.html#smoothstep">smoothstep</a></li><li><a href="global.html#updateItem">updateItem</a></li><li><a href="global.html#updateProfile">updateProfile</a></li><li><a href="global.html#updateRecordDetails">updateRecordDetails</a></li><li><a href="global.html#updateRecordItem">updateRecordItem</a></li><li><a href="global.html#updateReelsDetails">updateReelsDetails</a></li><li><a href="global.html#updateReelsGalleryDetails">updateReelsGalleryDetails</a></li><li><a href="global.html#updateScene">updateScene</a></li><li><a href="global.html#uploadFile">uploadFile</a></li><li><a href="global.html#uploadMediaFiles">uploadMediaFiles</a></li><li><a href="global.html#uploadRecordFile">uploadRecordFile</a></li><li><a href="global.html#useWindowSize">useWindowSize</a></li><li><a href="global.html#wrapPi">wrapPi</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Jan 06 2026 01:55:27 GMT+0900 (대한민국 표준시)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

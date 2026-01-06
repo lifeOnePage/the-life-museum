@@ -1,8 +1,8 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
-import LifeRecordDesktop from "./components/LifeRecordDesktop";
-import LifeRecordMobile from "./components/LifeRecordMobile";
+import LifeRecordDesktop from "./(views)/desktop/LifeRecordDesktop";
+import LifeRecordMobile from "./(views)/mobile/LifeRecordMobile";
 import "./styles/cardPage.css";
 import "./styles/cardPage-mobile.css";
 

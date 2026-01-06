@@ -13,7 +13,7 @@ import { HiVolumeUp, HiVolumeOff } from "react-icons/hi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { IoMenu } from "react-icons/io5";
 
-import "../styles/cardPage-mobile.css";
+import "../../styles/cardPage-mobile.css";
 
 const MONTHS = [
   "JAN",

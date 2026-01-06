@@ -3,9 +3,12 @@ import { makeDummyGalleryPayload, makeMixedPayloadWithIds } from "./dummyData";
 /**
  * Fetches reel details.
  * 리엘 상세 정보를 조회합니다.
- * @param {{ token: string, identifier: string }} params
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.identifier
  * @returns {Promise<any>}
  */
+
 export async function fetchReelsDetails({ token, identifier }) {
   console.group("fetchReelsDetails");
   console.log("identifier: ", identifier);
@@ -27,7 +30,10 @@ export async function fetchReelsDetails({ token, identifier }) {
 /**
  * Updates reel profile info.
  * 리엘 프로필 정보를 업데이트합니다.
- * @param {{ token?: string, id: string, data: object }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.id
+ * @param {Object} params.data
  * @returns {Promise<any>}
  */
 export async function updateReelsDetails({ token, id, data }) {
@@ -50,7 +56,7 @@ export async function updateReelsDetails({ token, id, data }) {
 
     // 2) presign 요청 (경로: reels/{id}/profile)
     const ext =
-      (blob.type && blob.type.split("/")[1]) ? blob.type.split("/")[1] : "bin";
+      blob.type && blob.type.split("/")[1] ? blob.type.split("/")[1] : "bin";
     const filename = `profile-${Date.now()}.${ext}`;
 
     const presignRes = await fetch(`/api/storage/presign`, {
@@ -61,7 +67,9 @@ export async function updateReelsDetails({ token, id, data }) {
       },
       body: JSON.stringify({
         prefix: `reel/${id}/profile`,
-        files: [{ name: filename, type: blob.type || "application/octet-stream" }],
+        files: [
+          { name: filename, type: blob.type || "application/octet-stream" },
+        ],
       }),
     });
 
@@ -77,7 +85,9 @@ export async function updateReelsDetails({ token, id, data }) {
     // 3) 실제 업로드 (PUT)
     const putRes = await fetch(uploadUrl, {
       method: "PUT",
-      headers: headers || { "Content-Type": blob.type || "application/octet-stream" },
+      headers: headers || {
+        "Content-Type": blob.type || "application/octet-stream",
+      },
       body: blob,
     });
     if (!putRes.ok) {
@@ -118,11 +128,13 @@ export async function updateReelsDetails({ token, id, data }) {
   return json;
 }
 
-
 /**
  * Updates gallery details (including dummy payload).
  * 갤러리 상세(더미 포함)를 업데이트합니다.
- * @param {{ token?: string, id: string, data?: object }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.id
+ * @param {Object} [params.data]
  * @returns {Promise<any>}
  */
 export async function updateReelsGalleryDetails({ token, id, data }) {
@@ -155,7 +167,10 @@ export async function updateReelsGalleryDetails({ token, id, data }) {
 /**
  * Fetches lifestory data.
  * 라이프스토리 데이터를 조회합니다.
- * @param {{ token?: string, id: string, edit?: boolean }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.id
+ * @param {boolean} [params.edit]
  * @returns {Promise<any>}
  */
 export async function fetchLifestory({ token, id, edit = false }) {
@@ -174,7 +189,10 @@ export async function fetchLifestory({ token, id, edit = false }) {
 /**
  * Saves lifestory data.
  * 라이프스토리 데이터를 저장합니다.
- * @param {{ token?: string, id: string, data: object }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.id
+ * @param {Object} params.data
  * @returns {Promise<any>}
  */
 export async function saveLifestory({ token, id, data }) {
@@ -195,7 +213,9 @@ export async function saveLifestory({ token, id, data }) {
 /**
  * Increments lifestory usage by 1.
  * 라이프스토리 사용량을 1회 증가시킵니다.
- * @param {{ token?: string, id: string }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.id
  * @returns {Promise<any>}
  */
 export async function incrementLifestoryUsage({ token, id }) {
@@ -205,7 +225,11 @@ export async function incrementLifestoryUsage({ token, id }) {
 /**
  * Generates a story via GPT.
  * GPT로 스토리를 생성합니다.
- * @param {{ token?: string, style: string, messages: Array<any>, userName?: string }} params
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.style
+ * @param {Array<Object>} params.messages
+ * @param {string} [params.userName]
  * @returns {Promise<any>}
  */
 export async function generateStory({ token, style, messages, userName }) {

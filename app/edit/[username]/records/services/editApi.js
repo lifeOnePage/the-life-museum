@@ -3,7 +3,9 @@ import { authedFetch } from "@/app/utils/authedFetch";
 /**
  * Fetches record details.
  * 레코드 상세 정보를 조회합니다.
- * @param {{ token: string, identifier: string }} params
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.identifier
  * @returns {Promise<any>}
  */
 export async function fetchRecordDetails({ token, identifier }) {
@@ -21,7 +23,10 @@ export async function fetchRecordDetails({ token, identifier }) {
 /**
  * Updates record metadata.
  * 레코드 메타 정보를 업데이트합니다.
- * @param {{ token: string, id: string, data: object }} params
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.id
+ * @param {Object} params.data
  * @returns {Promise<any>}
  */
 export async function updateRecordDetails({ token, id, data }) {
@@ -40,7 +45,10 @@ export async function updateRecordDetails({ token, id, data }) {
 /**
  * Creates a record timeline item.
  * 레코드 타임라인 아이템을 생성합니다.
- * @param {{ token: string, recordId: string, data: object }} params
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.recordId
+ * @param {Object} params.data
  * @returns {Promise<any>}
  */
 export async function createRecordItem({ token, recordId, data }) {
@@ -58,7 +66,10 @@ export async function createRecordItem({ token, recordId, data }) {
 /**
  * Updates a record timeline item.
  * 레코드 타임라인 아이템을 업데이트합니다.
- * @param {{ token: string, itemId: string, data: object }} params
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.itemId
+ * @param {Object} params.data
  * @returns {Promise<any>}
  */
 export async function updateRecordItem({ token, itemId, data }) {
@@ -76,7 +87,9 @@ export async function updateRecordItem({ token, itemId, data }) {
 /**
  * Deletes a record timeline item.
  * 레코드 타임라인 아이템을 삭제합니다.
- * @param {{ token: string, itemId: string }} params
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {string} params.itemId
  * @returns {Promise<any>}
  */
 export async function deleteRecordItem({ token, itemId }) {
@@ -93,7 +106,10 @@ export async function deleteRecordItem({ token, itemId }) {
 /**
  * Uploads a record file via presign and returns a public URL.
  * 레코드용 파일을 presign 후 업로드하고 공개 URL을 반환합니다.
- * @param {{ token: string, file: File, prefix: string }} params
+ * @param {Object} params
+ * @param {string} params.token
+ * @param {File} params.file
+ * @param {string} params.prefix
  * @returns {Promise<string>}
  */
 export async function uploadRecordFile({ token, file, prefix }) {

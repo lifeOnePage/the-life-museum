@@ -230,6 +230,8 @@ export default function EditRecords() {
         "name",
         "subName",
         "description",
+        "pageTitle",
+        "pageSubtitle",
         "bgm",
         "color",
         "birthDate",

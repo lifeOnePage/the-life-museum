@@ -19,25 +19,7 @@ import { DEFAULT_THEME, BG_THEME_PALETTE } from "../../utils/constants";
 import { calculateAge, getYear, toMonthDay } from "../../utils/dateUtils";
 import { norm360, wrapTo180, angDist } from "../../utils/mathUtils";
 import ControlButtons from "../../components/ControlButtons";
-import ImageSlider from "../../components/ImageSlider";
-import EditControls from "../../components/EditControls";
-import CardContent from "../../components/CardContent";
-import HighlightTimeline from "../../components/HighlightTimeline";
-import TimelineWheel from "../../components/TimelineWheel";
-import UploadingOverlay from "../../components/UploadingOverlay";
-
-function useIsMobile(bp = 768) {
-  const [m, setM] = React.useState(
-    typeof window !== "undefined" ? window.innerWidth <= bp : false,
-  );
-  useEffect(() => {
-    const on = () => setM(window.innerWidth <= bp);
-    window.addEventListener("resize", on);
-    on();
-    return () => window.removeEventListener("resize", on);
-  }, [bp]);
-  return m;
-}
+import useIsMobile from "@/app/hooks/useIsMobile";
 
 export default function LifeRecordDesktop({
   data,
@@ -88,6 +70,7 @@ export default function LifeRecordDesktop({
   // API 데이터를 timeline 형식으로 변환
   const timeline = useMemo(() => {
     const result = [];
+    console.log(data?.record);
 
     // 메인 아이템
     if (data.record) {
@@ -622,6 +605,11 @@ export default function LifeRecordDesktop({
   };
 
   const isAtHome = activeItem?.kind === "main";
+  console.log(activeItem);
+  const defaultPageTitle = "Life-\nRecords";
+  const defaultPageSubtitle = `${data.record?.userName || "사용자"}님의 라이프 레코드입니다.\n"작은 장면을 모아 긴 기억을 만듭니다"`;
+  const pageTitle = data.record?.pageTitle || "";
+  const pageSubtitle = data.record?.pageSubtitle || "";
 
   return (
     <main
@@ -643,15 +631,53 @@ export default function LifeRecordDesktop({
 
       <div className="lr-grid">
         <section className="lr-left">
-          <h1 className="lr-title">
-            Life- <br />
-            Records
-          </h1>
-          <p className="lr-sub">
-            <b>{data.record?.userName || "사용자"}</b>님의 라이프 레코드입니다.
-            <br />
-            "작은 장면을 모아 긴 기억을 만듭니다"
-          </p>
+          {isEditing ? (
+            <>
+              <textarea
+                maxLength={20}
+                className="lr-title-input"
+                rows={4}
+                value={pageTitle}
+                placeholder={defaultPageTitle}
+                onChange={(e) => {
+                  const newData = {
+                    ...data,
+                    record: {
+                      ...data.record,
+                      pageTitle: e.target.value,
+                    },
+                  };
+                  onDataChange?.(newData);
+                }}
+              />
+              <textarea
+                maxLength={100}
+                className="lr-sub-input"
+                rows={3}
+                value={pageSubtitle}
+                placeholder={defaultPageSubtitle}
+                onChange={(e) => {
+                  const newData = {
+                    ...data,
+                    record: {
+                      ...data.record,
+                      pageSubtitle: e.target.value,
+                    },
+                  };
+                  onDataChange?.(newData);
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <h1 className="lr-title" style={{ whiteSpace: "pre-line" }}>
+                {pageTitle || defaultPageTitle}
+              </h1>
+              <p className="lr-sub" style={{ whiteSpace: "pre-line" }}>
+                {pageSubtitle || defaultPageSubtitle}
+              </p>
+            </>
+          )}
         </section>
 
         <section className="lr-center">

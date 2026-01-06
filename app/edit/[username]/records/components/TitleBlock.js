@@ -6,9 +6,9 @@
  */
 export default function TitleBlock({ kor, eng }) {
   return (
-    <div className="flex items-baseline gap-2 w-full border-b border-white py-4 text-2xl font-bold font-serif italic">
+    <div className="flex w-full items-baseline gap-2 border-b border-white py-4 font-serif text-2xl font-bold italic">
       {eng}{" "}
-      <p className="font-sans not-italic font-light align-bottom justify-end text-sm">
+      <p className="justify-end align-bottom font-sans text-sm font-light not-italic">
         {kor}
       </p>
     </div>

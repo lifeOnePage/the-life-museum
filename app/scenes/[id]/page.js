@@ -881,6 +881,10 @@ export default function ViewPage() {
 
     if (newIndex !== leftIndex) {
       setLeftIndex(newIndex);
+      // 용수철 효과 방지: 현재 위치를 새로운 시작점으로 업데이트
+      dragStateRef.current.startIndex = newIndex;
+      dragStateRef.current.startX = e.clientX;
+      dragStateRef.current.startY = e.clientY;
     }
   };
 

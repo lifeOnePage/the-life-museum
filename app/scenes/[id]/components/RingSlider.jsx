@@ -28,6 +28,7 @@ export default function RingSlider({
   const startXRef = useRef(0);
   const dragOffsetRef = useRef(0);
   const wheelAccumulatorRef = useRef(0); // 휠 스크롤 누적값
+  const currentIndexRef = useRef(leftIndex); // 드래그 중 현재 인덱스 추적
 
   // 현재 leftIndex가 속한 아이템 찾기
   const currentItem = items.find((item) => {
@@ -89,10 +90,11 @@ export default function RingSlider({
     const deltaX = getClientX(e) - startXRef.current;
     const framesDelta = Math.round(deltaX / filmFrameWidth);
 
-    // 드래그한 거리만큼 인덱스 변경
-    const newIndex = leftIndex - framesDelta;
-    if (newIndex >= minIndex && newIndex <= maxIndex && newIndex !== leftIndex) {
+    // 드래그한 거리만큼 인덱스 변경 (로컬 ref 사용하여 즉시 반영)
+    const newIndex = currentIndexRef.current - framesDelta;
+    if (newIndex >= minIndex && newIndex <= maxIndex && newIndex !== currentIndexRef.current) {
       onChangeLeftIndex?.(newIndex);
+      currentIndexRef.current = newIndex; // 즉시 로컬 ref 업데이트 (용수철 효과 방지)
       startXRef.current = getClientX(e);
     }
   };
@@ -100,6 +102,11 @@ export default function RingSlider({
   const handleEnd = () => {
     isDraggingRef.current = false;
   };
+
+  // leftIndex prop과 로컬 ref 동기화
+  useEffect(() => {
+    currentIndexRef.current = leftIndex;
+  }, [leftIndex]);
 
   // 휠 스크롤 핸들러 (데스크탑용)
   const handleWheel = (e) => {

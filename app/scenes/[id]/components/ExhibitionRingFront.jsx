@@ -389,8 +389,8 @@ const MediaPlane = React.forwardRef(function MediaPlane(
         )}
       </mesh>
 
-      {/* Projection Texture 오버레이 - 빈 플레인 및 다른 이벤트 미디어 제외 */}
-      {kind !== "empty" && category !== "otherItem" && (
+      {/* Projection Texture 오버레이 - 빈 플레인 및 다른 이벤트 미디어 제외, 다크모드일 때만 */}
+      {kind !== "empty" && category !== "otherItem" && isDarkMode && (
         <mesh renderOrder={20} position={[0, 0, 0.01]}>
           <planeGeometry args={[PLANE_W * 3, PLANE_H * 3]} />
           <Suspense fallback={null}>
@@ -398,7 +398,7 @@ const MediaPlane = React.forwardRef(function MediaPlane(
           </Suspense>
         </mesh>
       )}
-      {kind !== "empty" && category === "otherItem" && (
+      {kind !== "empty" && category === "otherItem" && isDarkMode && (
         <mesh renderOrder={20} position={[0, 0, 0.01]}>
           <planeGeometry args={[PLANE_W * 3, PLANE_H * 3]} />
           <Suspense fallback={null}>
@@ -501,7 +501,7 @@ function ExhibitionRingInner({
   const { camera, gl } = useThree();
 
   // 애니메이션 파라미터
-  const bulge = 0.6; // 위로 튀어나오는 최대 높이
+  const bulge = 1; // 위로 튀어나오는 최대 높이
 
   // 텍스트 고정 위치 저장
   const fixedPositionsRef = useRef({});
@@ -712,12 +712,14 @@ function ExhibitionRingInner({
         );
       })}
 
-      {/* Projection Effect - 선택된 플레인 위에 붙어다니는 효과 */}
-      <Suspense fallback={null}>
-        <mesh ref={effectOverlayRef} position={[0, 0, 0]}>
-          <ProjectionEffectOverlay />
-        </mesh>
-      </Suspense>
+      {/* Projection Effect - 선택된 플레인 위에 붙어다니는 효과, 다크모드일 때만 */}
+      {isDarkMode && (
+        <Suspense fallback={null}>
+          <mesh ref={effectOverlayRef} position={[0, 0, 0]}>
+            <ProjectionEffectOverlay />
+          </mesh>
+        </Suspense>
+      )}
     </group>
   );
 }
@@ -811,6 +813,11 @@ export default function ExhibitionRingFront({
 
       if (nearestValidIndex !== currentIndex && onCurrentIndexChange) {
         onCurrentIndexChange(nearestValidIndex);
+        // 인덱스가 변경되면 현재 위치를 새로운 시작점으로 업데이트 (용수철 효과 방지)
+        dragStateRef.current = {
+          startX: e.clientX,
+          startIndex: nearestValidIndex,
+        };
       }
     },
     [

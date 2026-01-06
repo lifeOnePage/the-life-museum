@@ -111,12 +111,12 @@ function ImageMat({ url, category, animationOpacity = 1, isDarkMode = true }) {
       color = 0xffffff;
       break;
     case "sameItem": // 같은 이벤트의 다른 이미지
-      baseOpacity = 0.5;
+      baseOpacity =isDarkMode ? 0.5 : 0.5;
       color = 0xffffff;
       break;
     case "otherItem": // 다른 이벤트의 이미지 (흑백)
-      baseOpacity = 0.6;
-      color = 0x777777; // 회색톤으로 채도 낮춤 (약 47% 밝기)
+      baseOpacity = isDarkMode ? 0.6 : 0.2;
+      color = isDarkMode ? 0x777777 : 0xbbbbbb; // 회색톤으로 채도 낮춤 (약 47% 밝기)
       break;
     default:
       baseOpacity = 0.2;
@@ -628,7 +628,7 @@ function ExhibitionRingInner({
 
         // 모든 아이템이 매 프레임 현재 위치 계산 (회전)
         // 텍스처 배열이 reverse되어 있어서 range.end가 실제 맨 앞 이미지
-        console.log(range)
+        // console.log(range)
         const startIndex = range.end;
         const baseAngle = startIndex * step + ringAngle.current;
 

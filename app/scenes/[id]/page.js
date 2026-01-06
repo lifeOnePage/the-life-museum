@@ -36,6 +36,7 @@ export default function ViewPage() {
   const [exhibitionCurrentIndex, setExhibitionCurrentIndex] = useState(0); // 전시 모드 링 인덱스
   const [enableProfileSwitch, setEnableProfileSwitch] = useState(false); // 프로필 전환 활성화 여부 - 회전 기반 로직 사용
   const [isExhibitionPanelOpen, setIsExhibitionPanelOpen] = useState(false); // 전시 모드 패널 표시 여부
+  const [isProfileOpen, setIsProfileOpen] = useState(true); // 하단 프로필 섹션 표시 여부
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 전시 모드 패널 저장되지 않은 변경사항
   const [isSlowRotation, setIsSlowRotation] = useState(false); // 한 바퀴 완료 후 느린 회전
   const [lockedItemId, setLockedItemId] = useState(null); // 잠금된 아이템 ID (모바일 타임라인용)
@@ -1226,6 +1227,9 @@ export default function ViewPage() {
                 exhibitionScreen={exhibitionScreen}
                 isPaused={isExhibitionPanelOpen}
                 isSlowRotation={isSlowRotation}
+                isProfileOpen={isProfileOpen}
+                onToggleProfile={() => setIsProfileOpen(!isProfileOpen)}
+                showControls={showControls}
               />
             </div>
 

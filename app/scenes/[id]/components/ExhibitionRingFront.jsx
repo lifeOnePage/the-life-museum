@@ -19,8 +19,8 @@ import SceneDescBlock from "./SceneDescBlock";
 
 // ▶︎ 고정 파라미터
 const RADIUS = 7.2;
-const PLANE_W = 1;
-const PLANE_H = 0.8;
+const PLANE_W = 0.8;
+const PLANE_H = 0.6;
 const CAM_Y = 2;
 const CAM_Z = 22;
 
@@ -416,7 +416,7 @@ const MediaPlane = React.forwardRef(function MediaPlane(
 function ProjectionEffectOverlay() {
   const effectTex = useLoader(
     THREE.TextureLoader,
-    "/images/projection_effect_texture.png",
+    "/images/projection_effect_texture_v2.png",
   );
 
   useEffect(() => {
@@ -429,12 +429,12 @@ function ProjectionEffectOverlay() {
 
   return (
     <>
-      <planeGeometry args={[PLANE_W * 3, PLANE_H]} />
+      <planeGeometry args={[PLANE_W * 6, PLANE_H*2]} />
       <meshBasicMaterial
         map={effectTex}
         color={0xffffff}
         transparent={true}
-        opacity={1}
+        opacity={0.7}
         blending={THREE.AdditiveBlending}
         depthWrite={false}
         toneMapped={false}
@@ -598,7 +598,7 @@ function ExhibitionRingInner({
       // 선택된 플레인의 위치 추적 - 매 프레임 직접 업데이트
       if (i === currentIndex && effectOverlayRef.current) {
         // effect box 위치 계산 (bulge 애니메이션 포함하여 따라다님)
-        const effectY = y + PLANE_H;
+        const effectY = y + PLANE_H * 1.5;
         effectOverlayRef.current.position.set(x, effectY, z);
       }
 
@@ -984,7 +984,7 @@ export default function ExhibitionRingFront({
           <div
             className="flex min-w-0 flex-col" // inline-flex → flex 추천 (폭 계산 안정)
             style={{
-              transform: "translateY(-10vh)",
+              transform: "translateY(-15vh)",
               maxWidth: "calc(50vh * 25 / 17)",
               // width: renderedMediaWidth ? `${renderedMediaWidth}px` : "auto", // 컨테이너 자체를 잠금
             }}

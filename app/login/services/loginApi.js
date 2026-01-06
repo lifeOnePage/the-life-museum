@@ -32,8 +32,8 @@ export function setupRecaptcha(elementId) {
   return setupRecaptchaRaw(elementId);
 }
 
-export async function sendOtp(phone) {
-  const e164 = toE164(phone);
+export async function sendOtp(phone, countryCode = "+82") {
+  const e164 = toE164(phone, countryCode);
   const res = await sendVerificationCode(e164);
   return { res, verificationId: res.verificationId };
 }
@@ -72,8 +72,8 @@ export async function verifyOtp(confirmation, code) {
 
 // 회원가입 저장 (JWT 보호) -> Postgres User 생성/업데이트
 export async function saveSignupProfileWithJwt({ token, payload }) {
-  // payload: { name, phone, birth, email }
-  const mobile = toE164(payload.phone);
+  // payload: { name, phone, birth, email, countryCode }
+  const mobile = toE164(payload.phone, payload.countryCode || "+82");
   const birthDate = normalizeToYMD(payload.birth);
   if (!mobile) throw new Error("휴대폰번호 형식 오류");
   if (!birthDate) throw new Error("생년월일 형식 오류");

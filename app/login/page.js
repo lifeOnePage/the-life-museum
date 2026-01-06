@@ -11,6 +11,7 @@ import FieldBlock from "./components/FieldBlock";
 import { PrimaryButton, SecondaryButton } from "./components/Buttons";
 import SlideScreen from "./components/SlideScreen";
 import ErrorToast from "./components/ErrorToast";
+import CountryCodeSelect from "./components/CountryCodeSelect";
 
 import {
   setupRecaptcha,
@@ -27,6 +28,7 @@ export default function LoginPage() {
 
   const [stage, setStage] = useState("phone"); // phone → otp → signup | login
   const [phone, setPhone] = useState("");
+  const [countryCode, setCountryCode] = useState("+82"); // 국가 코드 상태 추가
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -109,13 +111,13 @@ export default function LoginPage() {
     if (!normalized) return setError("전화번호를 입력해주세요");
     try {
       setLoading(true);
-      const { res, verificationId } = await sendOtp(normalized);
+      const { res, verificationId } = await sendOtp(normalized, countryCode);
       setConfirmation(res);
       setVerificationId(verificationId);
       setStage("otp");
     } catch (e) {
       console.error(e);
-      setError("인증번호 전송에 실패했어요. 새로고침 후 다시 시도해주세요.");
+      setError(e.message || "인증번호 전송에 실패했어요. 새로고침 후 다시 시도해주세요.");
     } finally {
       setLoading(false);
     }
@@ -165,6 +167,7 @@ export default function LoginPage() {
           token,
           payload: {
             phone,
+            countryCode, // 국가 코드 추가
             name: signupData.name.trim(),
             birth: signupData.birth.trim(),
             email: (signupData.email || "").trim() || null,
@@ -269,14 +272,57 @@ export default function LoginPage() {
               <SlideScreen key="stage-phone">
                 <Header>전화번호를 입력해주세요</Header>
                 <div id="recaptcha-container"></div>
-                <FieldBlock
-                  label="전화번호"
-                  value={phone}
-                  onChange={setPhone}
-                  placeholder="01012345678"
-                  type="tel"
-                  autoFocus
-                />
+
+                {/* 국가 코드 + 전화번호 입력 */}
+                <div style={{ marginBottom: "20px" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "14px",
+                      fontWeight: 500,
+                      marginBottom: "8px",
+                      color: "#fff",
+                    }}
+                  >
+                    전화번호
+                  </label>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <CountryCodeSelect
+                      value={countryCode}
+                      onChange={setCountryCode}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="tel"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder={countryCode === "+82" ? "01012345678" : "Phone number"}
+                        autoFocus
+                        style={{
+                          width: "100%",
+                          height: "48px",
+                          padding: "0 16px",
+                          background: "rgba(255, 255, 255, 0.1)",
+                          border: "1px solid rgba(255, 255, 255, 0.2)",
+                          borderRadius: "8px",
+                          color: "#fff",
+                          fontSize: "15px",
+                          outline: "none",
+                          transition: "all 0.2s",
+                        }}
+                        onFocus={(e) => {
+                          e.target.style.background = "rgba(255, 255, 255, 0.15)";
+                          e.target.style.borderColor = "rgba(255, 255, 255, 0.3)";
+                        }}
+                        onBlur={(e) => {
+                          e.target.style.background = "rgba(255, 255, 255, 0.1)";
+                          e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                        }}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 <PrimaryButton disabled={loading} onClick={onSendOtp}>
                   {loading ? "전송 중..." : "인증번호 받기"}
                 </PrimaryButton>

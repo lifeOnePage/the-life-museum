@@ -7,6 +7,7 @@ import React, {
   Suspense,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -17,9 +18,9 @@ import { motion } from "framer-motion";
 import SceneDescBlock from "./SceneDescBlock";
 
 // ▶︎ 고정 파라미터
-const RADIUS = 7.5;
-const PLANE_W = 1;
-const PLANE_H = 0.8;
+const RADIUS = 7.2;
+const PLANE_W = 0.8;
+const PLANE_H = 0.6;
 const CAM_Y = 2;
 const CAM_Z = 22;
 
@@ -114,7 +115,7 @@ function ImageMat({ url, category, animationOpacity = 1, isDarkMode = true }) {
       color = 0xffffff;
       break;
     case "otherItem": // 다른 이벤트의 이미지 (흑백)
-      baseOpacity = 0.2;
+      baseOpacity = 0.6;
       color = 0x777777; // 회색톤으로 채도 낮춤 (약 47% 밝기)
       break;
     default:
@@ -271,7 +272,34 @@ function EmptyMat({ isDarkMode = true, animationOpacity = 1 }) {
 function ProjectionOverlay({ animationOpacity = 1 }) {
   const projectionTex = useLoader(
     THREE.TextureLoader,
-    "/images/projection_texture.png",
+    "/images/glow effect.png",
+  );
+
+  useEffect(() => {
+    if (!projectionTex) return;
+    projectionTex.colorSpace = THREE.SRGBColorSpace;
+    projectionTex.wrapS = THREE.ClampToEdgeWrapping;
+    projectionTex.wrapT = THREE.ClampToEdgeWrapping;
+    projectionTex.needsUpdate = true;
+  }, [projectionTex]);
+
+  return (
+    <meshBasicMaterial
+      map={projectionTex}
+      color={0xffffff}
+      transparent={true}
+      opacity={0.3}
+      blending={THREE.AdditiveBlending}
+      // depthWrite={false}
+      toneMapped={false}
+    />
+  );
+}
+// ===== Projection Texture Overlay =====
+function ProjectionOverlayForOtherItem({ animationOpacity = 1 }) {
+  const projectionTex = useLoader(
+    THREE.TextureLoader,
+    "/images/glow effect_v2.png",
   );
 
   useEffect(() => {
@@ -361,12 +389,22 @@ const MediaPlane = React.forwardRef(function MediaPlane(
         )}
       </mesh>
 
-      {/* Projection Texture 오버레이 - 빈 플레인 및 다른 이벤트 미디어 제외 */}
-      {kind !== "empty" && (
-        <mesh renderOrder={100} position={[0, 0, 0.001]}>
-          <planeGeometry args={[PLANE_W, PLANE_H]} />
+      {/* Projection Texture 오버레이 - 빈 플레인 및 다른 이벤트 미디어 제외, 다크모드일 때만 */}
+      {kind !== "empty" && category !== "otherItem" && isDarkMode && (
+        <mesh renderOrder={20} position={[0, 0, 0.01]}>
+          <planeGeometry args={[PLANE_W * 3, PLANE_H * 3]} />
           <Suspense fallback={null}>
             <ProjectionOverlay animationOpacity={animationOpacity} />
+          </Suspense>
+        </mesh>
+      )}
+      {kind !== "empty" && category === "otherItem" && isDarkMode && (
+        <mesh renderOrder={20} position={[0, 0, 0.01]}>
+          <planeGeometry args={[PLANE_W * 3, PLANE_H * 3]} />
+          <Suspense fallback={null}>
+            <ProjectionOverlayForOtherItem
+              animationOpacity={animationOpacity}
+            />
           </Suspense>
         </mesh>
       )}
@@ -378,7 +416,7 @@ const MediaPlane = React.forwardRef(function MediaPlane(
 function ProjectionEffectOverlay() {
   const effectTex = useLoader(
     THREE.TextureLoader,
-    "/images/projection_effect_texture.png",
+    "/images/projection_effect_texture_v2.png",
   );
 
   useEffect(() => {
@@ -391,14 +429,14 @@ function ProjectionEffectOverlay() {
 
   return (
     <>
-      <planeGeometry args={[PLANE_W * 2, PLANE_H]} />
+      <planeGeometry args={[PLANE_W * 6, PLANE_H*2]} />
       <meshBasicMaterial
         map={effectTex}
         color={0xffffff}
         transparent={true}
-        opacity={0.5}
+        opacity={0.7}
         blending={THREE.AdditiveBlending}
-        // depthWrite={false}
+        depthWrite={false}
         toneMapped={false}
       />
     </>
@@ -463,7 +501,7 @@ function ExhibitionRingInner({
   const { camera, gl } = useThree();
 
   // 애니메이션 파라미터
-  const bulge = 0.6; // 위로 튀어나오는 최대 높이
+  const bulge = 1; // 위로 튀어나오는 최대 높이
 
   // 텍스트 고정 위치 저장
   const fixedPositionsRef = useRef({});
@@ -542,14 +580,16 @@ function ExhibitionRingInner({
       const a = baseAngle + angleOffset;
       const adjustedRadius = RADIUS * radiusMultiplier;
       const x = Math.cos(a) * adjustedRadius;
-      const z = Math.sin(a) * adjustedRadius;
-      // const z = Math.sin(a) * adjustedRadius + bulge * w;
+      const baseZ = Math.sin(a) * adjustedRadius;
+
+      // Z-fighting 방지: 위로 올라간 플레인을 Z축으로도 약간 앞으로 이동
+      // + 인덱스 기반 미세 오프셋으로 인접 플레인들도 고유한 Z값 보장
+      const zOffset = w * 2 + i * 0.01; // bulge 가중치 + 인덱스별 간격
+      const z = baseZ + zOffset;
 
       // 원근감: z 좌표에 따라 y 좌표 조정
-      const depthOffset = -z * 0.4;
+      const depthOffset = -baseZ * 0.4;
       const y = bulge * w + depthOffset;
-      // const y = depthOffset;
-      // const y = 0;
 
       const m = planeRefs.current[i];
       if (!m) continue;
@@ -558,14 +598,14 @@ function ExhibitionRingInner({
       // 선택된 플레인의 위치 추적 - 매 프레임 직접 업데이트
       if (i === currentIndex && effectOverlayRef.current) {
         // effect box 위치 계산 (bulge 애니메이션 포함하여 따라다님)
-        const effectY = y + PLANE_H;
+        const effectY = y + PLANE_H * 1.5;
         effectOverlayRef.current.position.set(x, effectY, z);
       }
 
       // 모든 플레인이 사용자(카메라)를 향하도록 회전 (같은 방향)
       m.rotation.set(0, 0, 0);
 
-      // Z-fighting 방지
+      // Z-fighting 방지: z 값 기반 renderOrder
       m.renderOrder = Math.round((z + RADIUS) * 100);
     }
 
@@ -672,12 +712,14 @@ function ExhibitionRingInner({
         );
       })}
 
-      {/* Projection Effect - 선택된 플레인 위에 붙어다니는 효과 */}
-      <Suspense fallback={null}>
-        <mesh ref={effectOverlayRef} position={[0, 0, 0]}>
-          <ProjectionEffectOverlay />
-        </mesh>
-      </Suspense>
+      {/* Projection Effect - 선택된 플레인 위에 붙어다니는 효과, 다크모드일 때만 */}
+      {isDarkMode && (
+        <Suspense fallback={null}>
+          <mesh ref={effectOverlayRef} position={[0, 0, 0]}>
+            <ProjectionEffectOverlay />
+          </mesh>
+        </Suspense>
+      )}
     </group>
   );
 }
@@ -771,6 +813,11 @@ export default function ExhibitionRingFront({
 
       if (nearestValidIndex !== currentIndex && onCurrentIndexChange) {
         onCurrentIndexChange(nearestValidIndex);
+        // 인덱스가 변경되면 현재 위치를 새로운 시작점으로 업데이트 (용수철 효과 방지)
+        dragStateRef.current = {
+          startX: e.clientX,
+          startIndex: nearestValidIndex,
+        };
       }
     },
     [
@@ -830,6 +877,70 @@ export default function ExhibitionRingFront({
       LM.onError = _err;
     };
   }, []);
+  function getRenderedContainWidth(el, kind) {
+    if (!el) return null;
+
+    const W = el.clientWidth;
+    const H = el.clientHeight;
+    if (!W || !H) return null;
+
+    let nw = 0,
+      nh = 0;
+
+    if (kind === "image") {
+      nw = el.naturalWidth;
+      nh = el.naturalHeight;
+    } else if (kind === "video") {
+      nw = el.videoWidth;
+      nh = el.videoHeight;
+    }
+
+    // 메타데이터/이미지 로드 전이면 계산 불가
+    if (!nw || !nh) return null;
+
+    // object-contain(contain) 기준 실제 표시 스케일
+    const s = Math.min(W / nw, H / nh);
+
+    // 실제 “그려진 컨텐츠” 폭
+    return Math.round(nw * s);
+  }
+  const mediaRef = useRef(null);
+
+  const [renderedMediaWidth, setRenderedMediaWidth] = useState(null);
+
+  useLayoutEffect(() => {
+    let raf = 0;
+    const setup = () => {
+      const el = mediaRef.current;
+      if (!el) return;
+
+      const kind =
+        selectedSlot?.kind === "video" || selectedSlot?.type === "video"
+          ? "video"
+          : "image";
+
+      const update = () => {
+        const w = getRenderedContainWidth(el, kind);
+        // 계산이 안 되면 null 유지 (로드 전)
+        setRenderedMediaWidth(w);
+      };
+
+      update();
+
+      const ro = new ResizeObserver(() => update());
+      ro.observe(el);
+
+      window.addEventListener("resize", update);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener("resize", update);
+      };
+    };
+    setup();
+    return () => cancelAnimationFrame(raf);
+  }, [selectedSlot?.url, selectedSlot?.kind, selectedSlot?.type]);
+
+  // console.log(mediaWidth);
 
   return (
     <div
@@ -870,49 +981,86 @@ export default function ExhibitionRingFront({
         </Suspense>
       </Canvas>
 
-      {/* SceneDescBlock 컴포넌트 - 상단 가로 레이아웃 정보 표시 */}
-      <SceneDescBlock
-        selectedSlot={selectedSlot}
-        selectedItem={selectedItem}
-        isDarkMode={isDarkMode}
-        textOpacity={textOpacity}
-      />
-
-      {/* 중앙에 선택된 이미지/비디오 크게 표시 */}
+      {/* 중앙에 선택된 이미지/비디오 크게 표시 + SceneDescBlock */}
       {selectedSlot && selectedItem && selectedSlot.url && (
         <div
           className="pointer-events-none absolute inset-0 z-10000 flex items-center justify-center transition-opacity duration-300"
           style={{ opacity: textOpacity }}
         >
+          {/* 이미지와 설명 블록을 같은 너비로 묶는 컨테이너 - 이미지 크기에 맞춤 */}
           <div
-            className="flex aspect-[25/17] h-[50vh] items-center justify-center"
-            style={{ transform: "translateY(-10vh)" }}
+            className="flex min-w-0 flex-col" // inline-flex → flex 추천 (폭 계산 안정)
+            style={{
+              transform: "translateY(-15vh)",
+              maxWidth: "calc(50vh * 25 / 17)",
+              // width: renderedMediaWidth ? `${renderedMediaWidth}px` : "auto", // 컨테이너 자체를 잠금
+            }}
           >
+            {/* 이미지/비디오 - 원래 크기 제한 유지 */}
             {selectedSlot.kind === "image" || selectedSlot.type === "image" ? (
               <img
+                ref={mediaRef}
+                onLoad={() => {
+                  const el = mediaRef.current;
+                  const w = getRenderedContainWidth(el, "image");
+                  setRenderedMediaWidth(w);
+                }}
                 src={proxify(selectedSlot.url)}
                 alt={selectedItem.title || ""}
-                className="h-full w-full object-contain"
+                className="object-contain"
                 crossOrigin="anonymous"
                 style={{
+                  maxHeight: "50vh",
+                  maxWidth: "calc(50vh * 25 / 17)",
                   filter: "drop-shadow(0px 40px 40px rgba(0, 0, 0, 0.2))",
                 }}
               />
             ) : selectedSlot.kind === "video" ||
               selectedSlot.type === "video" ? (
               <video
+                ref={mediaRef}
+                onLoadedMetadata={() => {
+                  const el = mediaRef.current;
+                  const w = getRenderedContainWidth(el, "video");
+                  setRenderedMediaWidth(w);
+                }}
                 src={proxify(selectedSlot.url)}
-                className="h-full w-full object-contain"
+                className="object-contain"
                 autoPlay
                 loop
                 muted
                 playsInline
                 crossOrigin="anonymous"
                 style={{
+                  maxHeight: "50vh",
+                  maxWidth: "calc(50vh * 25 / 17)",
                   filter: "drop-shadow(0 30px 60px rgba(0, 0, 0, 0.6))",
                 }}
               />
             ) : null}
+
+            {/* SceneDescBlock - 이미지 너비에 자동으로 맞춤, 높이는 내용에 따라 자동 */}
+            <div
+              className={`w-full min-w-0 overflow-hidden transition-colors duration-500 ${
+                isDarkMode ? "bg-white/10 text-white" : "bg-black/5 text-black"
+              } backdrop-blur-md`}
+              style={{
+                width: renderedMediaWidth
+                  ? `${renderedMediaWidth}px`
+                  : undefined,
+                maxWidth: renderedMediaWidth
+                  ? `${renderedMediaWidth}px`
+                  : undefined,
+                visibility: renderedMediaWidth ? "visible" : "hidden", // 측정 전 auto폭으로 튀는 것 방지
+              }}
+            >
+              <SceneDescBlock
+                selectedSlot={selectedSlot}
+                selectedItem={selectedItem}
+                isDarkMode={isDarkMode}
+                textOpacity={1}
+              />
+            </div>
           </div>
         </div>
       )}
@@ -994,7 +1142,7 @@ export default function ExhibitionRingFront({
 
       {/* 하단 프로필 정보 바 */}
       <div
-        className={`absolute top-0 left-1/2 flex w-full -translate-x-1/2 items-start px-8 py-3 transition-colors duration-500 ${
+        className={`absolute bottom-0 left-1/2 flex w-full -translate-x-1/2 items-start px-8 py-3 transition-colors duration-500 ${
           isDarkMode ? "text-black" : "text-white"
         } backdrop-blur-md`}
         style={{ height: "calc(100vh / 8)" }}

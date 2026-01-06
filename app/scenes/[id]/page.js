@@ -99,17 +99,28 @@ export default function ViewPage() {
 
   // Scene 데이터 로드 및 소유자 확인
   useEffect(() => {
+    console.log("📊 loadScene useEffect 실행됨 - id:", id, ", user:", user);
+
     const loadScene = async () => {
       try {
         setLoading(true);
         const sceneData = await getScene(id);
 
         // 소유자 확인: sceneData.userId와 현재 로그인한 user.id 비교
+        console.group("🔐 소유권 확인");
+        console.log("현재 user:", user);
+        console.log("user.id:", user?.id);
+        console.log("sceneData.userId:", sceneData.userId);
+        console.log("일치 여부:", user?.id === sceneData.userId);
+
         if (user && sceneData.userId && user.id === sceneData.userId) {
+          console.log("✅ 소유자입니다 (isOwner = true)");
           setIsOwner(true);
         } else {
+          console.log("❌ 소유자가 아닙니다 (isOwner = false)");
           setIsOwner(false);
         }
+        console.groupEnd();
 
         // 프로필 데이터 설정
         setProfile({

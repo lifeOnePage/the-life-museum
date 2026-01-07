@@ -34,6 +34,8 @@ export async function GET(req, { params }) {
         name: true,
         subName: true,
         description: true,
+        pageTitle: true,
+        pageSubtitle: true,
         bgm: true,
         color: true,
         birthDate: true,
@@ -41,6 +43,8 @@ export async function GET(req, { params }) {
         userName: true,
         createdAt: true,
         updatedAt: true,
+        pageTitle: true,
+        pageSubtitle: true,
         recordItems: {
           select: {
             id: true,
@@ -76,6 +80,8 @@ export async function GET(req, { params }) {
           name: record.name,
           subName: record.subName,
           description: record.description,
+          pageTitle: record.pageTitle,
+          pageSubtitle: record.pageSubtitle,
           bgm: record.bgm,
           color: record.color,
           birthDate: record.birthDate || null,

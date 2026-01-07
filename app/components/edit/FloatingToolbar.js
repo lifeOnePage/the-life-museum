@@ -43,7 +43,10 @@ export default function FloatingToolbar({
   isSaved = true,
   isPreview = false,
   isSaving = false,
+  width,
 }) {
+  const isPcShell = typeof width === "number" && width <= 932 && width >= 768;
+
   const [collapsed, setCollapsed] = useState(false);
   const [hovered, setHovered] = useState(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -153,6 +156,7 @@ export default function FloatingToolbar({
           boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
           overflow: "hidden",
           position: "relative",
+          transform: isPcShell ? "scale(0.7)" : "none",
         }}
       >
         <div
@@ -231,8 +235,8 @@ export default function FloatingToolbar({
             transition={{ duration: 0.2 }}
             style={{
               position: "absolute",
-              bottom: collapsed ? "68px" : "calc(100% + 12px)",
-              left: "-100%",
+              bottom: isPcShell ? "calc(50%)" : "calc(100% + 0.75rem)",
+              left: isPcShell ? "-200%" : "-100%",
               transform: "translateX(-50%)",
               background: "#1a1a1aff",
               padding: "12px",
@@ -240,11 +244,12 @@ export default function FloatingToolbar({
               display: "grid",
               gridTemplateColumns: "repeat(4, 1fr)",
               gap: "8px",
-              width: "200px",
+              width: "210px",
               border: "2px solid rgba(255, 255, 255, 0.3)",
               boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
               zIndex: 10001,
               pointerEvents: "auto",
+              transform: isPcShell ? "scale(0.7)" : "none",
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -304,19 +309,20 @@ export default function FloatingToolbar({
             transition={{ duration: 0.2 }}
             style={{
               position: "absolute",
-              bottom: collapsed ? "68px" : "calc(100% + 12px)",
-              left: "-200%",
+              bottom: isPcShell ? "calc(25%)" : "calc(100% + 0.75rem)",
+              left: isPcShell ? "-320%" : "-200%",
               transform: "translateX(-50%)",
               background: "#1a1a1aff",
               padding: "16px",
               borderRadius: "12px",
               width: "320px",
-              maxHeight: "400px",
+              maxHeight: isPcShell ? "200px" : "400px",
               overflowY: "auto",
               border: "2px solid rgba(255, 255, 255, 0.3)",
               boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
               zIndex: 10001,
               pointerEvents: "auto",
+              // transform: isPcShell ? "scale(0.5)" : "none",
             }}
             onClick={(e) => e.stopPropagation()}
           >

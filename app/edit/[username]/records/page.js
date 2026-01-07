@@ -1,10 +1,11 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import FloatingToolbar from "@/app/components/edit/FloatingToolbar";
-import LifeRecordDesktop from "@/app/view/[identifier]/records/components/LifeRecordDesktop";
-import LifeRecordMobile from "@/app/view/[identifier]/records/components/LifeRecordMobile";
+import ToastStack from "@/app/components/Toast";
+import LifeRecordDesktop from "@/app/view/[identifier]/records/(views)/desktop/LifeRecordDesktop";
+import LifeRecordMobile from "@/app/view/[identifier]/records/(views)/mobile/LifeRecordMobile";
 import {
   fetchRecordDetails,
   updateRecordDetails,
@@ -15,9 +16,14 @@ import {
 } from "./services/editApi";
 import ImageAddModal from "./components/ImageAddModal";
 import ImageCropOverlay from "./components/ImageCropOverlay";
-import ToastStack from "@/app/components/Toast";
 import "@/app/view/[identifier]/records/styles/cardPage.css";
 import "@/app/view/[identifier]/records/styles/cardPage-mobile.css";
+
+/**
+ * Subscribes to window size changes.
+ * 현재 window 크기를 구독합니다.
+ * @returns {{ width: number, height: number }}
+ */
 
 function useWindowSize() {
   const [size, setSize] = useState({ width: 0, height: 0 });
@@ -32,6 +38,11 @@ function useWindowSize() {
   return size;
 }
 
+/**
+ * Record edit page.
+ * 레코드 편집 페이지.
+ * @returns {JSX.Element}
+ */
 export default function EditRecords() {
   const { width } = useWindowSize();
   const { username } = useParams();
@@ -42,19 +53,52 @@ export default function EditRecords() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
-
-  // Toast 상태
   const [toasts, setToasts] = useState([]);
+  const toastTimers = useRef(new Map());
 
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
+    const timer = toastTimers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      toastTimers.current.delete(id);
+    }
   };
 
-  const showToast = (message, { tone = "success", duration = 2400 } = {}) => {
+  const showToast = (
+    message,
+    { tone = "success", duration = 2400, showProgress = false } = {},
+  ) => {
     const id = Date.now() + Math.random();
-    setToasts((prev) => [...prev, { id, message, tone, duration }]);
-    const timer = setTimeout(() => removeToast(id), duration + 120);
-    return () => clearTimeout(timer);
+    setToasts((prev) => [
+      ...prev,
+      { id, message, tone, duration, showProgress },
+    ]);
+    if (duration > 0) {
+      const timer = setTimeout(() => removeToast(id), duration + 120);
+      toastTimers.current.set(id, timer);
+    }
+    return id;
+  };
+
+  const updateToast = (
+    id,
+    { message, tone = "success", duration = 2400, showProgress = false } = {},
+  ) => {
+    setToasts((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, message, tone, duration, showProgress } : t,
+      ),
+    );
+    const timer = toastTimers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      toastTimers.current.delete(id);
+    }
+    if (duration > 0) {
+      const newTimer = setTimeout(() => removeToast(id), duration + 120);
+      toastTimers.current.set(id, newTimer);
+    }
   };
 
   const [data, setData] = useState(null);
@@ -293,6 +337,11 @@ export default function EditRecords() {
     try {
       setIsSaving(true);
       setError(null);
+      const toastId = showToast("저장 중...", {
+        tone: "neutral",
+        duration: 0,
+        showProgress: true,
+      });
 
       // 1. Record 업데이트 - 변경된 필드만 추출
       const recordFields = [
@@ -300,6 +349,8 @@ export default function EditRecords() {
         "name",
         "subName",
         "description",
+        "pageTitle",
+        "pageSubtitle",
         "bgm",
         "color",
         "birthDate",
@@ -477,12 +528,20 @@ export default function EditRecords() {
       // 삭제는 별도로 처리하거나, handleDataChange에서 관리
 
       setIsSaved(true);
-      showToast("저장되었습니다.", { tone: "success" });
+      updateToast(toastId, {
+        message: "저장되었습니다.",
+        tone: "success",
+        duration: 2000,
+        showProgress: false,
+      });
     } catch (e) {
       console.error("[edit records] save error:", e);
       setError(e.message || "저장 중 오류가 발생했습니다.");
-      showToast(`저장 실패: ${e.message || "알 수 없는 오류"}`, {
+      updateToast(toastId, {
+        message: `저장 실패: ${e.message || "알 수 없는 오류"}`,
         tone: "error",
+        duration: 3000,
+        showProgress: false,
       });
     } finally {
       setIsSaving(false);
@@ -991,16 +1050,17 @@ export default function EditRecords() {
   return (
     <>
       <ToastStack toasts={toasts} onDismiss={removeToast} />
+      <ToastStack toasts={toasts} onDismiss={removeToast} />
       {error && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-md bg-red-500/90 px-4 py-2 text-sm text-white">
           ⚠️ {error}
         </div>
       )}
-      {isSaving && (
+      {/* {isSaving && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-md bg-blue-500/90 px-4 py-2 text-sm text-white">
           저장 중...
         </div>
-      )}
+      )} */}
       <ImageAddModal
         isOpen={isImageModalOpen}
         onClose={() => {
@@ -1035,6 +1095,7 @@ export default function EditRecords() {
         }
       />
       <FloatingToolbar
+        width={width}
         mypage={mypage}
         preview={preview}
         save={save}
@@ -1058,7 +1119,7 @@ export default function EditRecords() {
         isPreview={isPreview}
         isSaving={isSaving}
       />
-      {width <= 1000 ? (
+      {width <= 768 ? (
         <LifeRecordMobile
           data={data}
           isEditing={!isPreview}
@@ -1091,6 +1152,7 @@ export default function EditRecords() {
           onCropComplete={handleCropComplete}
           onCropCancel={handleCropCancel}
           aspectRatio={1}
+          width={width}
         />
       )}
     </>

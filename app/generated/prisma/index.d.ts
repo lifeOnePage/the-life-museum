@@ -9253,6 +9253,8 @@ export namespace Prisma {
     name: string | null
     subName: string | null
     description: string | null
+    pageTitle: string | null
+    pageSubtitle: string | null
     bgm: string | null
     color: string | null
     userId: number | null
@@ -9270,6 +9272,8 @@ export namespace Prisma {
     name: string | null
     subName: string | null
     description: string | null
+    pageTitle: string | null
+    pageSubtitle: string | null
     bgm: string | null
     color: string | null
     userId: number | null
@@ -9287,6 +9291,8 @@ export namespace Prisma {
     name: number
     subName: number
     description: number
+    pageTitle: number
+    pageSubtitle: number
     bgm: number
     color: number
     userId: number
@@ -9316,6 +9322,8 @@ export namespace Prisma {
     name?: true
     subName?: true
     description?: true
+    pageTitle?: true
+    pageSubtitle?: true
     bgm?: true
     color?: true
     userId?: true
@@ -9333,6 +9341,8 @@ export namespace Prisma {
     name?: true
     subName?: true
     description?: true
+    pageTitle?: true
+    pageSubtitle?: true
     bgm?: true
     color?: true
     userId?: true
@@ -9350,6 +9360,8 @@ export namespace Prisma {
     name?: true
     subName?: true
     description?: true
+    pageTitle?: true
+    pageSubtitle?: true
     bgm?: true
     color?: true
     userId?: true
@@ -9454,6 +9466,8 @@ export namespace Prisma {
     name: string | null
     subName: string | null
     description: string | null
+    pageTitle: string | null
+    pageSubtitle: string | null
     bgm: string | null
     color: string | null
     userId: number | null
@@ -9490,6 +9504,8 @@ export namespace Prisma {
     name?: boolean
     subName?: boolean
     description?: boolean
+    pageTitle?: boolean
+    pageSubtitle?: boolean
     bgm?: boolean
     color?: boolean
     userId?: boolean
@@ -9510,6 +9526,8 @@ export namespace Prisma {
     name?: boolean
     subName?: boolean
     description?: boolean
+    pageTitle?: boolean
+    pageSubtitle?: boolean
     bgm?: boolean
     color?: boolean
     userId?: boolean
@@ -9528,6 +9546,8 @@ export namespace Prisma {
     name?: boolean
     subName?: boolean
     description?: boolean
+    pageTitle?: boolean
+    pageSubtitle?: boolean
     bgm?: boolean
     color?: boolean
     userId?: boolean
@@ -9546,6 +9566,8 @@ export namespace Prisma {
     name?: boolean
     subName?: boolean
     description?: boolean
+    pageTitle?: boolean
+    pageSubtitle?: boolean
     bgm?: boolean
     color?: boolean
     userId?: boolean
@@ -9554,7 +9576,7 @@ export namespace Prisma {
     displayMode?: boolean
   }
 
-  export type RecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "coverUrl" | "name" | "subName" | "description" | "bgm" | "color" | "userId" | "userName" | "birthDate" | "displayMode", ExtArgs["result"]["record"]>
+  export type RecordOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "createdAt" | "updatedAt" | "identifier" | "coverUrl" | "name" | "subName" | "description" | "pageTitle" | "pageSubtitle" | "bgm" | "color" | "userId" | "userName" | "birthDate" | "displayMode", ExtArgs["result"]["record"]>
   export type RecordInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     user?: boolean | Record$userArgs<ExtArgs>
     recordItems?: boolean | Record$recordItemsArgs<ExtArgs>
@@ -9582,6 +9604,8 @@ export namespace Prisma {
       name: string | null
       subName: string | null
       description: string | null
+      pageTitle: string | null
+      pageSubtitle: string | null
       bgm: string | null
       color: string | null
       userId: number | null
@@ -10021,6 +10045,8 @@ export namespace Prisma {
     readonly name: FieldRef<"Record", 'String'>
     readonly subName: FieldRef<"Record", 'String'>
     readonly description: FieldRef<"Record", 'String'>
+    readonly pageTitle: FieldRef<"Record", 'String'>
+    readonly pageSubtitle: FieldRef<"Record", 'String'>
     readonly bgm: FieldRef<"Record", 'String'>
     readonly color: FieldRef<"Record", 'String'>
     readonly userId: FieldRef<"Record", 'Int'>
@@ -15290,6 +15316,8 @@ export namespace Prisma {
     name: 'name',
     subName: 'subName',
     description: 'description',
+    pageTitle: 'pageTitle',
+    pageSubtitle: 'pageSubtitle',
     bgm: 'bgm',
     color: 'color',
     userId: 'userId',
@@ -15973,6 +16001,8 @@ export namespace Prisma {
     name?: StringNullableFilter<"Record"> | string | null
     subName?: StringNullableFilter<"Record"> | string | null
     description?: StringNullableFilter<"Record"> | string | null
+    pageTitle?: StringNullableFilter<"Record"> | string | null
+    pageSubtitle?: StringNullableFilter<"Record"> | string | null
     bgm?: StringNullableFilter<"Record"> | string | null
     color?: StringNullableFilter<"Record"> | string | null
     userId?: IntNullableFilter<"Record"> | number | null
@@ -15992,6 +16022,8 @@ export namespace Prisma {
     name?: SortOrderInput | SortOrder
     subName?: SortOrderInput | SortOrder
     description?: SortOrderInput | SortOrder
+    pageTitle?: SortOrderInput | SortOrder
+    pageSubtitle?: SortOrderInput | SortOrder
     bgm?: SortOrderInput | SortOrder
     color?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
@@ -16014,6 +16046,8 @@ export namespace Prisma {
     name?: StringNullableFilter<"Record"> | string | null
     subName?: StringNullableFilter<"Record"> | string | null
     description?: StringNullableFilter<"Record"> | string | null
+    pageTitle?: StringNullableFilter<"Record"> | string | null
+    pageSubtitle?: StringNullableFilter<"Record"> | string | null
     bgm?: StringNullableFilter<"Record"> | string | null
     color?: StringNullableFilter<"Record"> | string | null
     userId?: IntNullableFilter<"Record"> | number | null
@@ -16033,6 +16067,8 @@ export namespace Prisma {
     name?: SortOrderInput | SortOrder
     subName?: SortOrderInput | SortOrder
     description?: SortOrderInput | SortOrder
+    pageTitle?: SortOrderInput | SortOrder
+    pageSubtitle?: SortOrderInput | SortOrder
     bgm?: SortOrderInput | SortOrder
     color?: SortOrderInput | SortOrder
     userId?: SortOrderInput | SortOrder
@@ -16058,6 +16094,8 @@ export namespace Prisma {
     name?: StringNullableWithAggregatesFilter<"Record"> | string | null
     subName?: StringNullableWithAggregatesFilter<"Record"> | string | null
     description?: StringNullableWithAggregatesFilter<"Record"> | string | null
+    pageTitle?: StringNullableWithAggregatesFilter<"Record"> | string | null
+    pageSubtitle?: StringNullableWithAggregatesFilter<"Record"> | string | null
     bgm?: StringNullableWithAggregatesFilter<"Record"> | string | null
     color?: StringNullableWithAggregatesFilter<"Record"> | string | null
     userId?: IntNullableWithAggregatesFilter<"Record"> | number | null
@@ -16885,6 +16923,8 @@ export namespace Prisma {
     name?: string | null
     subName?: string | null
     description?: string | null
+    pageTitle?: string | null
+    pageSubtitle?: string | null
     bgm?: string | null
     color?: string | null
     userName?: string | null
@@ -16903,6 +16943,8 @@ export namespace Prisma {
     name?: string | null
     subName?: string | null
     description?: string | null
+    pageTitle?: string | null
+    pageSubtitle?: string | null
     bgm?: string | null
     color?: string | null
     userId?: number | null
@@ -16920,6 +16962,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -16938,6 +16982,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -16956,6 +17002,8 @@ export namespace Prisma {
     name?: string | null
     subName?: string | null
     description?: string | null
+    pageTitle?: string | null
+    pageSubtitle?: string | null
     bgm?: string | null
     color?: string | null
     userId?: number | null
@@ -16972,6 +17020,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -16988,6 +17038,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -17943,6 +17995,8 @@ export namespace Prisma {
     name?: SortOrder
     subName?: SortOrder
     description?: SortOrder
+    pageTitle?: SortOrder
+    pageSubtitle?: SortOrder
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
@@ -17965,6 +18019,8 @@ export namespace Prisma {
     name?: SortOrder
     subName?: SortOrder
     description?: SortOrder
+    pageTitle?: SortOrder
+    pageSubtitle?: SortOrder
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
@@ -17982,6 +18038,8 @@ export namespace Prisma {
     name?: SortOrder
     subName?: SortOrder
     description?: SortOrder
+    pageTitle?: SortOrder
+    pageSubtitle?: SortOrder
     bgm?: SortOrder
     color?: SortOrder
     userId?: SortOrder
@@ -19194,6 +19252,8 @@ export namespace Prisma {
     name?: string | null
     subName?: string | null
     description?: string | null
+    pageTitle?: string | null
+    pageSubtitle?: string | null
     bgm?: string | null
     color?: string | null
     userName?: string | null
@@ -19211,6 +19271,8 @@ export namespace Prisma {
     name?: string | null
     subName?: string | null
     description?: string | null
+    pageTitle?: string | null
+    pageSubtitle?: string | null
     bgm?: string | null
     color?: string | null
     userName?: string | null
@@ -19339,6 +19401,8 @@ export namespace Prisma {
     name?: StringNullableFilter<"Record"> | string | null
     subName?: StringNullableFilter<"Record"> | string | null
     description?: StringNullableFilter<"Record"> | string | null
+    pageTitle?: StringNullableFilter<"Record"> | string | null
+    pageSubtitle?: StringNullableFilter<"Record"> | string | null
     bgm?: StringNullableFilter<"Record"> | string | null
     color?: StringNullableFilter<"Record"> | string | null
     userId?: IntNullableFilter<"Record"> | number | null
@@ -20382,6 +20446,8 @@ export namespace Prisma {
     name?: string | null
     subName?: string | null
     description?: string | null
+    pageTitle?: string | null
+    pageSubtitle?: string | null
     bgm?: string | null
     color?: string | null
     userName?: string | null
@@ -20399,6 +20465,8 @@ export namespace Prisma {
     name?: string | null
     subName?: string | null
     description?: string | null
+    pageTitle?: string | null
+    pageSubtitle?: string | null
     bgm?: string | null
     color?: string | null
     userId?: number | null
@@ -20431,6 +20499,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -20448,6 +20518,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userId?: NullableIntFieldUpdateOperationsInput | number | null
@@ -20769,6 +20841,8 @@ export namespace Prisma {
     name?: string | null
     subName?: string | null
     description?: string | null
+    pageTitle?: string | null
+    pageSubtitle?: string | null
     bgm?: string | null
     color?: string | null
     userName?: string | null
@@ -20811,6 +20885,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -20828,6 +20904,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userName?: NullableStringFieldUpdateOperationsInput | string | null
@@ -20845,6 +20923,8 @@ export namespace Prisma {
     name?: NullableStringFieldUpdateOperationsInput | string | null
     subName?: NullableStringFieldUpdateOperationsInput | string | null
     description?: NullableStringFieldUpdateOperationsInput | string | null
+    pageTitle?: NullableStringFieldUpdateOperationsInput | string | null
+    pageSubtitle?: NullableStringFieldUpdateOperationsInput | string | null
     bgm?: NullableStringFieldUpdateOperationsInput | string | null
     color?: NullableStringFieldUpdateOperationsInput | string | null
     userName?: NullableStringFieldUpdateOperationsInput | string | null

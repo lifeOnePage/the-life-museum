@@ -23,6 +23,21 @@ body,
   overflow-y: hidden;
 }
 
+.pc-shell {
+  --pc-scale: 0.45;
+  justify-content: center;
+  overflow: scroll;
+}
+
+.pc-shell .lr-grid {
+  transform: scale(var(--pc-scale));
+  transform-origin: top center;
+  width: 900px;
+  max-width: 900px;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .lr-page--editing {
   overflow-y: auto;
 }
@@ -59,9 +74,8 @@ body,
   align-self: center;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   text-align: left;
-
   margin-right: 60px;
 }
 
@@ -74,6 +88,38 @@ body,
   line-height: 100%;
   opacity: 0.7;
   margin-bottom: 10px;
+  width: 250px;
+  min-height: 160px;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.lr-title-input {
+  font-size: 70px;
+  font-weight: 700;
+  font-style: italic;
+  letter-spacing: 0.5px;
+  font-family: "Cormorant Garamond";
+  line-height: 100%;
+  opacity: 0.7;
+  margin-bottom: 10px;
+  width: 280px;
+  min-height: 160px;
+  background: transparent;
+  border: 1px dashed var(--text);
+  border-radius: 4px;
+  padding: 8px;
+  white-space: pre-wrap;
+  resize: none;
+}
+
+.lr-title-input::-webkit-scrollbar {
+  width: 8px;
+}
+
+.lr-title-input::-webkit-scrollbar-thumb {
+  background: var(--text);
+  border-radius: 4px;
 }
 
 .lr-sub {
@@ -86,6 +132,39 @@ body,
   line-height: 130%;
   letter-spacing: -1px;
   margin-top: 25px;
+  text-align: left;
+}
+
+.lr-sub-input {
+  margin: 0;
+  line-height: 1.3;
+  font-size: 1rem;
+  margin-top: 25px;
+  background: transparent;
+  border: 1px dashed var(--text);
+  border-radius: 4px;
+  padding: 8px;
+  color: inherit;
+  width: 280px;
+  height: 10rem;
+  margin-bottom: 8px;
+  overflow-y: auto;
+  overflow-x: auto;
+  resize: none;
+  font-family: "Pretendard Variable";
+  font-style: normal;
+  font-weight: 300;
+  letter-spacing: -0.05rem;
+  white-space: pre-wrap;
+}
+
+.lr-sub-input::-webkit-scrollbar {
+  width: 8px;
+}
+
+.lr-sub-input::-webkit-scrollbar-thumb {
+  background: var(--text);
+  border-radius: 4px;
 }
 
 .lr-center {

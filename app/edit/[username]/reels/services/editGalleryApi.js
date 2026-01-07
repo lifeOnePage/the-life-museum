@@ -1,6 +1,12 @@
 // services/galleryService.js
 // 업로드 & API 호출 유틸 (Storage 교체/확장 용이)
 
+/**
+ * Infers media type from a file or URL.
+ * 파일/URL에서 미디어 타입을 추론합니다.
+ * @param {File|string} fileOrUrl
+ * @returns {number} 0=image, 1=video
+ */
 export function inferSrcType(fileOrUrl) {
   // 0 = image, 1 = video
   const isFile = typeof fileOrUrl !== "string";
@@ -9,6 +15,14 @@ export function inferSrcType(fileOrUrl) {
   return url.match(/\.(mp4|mov|webm|m4v|avi)$/) ? 1 : 0;
 }
 
+/**
+ * Uploads files via presigned URLs and returns upload results.
+ * presign 후 PUT 업로드를 수행하고 업로드 결과를 반환합니다.
+ * @param {File[]} files
+ * @param {Object} options
+ * @param {string} options.prefix
+ * @returns {Promise<Array<{url: string, key: string, srcType: number}>>}
+ */
 export async function uploadMediaFiles(files, { prefix }) {
   // 1) 프리사인 URL들 요청
   const res = await fetch("/api/storage/presign", {
@@ -48,6 +62,15 @@ export async function uploadMediaFiles(files, { prefix }) {
  * 서버로 PATCH 호출
  * payload는 부분 업데이트 허용: { childhood?, memory?, relationship? }
  */
+/**
+ * Partially updates gallery sections via PATCH.
+ * 갤러리 섹션을 PATCH로 부분 업데이트합니다.
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Object} params.payload
+ * @returns {Promise<any>}
+ */
 export async function patchReelsGallery({ token, reelId, payload }) {
   console.log("payload:", payload);
   const res = await fetch(`/api/reel/gallery/${encodeURIComponent(reelId)}`, {
@@ -72,6 +95,15 @@ export async function patchReelsGallery({ token, reelId, payload }) {
  */
 
 // items: [{ id?, url?, file?, caption? }]
+/**
+ * Saves the childhood section.
+ * childhood 섹션을 저장합니다.
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array<Object>} params.items
+ * @returns {Promise<any>}
+ */
 export async function saveChildhood({ token, reelId, items }) {
   // 1) 파일만 먼저 업로드해서 URL/타입 확보
   const fileIdx = []; // items에서 파일 항목들의 인덱스 기록
@@ -127,6 +159,15 @@ export async function saveChildhood({ token, reelId, items }) {
 
 // services/galleryService.js (수정본의 핵심 라인만)
 
+/**
+ * Saves the memory section.
+ * memory 섹션을 저장합니다.
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array<Object>} params.items
+ * @returns {Promise<any>}
+ */
 export async function saveExperience({ token, reelId, items }) {
   // 1) 업로드 대상 추출
   const uploadTargets = [];
@@ -170,6 +211,15 @@ export async function saveExperience({ token, reelId, items }) {
   return patchReelsGallery({ token, reelId, payload: { memory: normalized } });
 }
 
+/**
+ * Saves the relationship section.
+ * relationship 섹션을 저장합니다.
+ * @param {Object} params
+ * @param {string} [params.token]
+ * @param {string} params.reelId
+ * @param {Array<Object>} params.items
+ * @returns {Promise<any>}
+ */
 export async function saveRelationship({ token, reelId, items }) {
   const uploadTargets = [];
   items.forEach((rel, ri) => {

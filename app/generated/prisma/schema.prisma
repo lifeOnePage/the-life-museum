@@ -99,22 +99,24 @@ model Relationship {
 }
 
 model Record {
-  id          Int          @id @default(autoincrement())
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  identifier  String       @unique
-  coverUrl    String?
-  name        String?
-  subName     String?
-  description String?
-  bgm         String?
-  color       String?
-  userId      Int?
-  userName    String?
-  birthDate   String?
-  displayMode String?      @default("year")
-  user        User?        @relation(fields: [userId], references: [id])
-  recordItems RecordItem[]
+  id           Int          @id @default(autoincrement())
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  identifier   String       @unique
+  coverUrl     String?
+  name         String?
+  subName      String?
+  description  String?
+  pageTitle    String?
+  pageSubtitle String?
+  bgm          String?
+  color        String?
+  userId       Int?
+  userName     String?
+  birthDate    String?
+  displayMode  String?      @default("year")
+  user         User?        @relation(fields: [userId], references: [id])
+  recordItems  RecordItem[]
 }
 
 model RecordItem {

@@ -7,13 +7,29 @@ export async function POST(req) {
   const auth = req.headers.get("authorization") || "";
   const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
   const payload = token ? verifyJwt(token) : null;
-  if (!payload) return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  if (!payload)
+    return NextResponse.json(
+      { ok: false, error: "unauthorized" },
+      { status: 401 },
+    );
 
   const { birthDate } = await req.json();
-  if (!birthDate) return NextResponse.json({ ok: false, error: "birthDate required" }, { status: 400 });
+  if (!birthDate)
+    return NextResponse.json(
+      { ok: false, error: "birthDate required" },
+      { status: 400 },
+    );
+  console.log(birthDate);
 
   const me = await client.user.findUnique({ where: { id: payload.sub } });
-  if (!me) return NextResponse.json({ ok: false, error: "not_found" }, { status: 404 });
+  console.log(me.birthDate);
+
+  if (!me)
+    return NextResponse.json(
+      { ok: false, error: "not_found" },
+      { status: 404 },
+    );
+  console.log(me.birthDate);
 
   const ok = (me.birthDate || "") === birthDate;
   return NextResponse.json({ ok, user: me });

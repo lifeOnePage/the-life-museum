@@ -1,6 +1,7 @@
 "use client";
 import { HiHome } from "react-icons/hi";
 import { norm360, angDist } from "../utils/mathUtils";
+import { log } from "three";
 
 export default function TimelineWheel({
   timeline,
@@ -75,6 +76,3 @@ export default function TimelineWheel({
     </aside>
   );
 }
-
-
-

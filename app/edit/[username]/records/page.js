@@ -47,7 +47,7 @@ export default function EditRecords() {
   const { width } = useWindowSize();
   const { username } = useParams();
   const router = useRouter();
-  const { user, token } = useAuth();
+  const { user, token, loading: authLoading } = useAuth();
   const [isSaved, setIsSaved] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -119,7 +119,12 @@ export default function EditRecords() {
   };
 
   useEffect(() => {
-    if (!token || !username) return;
+    if (authLoading) return;
+    if (!token || !username) {
+      setIsLoading(false);
+      setError(!token ? "로그인이 필요합니다." : "잘못된 접근입니다.");
+      return;
+    }
     (async () => {
       try {
         setIsLoading(true);
@@ -244,7 +249,7 @@ export default function EditRecords() {
         setIsLoading(false);
       }
     })();
-  }, [token, username, user]);
+  }, [authLoading, token, username, user]);
 
   // 페이지를 떠날 때 자동저장
   useEffect(() => {

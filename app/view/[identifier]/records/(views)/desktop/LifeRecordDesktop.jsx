@@ -511,9 +511,11 @@ export default function LifeRecordDesktop({
 
         let nextIdx;
         if (e.key === "ArrowUp") {
-          nextIdx = activeIdx > 0 ? activeIdx - 1 : timeline.length - 1;
+          if (activeIdx <= 0) return;
+          nextIdx = activeIdx - 1;
         } else {
-          nextIdx = activeIdx < timeline.length - 1 ? activeIdx + 1 : 0;
+          if (activeIdx >= timeline.length - 1) return;
+          nextIdx = activeIdx + 1;
         }
 
         if (scrollSound.current) {

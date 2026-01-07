@@ -80,7 +80,6 @@ textarea::-webkit-scrollbar-thumb {
   font-weight: 300;
   line-height: 130%;
   letter-spacing: -1px;
-
   margin-top: 20px;
 }
 
@@ -97,9 +96,10 @@ textarea::-webkit-scrollbar-thumb {
   border: 1px dashed var(--text);
   border-radius: 4px;
   padding: 8px;
-  width: 21.5rem;
+  width: 20rem;
   height: auto;
   white-space: pre-wrap;
+  word-break: break-all;
   resize: none;
 }
 

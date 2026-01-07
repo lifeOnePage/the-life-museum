@@ -6,12 +6,14 @@ const toneStyles = {
   success: "border-l-4 border-green-400",
   info: "border-l-4 border-blue-400",
   error: "border-l-4 border-red-400",
+  neutral: "",
 };
 
 const toneIcon = {
   success: <FiCheckCircle className="shrink-0" />,
   info: <FiInfo className="shrink-0" />,
   error: <FiAlertTriangle className="shrink-0" />,
+  neutral: <FiInfo className="shrink-0" />,
 };
 
 export default function ToastStack({ toasts = [], onDismiss }) {
@@ -43,7 +45,7 @@ export default function ToastStack({ toasts = [], onDismiss }) {
               </div>
 
               {/* 진행바 */}
-              {t.duration > 0 && (
+              {t.showProgress && t.duration > 0 && (
                 <motion.div
                   className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/15 overflow-hidden rounded-b-xl"
                   initial={false}
@@ -56,6 +58,20 @@ export default function ToastStack({ toasts = [], onDismiss }) {
                     style={{ transformOrigin: "left" }}
                   />
                 </motion.div>
+              )}
+              {t.showProgress && t.duration === 0 && (
+                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/15 overflow-hidden rounded-b-xl">
+                  <motion.div
+                    className="h-full w-[40%] bg-white/80"
+                    initial={{ x: "-40%" }}
+                    animate={{ x: "140%" }}
+                    transition={{
+                      duration: 1.2,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                  />
+                </div>
               )}
             </motion.div>
           ))}

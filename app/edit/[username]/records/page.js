@@ -1,8 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import FloatingToolbar from "@/app/components/edit/FloatingToolbar";
+import ToastStack from "@/app/components/Toast";
 import LifeRecordDesktop from "@/app/view/[identifier]/records/(views)/desktop/LifeRecordDesktop";
 import LifeRecordMobile from "@/app/view/[identifier]/records/(views)/mobile/LifeRecordMobile";
 import {
@@ -23,6 +24,7 @@ import "@/app/view/[identifier]/records/styles/cardPage-mobile.css";
  * 현재 window 크기를 구독합니다.
  * @returns {{ width: number, height: number }}
  */
+
 function useWindowSize() {
   const [size, setSize] = useState({ width: 0, height: 0 });
   useEffect(() => {
@@ -51,6 +53,53 @@ export default function EditRecords() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [toasts, setToasts] = useState([]);
+  const toastTimers = useRef(new Map());
+
+  const removeToast = (id) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+    const timer = toastTimers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      toastTimers.current.delete(id);
+    }
+  };
+
+  const showToast = (
+    message,
+    { tone = "success", duration = 2400, showProgress = false } = {},
+  ) => {
+    const id = Date.now() + Math.random();
+    setToasts((prev) => [
+      ...prev,
+      { id, message, tone, duration, showProgress },
+    ]);
+    if (duration > 0) {
+      const timer = setTimeout(() => removeToast(id), duration + 120);
+      toastTimers.current.set(id, timer);
+    }
+    return id;
+  };
+
+  const updateToast = (
+    id,
+    { message, tone = "success", duration = 2400, showProgress = false } = {},
+  ) => {
+    setToasts((prev) =>
+      prev.map((t) =>
+        t.id === id ? { ...t, message, tone, duration, showProgress } : t,
+      ),
+    );
+    const timer = toastTimers.current.get(id);
+    if (timer) {
+      clearTimeout(timer);
+      toastTimers.current.delete(id);
+    }
+    if (duration > 0) {
+      const newTimer = setTimeout(() => removeToast(id), duration + 120);
+      toastTimers.current.set(id, newTimer);
+    }
+  };
 
   const [data, setData] = useState(null);
   const [originalData, setOriginalData] = useState(null); // 원본 데이터 저장
@@ -280,13 +329,18 @@ export default function EditRecords() {
     }
 
     if (!token || !recordId || !data || !originalData) {
-      alert("저장할 데이터가 없습니다.");
+      showToast("저장할 데이터가 없습니다.", { tone: "error" });
       return;
     }
 
     try {
       setIsSaving(true);
       setError(null);
+      const toastId = showToast("저장 중...", {
+        tone: "neutral",
+        duration: 0,
+        showProgress: true,
+      });
 
       // 1. Record 업데이트 - 변경된 필드만 추출
       const recordFields = [
@@ -473,11 +527,21 @@ export default function EditRecords() {
       // 삭제는 별도로 처리하거나, handleDataChange에서 관리
 
       setIsSaved(true);
-      window.alert("저장되었습니다.");
+      updateToast(toastId, {
+        message: "저장되었습니다.",
+        tone: "success",
+        duration: 2000,
+        showProgress: false,
+      });
     } catch (e) {
       console.error("[edit records] save error:", e);
       setError(e.message || "저장 중 오류가 발생했습니다.");
-      alert(`저장 실패: ${e.message || "알 수 없는 오류"}`);
+      updateToast(toastId, {
+        message: `저장 실패: ${e.message || "알 수 없는 오류"}`,
+        tone: "error",
+        duration: 3000,
+        showProgress: false,
+      });
     } finally {
       setIsSaving(false);
     }
@@ -982,16 +1046,17 @@ export default function EditRecords() {
 
   return (
     <>
+      <ToastStack toasts={toasts} onDismiss={removeToast} />
       {error && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-md bg-red-500/90 px-4 py-2 text-sm text-white">
           ⚠️ {error}
         </div>
       )}
-      {isSaving && (
+      {/* {isSaving && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-md bg-blue-500/90 px-4 py-2 text-sm text-white">
           저장 중...
         </div>
-      )}
+      )} */}
       <AddTimelineModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}

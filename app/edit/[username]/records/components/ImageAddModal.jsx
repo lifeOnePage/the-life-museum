@@ -3,7 +3,13 @@ import { useState, useRef, useEffect } from "react";
 import { uploadRecordFile } from "../services/editApi";
 import { useAuth } from "@/app/contexts/AuthContext";
 
-export default function ImageAddModal({ isOpen, onClose, onSave, currentImages = [] }) {
+export default function ImageAddModal({
+  isLoading,
+  isOpen,
+  onClose,
+  onSave,
+  currentImages = [],
+}) {
   const { token } = useAuth();
   const [images, setImages] = useState(Array(5).fill(null)); // 5개 슬롯으로 초기화
   const [isUploading, setIsUploading] = useState(false);
@@ -27,7 +33,7 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
     if (files.length === 0 || !token) return;
 
     // 현재 이미지 개수 확인 (null 제외)
-    const currentCount = images.filter(img => img !== null).length;
+    const currentCount = images.filter((img) => img !== null).length;
     const availableSlots = 5 - currentCount;
 
     if (availableSlots <= 0) {
@@ -78,7 +84,11 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
       // 기존 이미지 배열에 추가 (null 슬롯에 채우기)
       const newImages = [...images];
       let addedCount = 0;
-      for (let i = 0; i < newImages.length && addedCount < uploadedUrls.length; i++) {
+      for (
+        let i = 0;
+        i < newImages.length && addedCount < uploadedUrls.length;
+        i++
+      ) {
         if (newImages[i] === null) {
           newImages[i] = uploadedUrls[addedCount];
           addedCount++;
@@ -130,7 +140,7 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
     setDraggedIndex(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     // images 배열을 5개로 채우기 (null로 패딩)
     const paddedImages = [...images];
     while (paddedImages.length < 5) {
@@ -138,7 +148,6 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
     }
 
     onSave(paddedImages);
-    handleClose();
   };
 
   const handleClose = () => {
@@ -156,11 +165,11 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
     if (!confirm("이미지를 삭제하시겠습니까?")) {
       return;
     }
-    
+
     const newImages = [...images];
     newImages[index] = null;
     // null을 제거하고 뒤에 추가하여 5개 유지
-    const filtered = newImages.filter(img => img !== null);
+    const filtered = newImages.filter((img) => img !== null);
     while (filtered.length < 5) {
       filtered.push(null);
     }
@@ -169,7 +178,7 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
 
   if (!isOpen) return null;
 
-  const validImages = images.filter(img => img !== null);
+  const validImages = images.filter((img) => img !== null);
   const hasEmptySlots = validImages.length < 5;
 
   return (
@@ -196,7 +205,9 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
                   <div
                     key={idx}
                     draggable={img !== null}
-                    onDragStart={img !== null ? (e) => handleDragStart(e, idx) : undefined}
+                    onDragStart={
+                      img !== null ? (e) => handleDragStart(e, idx) : undefined
+                    }
                     onDragOver={handleDragOver}
                     onDrop={(e) => handleDrop(e, idx)}
                     onDragEnd={handleDragEnd}
@@ -278,7 +289,11 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
               onClick={handleSave}
               className="rounded-md bg-black px-4 py-2 text-sm text-white hover:bg-gray-800"
             >
-              저장
+              {isLoading ? (
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              ) : (
+                "저장"
+              )}
             </button>
           </div>
         </div>
@@ -286,4 +301,3 @@ export default function ImageAddModal({ isOpen, onClose, onSave, currentImages =
     </div>
   );
 }
-

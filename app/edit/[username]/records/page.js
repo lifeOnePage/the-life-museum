@@ -328,13 +328,14 @@ export default function EditRecords() {
     setIsPreview((p) => !p);
   };
 
-  const save = async () => {
+  const save = async (overrideData = null) => {
     // 이미 저장 중이면 중복 실행 방지
     if (isSaving) {
       return;
     }
 
-    if (!token || !recordId || !data || !originalData) {
+    const workingData = overrideData || data;
+    if (!token || !recordId || !workingData || !originalData) {
       showToast("저장할 데이터가 없습니다.", { tone: "error" });
       return;
     }
@@ -363,7 +364,7 @@ export default function EditRecords() {
       ];
       const changedRecordFields = {};
       recordFields.forEach((field) => {
-        const currentValue = data.record[field];
+        const currentValue = workingData.record[field];
         const originalValue = originalData.record[field];
         // null과 undefined를 동일하게 처리
         const current = currentValue === undefined ? null : currentValue;
@@ -386,10 +387,10 @@ export default function EditRecords() {
 
       // 2. RecordItems 업데이트 (기존 items와 새 items 비교)
       // 임시 ID는 문자열로 시작하므로 숫자 ID만 기존 항목으로 간주
-      const existingItems = data.items.filter(
+      const existingItems = workingData.items.filter(
         (item) => item.id && typeof item.id === "number",
       );
-      const newItems = data.items.filter(
+      const newItems = workingData.items.filter(
         (item) =>
           !item.id ||
           (typeof item.id === "string" && item.id.startsWith("temp-")),
@@ -482,7 +483,7 @@ export default function EditRecords() {
         }
       }
 
-      const updatedItems = [...data.items];
+      const updatedItems = [...workingData.items];
       for (const item of newItems) {
         let images = [];
         if (item.images && Array.isArray(item.images)) {
@@ -522,7 +523,7 @@ export default function EditRecords() {
 
       // 업데이트된 items로 상태 갱신
       const newData = {
-        ...data,
+        ...workingData,
         items: updatedItems,
       };
       setData(newData);
@@ -604,7 +605,7 @@ export default function EditRecords() {
     setIsImageModalOpen(true);
   };
 
-  const handleImageModalSave = (images) => {
+  const handleImageModalSave = async (images) => {
     if (!data || !imageModalItemId) return;
 
     const newItems = data.items.map((item) =>
@@ -617,14 +618,21 @@ export default function EditRecords() {
         : item,
     );
 
-    setData({
+    const newData = {
       ...data,
       items: newItems,
-    });
+    };
 
     setIsSaved(false);
-    setIsImageModalOpen(false);
     setImageModalItemId(null);
+    setIsUploadingImage(true);
+    setData(newData);
+    try {
+      await save(newData);
+    } finally {
+      setIsUploadingImage(false);
+      setIsImageModalOpen(false);
+    }
   };
 
   const handleDataChange = (newData) => {
@@ -811,6 +819,7 @@ export default function EditRecords() {
       "[handleImageChange] Received targetSlotIndex:",
       targetSlotIndex,
     );
+
     // 크롭 없이 바로 업로드
     await uploadImageFile(type, itemId, file, targetSlotIndex);
   };
@@ -1067,6 +1076,7 @@ export default function EditRecords() {
         </div>
       )} */}
       <ImageAddModal
+        isLoading={isUploadingImage}
         isOpen={isImageModalOpen}
         onClose={() => {
           setIsImageModalOpen(false);

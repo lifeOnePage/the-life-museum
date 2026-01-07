@@ -224,14 +224,37 @@ const DetailEdit = forwardRef(function DetailEdit({ item, onChange, onUploadStat
   }, [formData.img]);
 
   // 외부에서 호출 가능하도록 ref로 uploadPendingImages 노출
+  // 외부에서 formData 강제 초기화
+  const resetFormData = (newItem) => {
+    setFormData({
+      title: newItem.title || "",
+      date: newItem.date || "",
+      desc: newItem.desc || "",
+      img: (newItem.img || newItem.images || []).map((url, idx) => {
+        const imgUrl = typeof url === 'string' ? url : url.url;
+        return { id: `img-${Date.now()}-${idx}`, url: imgUrl, isUploaded: true };
+      }),
+    });
+    // lastSentDataRef도 업데이트하여 onChange 중복 호출 방지
+    lastSentDataRef.current = JSON.stringify({
+      title: newItem.title || "",
+      date: newItem.date || "",
+      desc: newItem.desc || "",
+      img: (newItem.img || newItem.images || []).map((url) => {
+        return typeof url === 'string' ? url : url.url;
+      }),
+    });
+  };
+
   useImperativeHandle(ref, () => ({
-    uploadPendingImages
+    uploadPendingImages,
+    resetFormData
   }));
 
   return (
     <div className="px-4 py-4">
       <div className="mb-6">
-        <h3 className="text-white text-lg font-medium mb-1">장면 추가하기</h3>
+        <h3 className="text-white text-lg font-medium mb-1">장면 기록하기</h3>
         <p className="text-white/60 text-sm">기억에 남는 순간을 자유롭게 기록해보세요</p>
       </div>
 

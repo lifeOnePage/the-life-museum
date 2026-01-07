@@ -55,7 +55,7 @@ export default function MobileTimeline({
                   scrollToItemWithSteps(item);
                 }
               }}
-              className="relative cursor-pointer px-2 py-3 text-left text-white transition-opacity duration-200"
+              className="relative cursor-pointer px-2 py-2 text-left text-white transition-opacity duration-200"
               style={{
                 opacity: itemOpacity,
                 touchAction: "manipulation", // 모바일 터치 최적화

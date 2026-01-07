@@ -752,12 +752,14 @@ export default function ViewPage() {
         // playFeedback();
         console.log("타임라인 스크롤: 중앙 아이템 변경:", closestItem.title);
 
-        // leftIndex 직접 업데이트 (링 회전) - 링 드래그 중이거나 사용자가 타임라인을 터치 중일 때는 수행하지 않음
+        // leftIndex 직접 업데이트 (링 회전) - 다음 경우에는 수행하지 않음:
+        // 1. 링 드래그 중 2. 사용자가 타임라인 터치 중 3. 프로그래매틱 타임라인 스크롤 중
         const itemRange = textureData.itemRanges[closestItem.id];
         if (
           itemRange &&
           !isRingDraggingRef.current &&
-          !isUserTouchingTimelineRef.current
+          !isUserTouchingTimelineRef.current &&
+          !isTimelineScrollingRef.current
         ) {
           setLeftIndex(itemRange.start);
           // 링이 실제로 업데이트되었을 때만 ref 갱신

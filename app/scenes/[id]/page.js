@@ -761,7 +761,14 @@ export default function ViewPage() {
           !isUserTouchingTimelineRef.current &&
           !isTimelineScrollingRef.current
         ) {
-          setLeftIndex(itemRange.start);
+          // 현재 leftIndex가 이미 해당 아이템의 범위 내에 있는지 확인
+          const isAlreadyInRange = leftIndex >= itemRange.start && leftIndex <= itemRange.end;
+
+          // 범위 밖에 있을 때만 start로 이동 (타임라인 스크롤로 인한 아이템 변경)
+          // 범위 내에 있으면 현재 위치 유지 (링 드래그로 이미 해당 아이템 내부에 있음)
+          if (!isAlreadyInRange) {
+            setLeftIndex(itemRange.start);
+          }
           // 링이 실제로 업데이트되었을 때만 ref 갱신
           prevScrollClosestItemRef.current = closestItem;
         }

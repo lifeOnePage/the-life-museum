@@ -72,7 +72,7 @@ export default function LifeRecordDesktop({
   // API 데이터를 timeline 형식으로 변환
   const timeline = useMemo(() => {
     const result = [];
-    console.log(data?.record);
+    // console.log(data?.record);
 
     // 메인 아이템
     if (data.record) {
@@ -329,6 +329,7 @@ export default function LifeRecordDesktop({
     if (!bgmAudioRef.current) return;
 
     if (isBgmPlaying) {
+      LP - image;
       bgmAudioRef.current.pause();
       setIsBgmPlaying(false);
     } else {
@@ -463,36 +464,10 @@ export default function LifeRecordDesktop({
     // 인덱스가 증가하면 반시계 방향(음수), 감소하면 시계 방향(양수)
     // 각도 차이를 계산
     const angleDiff = base - currentBase;
+    // console.log(base, currentBase, angleDiff);
 
-    // 인덱스 방향 확인
-    const isForward = i > activeIdx;
-
-    // -180~180 범위로 정규화하여 가장 짧은 경로 선택
-    const normalizedDiff = wrapTo180(angleDiff);
-
-    // 정규화된 값과 원래 값의 절댓값 비교
-    const absNormalized = Math.abs(normalizedDiff);
-    const absRaw = Math.abs(angleDiff);
-
-    // 더 작은 절댓값을 가진 방향 선택
-    let finalDiff;
-    if (absNormalized <= absRaw && absNormalized <= 180) {
-      finalDiff = normalizedDiff;
-    } else {
-      finalDiff = angleDiff;
-    }
-
-    // 인덱스 방향에 따라 delta 결정
-    // 인덱스 증가(앞으로): 반시계 방향(음수) → delta는 음수
-    // 인덱스 감소(뒤로): 시계 방향(양수) → delta는 양수
-    let delta;
-    if (isForward) {
-      // 앞으로: 반시계 방향 (음수)
-      delta = -Math.abs(finalDiff);
-    } else {
-      // 뒤로: 시계 방향 (양수)
-      delta = Math.abs(finalDiff);
-    }
+    // 현재 인덱스 대비 목표 각도 차이를 최소 회전으로 정규화
+    let delta = -wrapTo180(angleDiff);
 
     if (reverse) delta = -delta;
 
@@ -509,17 +484,14 @@ export default function LifeRecordDesktop({
       currentKind === "main" ||
       targetKind === "main"
     ) {
-      console.log("[snapToIndex] 이동:", {
-        from: `${currentKind} (idx: ${activeIdx})`,
-        to: `${targetKind} (idx: ${i})`,
-        isForward,
-        angleDiff: angleDiff.toFixed(2),
-        normalizedDiff: normalizedDiff.toFixed(2),
-        finalDiff: finalDiff.toFixed(2),
-        delta: delta.toFixed(2),
-        currentRotation: currentRotation.toFixed(2),
-        newRotation: newRotation.toFixed(2),
-      });
+      // console.log("[snapToIndex] 이동:", {
+      //   from: `${currentKind} (idx: ${activeIdx})`,
+      //   to: `${targetKind} (idx: ${i})`,
+      //   angleDiff: angleDiff.toFixed(2),
+      //   delta: delta.toFixed(2),
+      //   currentRotation: currentRotation.toFixed(2),
+      //   newRotation: newRotation.toFixed(2),
+      // });
     }
 
     if (scrollSound.current) {
@@ -567,6 +539,7 @@ export default function LifeRecordDesktop({
     if (wheelTimer.current) clearTimeout(wheelTimer.current);
     wheelTimer.current = setTimeout(() => snapToClosest(next), 140);
   };
+  // console.log("rotate", rotation);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -704,11 +677,12 @@ export default function LifeRecordDesktop({
   };
 
   const isAtHome = activeItem?.kind === "main";
-  console.log(activeItem);
   const defaultPageTitle = "Life-\nRecords";
   const defaultPageSubtitle = `${data.record?.userName || "사용자"}님의 라이프 레코드입니다.\n"작은 장면을 모아 긴 기억을 만듭니다"`;
   const pageTitle = data.record?.pageTitle || "";
   const pageSubtitle = data.record?.pageSubtitle || "";
+  // console.log("active", angleForIndex(activeIdx));
+  console.log("iter");
 
   return (
     <main
@@ -2203,7 +2177,9 @@ export default function LifeRecordDesktop({
               className="lp-disc"
               src="/images/records/LP-image.png"
               alt="LP"
-              style={{ transform: `rotate(${norm360(rotation)}deg)` }}
+              style={{
+                transform: `rotate(${-angleForIndex(activeIdx)}deg)`,
+              }}
             />
             <div className="year-circle">
               {timeline.map((item, i) => {

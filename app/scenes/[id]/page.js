@@ -756,6 +756,8 @@ export default function ViewPage() {
         const itemRange = textureData.itemRanges[closestItem.id];
         if (itemRange && !isRingDraggingRef.current && !isUserTouchingTimelineRef.current) {
           setLeftIndex(itemRange.start);
+          // 링이 실제로 업데이트되었을 때만 ref 갱신
+          prevScrollClosestItemRef.current = closestItem;
         }
 
         // 사용자가 직접 스크롤하는 경우에만 햅틱/사운드 재생
@@ -770,8 +772,6 @@ export default function ViewPage() {
           if (closestDistance < DISTANCE_THRESHOLD) {
           }
         }
-
-        prevScrollClosestItemRef.current = closestItem;
       }
 
       scrollScheduledRef.current = false;

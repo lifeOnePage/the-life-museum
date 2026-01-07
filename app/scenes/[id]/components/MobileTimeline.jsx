@@ -41,11 +41,8 @@ export default function MobileTimeline({
               key={item.id}
               ref={(el) => (itemRefs.current[item.id] = el)}
               onClick={() => {
-                // 이미 선택된 아이템을 다시 클릭하면 잠금 토글
-                if (isCurrentItem) {
-                  handleItemClick(item);
-                } else {
-                  // 다른 아이템 클릭 시 잠금 해제 후 애니메이션과 함께 이동
+                // 현재 아이템이 아닌 경우에만 이동
+                if (!isCurrentItem) {
                   setLockedItemId(null);
                   scrollToItemWithSteps(item);
                 }
@@ -53,9 +50,7 @@ export default function MobileTimeline({
               onTouchEnd={(e) => {
                 // 모바일 터치 지원
                 e.preventDefault(); // 중복 이벤트 방지
-                if (isCurrentItem) {
-                  handleItemClick(item);
-                } else {
+                if (!isCurrentItem) {
                   setLockedItemId(null);
                   scrollToItemWithSteps(item);
                 }
@@ -101,13 +96,25 @@ export default function MobileTimeline({
                 </div>
                 {/* 잠금 아이콘 - 현재 선택된 아이템에만 표시 (프로필 제외) */}
                 {isCurrentItem && !item.isProfile && (
-                  <div className="flex-shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // 부모 버튼 클릭 이벤트 차단
+                      handleItemClick(item); // 잠금 토글
+                    }}
+                    onTouchEnd={(e) => {
+                      e.stopPropagation(); // 부모 버튼 터치 이벤트 차단
+                      e.preventDefault();
+                      handleItemClick(item); // 잠금 토글
+                    }}
+                    className="flex-shrink-0 p-3 -m-3 touch-manipulation"
+                    aria-label={isLocked ? "잠금 해제" : "잠금"}
+                  >
                     {isLocked ? (
                       <MdLock className="h-4 w-4 text-white/70" />
                     ) : (
                       <MdLockOpen className="h-4 w-4 text-white/40" />
                     )}
-                  </div>
+                  </button>
                 )}
               </div>
             </button>

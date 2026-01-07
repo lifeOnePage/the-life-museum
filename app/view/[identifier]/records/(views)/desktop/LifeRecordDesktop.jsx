@@ -22,6 +22,7 @@ import ControlButtons from "../../components/ControlButtons";
 import useIsMobile from "@/app/hooks/useIsMobile";
 
 export default function LifeRecordDesktop({
+  width,
   data,
   isEditing = false,
   onDataChange,
@@ -324,9 +325,10 @@ export default function LifeRecordDesktop({
   };
 
   const isMobile = useIsMobile(1000);
+  const isPcShell = typeof width === "number" && width <= 932;
   const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 205, ANCHOR: 0 };
   const MOBILE = { START: 110, SWEEP: 180, RADIUS: 140, ANCHOR: 110 };
-  const CFG = isMobile ? MOBILE : DESKTOP;
+  const CFG = isPcShell ? DESKTOP : isMobile ? MOBILE : DESKTOP;
   const RADIUS = CFG.RADIUS;
   const getAnchor = () => CFG.ANCHOR;
 
@@ -615,7 +617,9 @@ export default function LifeRecordDesktop({
 
   return (
     <main
-      className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
+      className={`lr-page ${isEditing ? "lr-page--editing" : ""} ${
+        width <= 932 ? "pc-shell" : ""
+      }`}
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
       <ControlButtons

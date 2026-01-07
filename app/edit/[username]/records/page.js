@@ -1063,6 +1063,7 @@ export default function EditRecords() {
         onSave={handleAddTimelineItem}
       />
       <FloatingToolbar
+        width={width}
         mypage={mypage}
         preview={preview}
         save={save}
@@ -1086,7 +1087,7 @@ export default function EditRecords() {
         isPreview={isPreview}
         isSaving={isSaving}
       />
-      {width <= 1000 ? (
+      {width <= 768 ? (
         <LifeRecordMobile
           data={data}
           isEditing={!isPreview}
@@ -1117,6 +1118,7 @@ export default function EditRecords() {
           onCropComplete={handleCropComplete}
           onCropCancel={handleCropCancel}
           aspectRatio={1}
+          width={width}
         />
       )}
     </>

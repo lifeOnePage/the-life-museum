@@ -23,6 +23,21 @@ body,
   overflow-y: hidden;
 }
 
+.pc-shell {
+  --pc-scale: 0.45;
+  justify-content: center;
+  overflow: scroll;
+}
+
+.pc-shell .lr-grid {
+  transform: scale(var(--pc-scale));
+  transform-origin: top center;
+  width: 900px;
+  max-width: 900px;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .lr-page--editing {
   overflow-y: auto;
 }

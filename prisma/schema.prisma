@@ -107,6 +107,8 @@ model Record {
   name        String?
   subName     String?
   description String?
+  pageTitle   String?
+  pageSubtitle String?
   bgm         String?
   color       String?
   userId      Int?

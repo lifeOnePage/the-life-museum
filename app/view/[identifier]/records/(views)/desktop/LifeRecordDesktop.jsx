@@ -13,33 +13,16 @@ import {
   IoIosArrowDropleftCircle,
   IoIosArrowDroprightCircle,
 } from "react-icons/io";
-import "../styles/cardPage.css";
-import "../styles/cardPage-mobile.css";
-import { DEFAULT_THEME, BG_THEME_PALETTE } from "../utils/constants";
-import { calculateAge, getYear, toMonthDay } from "../utils/dateUtils";
-import { norm360, wrapTo180, angDist } from "../utils/mathUtils";
-import ControlButtons from "./ControlButtons";
-import ImageSlider from "./ImageSlider";
-import EditControls from "./EditControls";
-import CardContent from "./CardContent";
-import HighlightTimeline from "./HighlightTimeline";
-import TimelineWheel from "./TimelineWheel";
-import UploadingOverlay from "./UploadingOverlay";
-
-function useIsMobile(bp = 768) {
-  const [m, setM] = React.useState(
-    typeof window !== "undefined" ? window.innerWidth <= bp : false,
-  );
-  useEffect(() => {
-    const on = () => setM(window.innerWidth <= bp);
-    window.addEventListener("resize", on);
-    on();
-    return () => window.removeEventListener("resize", on);
-  }, [bp]);
-  return m;
-}
+import "../../styles/cardPage.css";
+import "../../styles/cardPage-mobile.css";
+import { DEFAULT_THEME, BG_THEME_PALETTE } from "../../utils/constants";
+import { calculateAge, getYear, toMonthDay } from "../../utils/dateUtils";
+import { norm360, wrapTo180, angDist } from "../../utils/mathUtils";
+import ControlButtons from "../../components/ControlButtons";
+import useIsMobile from "@/app/hooks/useIsMobile";
 
 export default function LifeRecordDesktop({
+  width,
   data,
   isEditing = false,
   onDataChange,
@@ -89,6 +72,7 @@ export default function LifeRecordDesktop({
   // API 데이터를 timeline 형식으로 변환
   const timeline = useMemo(() => {
     const result = [];
+    // console.log(data?.record);
 
     // 메인 아이템
     if (data.record) {
@@ -345,6 +329,7 @@ export default function LifeRecordDesktop({
     if (!bgmAudioRef.current) return;
 
     if (isBgmPlaying) {
+      LP - image;
       bgmAudioRef.current.pause();
       setIsBgmPlaying(false);
     } else {
@@ -356,9 +341,10 @@ export default function LifeRecordDesktop({
   };
 
   const isMobile = useIsMobile(1000);
+  const isPcShell = typeof width === "number" && width <= 932;
   const DESKTOP = { START: 0, SWEEP: 120, RADIUS: 205, ANCHOR: 0 };
   const MOBILE = { START: 110, SWEEP: 180, RADIUS: 140, ANCHOR: 110 };
-  const CFG = isMobile ? MOBILE : DESKTOP;
+  const CFG = isPcShell ? DESKTOP : isMobile ? MOBILE : DESKTOP;
   const RADIUS = CFG.RADIUS;
   const getAnchor = () => CFG.ANCHOR;
 
@@ -478,36 +464,10 @@ export default function LifeRecordDesktop({
     // 인덱스가 증가하면 반시계 방향(음수), 감소하면 시계 방향(양수)
     // 각도 차이를 계산
     const angleDiff = base - currentBase;
+    // console.log(base, currentBase, angleDiff);
 
-    // 인덱스 방향 확인
-    const isForward = i > activeIdx;
-
-    // -180~180 범위로 정규화하여 가장 짧은 경로 선택
-    const normalizedDiff = wrapTo180(angleDiff);
-
-    // 정규화된 값과 원래 값의 절댓값 비교
-    const absNormalized = Math.abs(normalizedDiff);
-    const absRaw = Math.abs(angleDiff);
-
-    // 더 작은 절댓값을 가진 방향 선택
-    let finalDiff;
-    if (absNormalized <= absRaw && absNormalized <= 180) {
-      finalDiff = normalizedDiff;
-    } else {
-      finalDiff = angleDiff;
-    }
-
-    // 인덱스 방향에 따라 delta 결정
-    // 인덱스 증가(앞으로): 반시계 방향(음수) → delta는 음수
-    // 인덱스 감소(뒤로): 시계 방향(양수) → delta는 양수
-    let delta;
-    if (isForward) {
-      // 앞으로: 반시계 방향 (음수)
-      delta = -Math.abs(finalDiff);
-    } else {
-      // 뒤로: 시계 방향 (양수)
-      delta = Math.abs(finalDiff);
-    }
+    // 현재 인덱스 대비 목표 각도 차이를 최소 회전으로 정규화
+    let delta = -wrapTo180(angleDiff);
 
     if (reverse) delta = -delta;
 
@@ -524,17 +484,14 @@ export default function LifeRecordDesktop({
       currentKind === "main" ||
       targetKind === "main"
     ) {
-      console.log("[snapToIndex] 이동:", {
-        from: `${currentKind} (idx: ${activeIdx})`,
-        to: `${targetKind} (idx: ${i})`,
-        isForward,
-        angleDiff: angleDiff.toFixed(2),
-        normalizedDiff: normalizedDiff.toFixed(2),
-        finalDiff: finalDiff.toFixed(2),
-        delta: delta.toFixed(2),
-        currentRotation: currentRotation.toFixed(2),
-        newRotation: newRotation.toFixed(2),
-      });
+      // console.log("[snapToIndex] 이동:", {
+      //   from: `${currentKind} (idx: ${activeIdx})`,
+      //   to: `${targetKind} (idx: ${i})`,
+      //   angleDiff: angleDiff.toFixed(2),
+      //   delta: delta.toFixed(2),
+      //   currentRotation: currentRotation.toFixed(2),
+      //   newRotation: newRotation.toFixed(2),
+      // });
     }
 
     if (scrollSound.current) {
@@ -582,6 +539,7 @@ export default function LifeRecordDesktop({
     if (wheelTimer.current) clearTimeout(wheelTimer.current);
     wheelTimer.current = setTimeout(() => snapToClosest(next), 140);
   };
+  // console.log("rotate", rotation);
 
   const handleKeyDown = useCallback(
     (e) => {
@@ -602,12 +560,12 @@ export default function LifeRecordDesktop({
         e.preventDefault();
 
         let nextIdx;
-        if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-          // 위/좌: 이전 항목
-          nextIdx = activeIdx > 0 ? activeIdx - 1 : timeline.length - 1;
+        if (e.key === "ArrowUp") {
+          if (activeIdx <= 0) return;
+          nextIdx = activeIdx - 1;
         } else {
-          // 아래/우: 다음 항목
-          nextIdx = activeIdx < timeline.length - 1 ? activeIdx + 1 : 0;
+          if (activeIdx >= timeline.length - 1) return;
+          nextIdx = activeIdx + 1;
         }
 
         if (scrollSound.current) {
@@ -719,10 +677,18 @@ export default function LifeRecordDesktop({
   };
 
   const isAtHome = activeItem?.kind === "main";
+  const defaultPageTitle = "Life-\nRecords";
+  const defaultPageSubtitle = `${data.record?.userName || "사용자"}님의 라이프 레코드입니다.\n"작은 장면을 모아 긴 기억을 만듭니다"`;
+  const pageTitle = data.record?.pageTitle || "";
+  const pageSubtitle = data.record?.pageSubtitle || "";
+  // console.log("active", angleForIndex(activeIdx));
+  console.log("iter");
 
   return (
     <main
-      className={`lr-page ${isEditing ? "lr-page--editing" : ""}`}
+      className={`lr-page ${isEditing ? "lr-page--editing" : ""} ${
+        width <= 932 ? "pc-shell" : ""
+      }`}
       style={{ ["--bg"]: theme.bg, ["--text"]: theme.text }}
     >
       <ControlButtons
@@ -740,15 +706,53 @@ export default function LifeRecordDesktop({
 
       <div className="lr-grid">
         <section className="lr-left">
-          <h1 className="lr-title">
-            Life- <br />
-            Records
-          </h1>
-          <p className="lr-sub">
-            <b>{data.record?.userName || "사용자"}</b>님의 라이프 레코드입니다.
-            <br />
-            "작은 장면을 모아 긴 기억을 만듭니다"
-          </p>
+          {isEditing ? (
+            <>
+              <textarea
+                maxLength={20}
+                className="lr-title-input"
+                rows={4}
+                value={pageTitle}
+                placeholder={defaultPageTitle}
+                onChange={(e) => {
+                  const newData = {
+                    ...data,
+                    record: {
+                      ...data.record,
+                      pageTitle: e.target.value,
+                    },
+                  };
+                  onDataChange?.(newData);
+                }}
+              />
+              <textarea
+                maxLength={100}
+                className="lr-sub-input"
+                rows={3}
+                value={pageSubtitle}
+                placeholder={defaultPageSubtitle}
+                onChange={(e) => {
+                  const newData = {
+                    ...data,
+                    record: {
+                      ...data.record,
+                      pageSubtitle: e.target.value,
+                    },
+                  };
+                  onDataChange?.(newData);
+                }}
+              />
+            </>
+          ) : (
+            <>
+              <h1 className="lr-title" style={{ whiteSpace: "pre-line" }}>
+                {pageTitle || defaultPageTitle}
+              </h1>
+              <p className="lr-sub" style={{ whiteSpace: "pre-line" }}>
+                {pageSubtitle || defaultPageSubtitle}
+              </p>
+            </>
+          )}
         </section>
 
         <section className="lr-center">
@@ -2173,7 +2177,9 @@ export default function LifeRecordDesktop({
               className="lp-disc"
               src="/images/records/LP-image.png"
               alt="LP"
-              style={{ transform: `rotate(${norm360(rotation)}deg)` }}
+              style={{
+                transform: `rotate(${-angleForIndex(activeIdx)}deg)`,
+              }}
             />
             <div className="year-circle">
               {timeline.map((item, i) => {

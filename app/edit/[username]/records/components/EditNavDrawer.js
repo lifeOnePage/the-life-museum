@@ -1,3 +1,13 @@
+/**
+ * Side navigation for record editing.
+ * 레코드 편집용 사이드 네비게이션
+ * @param {Object} props
+ * @param {number} props.desktopShowMenu
+ * @param {Function} props.setDesktopShowMenu
+ * @param {Array<{eng: string, kor: string}>} props.section
+ * @returns {JSX.Element}
+ */
+
 export default function EditNavDrawer({
   desktopShowMenu,
   setDesktopShowMenu,

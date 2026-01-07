@@ -4,14 +4,14 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { AnimatePresence, motion } from "framer-motion";
 import { TbRefresh, TbRefreshOff } from "react-icons/tb";
-import { MdLock, MdLockOpen } from "react-icons/md";
-import Pannel from "./components/Pannel";
+import Pannel from "./components/pannel";
 import SceneRing from "./components/SceneRing";
 // import ExhibitionRing from "./components/ExhibitionRing"; // 원래 버전 (왼쪽 선택)
 import ExhibitionRing from "./components/ExhibitionRingFront"; // 새 버전 (앞쪽 선택)
 import ProfileDetailScreen from "./components/ProfileDetailScreen";
 import RingSlider from "./components/RingSlider";
 import ProfileCurtain from "./components/ProfileCurtain";
+import MobileTimeline from "./components/MobileTimeline";
 import {
   buildTextureData,
   ensureMinimumTextures,
@@ -36,6 +36,7 @@ export default function ViewPage() {
   const [exhibitionCurrentIndex, setExhibitionCurrentIndex] = useState(0); // 전시 모드 링 인덱스
   const [enableProfileSwitch, setEnableProfileSwitch] = useState(false); // 프로필 전환 활성화 여부 - 회전 기반 로직 사용
   const [isExhibitionPanelOpen, setIsExhibitionPanelOpen] = useState(false); // 전시 모드 패널 표시 여부
+  const [isProfileOpen, setIsProfileOpen] = useState(true); // 하단 프로필 섹션 표시 여부
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 전시 모드 패널 저장되지 않은 변경사항
   const [isSlowRotation, setIsSlowRotation] = useState(false); // 한 바퀴 완료 후 느린 회전
   const [lockedItemId, setLockedItemId] = useState(null); // 잠금된 아이템 ID (모바일 타임라인용)
@@ -285,6 +286,7 @@ export default function ViewPage() {
   const profileCurtainTimerRef = useRef(null);
   const slowRotationTimerRef = useRef(null); // 느린 회전 후 커튼 표시 타이머
   const hasLeftProfileRef = useRef(false); // 프로필에서 벗어났는지 추적
+  const isManualControlRef = useRef(false); // 수동 조작 중인지 추적 (방향키/드래그)
 
   // 전시 모드에서 인덱스 변경 시 회전 추적
   useEffect(() => {
@@ -304,14 +306,17 @@ export default function ViewPage() {
     }
 
     // 프로필로 돌아왔고, 이전에 프로필이 아닌 곳에서 왔고, 프로필을 벗어난 적이 있다면 한 바퀴 완료
-    // (마지막 컨텐츠 -> 프로필로 넘어가는 순간 감지)
+    // (마지막 컨텐츠 -> 프로필로 정방향 이동하는 순간 감지)
     // OFF 모드(exhibitionInterval === 0)일 때는 프로필 커튼 표시 안 함
+    // 수동 조작 중일 때는 커튼 표시 안 함
+    console.log(profileIndex, prevIndex, hasLeftProfileRef.current)
     if (
       currentSlot.itemId === "profile" &&
       hasLeftProfileRef.current &&
-      prevIndex < profileIndex && // 이전 인덱스가 프로필보다 앞에 있었다면 (루프 완료, 0 -> 59 같은 점프)
+      prevIndex === 0 && // 바로 직전 인덱스에서 정방향으로 왔을 때만 (역방향 회전 제외)
       !rotationCompleteRef.current &&
-      exhibitionInterval !== 0 // OFF 모드가 아닐 때만
+      exhibitionInterval !== 0 && // OFF 모드가 아닐 때만
+      !isManualControlRef.current // 수동 조작 중이 아닐 때만
     ) {
       rotationCompleteRef.current = true;
       hasLeftProfileRef.current = false; // 다음 회전을 위해 리셋
@@ -346,6 +351,63 @@ export default function ViewPage() {
       }
     };
   }, [isExhibitionMode, exhibitionScreen, isSlowRotation]);
+
+  // 전시 모드 방향키 네비게이션
+  useEffect(() => {
+    if (!isExhibitionMode || exhibitionScreen !== "ring") return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault(); // 기본 스크롤 동작 방지
+
+        // 수동 조작 플래그 설정
+        isManualControlRef.current = true;
+
+        const maxIndex = textureData.textures.length - 1;
+        const textures = textureData.textures;
+
+        // 다음/이전 유효한 이미지가 있는 플레인 찾기
+        const findNextValidIndex = (current, direction) => {
+          let steps = 0;
+          const totalSteps = textures.length;
+
+          while (steps < totalSteps) {
+            steps++;
+            let nextIndex = current + direction * steps;
+
+            // 인덱스 순환
+            if (nextIndex < 0) nextIndex += textures.length;
+            if (nextIndex > maxIndex) nextIndex -= textures.length;
+
+            // 유효한 이미지가 있는 플레인인지 확인 (빈 플레인이 아님)
+            const texture = textures[nextIndex];
+            if (texture && texture.kind !== "empty") {
+              return nextIndex;
+            }
+          }
+
+          // 유효한 플레인을 찾지 못하면 현재 인덱스 유지
+          return current;
+        };
+
+        if (e.key === "ArrowRight") {
+          // 왼쪽 화살표: 이전 이미지로 (역방향)
+          setExhibitionCurrentIndex((prev) => findNextValidIndex(prev, -1));
+        } else if (e.key === "ArrowLeft") {
+          // 오른쪽 화살표: 다음 이미지로 (정방향)
+          setExhibitionCurrentIndex((prev) => findNextValidIndex(prev, 1));
+        }
+
+        // 일정 시간 후 수동 조작 플래그 해제
+        setTimeout(() => {
+          isManualControlRef.current = false;
+        }, 1000);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isExhibitionMode, exhibitionScreen, textureData.textures]);
 
   // 프로필 커튼 자동 닫기 (20초 후)
   useEffect(() => {
@@ -489,6 +551,7 @@ export default function ViewPage() {
     velocity: 0, // 현재 속도
   });
   const isRingDraggingRef = useRef(false); // 링 드래그 중 플래그 (타임라인 간섭 방지용)
+  const isUserTouchingTimelineRef = useRef(false); // 사용자가 타임라인을 터치 중인지 추적
 
   // 프로그래매틱 스크롤 중인지 추적 (순환 참조 방지)
   const isTimelineScrollingRef = useRef(false);
@@ -686,12 +749,12 @@ export default function ViewPage() {
         closestItem &&
         prevScrollClosestItemRef.current?.id !== closestItem.id
       ) {
-        playFeedback();
+        // playFeedback();
         console.log("타임라인 스크롤: 중앙 아이템 변경:", closestItem.title);
 
-        // leftIndex 직접 업데이트 (링 회전) - 링 드래그 중이 아닐 때만 수행
+        // leftIndex 직접 업데이트 (링 회전) - 링 드래그 중이거나 사용자가 타임라인을 터치 중일 때는 수행하지 않음
         const itemRange = textureData.itemRanges[closestItem.id];
-        if (itemRange && !isRingDraggingRef.current) {
+        if (itemRange && !isRingDraggingRef.current && !isUserTouchingTimelineRef.current) {
           setLeftIndex(itemRange.start);
         }
 
@@ -722,11 +785,26 @@ export default function ViewPage() {
       }
     };
 
+    const handleTouchStart = () => {
+      isUserTouchingTimelineRef.current = true;
+    };
+
+    const handleTouchEnd = () => {
+      // 터치 종료 후 약간의 지연을 두고 플래그 해제 (관성 스크롤 고려)
+      setTimeout(() => {
+        isUserTouchingTimelineRef.current = false;
+      }, 100);
+    };
+
     timeline.addEventListener("scroll", handleScroll, { passive: true });
+    timeline.addEventListener("touchstart", handleTouchStart, { passive: true });
+    timeline.addEventListener("touchend", handleTouchEnd, { passive: true });
     updateScrollState(); // 초기 실행
 
     return () => {
       timeline.removeEventListener("scroll", handleScroll);
+      timeline.removeEventListener("touchstart", handleTouchStart);
+      timeline.removeEventListener("touchend", handleTouchEnd);
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
       }
@@ -803,6 +881,7 @@ export default function ViewPage() {
   // 3D 링 드래그 핸들러 (모바일)
   const handleRingPointerDown = (e) => {
     isRingDraggingRef.current = true; // 드래그 시작 플래그
+    isManualControlRef.current = true; // 수동 조작 플래그 설정 (커튼 방지)
     dragStateRef.current = {
       isDragging: true,
       startX: e.clientX,
@@ -896,6 +975,11 @@ export default function ViewPage() {
     setTimeout(() => {
       isRingDraggingRef.current = false;
     }, 300);
+
+    // 수동 조작 플래그는 약간 더 긴 지연 후 해제 (자동 회전 재개 전까지)
+    setTimeout(() => {
+      isManualControlRef.current = false;
+    }, 1000);
   };
 
   // 수동 네비게이션 중인지 추적
@@ -1226,6 +1310,9 @@ export default function ViewPage() {
                 exhibitionScreen={exhibitionScreen}
                 isPaused={isExhibitionPanelOpen}
                 isSlowRotation={isSlowRotation}
+                isProfileOpen={isProfileOpen}
+                onToggleProfile={() => setIsProfileOpen(!isProfileOpen)}
+                showControls={showControls}
               />
             </div>
 
@@ -1419,18 +1506,11 @@ export default function ViewPage() {
                   {/* 패널 내용 */}
                   <div className="flex-1 overflow-hidden">
                     <Pannel
-                      type="list"
-                      mode={mode}
                       items={items}
                       setItems={setItems}
                       profile={profile}
                       setProfile={setProfile}
                       onItemClick={() => {}}
-                      onToggleMode={
-                        isOwner
-                          ? () => setMode(mode === "view" ? "edit" : "view")
-                          : null
-                      }
                       sceneId={id}
                       onHasChangesChange={setHasUnsavedChanges}
                     />
@@ -1635,106 +1715,18 @@ export default function ViewPage() {
         </div> */}
 
         {/* 타임라인 - 모바일 전용 */}
-        <div
-          ref={timelineRef}
-          className="absolute top-auto bottom-0 left-4 z-20 max-h-[36vh] overflow-y-auto py-10 [&::-webkit-scrollbar]:hidden"
-          style={{
-            scrollbarWidth: "none", // Firefox
-            msOverflowStyle: "none", // IE/Edge
-          }}
-        >
-          {/* 상단 패딩 (중앙 정렬용) */}
-          <div className="h-[20vh]" />
-
-          <div className="flex flex-col gap-3 pb-[20vh]">
-            {items.map((item) => {
-              const year = item.date ? item.date.match(/\d{4}/)?.[0] : "";
-
-              const isLocked = lockedItemId === item.id;
-              const isCurrentItem = currentItem?.id === item.id;
-
-              // 모든 아이템에 동일한 거리 기반 투명도 적용
-              const itemOpacity = itemOpacities[item.id] ?? 0.15;
-
-              return (
-                <button
-                  key={item.id}
-                  ref={(el) => (itemRefs.current[item.id] = el)}
-                  onClick={() => {
-                    // 이미 선택된 아이템을 다시 클릭하면 잠금 토글
-                    if (isCurrentItem) {
-                      handleItemClick(item);
-                    } else {
-                      // 다른 아이템 클릭 시 잠금 해제 후 애니메이션과 함께 이동
-                      setLockedItemId(null);
-                      scrollToItemWithSteps(item);
-                    }
-                  }}
-                  onTouchEnd={(e) => {
-                    // 모바일 터치 지원
-                    e.preventDefault(); // 중복 이벤트 방지
-                    if (isCurrentItem) {
-                      handleItemClick(item);
-                    } else {
-                      setLockedItemId(null);
-                      scrollToItemWithSteps(item);
-                    }
-                  }}
-                  className="relative cursor-pointer px-2 py-2 text-left text-white transition-opacity duration-200"
-                  style={{
-                    opacity: itemOpacity,
-                    touchAction: "manipulation", // 모바일 터치 최적화
-                  }}
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      {item.isProfile ? (
-                        // 프로필 아이템: {이름}\n{생년} 형식
-                        <>
-                          <div
-                            className={`text-sm leading-tight ${isCurrentItem ? "font-bold" : "font-normal"}`}
-                          >
-                            {profile.name || "대표 타이틀"}
-                          </div>
-                          {profile.birthDate && (
-                            <div className="mt-0.5 text-xs opacity-70">
-                              {profile.birthDate.match(/\d{4}/)?.[0] ||
-                                profile.birthDate}
-                            </div>
-                          )}
-                        </>
-                      ) : (
-                        // 일반 아이템
-                        <>
-                          <div
-                            className={`text-sm leading-tight ${isCurrentItem ? "font-bold" : "font-normal"}`}
-                          >
-                            {item.title || "제목 없음"}
-                          </div>
-                          {year && (
-                            <div className="mt-0.5 text-xs opacity-70">
-                              {year}
-                            </div>
-                          )}
-                        </>
-                      )}
-                    </div>
-                    {/* 잠금 아이콘 - 현재 선택된 아이템에만 표시 (프로필 제외) */}
-                    {isCurrentItem && !item.isProfile && (
-                      <div className="flex-shrink-0">
-                        {isLocked ? (
-                          <MdLock className="h-4 w-4 text-white/70" />
-                        ) : (
-                          <MdLockOpen className="h-4 w-4 text-white/40" />
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <MobileTimeline
+          items={items}
+          profile={profile}
+          currentItem={currentItem}
+          lockedItemId={lockedItemId}
+          itemOpacities={itemOpacities}
+          itemRefs={itemRefs}
+          timelineRef={timelineRef}
+          handleItemClick={handleItemClick}
+          scrollToItemWithSteps={scrollToItemWithSteps}
+          setLockedItemId={setLockedItemId}
+        />
 
         {/* Pannel - 모바일 전용 모달 스타일 */}
         <AnimatePresence>
@@ -1783,22 +1775,12 @@ export default function ViewPage() {
                 {/* 패널 내용 */}
                 <div className="flex-1 overflow-hidden">
                   <Pannel
-                    type="list"
-                    mode={mode}
                     items={items}
                     setItems={setItems}
                     profile={profile}
                     setProfile={setProfile}
                     onItemClick={handleItemClick}
-                    onToggleMode={
-                      isOwner
-                        ? () => setMode(mode === "view" ? "edit" : "view")
-                        : null
-                    }
                     sceneId={id}
-                    currentItem={currentItem}
-                    lockedItemId={lockedItemId}
-                    onToggleLock={handleToggleLock}
                     onHasChangesChange={setHasUnsavedChanges}
                   />
                 </div>
@@ -2153,26 +2135,14 @@ export default function ViewPage() {
             className={`relative flex flex-1 items-start ${mode === "edit" ? "mt-0 mb-0" : "mt-0 mb-10"}`}
           >
             {/* 패널 - 왼쪽 */}
-            <div
-              className={`relative z-20 w-[400px] shrink-0 ${mode === "edit" ? "mt-30 mb-30 h-[calc(100vh-240px)]" : ""}`}
-            >
+            <div className="relative z-20 w-[400px] shrink-0 mt-30 mb-30 h-[calc(100vh-240px)]">
               <Pannel
-                type="list"
-                mode={mode}
                 items={items}
                 setItems={setItems}
                 profile={profile}
                 setProfile={setProfile}
                 onItemClick={handleItemClick}
-                onToggleMode={
-                  isOwner
-                    ? () => setMode(mode === "view" ? "edit" : "view")
-                    : null
-                }
                 sceneId={id}
-                currentItem={currentItem}
-                lockedItemId={lockedItemId}
-                onToggleLock={handleToggleLock}
               />
             </div>
 

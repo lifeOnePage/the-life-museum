@@ -197,6 +197,8 @@ exports.Prisma.RecordScalarFieldEnum = {
   name: 'name',
   subName: 'subName',
   description: 'description',
+  pageTitle: 'pageTitle',
+  pageSubtitle: 'pageSubtitle',
   bgm: 'bgm',
   color: 'color',
   userId: 'userId',

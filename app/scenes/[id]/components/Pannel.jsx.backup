@@ -48,6 +48,7 @@ export default function Pannel({
   const [selectedItem, setSelectedItem] = useState(null);
   const [editedData, setEditedData] = useState(null);
   const [originalData, setOriginalData] = useState(null); // 원본 데이터 저장
+  const [originalProfile, setOriginalProfile] = useState(null); // 원본 프로필 저장
   const [hasChanges, setHasChanges] = useState(false);
   const [listHasChanges, setListHasChanges] = useState(false);
   const [unsavedItemIds, setUnsavedItemIds] = useState(new Set());
@@ -124,6 +125,8 @@ export default function Pannel({
         setSelectedItem(null);
         setEditedData(null);
         setOriginalData(null);
+        // 프로필 원본 저장
+        setOriginalProfile(JSON.parse(JSON.stringify(profile)));
         setHasChanges(false);
         return;
       }
@@ -222,13 +225,36 @@ export default function Pannel({
     };
   };
 
-  const handleBack = () => {
-    // hasChanges는 handleChange에서 이미 정확하게 계산되었으므로
-    // 여기서는 추가로 unsavedItemIds를 설정하지 않음
-    // (handleChange에서 이미 처리함)
+  const handleBack = (discardChanges = false) => {
+    // 변경사항을 버리는 경우
+    if (discardChanges) {
+      // 프로필 뷰인 경우 프로필 복원
+      if (isProfileView && originalProfile) {
+        setProfile(originalProfile);
+      }
+      // 일반 아이템인 경우
+      else if (selectedItem && !selectedItem.isNew) {
+        setUnsavedItemIds(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(selectedItem.id);
+          return newSet;
+        });
+
+        // 원본 데이터로 복원
+        if (originalData) {
+          setItems(prevItems =>
+            prevItems.map(item =>
+              item.id === selectedItem.id ? originalData : item
+            )
+          );
+        }
+      }
+    }
+
     setSelectedItem(null);
     setEditedData(null);
     setOriginalData(null);
+    setOriginalProfile(null);
     setHasChanges(false);
     setIsProfileView(false);
   };

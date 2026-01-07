@@ -2,6 +2,16 @@
 import { useState } from "react";
 import BgmSelector from "./BgmSelector";
 
+/**
+ * Record basic info edit form.
+ * 레코드 기본 정보 편집 폼.
+ * @param {Object} props
+ * @param {Object} props.record
+ * @param {Function} props.setRecord
+ * @param {Function} props.setIsSaved
+ * @returns {JSX.Element}
+ */
+
 export default function EditRecordInfo({ record, setRecord, setIsSaved }) {
   const [formData, setFormData] = useState({
     name: record?.name || "",

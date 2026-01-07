@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import AddTimelineModal from "@/app/view/[identifier]/records/components/AddTimelineModal";
+import AddTimelineModal from "@/app/records/view/[identifier]/components/AddTimelineModal";
 
 /**
  * Timeline items editor list.

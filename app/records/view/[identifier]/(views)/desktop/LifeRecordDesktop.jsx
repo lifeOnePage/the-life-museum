@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
-import ImageCropOverlay from "@/app/edit/[username]/records/components/ImageCropOverlay";
+import ImageCropOverlay from "@/app/records/edit/[username]/components/ImageCropOverlay";
 import { HiStar, HiHome, HiOutlineStar, HiTrash } from "react-icons/hi";
 import {
   IoIosArrowDropleftCircle,

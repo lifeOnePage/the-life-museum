@@ -15,5 +15,19 @@ const nextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: '/edit/:username/records',
+        destination: '/records/edit/:username',
+        permanent: false,
+      },
+      {
+        source: '/view/:identifier/records',
+        destination: '/records/view/:identifier',
+        permanent: false,
+      },
+    ];
+  },
 };
 module.exports = nextConfig;

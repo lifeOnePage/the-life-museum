@@ -4,8 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import FloatingToolbar from "@/app/components/edit/FloatingToolbar";
 import ToastStack from "@/app/components/Toast";
-import LifeRecordDesktop from "@/app/view/[identifier]/records/(views)/desktop/LifeRecordDesktop";
-import LifeRecordMobile from "@/app/view/[identifier]/records/(views)/mobile/LifeRecordMobile";
+import LifeRecordDesktop from "@/app/records/view/[identifier]/(views)/desktop/LifeRecordDesktop";
+import LifeRecordMobile from "@/app/records/view/[identifier]/(views)/mobile/LifeRecordMobile";
 import {
   fetchRecordDetails,
   updateRecordDetails,
@@ -16,8 +16,8 @@ import {
 } from "./services/editApi";
 import ImageAddModal from "./components/ImageAddModal";
 import ImageCropOverlay from "./components/ImageCropOverlay";
-import "@/app/view/[identifier]/records/styles/cardPage.css";
-import "@/app/view/[identifier]/records/styles/cardPage-mobile.css";
+import "@/app/records/view/[identifier]/styles/cardPage.css";
+import "@/app/records/view/[identifier]/styles/cardPage-mobile.css";
 
 /**
  * Subscribes to window size changes.

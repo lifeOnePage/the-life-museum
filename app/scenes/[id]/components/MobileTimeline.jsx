@@ -26,7 +26,7 @@ export default function MobileTimeline({
       {/* 상단 패딩 (중앙 정렬용) */}
       <div className="h-[20vh]" />
 
-      <div className="flex flex-col gap-3 pb-[20vh]">
+      <div className="flex flex-col gap-8 pb-[20vh]">
         {items.map((item) => {
           const year = item.date ? item.date.match(/\d{4}/)?.[0] : "";
 
@@ -55,7 +55,7 @@ export default function MobileTimeline({
                   scrollToItemWithSteps(item);
                 }
               }}
-              className="relative cursor-pointer px-2 py-2 text-left text-white transition-opacity duration-200"
+              className="relative cursor-pointer px-2 py-3 text-left text-white transition-opacity duration-200"
               style={{
                 opacity: itemOpacity,
                 touchAction: "manipulation", // 모바일 터치 최적화

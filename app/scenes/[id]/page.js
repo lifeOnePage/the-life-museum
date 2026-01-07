@@ -309,7 +309,7 @@ export default function ViewPage() {
     // (마지막 컨텐츠 -> 프로필로 정방향 이동하는 순간 감지)
     // OFF 모드(exhibitionInterval === 0)일 때는 프로필 커튼 표시 안 함
     // 수동 조작 중일 때는 커튼 표시 안 함
-    console.log(profileIndex, prevIndex, hasLeftProfileRef.current)
+    console.log(profileIndex, prevIndex, hasLeftProfileRef.current);
     if (
       currentSlot.itemId === "profile" &&
       hasLeftProfileRef.current &&
@@ -754,7 +754,11 @@ export default function ViewPage() {
 
         // leftIndex 직접 업데이트 (링 회전) - 링 드래그 중이거나 사용자가 타임라인을 터치 중일 때는 수행하지 않음
         const itemRange = textureData.itemRanges[closestItem.id];
-        if (itemRange && !isRingDraggingRef.current && !isUserTouchingTimelineRef.current) {
+        if (
+          itemRange &&
+          !isRingDraggingRef.current &&
+          !isUserTouchingTimelineRef.current
+        ) {
           setLeftIndex(itemRange.start);
           // 링이 실제로 업데이트되었을 때만 ref 갱신
           prevScrollClosestItemRef.current = closestItem;
@@ -792,15 +796,16 @@ export default function ViewPage() {
     const handleTouchEnd = () => {
       // 터치 종료 후 약간의 지연을 두고 플래그 해제 (관성 스크롤 고려)
       setTimeout(() => {
-        updateScrollState();
         isUserTouchingTimelineRef.current = false;
         // 플래그 해제 후 명시적으로 현재 상태 동기화
-        
+        updateScrollState();
       }, 100);
     };
 
     timeline.addEventListener("scroll", handleScroll, { passive: true });
-    timeline.addEventListener("touchstart", handleTouchStart, { passive: true });
+    timeline.addEventListener("touchstart", handleTouchStart, {
+      passive: true,
+    });
     timeline.addEventListener("touchend", handleTouchEnd, { passive: true });
     updateScrollState(); // 초기 실행
 
@@ -2138,7 +2143,7 @@ export default function ViewPage() {
             className={`relative flex flex-1 items-start ${mode === "edit" ? "mt-0 mb-0" : "mt-0 mb-10"}`}
           >
             {/* 패널 - 왼쪽 */}
-            <div className="relative z-20 w-[400px] shrink-0 mt-30 mb-30 h-[calc(100vh-240px)]">
+            <div className="relative z-20 mt-30 mb-30 h-[calc(100vh-240px)] w-[400px] shrink-0">
               <Pannel
                 items={items}
                 setItems={setItems}

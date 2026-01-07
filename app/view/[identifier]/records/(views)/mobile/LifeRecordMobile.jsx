@@ -647,12 +647,61 @@ export default function LifeRecordMobile({
       )}
 
       <header className="lr-mobile-header">
-        <div className="lr-mobile-title">Life-Records</div>
-        <div className="lr-mobile-desc">
-          <b>{data.record?.userName || "사용자"}</b>님의 라이프 레코드입니다.
-          <br />
-          "작은 장면을 모아 긴 기억을 만듭니다"
-        </div>
+        {isEditing ? (
+          <>
+            <input
+              maxLength={20}
+              className="lr-mobile-title-input"
+              value={data.record?.pageTitle || ""}
+              placeholder={"Life-Records"}
+              onChange={(e) => {
+                const newData = {
+                  ...data,
+                  record: {
+                    ...data.record,
+                    pageTitle: e.target.value,
+                  },
+                };
+                onDataChange?.(newData);
+              }}
+            />
+            <textarea
+              maxLength={100}
+              className="lr-mobile-desc-input"
+              value={data.record?.pageSubtitle || ""}
+              placeholder={`${data.record?.userName || "사용자"}님의 라이프 레코드입니다. "작은 장면을 모아 긴 기억을 만듭니다"`}
+              onChange={(e) => {
+                const newData = {
+                  ...data,
+                  record: {
+                    ...data.record,
+                    pageSubtitle: e.target.value,
+                  },
+                };
+                onDataChange?.(newData);
+              }}
+            />
+          </>
+        ) : (
+          <>
+            <div className="lr-mobile-title">
+              {data.record?.pageTitle || "Life-Records"}
+            </div>
+            {data.record?.pageSubtitle ? (
+              <div
+                className="lr-mobile-desc"
+                style={{ whiteSpace: "pre-line" }}
+              >
+                {data.record.pageSubtitle}
+              </div>
+            ) : (
+              <div className="lr-mobile-desc">
+                <b>{data.record?.userName || "사용자"}</b>님의 라이프
+                레코드입니다. "작은 장면을 모아 긴 기억을 만듭니다"
+              </div>
+            )}
+          </>
+        )}
       </header>
 
       <div className="lr-mobile-cover-wrap">

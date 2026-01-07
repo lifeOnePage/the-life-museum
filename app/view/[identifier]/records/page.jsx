@@ -93,7 +93,7 @@ export default function ViewRecordsPage() {
 
   return (
     <>
-      {width <= 1000 ? (
+      {width <= 768 ? (
         <LifeRecordMobile
           data={data}
           autoSlideEnabled={autoSlideEnabled}
@@ -101,6 +101,7 @@ export default function ViewRecordsPage() {
         />
       ) : (
         <LifeRecordDesktop
+          width={width}
           data={data}
           autoSlideEnabled={autoSlideEnabled}
           onAutoSlideEnabledChange={setAutoSlideEnabled}

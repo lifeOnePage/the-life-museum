@@ -196,16 +196,80 @@ export default function EditRecords() {
     })();
   }, [token, username, user]);
 
-  const mypage = () => {
-    if (!isSaved) {
-      if (!confirm("저장하지 않은 변경사항이 있습니다. 정말 나가시겠습니까?")) {
-        return;
+  // 페이지를 떠날 때 자동저장
+  useEffect(() => {
+    const handleBeforeUnload = async (e) => {
+      if (!isSaved && !isSaving && data && originalData) {
+        // 비동기 저장은 beforeunload에서 완료할 수 없으므로 경고만 표시
+        e.preventDefault();
+        e.returnValue =
+          "저장하지 않은 변경사항이 있습니다. 정말 나가시겠습니까?";
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isSaved, isSaving, data, originalData]);
+
+  // 데이터 변경 시 자동저장 (debounce)
+  useEffect(() => {
+    // 편집 모드가 아니거나, 이미 저장 중이거나, 이미 저장된 상태면 자동저장하지 않음
+    if (
+      isPreview ||
+      isSaving ||
+      isSaved ||
+      !data ||
+      !originalData ||
+      !token ||
+      !recordId
+    ) {
+      return;
+    }
+
+    // debounce: 3초 후에 자동저장
+    const autoSaveTimer = setTimeout(async () => {
+      try {
+        await save();
+        // save 함수 내부에서 이미 "저장되었습니다." 토스트를 표시함
+      } catch (e) {
+        // 자동저장 실패는 조용히 처리 (사용자에게 알리지 않음)
+      }
+    }, 3000); // 3초 대기
+
+    return () => {
+      clearTimeout(autoSaveTimer);
+    };
+  }, [data, isPreview, isSaving, isSaved, token, recordId, originalData]);
+
+  const mypage = async () => {
+    // 마이페이지로 이동하기 전에 자동저장
+    if (!isSaved && !isSaving) {
+      try {
+        await save();
+      } catch (e) {
+        // 저장 실패해도 이동 가능하도록 (사용자가 선택할 수 있게)
+        if (
+          !confirm("저장하지 않은 변경사항이 있습니다. 정말 나가시겠습니까?")
+        ) {
+          return;
+        }
       }
     }
     router.push("/mypage");
   };
 
-  const preview = () => {
+  const preview = async () => {
+    // preview 모드로 전환하기 전에 자동저장
+    if (!isSaved && !isSaving) {
+      try {
+        await save();
+      } catch (e) {
+        // 저장 실패해도 preview 모드로 전환
+      }
+    }
     setIsPreview((p) => !p);
   };
 

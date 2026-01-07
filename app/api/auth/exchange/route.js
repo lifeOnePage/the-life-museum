@@ -12,13 +12,13 @@ export async function POST(req) {
     if (!idToken)
       return NextResponse.json(
         { ok: false, error: "Missing idToken" },
-        { status: 400 }
+        { status: 400 },
       );
 
     // console.group("api/auth/exchange");
     // console.log("firebaseAdmin: ", await firebaseAdmin.auth());
     const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
-    const { uid, phone_number: phoneNumber } = decoded;
+    const { phone_number: phoneNumber } = decoded;
 
     // console.log("phoneNumber: ", phoneNumber);
     // console.log("idToken: ", idToken);
@@ -39,12 +39,23 @@ export async function POST(req) {
 
     const token = signJwt({ sub: user.id, mobile: user.mobile });
 
-    return NextResponse.json({ ok: true, token, user });
+    const res = NextResponse.json({ ok: true, user });
+
+    res.cookies.set({
+      name: "app_token",
+      value: token,
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res;
   } catch (e) {
     console.error(e);
     return NextResponse.json(
       { ok: false, error: "exchange_failed" },
-      { status: 401 }
+      { status: 401 },
     );
   }
 }

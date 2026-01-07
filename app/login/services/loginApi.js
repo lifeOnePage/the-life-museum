@@ -54,6 +54,7 @@ export async function verifyOtp(confirmation, code) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
+    credentials: "include",
   });
   const json = await res.json();
   if (!json.ok) throw new Error("토큰 교환 실패");

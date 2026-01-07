@@ -1,4 +1,5 @@
 "use client";
+
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
@@ -19,11 +20,11 @@ import "@/app/records/(common)/styles/cardPage.css";
 import "@/app/records/(common)/styles/cardPage-mobile.css";
 import useWindowSize from "@/app/hooks/useWindowSize";
 
-export default function RecordsEditPage() {
+export default function Temp({ fetchedRecordData }) {
   const { width } = useWindowSize();
   const { username } = useParams();
-  const router = useRouter();
   const { user, token, loading: authLoading } = useAuth();
+  const router = useRouter();
   const [isSaved, setIsSaved] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -85,15 +86,6 @@ export default function RecordsEditPage() {
   const [activeItem, setActiveItem] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [navigateToItem, setNavigateToItem] = useState(null);
-  // 크롭 기능 제거됨 - 항상 비활성화 상태로 유지
-  const cropState = {
-    isActive: false,
-    imageFile: null,
-    type: null,
-    itemId: null,
-    targetSlotIndex: null,
-  };
-
   useEffect(() => {
     if (authLoading) return;
 
@@ -108,42 +100,42 @@ export default function RecordsEditPage() {
       try {
         setIsLoading(true);
         setError(null);
-        const result = await fetchRecordDetails({
-          token,
-          identifier: username,
-        });
-        if (result?.ok && result?.item) {
-          setRecordId(result.item.record.id);
+
+        if (fetchedRecordData?.ok && fetchedRecordData?.item) {
+          setRecordId(fetchedRecordData.item.record.id);
 
           // 레코드의 userName을 사용 (제작할 대상의 성함)
           const userName =
-            result.item.record.userName || user?.userName || "사용자";
+            fetchedRecordData.item.record.userName ||
+            user?.userName ||
+            "사용자";
 
           // 메인 레코드가 비어있으면 가이드라인 표시
           const isNewRecord =
-            !result.item.record.name?.trim() &&
-            !result.item.record.description?.trim() &&
-            !result.item.record.coverUrl;
+            !fetchedRecordData.item.record.name?.trim() &&
+            !fetchedRecordData.item.record.description?.trim() &&
+            !fetchedRecordData.item.record.coverUrl;
 
           const record = {
-            ...result.item.record,
+            ...fetchedRecordData.item.record,
             name:
-              result.item.record.name?.trim() ||
+              fetchedRecordData.item.record.name?.trim() ||
               (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
             description:
-              result.item.record.description?.trim() ||
+              fetchedRecordData.item.record.description?.trim() ||
               (isNewRecord
                 ? "일상의 작은 순간들을 관찰하고 기록하는 아티스트입니다.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브할 수 있도록 돕습니다."
                 : "당신을 소개하는 문구를 작성해주세요! (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)"),
             // 메인 커버 이미지가 없으면 기본 이미지 설정
             coverUrl:
-              result.item.record.coverUrl || "/images/records/No image.png",
+              fetchedRecordData.item.record.coverUrl ||
+              "/images/records/No image.png",
             // color가 없으면 기본값 설정
-            color: result.item.record.color || "#121212",
+            color: fetchedRecordData.item.record.color || "#121212",
           };
 
           // 타임라인 아이템이 없으면 기본 아이템 1개 생성 (새 레코드인 경우에만)
-          let items = result.item.recordItems || [];
+          let items = fetchedRecordData.item.recordItems || [];
           console.log(
             "[LOAD] Fetched items:",
             items.map((it) => ({
@@ -153,11 +145,12 @@ export default function RecordsEditPage() {
               imagesLength: it.images?.length,
             })),
           );
-          const originalName = result.item.record.name?.trim();
-          const originalDescription = result.item.record.description?.trim();
-          const originalCoverUrl = result.item.record.coverUrl;
-          const createdAt = result.item.record.createdAt;
-          const updatedAt = result.item.record.updatedAt;
+          const originalName = fetchedRecordData.item.record.name?.trim();
+          const originalDescription =
+            fetchedRecordData.item.record.description?.trim();
+          const originalCoverUrl = fetchedRecordData.item.record.coverUrl;
+          const createdAt = fetchedRecordData.item.record.createdAt;
+          const updatedAt = fetchedRecordData.item.record.updatedAt;
 
           const timeDiff =
             createdAt && updatedAt
@@ -1122,7 +1115,6 @@ export default function RecordsEditPage() {
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
-          cropState={cropState}
         />
       ) : (
         <LifeRecordDesktop
@@ -1136,7 +1128,6 @@ export default function RecordsEditPage() {
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
-          cropState={cropState}
           onCropComplete={handleCropComplete}
           onCropCancel={handleCropCancel}
           aspectRatio={1}

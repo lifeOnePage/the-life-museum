@@ -7,7 +7,7 @@ const AuthCtx = createContext(null);
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(null);
-  const [user, setUser]   = useState(null);
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,7 +34,7 @@ export function AuthProvider({ children }) {
 
   const value = useMemo(
     () => ({ token, user, setUser, signinWithToken, signout, loading }),
-    [token, user, loading]
+    [token, user, loading],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

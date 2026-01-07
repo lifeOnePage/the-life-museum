@@ -5,7 +5,6 @@
  * @param {number} props.desktopShowMenu
  * @param {Function} props.setDesktopShowMenu
  * @param {Array<{eng: string, kor: string}>} props.section
- * @returns {JSX.Element}
  */
 
 export default function EditNavDrawer({

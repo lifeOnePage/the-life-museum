@@ -1,6 +1,6 @@
 "use client";
 import { HiHome } from "react-icons/hi";
-import { norm360, angDist } from "../utils/mathUtils";
+import { norm360, angDist } from "../../../(common)/utils/mathUtils";
 import { log } from "three";
 
 export default function TimelineWheel({

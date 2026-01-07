@@ -1,6 +1,6 @@
 "use client";
 import { HiHome } from "react-icons/hi";
-import { getYear, calculateAge } from "../utils/dateUtils";
+import { getYear, calculateAge } from "../../../(common)/utils/dateUtils";
 
 export default function HighlightTimeline({
   timeline,
@@ -37,9 +37,7 @@ export default function HighlightTimeline({
               key={it.id}
               className={`${prefix}-highlight-item`}
               role="listitem"
-              title={
-                (it.kind === "year" ? it.event : it.title) || "하이라이트"
-              }
+              title={(it.kind === "year" ? it.event : it.title) || "하이라이트"}
               onClick={() => {
                 onItemClick?.(it.id);
               }}
@@ -79,9 +77,7 @@ export default function HighlightTimeline({
                 <div className={`${prefix}-timeline-connector`}></div>
                 <div className={`${prefix}-timeline-dot`}></div>
                 {it.date && (
-                  <div className={`${prefix}-timeline-date`}>
-                    {dateLabel}
-                  </div>
+                  <div className={`${prefix}-timeline-date`}>{dateLabel}</div>
                 )}
               </div>
             );
@@ -91,6 +87,3 @@ export default function HighlightTimeline({
     </>
   );
 }
-
-
-

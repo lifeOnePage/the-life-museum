@@ -1,11 +1,11 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import FloatingToolbar from "@/app/components/edit/FloatingToolbar";
 import ToastStack from "@/app/components/Toast";
-import LifeRecordDesktop from "@/app/records/view/[identifier]/(views)/desktop/LifeRecordDesktop";
-import LifeRecordMobile from "@/app/records/view/[identifier]/(views)/mobile/LifeRecordMobile";
+import LifeRecordDesktop from "@/app/records/(common)/views/desktop/LifeRecordDesktop";
+import LifeRecordMobile from "@/app/records/(common)/views/mobile/LifeRecordMobile";
 import {
   fetchRecordDetails,
   updateRecordDetails,
@@ -15,35 +15,11 @@ import {
   uploadRecordFile,
 } from "./services/editApi";
 import ImageAddModal from "./components/ImageAddModal";
-import ImageCropOverlay from "./components/ImageCropOverlay";
-import "@/app/records/view/[identifier]/styles/cardPage.css";
-import "@/app/records/view/[identifier]/styles/cardPage-mobile.css";
+import "@/app/records/(common)/styles/cardPage.css";
+import "@/app/records/(common)/styles/cardPage-mobile.css";
+import useWindowSize from "@/app/hooks/useWindowSize";
 
-/**
- * Subscribes to window size changes.
- * 현재 window 크기를 구독합니다.
- * @returns {{ width: number, height: number }}
- */
-
-function useWindowSize() {
-  const [size, setSize] = useState({ width: 0, height: 0 });
-  useEffect(() => {
-    const updateSize = () => {
-      setSize({ width: window.innerWidth, height: window.innerHeight });
-    };
-    window.addEventListener("resize", updateSize);
-    updateSize();
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
-  return size;
-}
-
-/**
- * Record edit page.
- * 레코드 편집 페이지.
- * @returns {JSX.Element}
- */
-export default function EditRecords() {
+export default function RecordsEditPage() {
   const { width } = useWindowSize();
   const { username } = useParams();
   const router = useRouter();
@@ -120,11 +96,14 @@ export default function EditRecords() {
 
   useEffect(() => {
     if (authLoading) return;
-    if (!token || !username) {
+
+    //auth token과 params username이 없으면 에러
+    if (!token) {
       setIsLoading(false);
-      setError(!token ? "로그인이 필요합니다." : "잘못된 접근입니다.");
+      setError("잘못된 접근입니다.");
       return;
     }
+
     (async () => {
       try {
         setIsLoading(true);
@@ -299,8 +278,8 @@ export default function EditRecords() {
     };
   }, [data, isPreview, isSaving, isSaved, token, recordId, originalData]);
 
+  // 마이페이지로 이동하기 전에 자동저장
   const mypage = async () => {
-    // 마이페이지로 이동하기 전에 자동저장
     if (!isSaved && !isSaving) {
       try {
         await save();
@@ -316,8 +295,8 @@ export default function EditRecords() {
     router.push("/mypage");
   };
 
+  // preview 모드로 전환하기 전에 자동저장
   const preview = async () => {
-    // preview 모드로 전환하기 전에 자동저장
     if (!isSaved && !isSaving) {
       try {
         await save();
@@ -328,6 +307,7 @@ export default function EditRecords() {
     setIsPreview((p) => !p);
   };
 
+  //저장하는 함수
   const save = async (overrideData = null) => {
     // 이미 저장 중이면 중복 실행 방지
     if (isSaving) {
@@ -554,6 +534,7 @@ export default function EditRecords() {
     }
   };
 
+  //로그아웃
   const logout = () => {
     router.push("/login");
   };
@@ -1031,13 +1012,13 @@ export default function EditRecords() {
     setIsSaved(false);
   };
 
-  if (isLoading) {
-    return (
-      <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
-        불러오는 중…
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
+  //       불러오는 중…
+  //     </div>
+  //   );
+  // }
 
   if (error && !data) {
     return (
@@ -1070,11 +1051,6 @@ export default function EditRecords() {
           ⚠️ {error}
         </div>
       )}
-      {/* {isSaving && (
-        <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-md bg-blue-500/90 px-4 py-2 text-sm text-white">
-          저장 중...
-        </div>
-      )} */}
       <ImageAddModal
         isLoading={isUploadingImage}
         isOpen={isImageModalOpen}
@@ -1147,9 +1123,6 @@ export default function EditRecords() {
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
           cropState={cropState}
-          onCropComplete={handleCropComplete}
-          onCropCancel={handleCropCancel}
-          aspectRatio={1}
         />
       ) : (
         <LifeRecordDesktop

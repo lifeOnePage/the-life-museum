@@ -13,12 +13,23 @@ import {
   IoIosArrowDropleftCircle,
   IoIosArrowDroprightCircle,
 } from "react-icons/io";
-import "../../styles/cardPage.css";
-import "../../styles/cardPage-mobile.css";
-import { DEFAULT_THEME, BG_THEME_PALETTE } from "../../utils/constants";
-import { calculateAge, getYear, toMonthDay } from "../../utils/dateUtils";
-import { norm360, wrapTo180, angDist } from "../../utils/mathUtils";
-import ControlButtons from "../../components/ControlButtons";
+import "@/app/records/(common)/styles/cardPage.css";
+import "@/app/records/(common)/styles/cardPage-mobile.css";
+import {
+  DEFAULT_THEME,
+  BG_THEME_PALETTE,
+} from "@/app/records/(common)/utils/constants";
+import {
+  calculateAge,
+  getYear,
+  toMonthDay,
+} from "@/app/records/(common)/utils/dateUtils";
+import {
+  norm360,
+  wrapTo180,
+  angDist,
+} from "@/app/records/(common)/utils/mathUtils";
+import ControlButtons from "@/app/records/view/[identifier]/components/ControlButtons";
 import useIsMobile from "@/app/hooks/useIsMobile";
 
 export default function LifeRecordDesktop({
@@ -32,7 +43,6 @@ export default function LifeRecordDesktop({
   onActiveItemChange,
   isUploadingImage = false,
   onNavigateToItem,
-  cropState = { isActive: false, imageFile: null, type: null, itemId: null },
   onCropComplete,
   onCropCancel,
   aspectRatio = 1,
@@ -873,27 +883,7 @@ export default function LifeRecordDesktop({
                     }}
                   />
                 )}
-                {cropState.isActive &&
-                cropState.imageFile &&
-                ((cropState.type === "main" && activeItem.kind === "main") ||
-                  (cropState.type === "item" &&
-                    cropState.itemId === activeItem.id)) ? (
-                  <div
-                    className="lr-cover"
-                    style={{
-                      position: "relative",
-                      width: "100%",
-                      height: "100%",
-                    }}
-                  >
-                    <ImageCropOverlay
-                      imageFile={cropState.imageFile}
-                      onCropComplete={onCropComplete}
-                      onCancel={onCropCancel}
-                      aspectRatio={aspectRatio}
-                    />
-                  </div>
-                ) : activeItem.video ? (
+                {activeItem.video ? (
                   <video
                     className="lr-cover"
                     src={activeItem.video}
@@ -945,7 +935,7 @@ export default function LifeRecordDesktop({
                                 {img ? (
                                   <div
                                     onClick={(e) => {
-                                      if (!cropState.isActive && isEditing) {
+                                      if (isEditing) {
                                         e.stopPropagation();
                                         e.preventDefault();
                                         // 이미지 추가 모달 열기
@@ -1000,10 +990,9 @@ export default function LifeRecordDesktop({
                                       width: "100%",
                                       height: "100%",
                                       position: "relative",
-                                      cursor:
-                                        cropState.isActive || !isEditing
-                                          ? "default"
-                                          : "pointer",
+                                      cursor: !isEditing
+                                        ? "default"
+                                        : "pointer",
                                     }}
                                   >
                                     <img
@@ -1020,7 +1009,7 @@ export default function LifeRecordDesktop({
                                           "/images/records/No image.png";
                                       }}
                                     />
-                                    {isEditing && !cropState.isActive && (
+                                    {isEditing && (
                                       <div
                                         style={{
                                           position: "absolute",
@@ -1063,7 +1052,7 @@ export default function LifeRecordDesktop({
                                 ) : (
                                   <div
                                     onClick={(e) => {
-                                      if (!cropState.isActive && isEditing) {
+                                      if (isEditing) {
                                         e.stopPropagation();
                                         e.preventDefault();
                                         // 이미지 추가 모달 열기
@@ -1104,13 +1093,11 @@ export default function LifeRecordDesktop({
                                       display: "flex",
                                       alignItems: "center",
                                       justifyContent: "center",
-                                      cursor: cropState.isActive
-                                        ? "not-allowed"
-                                        : "pointer",
+                                      cursor: "pointer",
                                       color: "#000000",
                                       fontSize: "14px",
                                       fontWeight: "500",
-                                      opacity: cropState.isActive ? 0.5 : 1,
+                                      opacity: 1,
                                     }}
                                   >
                                     + 이미지 추가
@@ -1484,100 +1471,6 @@ export default function LifeRecordDesktop({
                         </button>
                       </>
                     )}
-                    {/* {((activeItem.kind === "main" && activeItem.cover) ||
-                      (activeItem.kind !== "main" &&
-                        activeItem.images &&
-                        activeItem.images[currentImageIndex])) && (
-                      <>
-                        <button
-                          className="lr-image-change-badge"
-                          aria-label="이미지 변경"
-                          onClick={() => {
-                            if (!cropState.isActive) {
-                              if (activeItem.kind === "main") {
-                                mainImageInputRef.current?.click();
-                              } else {
-                                // 현재 보이는 이미지 인덱스를 targetSlotIndex로 설정
-                                console.log(
-                                  "[BUTTON CLICK] Setting targetSlotIndex to currentImageIndex:",
-                                  currentImageIndex,
-                                );
-                                targetImageSlotIndexRef.current =
-                                  currentImageIndex;
-                                setTargetImageSlotIndex(currentImageIndex);
-                                if (itemImageInputRef.current) {
-                                  itemImageInputRef.current.setAttribute(
-                                    "data-target-slot",
-                                    String(currentImageIndex),
-                                  );
-                                }
-                                itemImageInputRef.current?.click();
-                              }
-                            }
-                          }}
-                          disabled={cropState.isActive}
-                        >
-                          <svg
-                            viewBox="0 0 24 24"
-                            width="18"
-                            height="18"
-                            aria-hidden="true"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                          >
-                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                            <polyline points="17 8 12 3 7 8" />
-                            <line x1="12" y1="3" x2="12" y2="15" />
-                          </svg>
-                          <span>이미지 변경</span>
-                        </button>
-                        {activeItem.kind !== "main" &&
-                          onImageDelete &&
-                          activeItem.images &&
-                          activeItem.images[currentImageIndex] && (
-                            <button
-                              className="lr-image-delete-badge"
-                              aria-label="이미지 삭제"
-                              onClick={() => {
-                                if (!cropState.isActive) {
-                                  onImageDelete(
-                                    activeItem.id,
-                                    currentImageIndex,
-                                  );
-                                  // 삭제 후 인덱스 조정
-                                  const validImages = (
-                                    activeItem.images || []
-                                  ).filter((img) => img);
-                                  if (
-                                    currentImageIndex >=
-                                    validImages.length - 1
-                                  ) {
-                                    setCurrentImageIndex(
-                                      Math.max(0, validImages.length - 2),
-                                    );
-                                  }
-                                }
-                              }}
-                              disabled={cropState.isActive}
-                            >
-                              <svg
-                                viewBox="0 0 24 24"
-                                width="18"
-                                height="18"
-                                aria-hidden="true"
-                                fill="none"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                              >
-                                <polyline points="3 6 5 6 21 6" />
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                              </svg>
-                              <span>이미지 삭제</span>
-                            </button>
-                          )}
-                      </>
-                    )} */}
                   </>
                 )}
               </div>

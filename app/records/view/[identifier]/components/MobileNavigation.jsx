@@ -2,7 +2,7 @@
 import { HiHome } from "react-icons/hi";
 import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { IoMenu } from "react-icons/io5";
-import { formatDate } from "../utils/dateUtils";
+import { formatDate } from "../../../(common)/utils/dateUtils";
 
 export default function MobileNavigation({
   timeline,
@@ -91,10 +91,7 @@ export default function MobileNavigation({
           <div className="lr-mobile-menu" onClick={(e) => e.stopPropagation()}>
             <div className="lr-mobile-menu-header">
               <h3>타임라인 목록</h3>
-              <button
-                className="lr-mobile-menu-close"
-                onClick={onCloseMenu}
-              >
+              <button className="lr-mobile-menu-close" onClick={onCloseMenu}>
                 ✕
               </button>
             </div>
@@ -146,6 +143,3 @@ export default function MobileNavigation({
     </>
   );
 }
-
-
-

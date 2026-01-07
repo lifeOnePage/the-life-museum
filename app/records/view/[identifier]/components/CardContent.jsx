@@ -1,5 +1,9 @@
 "use client";
-import { getYear, toMonthDay, formatDate } from "../utils/dateUtils";
+import {
+  getYear,
+  toMonthDay,
+  formatDate,
+} from "../../../(common)/utils/dateUtils";
 
 export default function CardContent({
   activeItem,
@@ -266,5 +270,3 @@ export default function CardContent({
     </>
   );
 }
-
-

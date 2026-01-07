@@ -36,6 +36,7 @@ export default function ViewPage() {
   const [exhibitionCurrentIndex, setExhibitionCurrentIndex] = useState(0); // 전시 모드 링 인덱스
   const [enableProfileSwitch, setEnableProfileSwitch] = useState(false); // 프로필 전환 활성화 여부 - 회전 기반 로직 사용
   const [isExhibitionPanelOpen, setIsExhibitionPanelOpen] = useState(false); // 전시 모드 패널 표시 여부
+  const [isProfileOpen, setIsProfileOpen] = useState(true); // 하단 프로필 섹션 표시 여부
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 전시 모드 패널 저장되지 않은 변경사항
   const [isSlowRotation, setIsSlowRotation] = useState(false); // 한 바퀴 완료 후 느린 회전
   const [lockedItemId, setLockedItemId] = useState(null); // 잠금된 아이템 ID (모바일 타임라인용)
@@ -285,6 +286,7 @@ export default function ViewPage() {
   const profileCurtainTimerRef = useRef(null);
   const slowRotationTimerRef = useRef(null); // 느린 회전 후 커튼 표시 타이머
   const hasLeftProfileRef = useRef(false); // 프로필에서 벗어났는지 추적
+  const isManualControlRef = useRef(false); // 수동 조작 중인지 추적 (방향키/드래그)
 
   // 전시 모드에서 인덱스 변경 시 회전 추적
   useEffect(() => {
@@ -304,14 +306,17 @@ export default function ViewPage() {
     }
 
     // 프로필로 돌아왔고, 이전에 프로필이 아닌 곳에서 왔고, 프로필을 벗어난 적이 있다면 한 바퀴 완료
-    // (마지막 컨텐츠 -> 프로필로 넘어가는 순간 감지)
+    // (마지막 컨텐츠 -> 프로필로 정방향 이동하는 순간 감지)
     // OFF 모드(exhibitionInterval === 0)일 때는 프로필 커튼 표시 안 함
+    // 수동 조작 중일 때는 커튼 표시 안 함
+    console.log(profileIndex, prevIndex, hasLeftProfileRef.current)
     if (
       currentSlot.itemId === "profile" &&
       hasLeftProfileRef.current &&
-      prevIndex < profileIndex && // 이전 인덱스가 프로필보다 앞에 있었다면 (루프 완료, 0 -> 59 같은 점프)
+      prevIndex === 0 && // 바로 직전 인덱스에서 정방향으로 왔을 때만 (역방향 회전 제외)
       !rotationCompleteRef.current &&
-      exhibitionInterval !== 0 // OFF 모드가 아닐 때만
+      exhibitionInterval !== 0 && // OFF 모드가 아닐 때만
+      !isManualControlRef.current // 수동 조작 중이 아닐 때만
     ) {
       rotationCompleteRef.current = true;
       hasLeftProfileRef.current = false; // 다음 회전을 위해 리셋
@@ -346,6 +351,63 @@ export default function ViewPage() {
       }
     };
   }, [isExhibitionMode, exhibitionScreen, isSlowRotation]);
+
+  // 전시 모드 방향키 네비게이션
+  useEffect(() => {
+    if (!isExhibitionMode || exhibitionScreen !== "ring") return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault(); // 기본 스크롤 동작 방지
+
+        // 수동 조작 플래그 설정
+        isManualControlRef.current = true;
+
+        const maxIndex = textureData.textures.length - 1;
+        const textures = textureData.textures;
+
+        // 다음/이전 유효한 이미지가 있는 플레인 찾기
+        const findNextValidIndex = (current, direction) => {
+          let steps = 0;
+          const totalSteps = textures.length;
+
+          while (steps < totalSteps) {
+            steps++;
+            let nextIndex = current + direction * steps;
+
+            // 인덱스 순환
+            if (nextIndex < 0) nextIndex += textures.length;
+            if (nextIndex > maxIndex) nextIndex -= textures.length;
+
+            // 유효한 이미지가 있는 플레인인지 확인 (빈 플레인이 아님)
+            const texture = textures[nextIndex];
+            if (texture && texture.kind !== "empty") {
+              return nextIndex;
+            }
+          }
+
+          // 유효한 플레인을 찾지 못하면 현재 인덱스 유지
+          return current;
+        };
+
+        if (e.key === "ArrowRight") {
+          // 왼쪽 화살표: 이전 이미지로 (역방향)
+          setExhibitionCurrentIndex((prev) => findNextValidIndex(prev, -1));
+        } else if (e.key === "ArrowLeft") {
+          // 오른쪽 화살표: 다음 이미지로 (정방향)
+          setExhibitionCurrentIndex((prev) => findNextValidIndex(prev, 1));
+        }
+
+        // 일정 시간 후 수동 조작 플래그 해제
+        setTimeout(() => {
+          isManualControlRef.current = false;
+        }, 1000);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isExhibitionMode, exhibitionScreen, textureData.textures]);
 
   // 프로필 커튼 자동 닫기 (20초 후)
   useEffect(() => {
@@ -803,6 +865,7 @@ export default function ViewPage() {
   // 3D 링 드래그 핸들러 (모바일)
   const handleRingPointerDown = (e) => {
     isRingDraggingRef.current = true; // 드래그 시작 플래그
+    isManualControlRef.current = true; // 수동 조작 플래그 설정 (커튼 방지)
     dragStateRef.current = {
       isDragging: true,
       startX: e.clientX,
@@ -896,6 +959,11 @@ export default function ViewPage() {
     setTimeout(() => {
       isRingDraggingRef.current = false;
     }, 300);
+
+    // 수동 조작 플래그는 약간 더 긴 지연 후 해제 (자동 회전 재개 전까지)
+    setTimeout(() => {
+      isManualControlRef.current = false;
+    }, 1000);
   };
 
   // 수동 네비게이션 중인지 추적
@@ -1226,6 +1294,9 @@ export default function ViewPage() {
                 exhibitionScreen={exhibitionScreen}
                 isPaused={isExhibitionPanelOpen}
                 isSlowRotation={isSlowRotation}
+                isProfileOpen={isProfileOpen}
+                onToggleProfile={() => setIsProfileOpen(!isProfileOpen)}
+                showControls={showControls}
               />
             </div>
 

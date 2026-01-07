@@ -111,12 +111,12 @@ function ImageMat({ url, category, animationOpacity = 1, isDarkMode = true }) {
       color = 0xffffff;
       break;
     case "sameItem": // 같은 이벤트의 다른 이미지
-      baseOpacity = 0.5;
+      baseOpacity =isDarkMode ? 0.5 : 0.5;
       color = 0xffffff;
       break;
     case "otherItem": // 다른 이벤트의 이미지 (흑백)
-      baseOpacity = 0.6;
-      color = 0x777777; // 회색톤으로 채도 낮춤 (약 47% 밝기)
+      baseOpacity = isDarkMode ? 0.6 : 0.2;
+      color = isDarkMode ? 0x777777 : 0xbbbbbb; // 회색톤으로 채도 낮춤 (약 47% 밝기)
       break;
     default:
       baseOpacity = 0.2;
@@ -627,7 +627,9 @@ function ExhibitionRingInner({
         let labelX, labelY, normalizedX, normalizedY;
 
         // 모든 아이템이 매 프레임 현재 위치 계산 (회전)
-        const startIndex = range.start;
+        // 텍스처 배열이 reverse되어 있어서 range.end가 실제 맨 앞 이미지
+        // console.log(range)
+        const startIndex = range.end;
         const baseAngle = startIndex * step + ringAngle.current;
 
         const planeX = Math.cos(baseAngle) * RADIUS;
@@ -736,6 +738,9 @@ export default function ExhibitionRingFront({
   exhibitionScreen = "ring",
   isPaused = false,
   isSlowRotation = false,
+  isProfileOpen = true,
+  onToggleProfile,
+  showControls = true,
 }) {
   // console.log(profile);
   const [labelPositions, setLabelPositions] = useState([]);
@@ -1140,12 +1145,64 @@ export default function ExhibitionRingFront({
       )}
       <SceneDescBlock isDarkMode={isDarkMode} />
 
+      {/* 프로필 토글 버튼 - 프로필 섹션 바로 위, 중앙 */}
+      <div
+        className={`absolute left-1/2 -translate-x-1/2 transition-all duration-500 ${
+          showControls
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-4 opacity-0"
+        }`}
+        style={{
+          bottom: isProfileOpen ? "calc(100vh / 8)" : "0",
+        }}
+      >
+        <button
+          onClick={onToggleProfile}
+          className={`flex items-center gap-2 px-4 py-2 backdrop-blur-sm transition-colors ${
+            isDarkMode
+              ? "bg-white/10 text-white hover:bg-white/20"
+              : "bg-black/10 text-black hover:bg-black/20"
+          }`}
+          style={{
+            borderTopLeftRadius: "8px",
+            borderTopRightRadius: "8px",
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            className="transition-transform duration-300"
+            style={{
+              transform: isProfileOpen ? "rotate(180deg)" : "rotate(0deg)",
+            }}
+          >
+            <path
+              d="M4 10l4-4 4 4"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-sm font-medium">
+            {isProfileOpen ? "닫기" : "프로필 보기"}
+          </span>
+        </button>
+      </div>
+
       {/* 하단 프로필 정보 바 */}
       <div
-        className={`absolute bottom-0 left-1/2 flex w-full -translate-x-1/2 items-start px-8 py-3 transition-colors duration-500 ${
+        className={`absolute left-1/2 flex w-full -translate-x-1/2 flex-col transition-all duration-500 ${
           isDarkMode ? "text-black" : "text-white"
         } backdrop-blur-md`}
-        style={{ height: "calc(100vh / 8)" }}
+        style={{
+          bottom: isProfileOpen ? "0" : "calc(-100vh / 8)",
+        }}
+      >
+        {/* 프로필 내용 */}
+        <div className="flex items-start px-8 py-3" style={{ height: "calc(100vh / 8)" }}
       >
         {/* 프로필 이미지 썸네일 - 정방형 고정 */}
         <div
@@ -1252,6 +1309,7 @@ export default function ExhibitionRingFront({
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

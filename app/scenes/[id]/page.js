@@ -28,7 +28,7 @@ export default function ViewPage() {
   const [isProfileCurtainOpen, setIsProfileCurtainOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isOwner, setIsOwner] = useState(false);
-  const [isExhibitionMode, setIsExhibitionMode] = useState(false);
+  const [isExhibitionMode, setIsExhibitionMode] = useState(true);
   const [exhibitionInterval, setExhibitionInterval] = useState(5000); // 기본 5초
   const [showControls, setShowControls] = useState(true); // 컨트롤 버튼 표시 여부
   const [isDarkMode, setIsDarkMode] = useState(true); // 다크모드 기본값
@@ -36,11 +36,12 @@ export default function ViewPage() {
   const [exhibitionCurrentIndex, setExhibitionCurrentIndex] = useState(0); // 전시 모드 링 인덱스
   const [enableProfileSwitch, setEnableProfileSwitch] = useState(false); // 프로필 전환 활성화 여부 - 회전 기반 로직 사용
   const [isExhibitionPanelOpen, setIsExhibitionPanelOpen] = useState(false); // 전시 모드 패널 표시 여부
+  const [isProfileOpen, setIsProfileOpen] = useState(true); // 하단 프로필 섹션 표시 여부
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // 전시 모드 패널 저장되지 않은 변경사항
   const [isSlowRotation, setIsSlowRotation] = useState(false); // 한 바퀴 완료 후 느린 회전
   const [lockedItemId, setLockedItemId] = useState(null); // 잠금된 아이템 ID (모바일 타임라인용)
   const [curtainY, setCurtainY] = useState(0); // 모바일 커튼 Y 위치 (0 = 내려옴, -100 = 올라감)
-  const [desktopCurtainY, setDesktopCurtainY] = useState(-100); // 데스크탑 프로필 커튼 Y 위치 (0 = 내려옴, -100 = 올라감)
+  const [desktopCurtainY, setDesktopCurtainY] = useState(0); // 데스크탑 프로필 커튼 Y 위치 (0 = 내려옴, -100 = 올라감)
   const [showPlayTooltip, setShowPlayTooltip] = useState(false); // 플레이 버튼 툴팁
   const [showProfileTooltip, setShowProfileTooltip] = useState(false); // 프로필 버튼 툴팁
   const [showCurtain, setShowCurtain] = useState(true); // 모바일 커튼 표시 여부
@@ -99,17 +100,28 @@ export default function ViewPage() {
 
   // Scene 데이터 로드 및 소유자 확인
   useEffect(() => {
+    console.log("📊 loadScene useEffect 실행됨 - id:", id, ", user:", user);
+
     const loadScene = async () => {
       try {
         setLoading(true);
         const sceneData = await getScene(id);
 
         // 소유자 확인: sceneData.userId와 현재 로그인한 user.id 비교
+        console.group("🔐 소유권 확인");
+        console.log("현재 user:", user);
+        console.log("user.id:", user?.id);
+        console.log("sceneData.userId:", sceneData.userId);
+        console.log("일치 여부:", user?.id === sceneData.userId);
+
         if (user && sceneData.userId && user.id === sceneData.userId) {
+          console.log("✅ 소유자입니다 (isOwner = true)");
           setIsOwner(true);
         } else {
+          console.log("❌ 소유자가 아닙니다 (isOwner = false)");
           setIsOwner(false);
         }
+        console.groupEnd();
 
         // 프로필 데이터 설정
         setProfile({
@@ -256,7 +268,7 @@ export default function ViewPage() {
   // 프로필 아이템 인덱스 찾기 (전시 모드 시작 지점)
   const profileIndex = useMemo(() => {
     const index = textureData.textures.findIndex(
-      (texture) => texture.itemId === "profile"
+      (texture) => texture.itemId === "profile",
     );
     return index >= 0 ? index : 0;
   }, [textureData]);
@@ -274,6 +286,7 @@ export default function ViewPage() {
   const profileCurtainTimerRef = useRef(null);
   const slowRotationTimerRef = useRef(null); // 느린 회전 후 커튼 표시 타이머
   const hasLeftProfileRef = useRef(false); // 프로필에서 벗어났는지 추적
+  const isManualControlRef = useRef(false); // 수동 조작 중인지 추적 (방향키/드래그)
 
   // 전시 모드에서 인덱스 변경 시 회전 추적
   useEffect(() => {
@@ -293,14 +306,17 @@ export default function ViewPage() {
     }
 
     // 프로필로 돌아왔고, 이전에 프로필이 아닌 곳에서 왔고, 프로필을 벗어난 적이 있다면 한 바퀴 완료
-    // (마지막 컨텐츠 -> 프로필로 넘어가는 순간 감지)
+    // (마지막 컨텐츠 -> 프로필로 정방향 이동하는 순간 감지)
     // OFF 모드(exhibitionInterval === 0)일 때는 프로필 커튼 표시 안 함
+    // 수동 조작 중일 때는 커튼 표시 안 함
+    console.log(profileIndex, prevIndex, hasLeftProfileRef.current)
     if (
       currentSlot.itemId === "profile" &&
       hasLeftProfileRef.current &&
-      prevIndex < profileIndex && // 이전 인덱스가 프로필보다 앞에 있었다면 (루프 완료, 0 -> 59 같은 점프)
+      prevIndex === 0 && // 바로 직전 인덱스에서 정방향으로 왔을 때만 (역방향 회전 제외)
       !rotationCompleteRef.current &&
-      exhibitionInterval !== 0 // OFF 모드가 아닐 때만
+      exhibitionInterval !== 0 && // OFF 모드가 아닐 때만
+      !isManualControlRef.current // 수동 조작 중이 아닐 때만
     ) {
       rotationCompleteRef.current = true;
       hasLeftProfileRef.current = false; // 다음 회전을 위해 리셋
@@ -308,13 +324,22 @@ export default function ViewPage() {
       // 느린 회전 시작
       setIsSlowRotation(true);
     }
-  }, [exhibitionCurrentIndex, isExhibitionMode, exhibitionScreen, textureData, profileIndex, exhibitionInterval]);
+  }, [
+    exhibitionCurrentIndex,
+    isExhibitionMode,
+    exhibitionScreen,
+    textureData,
+    profileIndex,
+    exhibitionInterval,
+  ]);
 
   // 느린 회전 시작 시 2초 후 프로필 커튼 표시
   useEffect(() => {
-    if (!isExhibitionMode || exhibitionScreen !== "ring" || !isSlowRotation) return;
+    if (!isExhibitionMode || exhibitionScreen !== "ring" || !isSlowRotation)
+      return;
 
     slowRotationTimerRef.current = setTimeout(() => {
+      setDesktopCurtainY(0); // 커튼 위치 리셋
       setExhibitionScreen("profile-detail");
       // 느린 회전 속도는 커튼이 닫힐 때까지 유지
     }, 2000);
@@ -327,24 +352,87 @@ export default function ViewPage() {
     };
   }, [isExhibitionMode, exhibitionScreen, isSlowRotation]);
 
-  // 프로필 커튼 자동 닫기 (25초 후)
+  // 전시 모드 방향키 네비게이션
+  useEffect(() => {
+    if (!isExhibitionMode || exhibitionScreen !== "ring") return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+        e.preventDefault(); // 기본 스크롤 동작 방지
+
+        // 수동 조작 플래그 설정
+        isManualControlRef.current = true;
+
+        const maxIndex = textureData.textures.length - 1;
+        const textures = textureData.textures;
+
+        // 다음/이전 유효한 이미지가 있는 플레인 찾기
+        const findNextValidIndex = (current, direction) => {
+          let steps = 0;
+          const totalSteps = textures.length;
+
+          while (steps < totalSteps) {
+            steps++;
+            let nextIndex = current + direction * steps;
+
+            // 인덱스 순환
+            if (nextIndex < 0) nextIndex += textures.length;
+            if (nextIndex > maxIndex) nextIndex -= textures.length;
+
+            // 유효한 이미지가 있는 플레인인지 확인 (빈 플레인이 아님)
+            const texture = textures[nextIndex];
+            if (texture && texture.kind !== "empty") {
+              return nextIndex;
+            }
+          }
+
+          // 유효한 플레인을 찾지 못하면 현재 인덱스 유지
+          return current;
+        };
+
+        if (e.key === "ArrowRight") {
+          // 왼쪽 화살표: 이전 이미지로 (역방향)
+          setExhibitionCurrentIndex((prev) => findNextValidIndex(prev, -1));
+        } else if (e.key === "ArrowLeft") {
+          // 오른쪽 화살표: 다음 이미지로 (정방향)
+          setExhibitionCurrentIndex((prev) => findNextValidIndex(prev, 1));
+        }
+
+        // 일정 시간 후 수동 조작 플래그 해제
+        setTimeout(() => {
+          isManualControlRef.current = false;
+        }, 1000);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isExhibitionMode, exhibitionScreen, textureData.textures]);
+
+  // 프로필 커튼 자동 닫기 (20초 후)
   useEffect(() => {
     if (!isExhibitionMode || exhibitionScreen !== "profile-detail") return;
 
     profileCurtainTimerRef.current = setTimeout(() => {
-      setExhibitionScreen("ring");
-      rotationCompleteRef.current = false;
-      setIsSlowRotation(false); // 느린 회전 종료
-      // 처음(프로필)으로 리셋하여 다시 시작
-      setExhibitionCurrentIndex(profileIndex);
-    }, 25000);
+      setDesktopCurtainY(-100); // 커튼을 위로 올림
+      setTimeout(() => {
+        setExhibitionScreen("ring");
+        rotationCompleteRef.current = false;
+        // OFF 모드가 아닐 때만 회전 종료 (다시 시작)
+        if (exhibitionInterval !== 0) {
+          setIsSlowRotation(false);
+        }
+        // 처음(프로필)으로 리셋하여 다시 시작
+        setExhibitionCurrentIndex(profileIndex);
+      }, 800); // 커튼 애니메이션 시간
+    }, 20000);
 
     return () => {
       if (profileCurtainTimerRef.current) {
         clearTimeout(profileCurtainTimerRef.current);
       }
     };
-  }, [isExhibitionMode, exhibitionScreen, profileIndex]);
+  }, [isExhibitionMode, exhibitionScreen, profileIndex, exhibitionInterval]);
 
   // 이미지 aspect ratio 상태
   const [imageAspectRatio, setImageAspectRatio] = useState(null);
@@ -663,9 +751,9 @@ export default function ViewPage() {
         playFeedback();
         console.log("타임라인 스크롤: 중앙 아이템 변경:", closestItem.title);
 
-        // leftIndex 직접 업데이트 (링 회전) - 항상 수행하여 타임라인과 링 일치 보장
+        // leftIndex 직접 업데이트 (링 회전) - 링 드래그 중이 아닐 때만 수행
         const itemRange = textureData.itemRanges[closestItem.id];
-        if (itemRange) {
+        if (itemRange && !isRingDraggingRef.current) {
           setLeftIndex(itemRange.start);
         }
 
@@ -729,7 +817,6 @@ export default function ViewPage() {
 
     // 링 드래그 중이고, 아이템이 변경되었으면 햅틱 발생
     if (
-      isRingDraggingRef.current &&
       prevItem &&
       currentItemFromIndex &&
       prevItem.id !== currentItemFromIndex.id
@@ -778,6 +865,7 @@ export default function ViewPage() {
   // 3D 링 드래그 핸들러 (모바일)
   const handleRingPointerDown = (e) => {
     isRingDraggingRef.current = true; // 드래그 시작 플래그
+    isManualControlRef.current = true; // 수동 조작 플래그 설정 (커튼 방지)
     dragStateRef.current = {
       isDragging: true,
       startX: e.clientX,
@@ -856,6 +944,10 @@ export default function ViewPage() {
 
     if (newIndex !== leftIndex) {
       setLeftIndex(newIndex);
+      // 용수철 효과 방지: 현재 위치를 새로운 시작점으로 업데이트
+      dragStateRef.current.startIndex = newIndex;
+      dragStateRef.current.startX = e.clientX;
+      dragStateRef.current.startY = e.clientY;
     }
   };
 
@@ -867,6 +959,11 @@ export default function ViewPage() {
     setTimeout(() => {
       isRingDraggingRef.current = false;
     }, 300);
+
+    // 수동 조작 플래그는 약간 더 긴 지연 후 해제 (자동 회전 재개 전까지)
+    setTimeout(() => {
+      isManualControlRef.current = false;
+    }, 1000);
   };
 
   // 수동 네비게이션 중인지 추적
@@ -985,6 +1082,16 @@ export default function ViewPage() {
     // 스냅: 25% 이상 올라갔으면 완전히 올리고, 아니면 다시 내림
     if (desktopCurtainY < -25) {
       setDesktopCurtainY(-100);
+      setTimeout(() => {
+        setExhibitionScreen("ring");
+        rotationCompleteRef.current = false;
+        // OFF 모드가 아닐 때만 회전 종료 (다시 시작)
+        if (exhibitionInterval !== 0) {
+          setIsSlowRotation(false);
+        }
+        // 처음(프로필)으로 리셋하여 다시 시작
+        setExhibitionCurrentIndex(profileIndex);
+      }, 800); // 커튼 애니메이션 시간
     } else {
       setDesktopCurtainY(0);
     }
@@ -1013,7 +1120,7 @@ export default function ViewPage() {
       {/* 전시 모드 - 데스크탑 전용 */}
       {isExhibitionMode && (
         <div
-          className={`h-screen absolute inset-0 bottom-8 z-50 hidden transition-colors duration-500 lg:block ${
+          className={`absolute inset-0 bottom-8 z-50 hidden h-screen transition-colors duration-500 lg:block ${
             isDarkMode ? "bg-black" : "bg-white"
           }`}
         >
@@ -1138,36 +1245,36 @@ export default function ViewPage() {
                   setHasUnsavedChanges(false);
                   setIsExhibitionPanelOpen(true);
                 }}
-              className={`flex h-16 w-16 items-center justify-center rounded-full backdrop-blur-sm transition-all hover:scale-110 ${
-                isDarkMode
-                  ? "bg-white/10 text-white hover:bg-white/20"
-                  : "bg-black/10 text-black hover:bg-black/20"
-              }`}
-              aria-label="편집 패널 열기"
-            >
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+                className={`flex h-16 w-16 items-center justify-center rounded-full backdrop-blur-sm transition-all hover:scale-110 ${
+                  isDarkMode
+                    ? "bg-white/10 text-white hover:bg-white/20"
+                    : "bg-black/10 text-black hover:bg-black/20"
+                }`}
+                aria-label="편집 패널 열기"
               >
-                <path
-                  d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-                <path
-                  d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </button>
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
             )}
           </div>
 
@@ -1187,6 +1294,9 @@ export default function ViewPage() {
                 exhibitionScreen={exhibitionScreen}
                 isPaused={isExhibitionPanelOpen}
                 isSlowRotation={isSlowRotation}
+                isProfileOpen={isProfileOpen}
+                onToggleProfile={() => setIsProfileOpen(!isProfileOpen)}
+                showControls={showControls}
               />
             </div>
 
@@ -1212,24 +1322,103 @@ export default function ViewPage() {
             {/* 프로필 상세 화면 - 블러 위에 오버레이 */}
             <AnimatePresence>
               {exhibitionScreen === "profile-detail" && (
-                <motion.div
-                  key="profile-detail"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{
-                    opacity: {
-                      duration: 0.5,
-                      delay: exhibitionScreen === "profile-detail" ? 0.3 : 0,
-                    },
-                  }}
-                  className="absolute inset-0 z-50"
-                >
-                  <ProfileDetailScreen
-                    profile={profile}
-                    isDarkMode={isDarkMode}
-                  />
-                </motion.div>
+                // <motion.div
+                //   key="profile-detail"
+                //   initial={{ opacity: 0 }}
+                //   animate={{ opacity: 1 }}
+                //   exit={{ opacity: 0 }}
+                //   transition={{
+                //     opacity: {
+                //       duration: 0.5,
+                //       delay: exhibitionScreen === "profile-detail" ? 0.3 : 0,
+                //     },
+                //   }}
+                //   className="absolute inset-0 z-50"
+                //   onPointerDown={handleDesktopCurtainPointerDown}
+                //   onPointerMove={handleDesktopCurtainPointerMove}
+                //   onPointerUp={handleDesktopCurtainPointerUp}
+                //   onPointerLeave={handleDesktopCurtainPointerUp}
+                // >
+                //   <ProfileDetailScreen
+                //     profile={profile}
+                //     isDarkMode={isDarkMode}
+                //   />
+                //   {/* 드래그 힌트 */}
+                //   <motion.div
+                //     initial={{ opacity: 0 }}
+                //     animate={{ opacity: desktopCurtainY === 0 ? 1 : 0 }}
+                //     className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2"
+                //   >
+                //     <svg
+                //       width="20"
+                //       height="20"
+                //       viewBox="0 0 24 24"
+                //       fill="none"
+                //       className="text-white/60"
+                //     >
+                //       <path
+                //         d="M12 19V5M12 5L5 12M12 5L19 12"
+                //         stroke="currentColor"
+                //         strokeWidth="2"
+                //         strokeLinecap="round"
+                //         strokeLinejoin="round"
+                //       />
+                //     </svg>
+                //     <span className="text-xs text-white/60">
+                //       위로 드래그하여 닫기
+                //     </span>
+                //   </motion.div>
+                // </motion.div>
+
+                <AnimatePresence>
+                  {desktopCurtainY > -100 && (
+                    <motion.div
+                      initial={{ y: "-100%" }}
+                      animate={{ y: `${desktopCurtainY}%` }}
+                      exit={{ y: "-100%" }}
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className="fixed inset-0 z-50 hidden bg-black lg:block"
+                      style={{ touchAction: "none" }}
+                      onPointerDown={handleDesktopCurtainPointerDown}
+                      onPointerMove={handleDesktopCurtainPointerMove}
+                      onPointerUp={handleDesktopCurtainPointerUp}
+                      onPointerLeave={handleDesktopCurtainPointerUp}
+                    >
+                      <ProfileDetailScreen
+                        profile={profile}
+                        isDarkMode={isDarkMode}
+                        isFullScreen={true}
+                        isMobile={false}
+                      />
+
+                      {/* 드래그 힌트 */}
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: desktopCurtainY === 0 ? 1 : 0 }}
+                        className="absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-2"
+                      >
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          className="text-white/60"
+                        >
+                          <path
+                            d="M12 19V5M12 5L5 12M12 5L19 12"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        <span className="text-xs text-white/60">
+                          위로 드래그하여 닫기
+                        </span>
+                      </motion.div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               )}
             </AnimatePresence>
           </div>
@@ -1259,11 +1448,11 @@ export default function ViewPage() {
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0.9, opacity: 0 }}
                   transition={{ duration: 0.3 }}
-                  className="w-[92vw] max-w-[600px] h-[92vh] flex flex-col bg-black rounded-2xl shadow-2xl overflow-hidden"
+                  className="flex h-[92vh] w-[92vw] max-w-[600px] flex-col overflow-hidden rounded-2xl bg-black shadow-2xl"
                   onClick={(e) => e.stopPropagation()}
                 >
                   {/* 커스텀 헤더 - 닫기 버튼 */}
-                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 bg-black shrink-0">
+                  <div className="flex shrink-0 items-center justify-between border-b border-white/20 bg-black px-4 py-3">
                     <h2 className="text-lg font-bold text-white">편집</h2>
                     <button
                       onClick={() => {
@@ -1276,8 +1465,8 @@ export default function ViewPage() {
                       disabled={hasUnsavedChanges}
                       className={`transition-colors ${
                         hasUnsavedChanges
-                          ? 'text-white/30 cursor-not-allowed'
-                          : 'text-white hover:text-white/70'
+                          ? "cursor-not-allowed text-white/30"
+                          : "text-white hover:text-white/70"
                       }`}
                     >
                       <svg
@@ -1309,7 +1498,9 @@ export default function ViewPage() {
                       setProfile={setProfile}
                       onItemClick={() => {}}
                       onToggleMode={
-                        isOwner ? () => setMode(mode === "view" ? "edit" : "view") : null
+                        isOwner
+                          ? () => setMode(mode === "view" ? "edit" : "view")
+                          : null
                       }
                       sceneId={id}
                       onHasChangesChange={setHasUnsavedChanges}
@@ -1438,7 +1629,7 @@ export default function ViewPage() {
                   setHasUnsavedChanges(false); // 패널 열 때 초기화
                   setIsPanelOpen(true);
                 }}
-                className="flex items-center gap-2 px-4 py-2.5 bg-white/10 hover:bg-white/20 rounded-lg transition-colors w-full justify-center backdrop-blur-sm"
+                className="flex w-full items-center justify-center gap-2 rounded-lg bg-white/10 px-4 py-2.5 backdrop-blur-sm transition-colors hover:bg-white/20"
               >
                 <svg
                   width="18"
@@ -1563,7 +1754,7 @@ export default function ViewPage() {
                   className="relative cursor-pointer px-2 py-2 text-left text-white transition-opacity duration-200"
                   style={{
                     opacity: itemOpacity,
-                    touchAction: 'manipulation', // 모바일 터치 최적화
+                    touchAction: "manipulation", // 모바일 터치 최적화
                   }}
                 >
                   <div className="flex items-center gap-2">
@@ -1620,68 +1811,70 @@ export default function ViewPage() {
         <AnimatePresence>
           {isPanelOpen && (
             <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-black/50">
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              className="w-full max-h-[90vh] bg-black rounded-t-3xl shadow-2xl overflow-hidden flex flex-col"
-            >
-              {/* 커스텀 헤더 - 닫기 버튼 */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/20 bg-black shrink-0">
-                <h2 className="text-lg font-bold text-white">편집</h2>
-                <button
-                  onClick={() => {
-                    if (hasUnsavedChanges) {
-                      alert("변경사항을 먼저 저장해주세요.");
-                      return;
-                    }
-                    setIsPanelOpen(false);
-                    setMode("view");
-                    setHasUnsavedChanges(false);
-                  }}
-                  className="text-white hover:text-white/70 transition-colors"
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+              <motion.div
+                initial={{ y: "100%" }}
+                animate={{ y: 0 }}
+                exit={{ y: "100%" }}
+                transition={{ duration: 0.3, ease: "easeOut" }}
+                className="flex max-h-[90vh] w-full flex-col overflow-hidden rounded-t-3xl bg-black shadow-2xl"
+              >
+                {/* 커스텀 헤더 - 닫기 버튼 */}
+                <div className="flex shrink-0 items-center justify-between border-b border-white/20 bg-black px-4 py-3">
+                  <h2 className="text-lg font-bold text-white">편집</h2>
+                  <button
+                    onClick={() => {
+                      if (hasUnsavedChanges) {
+                        alert("변경사항을 먼저 저장해주세요.");
+                        return;
+                      }
+                      setIsPanelOpen(false);
+                      setMode("view");
+                      setHasUnsavedChanges(false);
+                    }}
+                    className="text-white transition-colors hover:text-white/70"
                   >
-                    <path
-                      d="M18 6L6 18M6 6l12 12"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-              </div>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M18 6L6 18M6 6l12 12"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
 
-              {/* 패널 내용 */}
-              <div className="flex-1 overflow-hidden">
-                <Pannel
-                  type="list"
-                  mode={mode}
-                  items={items}
-                  setItems={setItems}
-                  profile={profile}
-                  setProfile={setProfile}
-                  onItemClick={handleItemClick}
-                  onToggleMode={
-                    isOwner ? () => setMode(mode === "view" ? "edit" : "view") : null
-                  }
-                  sceneId={id}
-                  currentItem={currentItem}
-                  lockedItemId={lockedItemId}
-                  onToggleLock={handleToggleLock}
-                  onHasChangesChange={setHasUnsavedChanges}
-                />
-              </div>
-            </motion.div>
-          </div>
+                {/* 패널 내용 */}
+                <div className="flex-1 overflow-hidden">
+                  <Pannel
+                    type="list"
+                    mode={mode}
+                    items={items}
+                    setItems={setItems}
+                    profile={profile}
+                    setProfile={setProfile}
+                    onItemClick={handleItemClick}
+                    onToggleMode={
+                      isOwner
+                        ? () => setMode(mode === "view" ? "edit" : "view")
+                        : null
+                    }
+                    sceneId={id}
+                    currentItem={currentItem}
+                    lockedItemId={lockedItemId}
+                    onToggleLock={handleToggleLock}
+                    onHasChangesChange={setHasUnsavedChanges}
+                  />
+                </div>
+              </motion.div>
+            </div>
           )}
         </AnimatePresence>
 
@@ -2102,11 +2295,11 @@ export default function ViewPage() {
       </div>
 
       {/* 프로필 커튼 - 모바일과 데스크탑 모두 */}
-      <ProfileCurtain
+      {/* <ProfileCurtain
         open={isProfileCurtainOpen}
         onClose={() => setIsProfileCurtainOpen(false)}
         profile={profile}
-      />
+      /> */}
 
       {/* 데스크탑 프로필 커튼 */}
       <AnimatePresence>

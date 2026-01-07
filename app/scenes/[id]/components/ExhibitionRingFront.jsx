@@ -3,15 +3,24 @@
 "use client";
 
 import * as THREE from "three";
-import React, { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  Suspense,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 import { useVideoTexture } from "@react-three/drei";
 import { motion } from "framer-motion";
+import SceneDescBlock from "./SceneDescBlock";
 
 // ▶︎ 고정 파라미터
-const RADIUS = 7.5;
-const PLANE_W = 1;
-const PLANE_H = 0.8;
+const RADIUS = 7.2;
+const PLANE_W = 0.8;
+const PLANE_H = 0.6;
 const CAM_Y = 2;
 const CAM_Z = 22;
 
@@ -55,7 +64,30 @@ function distance2D(x1, y1, x2, y2) {
 }
 
 // ===== 머티리얼들 =====
-function ImageMat({ url, isSelected, isDarkMode, animationOpacity = 1 }) {
+// (1) 흑백 주입을 함수로 빼서 Image/Video에 동일 적용
+function injectGrayscaleOnBeforeCompile(mat) {
+  mat.onBeforeCompile = (shader) => {
+    const token = "#include <dithering_fragment>";
+    if (shader.fragmentShader.includes(token)) {
+      shader.fragmentShader = shader.fragmentShader.replace(
+        token,
+        `
+        // --- grayscale (final stage) ---
+        float gray = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
+        gl_FragColor.rgb = vec3(gray);
+        ${token}
+        `,
+      );
+    } else {
+      // 혹시 토큰이 없는 빌드/버전이면 끝에라도 붙여서 강제
+      shader.fragmentShader += `
+        float gray = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
+        gl_FragColor.rgb = vec3(gray);
+      `;
+    }
+  };
+}
+function ImageMat({ url, category, animationOpacity = 1, isDarkMode = true }) {
   const effUrl = useMemo(() => proxify(url), [url]);
   const tex = useLoader(THREE.TextureLoader, effUrl, (loader) => {
     loader.setCrossOrigin("anonymous");
@@ -70,26 +102,77 @@ function ImageMat({ url, isSelected, isDarkMode, animationOpacity = 1 }) {
     tex.needsUpdate = true;
   }, [tex, url]);
 
-  // 다크모드: 비선택 시 어둡게
-  // 라이트모드: 비선택 시 매우 연하게
-  const baseOpacity = isSelected ? 0.9 : isDarkMode ? 0.2 : 0.15;
-  const opacity = baseOpacity * animationOpacity;
-  const color = isDarkMode ? (isSelected ? 0xffffff : 0x666666) : 0xffffff;
+  // 카테고리별 스타일 설정
+  let baseOpacity, color;
 
-  return (
-    <meshBasicMaterial
-      map={tex}
-      color={color}
-      toneMapped={false}
-      transparent
-      opacity={opacity}
-      side={THREE.DoubleSide}
-      depthWrite={false}
-    />
-  );
+  switch (category) {
+    case "selected": // 선택중인 이미지
+      baseOpacity = 1.0;
+      color = 0xffffff;
+      break;
+    case "sameItem": // 같은 이벤트의 다른 이미지
+      baseOpacity =isDarkMode ? 0.5 : 0.5;
+      color = 0xffffff;
+      break;
+    case "otherItem": // 다른 이벤트의 이미지 (흑백)
+      baseOpacity = isDarkMode ? 0.6 : 0.2;
+      color = isDarkMode ? 0x777777 : 0xbbbbbb; // 회색톤으로 채도 낮춤 (약 47% 밝기)
+      break;
+    default:
+      baseOpacity = 0.2;
+      color = 0xffffff;
+  }
+
+  const opacity = baseOpacity * animationOpacity;
+  // const materialRef = useRef();
+
+  // Apply grayscale shader when material is created
+  // const handleMaterialCreation = useCallback((material) => {
+  //   if (!material) return;
+  //   materialRef.current = material;
+
+  //   if (category === 'otherItem') {
+  //     injectGrayscaleOnBeforeCompile(mat);
+  //     material.customProgramCacheKey = () => 'grayscale-image-v2';
+  //   } else {
+  //     material.customProgramCacheKey = () => 'normal-image-v2';
+  //   }
+  //   material.needsUpdate = true;
+  // }, [category]);
+
+  const material = useMemo(() => {
+    const mat = new THREE.MeshBasicMaterial({
+      map: tex,
+      color,
+      toneMapped: false,
+      transparent: true,
+      opacity,
+      side: THREE.DoubleSide,
+      depthWrite: false, // ✅ 투명 + 오버레이 구조에서 안정적
+    });
+
+    if (category === "otherItem") {
+      injectGrayscaleOnBeforeCompile(mat); // ✅ 주입 위치 변경
+      mat.customProgramCacheKey = () => "grayscale-image-v2";
+    } else {
+      mat.customProgramCacheKey = () => "normal-image-v2";
+    }
+
+    mat.needsUpdate = true;
+    return mat;
+  }, [tex, category, color, opacity]);
+  useEffect(() => {
+    if (!material) return;
+    material.opacity = opacity;
+    material.color.setHex(color);
+    // opacity/color만 바뀌면 사실 needsUpdate(재컴파일)까지는 불필요.
+    // material.needsUpdate = true;  // ← 가능하면 여기서는 빼는 걸 추천
+  }, [material, opacity, color]);
+
+  return <primitive object={material} attach="material" />;
 }
 
-function VideoMat({ url, isSelected, isDarkMode, animationOpacity = 1 }) {
+function VideoMat({ url, category, animationOpacity = 1, isDarkMode = true }) {
   const effUrl = useMemo(() => proxify(url), [url]);
   const vtex = useVideoTexture(effUrl, {
     crossOrigin: "anonymous",
@@ -106,80 +189,259 @@ function VideoMat({ url, isSelected, isDarkMode, animationOpacity = 1 }) {
     vtex.needsUpdate = true;
   }, [vtex, url]);
 
-  // 다크모드: 비선택 시 어둡게
-  // 라이트모드: 비선택 시 매우 연하게
-  const baseOpacity = isSelected ? 0.8 : isDarkMode ? 0.2 : 0.15;
+  // 카테고리별 스타일 설정
+  let baseOpacity, color;
+
+  switch (category) {
+    case "selected": // 선택중인 이미지
+      baseOpacity = 1.0;
+      color = 0xffffff;
+      break;
+    case "sameItem": // 같은 이벤트의 다른 이미지
+      baseOpacity = 0.5;
+      color = 0xffffff;
+      break;
+    case "otherItem": // 다른 이벤트의 이미지 (흑백)
+      baseOpacity = 1;
+      color = 0xffffff; // 회색톤으로 채도 낮춤 (약 47% 밝기)
+      break;
+    default:
+      baseOpacity = 0.2;
+      color = 0xffffff;
+  }
+
   const opacity = baseOpacity * animationOpacity;
-  const color = isDarkMode ? (isSelected ? 0xffffff : 0x666666) : 0xffffff;
+  const materialRef = useRef();
+
+  // Apply grayscale shader when material is created
+  const handleMaterialCreation = useCallback(
+    (material) => {
+      if (!material) return;
+      materialRef.current = material;
+
+      if (category === "otherItem") {
+        material.onBeforeCompile = (shader) => {
+          shader.fragmentShader = shader.fragmentShader.replace(
+            "#include <output_fragment>",
+            `
+          #include <output_fragment>
+          float gray = dot(gl_FragColor.rgb, vec3(0.299, 0.587, 0.114));
+          gl_FragColor.rgb = vec3(gray);
+          `,
+          );
+        };
+        material.customProgramCacheKey = () => "grayscale-video";
+      } else {
+        material.customProgramCacheKey = () => "normal-video";
+      }
+      material.needsUpdate = true;
+    },
+    [category],
+  );
 
   return (
     <meshBasicMaterial
+      key={`${category}-${url}`}
+      ref={handleMaterialCreation}
       map={vtex}
       color={color}
       toneMapped={false}
-      transparent
+      transparent={true}
       opacity={opacity}
       side={THREE.DoubleSide}
-      depthWrite={false}
     />
   );
 }
 
-function EmptyMat({ opacity = 0.06, animationOpacity = 1 }) {
+function EmptyMat({ isDarkMode = true, animationOpacity = 1 }) {
+  // 빈 플레인: 다크모드 10%, 라이트모드 20%
+  const opacity = (isDarkMode ? 0.03 : 0.2) * animationOpacity;
+
   return (
     <meshBasicMaterial
       color="white"
       transparent
-      opacity={opacity * animationOpacity}
+      opacity={opacity}
       side={THREE.DoubleSide}
-      depthWrite={false}
+      // depthWrite={false}
+    />
+  );
+}
+
+// ===== Projection Texture Overlay =====
+function ProjectionOverlay({ animationOpacity = 1 }) {
+  const projectionTex = useLoader(
+    THREE.TextureLoader,
+    "/images/glow effect.png",
+  );
+
+  useEffect(() => {
+    if (!projectionTex) return;
+    projectionTex.colorSpace = THREE.SRGBColorSpace;
+    projectionTex.wrapS = THREE.ClampToEdgeWrapping;
+    projectionTex.wrapT = THREE.ClampToEdgeWrapping;
+    projectionTex.needsUpdate = true;
+  }, [projectionTex]);
+
+  return (
+    <meshBasicMaterial
+      map={projectionTex}
+      color={0xffffff}
+      transparent={true}
+      opacity={0.3}
+      blending={THREE.AdditiveBlending}
+      // depthWrite={false}
+      toneMapped={false}
+    />
+  );
+}
+// ===== Projection Texture Overlay =====
+function ProjectionOverlayForOtherItem({ animationOpacity = 1 }) {
+  const projectionTex = useLoader(
+    THREE.TextureLoader,
+    "/images/glow effect_v2.png",
+  );
+
+  useEffect(() => {
+    if (!projectionTex) return;
+    projectionTex.colorSpace = THREE.SRGBColorSpace;
+    projectionTex.wrapS = THREE.ClampToEdgeWrapping;
+    projectionTex.wrapT = THREE.ClampToEdgeWrapping;
+    projectionTex.needsUpdate = true;
+  }, [projectionTex]);
+
+  return (
+    <meshBasicMaterial
+      map={projectionTex}
+      color={0xffffff}
+      transparent={true}
+      opacity={0.3}
+      blending={THREE.AdditiveBlending}
+      // depthWrite={false}
+      toneMapped={false}
     />
   );
 }
 
 // ===== 개별 플레인 =====
 const MediaPlane = React.forwardRef(function MediaPlane(
-  { slot, isSelected, isDarkMode, animationOpacity = 1 },
+  { slot, isSelected, selectedItemId, isDarkMode, animationOpacity = 1 },
   ref,
 ) {
   const kind = slot?.kind ?? slot?.type ?? "empty";
   const url = slot?.url ?? null;
+  const itemId = slot?.itemId;
+
+  // 카테고리 판단
+  let category;
+  if (kind === "empty") {
+    category = "empty";
+  } else if (isSelected) {
+    category = "selected"; // 선택중인 이미지
+  } else if (itemId === selectedItemId) {
+    category = "sameItem"; // 같은 이벤트의 다른 이미지
+  } else {
+    category = "otherItem"; // 다른 이벤트의 이미지
+  }
 
   return (
-    <mesh ref={ref}>
-      <planeGeometry args={[PLANE_W, PLANE_H]} />
-      {kind === "image" && url ? (
-        <Suspense
-          fallback={
-            <EmptyMat opacity={0.18} animationOpacity={animationOpacity} />
-          }
-        >
-          <ImageMat
-            url={url}
-            isSelected={isSelected}
+    <group ref={ref}>
+      {/* 메인 이미지/비디오 플레인 */}
+      <mesh renderOrder={10}>
+        <planeGeometry args={[PLANE_W, PLANE_H]} />
+        {kind === "image" && url ? (
+          <Suspense
+            fallback={
+              <EmptyMat
+                isDarkMode={isDarkMode}
+                animationOpacity={animationOpacity}
+              />
+            }
+          >
+            <ImageMat
+              url={url}
+              category={category}
+              isDarkMode={isDarkMode}
+              animationOpacity={animationOpacity}
+            />
+          </Suspense>
+        ) : kind === "video" && url ? (
+          <Suspense
+            fallback={
+              <EmptyMat
+                isDarkMode={isDarkMode}
+                animationOpacity={animationOpacity}
+              />
+            }
+          >
+            <VideoMat
+              url={url}
+              category={category}
+              isDarkMode={isDarkMode}
+              animationOpacity={animationOpacity}
+            />
+          </Suspense>
+        ) : (
+          <EmptyMat
             isDarkMode={isDarkMode}
             animationOpacity={animationOpacity}
           />
-        </Suspense>
-      ) : kind === "video" && url ? (
-        <Suspense
-          fallback={
-            <EmptyMat opacity={0.18} animationOpacity={animationOpacity} />
-          }
-        >
-          <VideoMat
-            url={url}
-            isSelected={isSelected}
-            isDarkMode={isDarkMode}
-            animationOpacity={animationOpacity}
-          />
-        </Suspense>
-      ) : (
-        <EmptyMat animationOpacity={animationOpacity} />
+        )}
+      </mesh>
+
+      {/* Projection Texture 오버레이 - 빈 플레인 및 다른 이벤트 미디어 제외, 다크모드일 때만 */}
+      {kind !== "empty" && category !== "otherItem" && isDarkMode && (
+        <mesh renderOrder={20} position={[0, 0, 0.01]}>
+          <planeGeometry args={[PLANE_W * 3, PLANE_H * 3]} />
+          <Suspense fallback={null}>
+            <ProjectionOverlay animationOpacity={animationOpacity} />
+          </Suspense>
+        </mesh>
       )}
-    </mesh>
+      {kind !== "empty" && category === "otherItem" && isDarkMode && (
+        <mesh renderOrder={20} position={[0, 0, 0.01]}>
+          <planeGeometry args={[PLANE_W * 3, PLANE_H * 3]} />
+          <Suspense fallback={null}>
+            <ProjectionOverlayForOtherItem
+              animationOpacity={animationOpacity}
+            />
+          </Suspense>
+        </mesh>
+      )}
+    </group>
   );
 });
+
+// ===== Projection Effect Overlay (선택된 플레인 위) =====
+function ProjectionEffectOverlay() {
+  const effectTex = useLoader(
+    THREE.TextureLoader,
+    "/images/projection_effect_texture_v2.png",
+  );
+
+  useEffect(() => {
+    if (!effectTex) return;
+    effectTex.colorSpace = THREE.SRGBColorSpace;
+    effectTex.wrapS = THREE.ClampToEdgeWrapping;
+    effectTex.wrapT = THREE.ClampToEdgeWrapping;
+    effectTex.needsUpdate = true;
+  }, [effectTex]);
+
+  return (
+    <>
+      <planeGeometry args={[PLANE_W * 6, PLANE_H*2]} />
+      <meshBasicMaterial
+        map={effectTex}
+        color={0xffffff}
+        transparent={true}
+        opacity={0.7}
+        blending={THREE.AdditiveBlending}
+        depthWrite={false}
+        toneMapped={false}
+      />
+    </>
+  );
+}
 
 // ===== 전시 링 내부 =====
 function ExhibitionRingInner({
@@ -213,6 +475,9 @@ function ExhibitionRingInner({
   if (planeOpacitiesRef.current.length !== N)
     planeOpacitiesRef.current = Array(N).fill(1);
 
+  // 선택된 플레인의 위치 추적 - ref로 변경하여 매 프레임 업데이트
+  const effectOverlayRef = useRef();
+
   // 다음 컨텐츠가 있는 슬롯 찾기 (빈 슬롯 건너뛰기) - 역방향 회전
   const findNextContentSlot = (currentIdx) => {
     for (let offset = 1; offset < N; offset++) {
@@ -236,7 +501,7 @@ function ExhibitionRingInner({
   const { camera, gl } = useThree();
 
   // 애니메이션 파라미터
-  const bulge = 0.3; // 위로 튀어나오는 최대 높이
+  const bulge = 1; // 위로 튀어나오는 최대 높이
 
   // 텍스트 고정 위치 저장
   const fixedPositionsRef = useRef({});
@@ -248,7 +513,12 @@ function ExhibitionRingInner({
     // isPaused가 true일 때는 회전 중지 (편집 패널이 열렸을 때)
     // isSlowRotation이 true일 때는 선택 변경 중지 (한 바퀴 완료 후 처음으로 돌아갈 때)
     // interval이 0일 때는 회전 중지 (OFF 선택 시)
-    if (exhibitionScreen === "ring" && !isPaused && !isSlowRotation && interval > 0) {
+    if (
+      exhibitionScreen === "ring" &&
+      !isPaused &&
+      !isSlowRotation &&
+      interval > 0
+    ) {
       const now = Date.now();
       if (now - lastUpdateTime.current >= interval) {
         const nextIndex = findNextContentSlot(currentIndex);
@@ -310,23 +580,32 @@ function ExhibitionRingInner({
       const a = baseAngle + angleOffset;
       const adjustedRadius = RADIUS * radiusMultiplier;
       const x = Math.cos(a) * adjustedRadius;
-      // const z = Math.sin(a) * adjustedRadius;
-      const z = Math.sin(a) * adjustedRadius + bulge * w;
+      const baseZ = Math.sin(a) * adjustedRadius;
+
+      // Z-fighting 방지: 위로 올라간 플레인을 Z축으로도 약간 앞으로 이동
+      // + 인덱스 기반 미세 오프셋으로 인접 플레인들도 고유한 Z값 보장
+      const zOffset = w * 2 + i * 0.01; // bulge 가중치 + 인덱스별 간격
+      const z = baseZ + zOffset;
 
       // 원근감: z 좌표에 따라 y 좌표 조정
-      const depthOffset = -z * 0.5;
-      // const y = bulge * w + depthOffset;
-      const y = depthOffset;
-      // const y = 0;
+      const depthOffset = -baseZ * 0.4;
+      const y = bulge * w + depthOffset;
 
       const m = planeRefs.current[i];
       if (!m) continue;
       m.position.set(x, y, z);
 
+      // 선택된 플레인의 위치 추적 - 매 프레임 직접 업데이트
+      if (i === currentIndex && effectOverlayRef.current) {
+        // effect box 위치 계산 (bulge 애니메이션 포함하여 따라다님)
+        const effectY = y + PLANE_H * 1.5;
+        effectOverlayRef.current.position.set(x, effectY, z);
+      }
+
       // 모든 플레인이 사용자(카메라)를 향하도록 회전 (같은 방향)
       m.rotation.set(0, 0, 0);
 
-      // Z-fighting 방지
+      // Z-fighting 방지: z 값 기반 renderOrder
       m.renderOrder = Math.round((z + RADIUS) * 100);
     }
 
@@ -348,7 +627,9 @@ function ExhibitionRingInner({
         let labelX, labelY, normalizedX, normalizedY;
 
         // 모든 아이템이 매 프레임 현재 위치 계산 (회전)
-        const startIndex = range.start;
+        // 텍스처 배열이 reverse되어 있어서 range.end가 실제 맨 앞 이미지
+        // console.log(range)
+        const startIndex = range.end;
         const baseAngle = startIndex * step + ringAngle.current;
 
         const planeX = Math.cos(baseAngle) * RADIUS;
@@ -418,7 +699,7 @@ function ExhibitionRingInner({
   return (
     <group position={[0, 0, 0]} rotation={[0, 0, 0]}>
       {slots.map((slot, i) => {
-        const isSelected = slot?.itemId === selectedItemId;
+        const isSelected = i === currentIndex; // 현재 인덱스와 비교
         const animationOpacity = 1; // 애니메이션 비활성화로 항상 1
         return (
           <MediaPlane
@@ -426,11 +707,21 @@ function ExhibitionRingInner({
             ref={(el) => (planeRefs.current[i] = el)}
             slot={slot}
             isSelected={isSelected}
+            selectedItemId={selectedItemId}
             isDarkMode={isDarkMode}
             animationOpacity={animationOpacity}
           />
         );
       })}
+
+      {/* Projection Effect - 선택된 플레인 위에 붙어다니는 효과, 다크모드일 때만 */}
+      {isDarkMode && (
+        <Suspense fallback={null}>
+          <mesh ref={effectOverlayRef} position={[0, 0, 0]}>
+            <ProjectionEffectOverlay />
+          </mesh>
+        </Suspense>
+      )}
     </group>
   );
 }
@@ -447,6 +738,9 @@ export default function ExhibitionRingFront({
   exhibitionScreen = "ring",
   isPaused = false,
   isSlowRotation = false,
+  isProfileOpen = true,
+  onToggleProfile,
+  showControls = true,
 }) {
   // console.log(profile);
   const [labelPositions, setLabelPositions] = useState([]);
@@ -473,51 +767,73 @@ export default function ExhibitionRingFront({
   }, [slots]);
 
   // 드래그로 가장 가까운 유효한 인덱스 찾기
-  const findNearestValidIndex = useCallback((targetIndex) => {
-    if (validIndices.length === 0) return 0;
+  const findNearestValidIndex = useCallback(
+    (targetIndex) => {
+      if (validIndices.length === 0) return 0;
 
-    // targetIndex에 가장 가까운 유효한 인덱스 찾기
-    let nearest = validIndices[0];
-    let minDist = Math.abs(targetIndex - nearest);
+      // targetIndex에 가장 가까운 유효한 인덱스 찾기
+      let nearest = validIndices[0];
+      let minDist = Math.abs(targetIndex - nearest);
 
-    for (const validIdx of validIndices) {
-      const dist = Math.abs(targetIndex - validIdx);
-      if (dist < minDist) {
-        minDist = dist;
-        nearest = validIdx;
+      for (const validIdx of validIndices) {
+        const dist = Math.abs(targetIndex - validIdx);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = validIdx;
+        }
       }
-    }
 
-    return nearest;
-  }, [validIndices]);
+      return nearest;
+    },
+    [validIndices],
+  );
 
   // 드래그 핸들러 (OFF 모드일 때만 작동)
-  const handlePointerDown = useCallback((e) => {
-    if (interval !== 0) return; // OFF 모드가 아니면 무시
+  const handlePointerDown = useCallback(
+    (e) => {
+      // if (interval !== 0) return; // OFF 모드가 아니면 무시
 
-    setIsDragging(true);
-    dragStateRef.current = {
-      startX: e.clientX,
-      startIndex: currentIndex,
-    };
-  }, [interval, currentIndex]);
+      setIsDragging(true);
+      dragStateRef.current = {
+        startX: e.clientX,
+        startIndex: currentIndex,
+      };
+    },
+    [interval, currentIndex],
+  );
 
-  const handlePointerMove = useCallback((e) => {
-    if (!isDragging || interval !== 0) return;
+  const handlePointerMove = useCallback(
+    (e) => {
+      // if (!isDragging || interval !== 0) return;
+      if (!isDragging) return;
 
-    const deltaX = e.clientX - dragStateRef.current.startX;
-    const sensitivity = 0.05; // 드래그 민감도
-    const indexDelta = - Math.round(deltaX * sensitivity);
+      const deltaX = e.clientX - dragStateRef.current.startX;
+      const sensitivity = 0.05; // 드래그 민감도
+      const indexDelta = -Math.round(deltaX * sensitivity);
 
-    // 새 인덱스 계산 (유효한 인덱스 범위 내에서)
-    const targetIndex = dragStateRef.current.startIndex - indexDelta;
-    const clampedIndex = Math.max(0, Math.min(slots.length - 1, targetIndex));
-    const nearestValidIndex = findNearestValidIndex(clampedIndex);
+      // 새 인덱스 계산 (유효한 인덱스 범위 내에서)
+      const targetIndex = dragStateRef.current.startIndex - indexDelta;
+      const clampedIndex = Math.max(0, Math.min(slots.length - 1, targetIndex));
+      const nearestValidIndex = findNearestValidIndex(clampedIndex);
 
-    if (nearestValidIndex !== currentIndex && onCurrentIndexChange) {
-      onCurrentIndexChange(nearestValidIndex);
-    }
-  }, [isDragging, interval, currentIndex, onCurrentIndexChange, slots.length, findNearestValidIndex]);
+      if (nearestValidIndex !== currentIndex && onCurrentIndexChange) {
+        onCurrentIndexChange(nearestValidIndex);
+        // 인덱스가 변경되면 현재 위치를 새로운 시작점으로 업데이트 (용수철 효과 방지)
+        dragStateRef.current = {
+          startX: e.clientX,
+          startIndex: nearestValidIndex,
+        };
+      }
+    },
+    [
+      isDragging,
+      interval,
+      currentIndex,
+      onCurrentIndexChange,
+      slots.length,
+      findNearestValidIndex,
+    ],
+  );
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false);
@@ -566,17 +882,82 @@ export default function ExhibitionRingFront({
       LM.onError = _err;
     };
   }, []);
+  function getRenderedContainWidth(el, kind) {
+    if (!el) return null;
+
+    const W = el.clientWidth;
+    const H = el.clientHeight;
+    if (!W || !H) return null;
+
+    let nw = 0,
+      nh = 0;
+
+    if (kind === "image") {
+      nw = el.naturalWidth;
+      nh = el.naturalHeight;
+    } else if (kind === "video") {
+      nw = el.videoWidth;
+      nh = el.videoHeight;
+    }
+
+    // 메타데이터/이미지 로드 전이면 계산 불가
+    if (!nw || !nh) return null;
+
+    // object-contain(contain) 기준 실제 표시 스케일
+    const s = Math.min(W / nw, H / nh);
+
+    // 실제 “그려진 컨텐츠” 폭
+    return Math.round(nw * s);
+  }
+  const mediaRef = useRef(null);
+
+  const [renderedMediaWidth, setRenderedMediaWidth] = useState(null);
+
+  useLayoutEffect(() => {
+    let raf = 0;
+    const setup = () => {
+      const el = mediaRef.current;
+      if (!el) return;
+
+      const kind =
+        selectedSlot?.kind === "video" || selectedSlot?.type === "video"
+          ? "video"
+          : "image";
+
+      const update = () => {
+        const w = getRenderedContainWidth(el, kind);
+        // 계산이 안 되면 null 유지 (로드 전)
+        setRenderedMediaWidth(w);
+      };
+
+      update();
+
+      const ro = new ResizeObserver(() => update());
+      ro.observe(el);
+
+      window.addEventListener("resize", update);
+      return () => {
+        ro.disconnect();
+        window.removeEventListener("resize", update);
+      };
+    };
+    setup();
+    return () => cancelAnimationFrame(raf);
+  }, [selectedSlot?.url, selectedSlot?.kind, selectedSlot?.type]);
+
+  // console.log(mediaWidth);
 
   return (
     <div
-      className="abolute h-[88vh] w-full"
+      className="abolute h-[calc(1100vh/12)] w-full"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerLeave}
       style={{
-        cursor: interval === 0 ? (isDragging ? 'grabbing' : 'grab') : 'default',
-        userSelect: 'none'
+        // cursor: interval === 0 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+        cursor: isDragging ? "grabbing" : "grab",
+        userSelect: "none",
       }}
     >
       <Canvas
@@ -605,121 +986,85 @@ export default function ExhibitionRingFront({
         </Suspense>
       </Canvas>
 
-      {/* 화면 중앙에 선택된 이미지와 아이템 정보 표시 */}
-      {selectedSlot && selectedItem && (
+      {/* 중앙에 선택된 이미지/비디오 크게 표시 + SceneDescBlock */}
+      {selectedSlot && selectedItem && selectedSlot.url && (
         <div
-          className="pointer-events-none absolute inset-0 z-10000 flex items-start justify-center pt-[4vh] transition-opacity duration-300"
+          className="pointer-events-none absolute inset-0 z-10000 flex items-center justify-center transition-opacity duration-300"
           style={{ opacity: textOpacity }}
         >
-          <div className="flex flex-col items-center gap-6">
-            {/* 선택된 이미지/비디오 - 고정 크기 영역 */}
-            {selectedSlot.url && (
-              <div className="flex aspect-[25/17] h-[50vh] items-center justify-center">
-                {selectedSlot.kind === "image" ||
-                selectedSlot.type === "image" ? (
-                  <img
-                    src={proxify(selectedSlot.url)}
-                    alt={selectedItem.title || ""}
-                    className="h-full w-full object-contain"
-                    crossOrigin="anonymous"
-                    style={{
-                      filter: "drop-shadow(0px 40px 40px rgba(0, 0, 0, 0.2))",
-                    }}
-                  />
-                ) : selectedSlot.kind === "video" ||
-                  selectedSlot.type === "video" ? (
-                  <video
-                    src={proxify(selectedSlot.url)}
-                    className="h-full w-full object-contain"
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    crossOrigin="anonymous"
-                    style={{
-                      filter: "drop-shadow(0 30px 60px rgba(0, 0, 0, 0.6))",
-                    }}
-                  />
-                ) : null}
-              </div>
-            )}
+          {/* 이미지와 설명 블록을 같은 너비로 묶는 컨테이너 - 이미지 크기에 맞춤 */}
+          <div
+            className="flex min-w-0 flex-col" // inline-flex → flex 추천 (폭 계산 안정)
+            style={{
+              transform: "translateY(-15vh)",
+              maxWidth: "calc(50vh * 25 / 17)",
+              // width: renderedMediaWidth ? `${renderedMediaWidth}px` : "auto", // 컨테이너 자체를 잠금
+            }}
+          >
+            {/* 이미지/비디오 - 원래 크기 제한 유지 */}
+            {selectedSlot.kind === "image" || selectedSlot.type === "image" ? (
+              <img
+                ref={mediaRef}
+                onLoad={() => {
+                  const el = mediaRef.current;
+                  const w = getRenderedContainWidth(el, "image");
+                  setRenderedMediaWidth(w);
+                }}
+                src={proxify(selectedSlot.url)}
+                alt={selectedItem.title || ""}
+                className="object-contain"
+                crossOrigin="anonymous"
+                style={{
+                  maxHeight: "50vh",
+                  maxWidth: "calc(50vh * 25 / 17)",
+                  filter: "drop-shadow(0px 40px 40px rgba(0, 0, 0, 0.2))",
+                }}
+              />
+            ) : selectedSlot.kind === "video" ||
+              selectedSlot.type === "video" ? (
+              <video
+                ref={mediaRef}
+                onLoadedMetadata={() => {
+                  const el = mediaRef.current;
+                  const w = getRenderedContainWidth(el, "video");
+                  setRenderedMediaWidth(w);
+                }}
+                src={proxify(selectedSlot.url)}
+                className="object-contain"
+                autoPlay
+                loop
+                muted
+                playsInline
+                crossOrigin="anonymous"
+                style={{
+                  maxHeight: "50vh",
+                  maxWidth: "calc(50vh * 25 / 17)",
+                  filter: "drop-shadow(0 30px 60px rgba(0, 0, 0, 0.6))",
+                }}
+              />
+            ) : null}
 
-            {/* 아이템 상세 정보 - 항상 같은 높이에 표시 */}
+            {/* SceneDescBlock - 이미지 너비에 자동으로 맞춤, 높이는 내용에 따라 자동 */}
             <div
-              className={`mt-3 w-[calc(50vh*25/17)] rounded-xl px-8 text-center transition-colors duration-300 ${
-                isDarkMode ? " text-white" : " text-black"
-              }`}
+              className={`w-full min-w-0 overflow-hidden transition-colors duration-500 ${
+                isDarkMode ? "bg-white/10 text-white" : "bg-black/5 text-black"
+              } backdrop-blur-md`}
+              style={{
+                width: renderedMediaWidth
+                  ? `${renderedMediaWidth}px`
+                  : undefined,
+                maxWidth: renderedMediaWidth
+                  ? `${renderedMediaWidth}px`
+                  : undefined,
+                visibility: renderedMediaWidth ? "visible" : "hidden", // 측정 전 auto폭으로 튀는 것 방지
+              }}
             >
-              {/* 제목 */}
-              {selectedItem.title && (
-                <div className="relative inline-block px-4">
-                  {/* 기본 텍스트 */}
-                  <h2
-                    className={`font-medium ${
-                      isDarkMode ? "text-white" : "text-black"
-                    }`}
-                    style={{
-                      letterSpacing: "-0.05rem",
-                      fontSize: "clamp(1.25rem, 2.8vh, 4rem)",
-                    }}
-                  >
-                    {selectedItem.title}
-                  </h2>
-
-                  {/* 애니메이션 레이어 (배경 확장 + 텍스트 색상 반전) */}
-                  <motion.div
-                    key={selectedItem.id}
-                    initial={{ width: 0 }}
-                    animate={{ width: "100%" }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
-                    className={`absolute inset-y-0 left-0 overflow-hidden ${
-                      isDarkMode ? "bg-white" : "bg-black"
-                    }`}
-                  >
-                    <h2
-                      className={`font-medium whitespace-nowrap ${
-                        isDarkMode ? "text-black" : "text-white"
-                      }`}
-                      style={{
-                        letterSpacing: "-0.05rem",
-                        fontSize: "clamp(1.25rem, 2.8vh, 4rem)",
-                      }}
-                    >
-                      {selectedItem.title}
-                    </h2>
-                  </motion.div>
-                </div>
-              )}
-
-              {/* 날짜 */}
-              {selectedItem.date && (
-                <p
-                  className={`mt-2 ${
-                    isDarkMode ? "text-white/70" : "text-black/70"
-                  }`}
-                  style={{
-                    letterSpacing: "-0.05rem",
-                    fontSize: "clamp(0.875rem, 1.8vh, 2rem)",
-                  }}
-                >
-                  {selectedItem.date}
-                </p>
-              )}
-
-              {/* 설명 */}
-              {selectedItem.desc && (
-                <p
-                  className={`mt-2 leading-relaxed ${
-                    isDarkMode ? "text-white/80" : "text-black/80"
-                  }`}
-                  style={{
-                    letterSpacing: "-0.05rem",
-                    fontSize: "clamp(0.875rem, 1.8vh, 2rem)",
-                  }}
-                >
-                  {selectedItem.desc}
-                </p>
-              )}
+              <SceneDescBlock
+                selectedSlot={selectedSlot}
+                selectedItem={selectedItem}
+                isDarkMode={isDarkMode}
+                textOpacity={1}
+              />
             </div>
           </div>
         </div>
@@ -772,7 +1117,7 @@ export default function ExhibitionRingFront({
                 transform: `translate(${translateX}, ${translateY})`,
                 zIndex: isSelected ? 9999 : Math.round((1 - z) * 1000),
                 opacity: z > 1 ? 0 : textOpacity, // 카메라 뒤에 있으면 숨김, 애니메이션 시 페이드아웃
-                pointerEvents: z > 1 ? 'none' : 'auto', // 카메라 뒤에 있으면 클릭 불가
+                pointerEvents: z > 1 ? "none" : "auto", // 카메라 뒤에 있으면 클릭 불가
               }}
             >
               <div
@@ -783,7 +1128,7 @@ export default function ExhibitionRingFront({
                 <div
                   onClick={handleLabelClick}
                   className={`${bgColor} px-3 py-1 transition-all duration-300 ${
-                    !isSelected ? "cursor-pointer hover:bg-opacity-40" : ""
+                    !isSelected ? "hover:bg-opacity-40 cursor-pointer" : ""
                   }`}
                 >
                   {title}
@@ -798,13 +1143,66 @@ export default function ExhibitionRingFront({
           );
         },
       )}
+      <SceneDescBlock isDarkMode={isDarkMode} />
+
+      {/* 프로필 토글 버튼 - 프로필 섹션 바로 위, 중앙 */}
+      <div
+        className={`absolute left-1/2 -translate-x-1/2 transition-all duration-500 ${
+          showControls
+            ? "translate-y-0 opacity-100"
+            : "pointer-events-none -translate-y-4 opacity-0"
+        }`}
+        style={{
+          bottom: isProfileOpen ? "calc(100vh / 8)" : "0",
+        }}
+      >
+        <button
+          onClick={onToggleProfile}
+          className={`flex items-center gap-2 px-4 py-2 backdrop-blur-sm transition-colors ${
+            isDarkMode
+              ? "bg-white/10 text-white hover:bg-white/20"
+              : "bg-black/10 text-black hover:bg-black/20"
+          }`}
+          style={{
+            borderTopLeftRadius: "8px",
+            borderTopRightRadius: "8px",
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 16 16"
+            fill="none"
+            className="transition-transform duration-300"
+            style={{
+              transform: isProfileOpen ? "rotate(180deg)" : "rotate(0deg)",
+            }}
+          >
+            <path
+              d="M4 10l4-4 4 4"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          <span className="text-sm font-medium">
+            {isProfileOpen ? "닫기" : "프로필 보기"}
+          </span>
+        </button>
+      </div>
 
       {/* 하단 프로필 정보 바 */}
       <div
-        className={`absolute bottom-0 left-1/2 flex w-full -translate-x-1/2 items-start px-8 py-3 transition-colors duration-500 ${
-          isDarkMode ? "bg-white/10 text-black" : "bg-black/5 text-white"
+        className={`absolute left-1/2 flex w-full -translate-x-1/2 flex-col transition-all duration-500 ${
+          isDarkMode ? "text-black" : "text-white"
         } backdrop-blur-md`}
-        style={{ height: "calc(100vh / 8)" }}
+        style={{
+          bottom: isProfileOpen ? "0" : "calc(-100vh / 8)",
+        }}
+      >
+        {/* 프로필 내용 */}
+        <div className="flex items-start px-8 py-3" style={{ height: "calc(100vh / 8)" }}
       >
         {/* 프로필 이미지 썸네일 - 정방형 고정 */}
         <div
@@ -911,6 +1309,7 @@ export default function ExhibitionRingFront({
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

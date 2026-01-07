@@ -14,8 +14,9 @@ import {
   deleteRecordItem,
   uploadRecordFile,
 } from "./services/editApi";
-import AddTimelineModal from "./components/AddTimelineModal";
+import ImageAddModal from "./components/ImageAddModal";
 import ImageCropOverlay from "./components/ImageCropOverlay";
+import ToastStack from "@/app/components/Toast";
 import "@/app/view/[identifier]/records/styles/cardPage.css";
 import "@/app/view/[identifier]/records/styles/cardPage-mobile.css";
 
@@ -104,7 +105,8 @@ export default function EditRecords() {
   const [data, setData] = useState(null);
   const [originalData, setOriginalData] = useState(null); // 원본 데이터 저장
   const [recordId, setRecordId] = useState(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isImageModalOpen, setIsImageModalOpen] = useState(false);
+  const [imageModalItemId, setImageModalItemId] = useState(null);
   const [activeItem, setActiveItem] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [navigateToItem, setNavigateToItem] = useState(null);
@@ -552,41 +554,23 @@ export default function EditRecords() {
   };
 
   const addTimelineItem = () => {
-    setIsAddModalOpen(true);
-  };
-
-  const handleAddTimelineItem = (newItem) => {
     if (!data) return;
 
-    // 새 항목에 임시 고유 ID 부여 (DB에 저장되기 전까지 사용)
-    // 음수나 문자열로 생성하여 DB ID와 구분
+    // 빈 아이템 생성 (null 값)
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    const itemWithTempId = {
-      ...newItem,
-      id: tempId, // null 대신 임시 ID 사용
+    const emptyItem = {
+      id: tempId,
+      title: "",
+      date: "",
+      location: "",
+      description: "",
+      coverUrl: null,
+      images: Array(5).fill(null),
+      color: "",
+      isHighlight: false,
     };
 
-    const newItems = [...(data.items || []), itemWithTempId];
-
-    // timeline 배열과 동일한 정렬 로직으로 정렬하여 인덱스 계산
-    const sortedItems = [...newItems].map((item) => {
-      const [y] = (item.date || "").split(".");
-      const year = y ? parseInt(y, 10) : 0;
-      return { ...item, year };
-    });
-
-    // 연도 순서대로 정렬 (오름차순: 오래된 것부터)
-    sortedItems.sort((a, b) => {
-      if (!a.year && !b.year) return 0;
-      if (!a.year) return 1;
-      if (!b.year) return -1;
-      return a.year - b.year;
-    });
-
-    // 정렬된 배열에서 생성된 항목의 인덱스 찾기
-    const createdItemIndex = sortedItems.findIndex(
-      (item) => item.id === tempId,
-    );
+    const newItems = [...(data.items || []), emptyItem];
 
     setData({
       ...data,
@@ -595,28 +579,48 @@ export default function EditRecords() {
 
     setIsSaved(false);
 
-    // timeline이 업데이트된 후에 해당 인덱스로 이동
-    // timeline[0]은 main 항목이므로 +1 필요
-    if (createdItemIndex !== -1) {
-      const targetIndex = createdItemIndex + 1; // main 항목(0) + 정렬된 인덱스
-      console.log(
-        "[AddTimeline] Created item index:",
-        createdItemIndex,
-        "Target timeline index:",
-        targetIndex,
-      );
-
-      // 데이터 업데이트 후 timeline이 재계산될 시간을 주기 위해 약간의 지연
-      setTimeout(() => {
-        console.log("[AddTimeline] Setting navigateToItem to:", targetIndex);
+    // 새로 추가된 아이템으로 이동
+    setTimeout(() => {
+      const timeline = [
+        { id: "Home", kind: "main" },
+        ...newItems.map((item) => ({ id: item.id, kind: "year" })),
+      ];
+      const targetIndex = timeline.findIndex((item) => item.id === tempId);
+      if (targetIndex !== -1) {
         setNavigateToItem(targetIndex);
-        // navigateToItem이 처리된 후 리셋
         setTimeout(() => {
-          console.log("[AddTimeline] Resetting navigateToItem");
           setNavigateToItem(null);
         }, 1000);
-      }, 300);
-    }
+      }
+    }, 300);
+  };
+
+  const handleImageModalOpen = (itemId) => {
+    setImageModalItemId(itemId);
+    setIsImageModalOpen(true);
+  };
+
+  const handleImageModalSave = (images) => {
+    if (!data || !imageModalItemId) return;
+
+    const newItems = data.items.map((item) =>
+      item.id === imageModalItemId
+        ? {
+            ...item,
+            images: images,
+            coverUrl: images.find((img) => img !== null) || null,
+          }
+        : item,
+    );
+
+    setData({
+      ...data,
+      items: newItems,
+    });
+
+    setIsSaved(false);
+    setIsImageModalOpen(false);
+    setImageModalItemId(null);
   };
 
   const handleDataChange = (newData) => {
@@ -1047,6 +1051,7 @@ export default function EditRecords() {
   return (
     <>
       <ToastStack toasts={toasts} onDismiss={removeToast} />
+      <ToastStack toasts={toasts} onDismiss={removeToast} />
       {error && (
         <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2 rounded-md bg-red-500/90 px-4 py-2 text-sm text-white">
           ⚠️ {error}
@@ -1057,10 +1062,38 @@ export default function EditRecords() {
           저장 중...
         </div>
       )} */}
-      <AddTimelineModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onSave={handleAddTimelineItem}
+      <ImageAddModal
+        isOpen={isImageModalOpen}
+        onClose={() => {
+          setIsImageModalOpen(false);
+          setImageModalItemId(null);
+        }}
+        onSave={handleImageModalSave}
+        currentImages={
+          imageModalItemId && data
+            ? (() => {
+                const item = data.items.find(
+                  (item) => item.id === imageModalItemId,
+                );
+                if (!item) return Array(5).fill(null);
+
+                // images 배열이 있으면 사용, 없으면 coverUrl을 첫 번째로 사용
+                let images = Array.isArray(item.images) ? [...item.images] : [];
+
+                // images가 비어있고 coverUrl이 있으면 coverUrl을 첫 번째로 추가
+                if (images.length === 0 && item.coverUrl) {
+                  images = [item.coverUrl];
+                }
+
+                // 5개로 패딩
+                while (images.length < 5) {
+                  images.push(null);
+                }
+
+                return images.slice(0, 5);
+              })()
+            : Array(5).fill(null)
+        }
       />
       <FloatingToolbar
         width={width}
@@ -1095,6 +1128,7 @@ export default function EditRecords() {
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
           onImageDelete={isPreview ? undefined : handleImageDelete}
+          onImageModalOpen={isPreview ? undefined : handleImageModalOpen}
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
@@ -1111,6 +1145,7 @@ export default function EditRecords() {
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
           onImageChange={isPreview ? undefined : handleImageChange}
           onImageDelete={isPreview ? undefined : handleImageDelete}
+          onImageModalOpen={isPreview ? undefined : handleImageModalOpen}
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}

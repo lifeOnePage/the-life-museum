@@ -34,6 +34,7 @@ export function setupRecaptcha(elementId) {
 
 export async function sendOtp(phone, countryCode = "+82") {
   const e164 = toE164(phone, countryCode);
+
   const res = await sendVerificationCode(e164);
   return { res, verificationId: res.verificationId };
 }
@@ -72,25 +73,23 @@ export async function verifyOtp(confirmation, code) {
 }
 
 // 회원가입 저장 (JWT 보호) -> Postgres User 생성/업데이트
-export async function saveSignupProfileWithJwt({ token, payload }) {
+export async function saveSignupProfileWithJwt({ payload }) {
   // payload: { name, phone, birth, email, countryCode }
   const mobile = toE164(payload.phone, payload.countryCode || "+82");
   const birthDate = normalizeToYMD(payload.birth);
   if (!mobile) throw new Error("휴대폰번호 형식 오류");
   if (!birthDate) throw new Error("생년월일 형식 오류");
-  console.group("save signup user /api/users");
-  console.log("name: ", payload.name);
-  console.log("mobile: ", mobile);
-  console.log("birthDate: ", birthDate);
-  console.log("email: ", payload.email);
-  console.groupEnd();
+  // console.group("save signup user /api/users");
+  // console.log("name: ", payload.name);
+  // console.log("mobile: ", mobile);
+  // console.log("birthDate: ", birthDate);
+  // console.log("email: ", payload.email);
+  // console.groupEnd();
 
   const res = await fetch("/api/users", {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
     body: JSON.stringify({
       name: payload.name,
       mobile,
@@ -104,7 +103,7 @@ export async function saveSignupProfileWithJwt({ token, payload }) {
 }
 
 // (기존유저) 생일 확인 (JWT 보호)
-export async function verifyBirthdateWithJwt({ token, birth }) {
+export async function verifyBirthdateWithJwt({ birth }) {
   const birthDate = normalizeToYMD(birth);
   if (!birthDate) throw new Error("생년월일 형식 오류");
 
@@ -112,8 +111,8 @@ export async function verifyBirthdateWithJwt({ token, birth }) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
     },
+    credentials: "include",
     body: JSON.stringify({ birthDate }),
   });
   const json = await res.json();

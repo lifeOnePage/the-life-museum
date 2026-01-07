@@ -2,11 +2,10 @@
 import { NextResponse } from "next/server";
 import { verifyJwt } from "@/app/api/_lib/jwt";
 import client from "@/app/client";
+import { requireAuthPayload } from "@/app/lib/auth.server";
 
 export async function POST(req) {
-  const auth = req.headers.get("authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-  const payload = token ? verifyJwt(token) : null;
+  const payload = await requireAuthPayload();
   if (!payload)
     return NextResponse.json(
       { ok: false, error: "unauthorized" },

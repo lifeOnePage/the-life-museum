@@ -1,6 +1,7 @@
 import client from "@/app/client"; // prisma
 import { verifyJwt } from "@/app/lib/jwt";
 
+// 레코드 상세 조회
 export async function getRecordDetailsServer({ token, identifier }) {
   const payload = verifyJwt(token); // { sub: userId, ... }
 

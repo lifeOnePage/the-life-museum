@@ -24,8 +24,6 @@ import {
 
 export default function LoginPage() {
   const router = useRouter();
-  const { token, user, signinWithToken } = useAuth();
-
   const [stage, setStage] = useState("phone"); // phone → otp → signup | login
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("+82"); // 국가 코드 상태 추가
@@ -66,7 +64,7 @@ export default function LoginPage() {
         skippable: true,
       },
     ],
-    []
+    [],
   );
   const [signupIndex, setSignupIndex] = useState(0);
   const [signupData, setSignupData] = useState({
@@ -117,7 +115,10 @@ export default function LoginPage() {
       setStage("otp");
     } catch (e) {
       console.error(e);
-      setError(e.message || "인증번호 전송에 실패했어요. 새로고침 후 다시 시도해주세요.");
+      setError(
+        e.message ||
+          "인증번호 전송에 실패했어요. 새로고침 후 다시 시도해주세요.",
+      );
     } finally {
       setLoading(false);
     }
@@ -136,7 +137,7 @@ export default function LoginPage() {
       console.groupEnd();
       const result = await verifyOtp(confirmation, otp);
       // JWT + 사용자 컨텍스트 저장
-      await signinWithToken(result.jwt, result.pgUser);
+      // await signinWithToken(result.jwt, result.pgUser);
 
       setKnownName(result.pgUser?.name || "");
       setIsNewUser(result.isNewUser);
@@ -164,7 +165,6 @@ export default function LoginPage() {
       try {
         setLoading(true);
         const saved = await saveSignupProfileWithJwt({
-          token,
           payload: {
             phone,
             countryCode, // 국가 코드 추가
@@ -174,12 +174,12 @@ export default function LoginPage() {
           },
         });
         // 서버가 최신 user 반환
-        await signinWithToken(token, saved.user);
+        // await signinWithToken(token, saved.user);
         router.push("/mypage");
       } catch (e) {
         console.error(e);
         setError(
-          "회원가입 저장 중 문제가 발생했어요. 잠시 후 다시 시도해주세요."
+          "회원가입 저장 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.",
         );
       } finally {
         setLoading(false);
@@ -199,8 +199,9 @@ export default function LoginPage() {
     if (!birth) return setError("생년월일을 입력해주세요");
     try {
       setLoading(true);
-      const res = await verifyBirthdateWithJwt({ token, birth });
-      await signinWithToken(token, res.user); // 혹시 서버에서 보정된 user 반환 시 반영
+
+      const res = await verifyBirthdateWithJwt({ birth });
+      // await signinWithToken(token, res.user); // 혹시 서버에서 보정된 user 반환 시 반영
       router.push("/mypage");
     } catch (e) {
       console.error(e);
@@ -243,7 +244,7 @@ export default function LoginPage() {
               zIndex: 100,
               width: "100%",
               height: 36,
-              marginTop:60,
+              marginTop: 60,
               border: "none",
               background: "transparent",
               cursor: "pointer",
@@ -264,9 +265,7 @@ export default function LoginPage() {
           </button>
         )}
 
-        <div
-          style={{ padding: "4px 24px" }}
-        >
+        <div style={{ padding: "4px 24px" }}>
           <AnimatePresence mode="wait" initial={false}>
             {stage === "phone" && (
               <SlideScreen key="stage-phone">
@@ -296,7 +295,9 @@ export default function LoginPage() {
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder={countryCode === "+82" ? "01012345678" : "Phone number"}
+                        placeholder={
+                          countryCode === "+82" ? "01012345678" : "Phone number"
+                        }
                         autoFocus
                         style={{
                           width: "100%",
@@ -311,12 +312,16 @@ export default function LoginPage() {
                           transition: "all 0.2s",
                         }}
                         onFocus={(e) => {
-                          e.target.style.background = "rgba(255, 255, 255, 0.15)";
-                          e.target.style.borderColor = "rgba(255, 255, 255, 0.3)";
+                          e.target.style.background =
+                            "rgba(255, 255, 255, 0.15)";
+                          e.target.style.borderColor =
+                            "rgba(255, 255, 255, 0.3)";
                         }}
                         onBlur={(e) => {
-                          e.target.style.background = "rgba(255, 255, 255, 0.1)";
-                          e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                          e.target.style.background =
+                            "rgba(255, 255, 255, 0.1)";
+                          e.target.style.borderColor =
+                            "rgba(255, 255, 255, 0.2)";
                         }}
                       />
                     </div>
@@ -364,7 +369,7 @@ export default function LoginPage() {
                   {(() => {
                     const shownIdxs = Array.from(
                       { length: signupIndex + 1 },
-                      (_, i) => i
+                      (_, i) => i,
                     );
                     const orderedIdxs = [
                       signupIndex,
@@ -412,8 +417,8 @@ export default function LoginPage() {
                     {signupIndex < signupFields.length - 1
                       ? "다음"
                       : loading
-                      ? "저장 중..."
-                      : "완료"}
+                        ? "저장 중..."
+                        : "완료"}
                   </PrimaryButton>
                 </div>
               </SlideScreen>

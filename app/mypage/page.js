@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import TopProgress from "@/app/components/loading/TopProgress";
 import FullscreenBusy from "@/app/components/loading/FullscreenBusy";
-import SmartButton from "@/app/components/loading/SmartButton";
 import {
   fetchMyReels,
   fetchMyRecords,

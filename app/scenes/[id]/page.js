@@ -882,6 +882,8 @@ export default function ViewPage() {
 
         setTimeout(() => {
           isTimelineScrollingRef.current = false;
+          // 플래그 해제 후 동기화를 위해 스크롤 이벤트 트리거
+          timelineElement.dispatchEvent(new Event('scroll'));
         }, 600);
       }
     }

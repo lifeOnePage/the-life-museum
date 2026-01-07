@@ -792,9 +792,10 @@ export default function ViewPage() {
     const handleTouchEnd = () => {
       // 터치 종료 후 약간의 지연을 두고 플래그 해제 (관성 스크롤 고려)
       setTimeout(() => {
+        updateScrollState();
         isUserTouchingTimelineRef.current = false;
         // 플래그 해제 후 명시적으로 현재 상태 동기화
-        updateScrollState();
+        
       }, 100);
     };
 

@@ -16,7 +16,6 @@ import {
 } from "./services/editApi";
 import ImageAddModal from "./components/ImageAddModal";
 import ImageCropOverlay from "./components/ImageCropOverlay";
-import ToastStack from "@/app/components/Toast";
 import "@/app/view/[identifier]/records/styles/cardPage.css";
 import "@/app/view/[identifier]/records/styles/cardPage-mobile.css";
 

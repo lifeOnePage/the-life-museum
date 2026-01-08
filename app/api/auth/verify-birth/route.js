@@ -21,7 +21,6 @@ export async function POST(req) {
   console.log(birthDate);
 
   const me = await client.user.findUnique({ where: { id: payload.sub } });
-  console.log(me.birthDate);
 
   if (!me)
     return NextResponse.json(

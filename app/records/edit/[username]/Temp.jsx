@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import FloatingToolbar from "@/app/components/edit/FloatingToolbar";
@@ -89,12 +89,7 @@ export default function Temp({ fetchedRecordData }) {
   useEffect(() => {
     if (authLoading) return;
 
-    //auth token과 params username이 없으면 에러
-    if (!token) {
-      setIsLoading(false);
-      setError("잘못된 접근입니다.");
-      return;
-    }
+    //⭐️ auth token이 없으면 에러는 서버에서 이미 처리.
 
     (async () => {
       try {

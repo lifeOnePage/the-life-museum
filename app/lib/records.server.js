@@ -1,9 +1,15 @@
 import client from "@/app/client"; // prisma
 import { verifyJwt } from "@/app/lib/jwt";
+import { cookies } from "next/headers";
 
 // 레코드 상세 조회
-export async function getRecordDetailsServer({ token, identifier }) {
-  const payload = verifyJwt(token); // { sub: userId, ... }
+export async function getRecordDetailsServer({ identifier }) {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("app_token")?.value;
+  if (!token) {
+    throw new Error("unauthorized");
+  }
+  const payload = verifyJwt(token);
 
   if (!payload?.sub) {
     throw new Error("unauthorized");
@@ -11,13 +17,6 @@ export async function getRecordDetailsServer({ token, identifier }) {
   const viewerId = Number(payload?.sub);
   if (!Number.isFinite(viewerId)) throw new Error("unauthorized");
 
-  const owner = await client.user.findUnique({
-    where: { id: viewerId }, // 또는 mobile / username 등
-    select: { id: true },
-  });
-  if (!owner) throw new Error("user_not_found");
-
-  // 2) 그 유저의 records 목록
   const records = await client.record.findFirst({
     where: {
       identifier,

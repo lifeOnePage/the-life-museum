@@ -19,15 +19,22 @@ import ImageAddModal from "./components/ImageAddModal";
 import "@/app/records/(common)/styles/cardPage.css";
 import "@/app/records/(common)/styles/cardPage-mobile.css";
 import useWindowSize from "@/app/hooks/useWindowSize";
+import { INIT_DATA } from "./constants/initData";
+import { date2String } from "@/app/utils/date2String";
 
-export default function Temp({ fetchedRecordData }) {
+export default function Temp({
+  identifier,
+  fetchedRecordData,
+  fetchedUserData,
+}) {
   const { width } = useWindowSize();
-  const { username } = useParams();
-  const { user, token, loading: authLoading } = useAuth();
+  const item = fetchedRecordData.item;
+  const recordId = item?.id;
+
+  const { token } = useAuth();
   const router = useRouter();
   const [isSaved, setIsSaved] = useState(true);
   const [isPreview, setIsPreview] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [toasts, setToasts] = useState([]);
@@ -80,140 +87,76 @@ export default function Temp({ fetchedRecordData }) {
 
   const [data, setData] = useState(null);
   const [originalData, setOriginalData] = useState(null); // 원본 데이터 저장
-  const [recordId, setRecordId] = useState(null);
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imageModalItemId, setImageModalItemId] = useState(null);
   const [activeItem, setActiveItem] = useState(null);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [navigateToItem, setNavigateToItem] = useState(null);
+
+  // 데이터 초기화
   useEffect(() => {
-    if (authLoading) return;
+    //⭐️ auth token이 없는 에러는 서버에서 이미 처리.
 
-    //⭐️ auth token이 없으면 에러는 서버에서 이미 처리.
+    /**
+     * 처음 생성하는건지 판단한 후,
+     * 기본값을 세팅한다.
+     */
+    if (!item) return;
+    setError(null);
 
-    (async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
+    const trimmedName = item.name?.trim() ?? "";
+    const trimmedDescription = item.description?.trim() ?? "";
+    //기본값 준비
+    const record = {
+      ...item,
+      name: trimmedName || INIT_DATA.name,
+      description: trimmedDescription || INIT_DATA.description,
+      coverUrl: item.coverUrl || INIT_DATA.coverUrl,
+      color: item.color || INIT_DATA.color,
+    };
 
-        if (fetchedRecordData?.ok && fetchedRecordData?.item) {
-          setRecordId(fetchedRecordData.item.id);
+    const itemsFromServer = item.recordItems ?? [];
 
-          // 레코드의 userName을 사용 (제작할 대상의 성함)
-          const userName =
-            fetchedRecordData.item.userName || user?.userName || "사용자";
+    //새 레코드인지 판단
+    const isRecordEmpty = !(trimmedName && trimmedDescription && item.coverUrl);
 
-          // 메인 레코드가 비어있으면 가이드라인 표시
-          const isNewRecord =
-            !fetchedRecordData.item.name?.trim() &&
-            !fetchedRecordData.item.description?.trim() &&
-            !fetchedRecordData.item.coverUrl;
+    const isNewlyCreated =
+      new Date(item.createdAt).getTime() === new Date(item.updatedAt).getTime();
 
-          const record = {
-            ...fetchedRecordData.item,
-            name:
-              fetchedRecordData.item.name?.trim() ||
-              (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
-            description:
-              fetchedRecordData.item.description?.trim() ||
-              (isNewRecord
-                ? "일상의 작은 순간들을 관찰하고 기록하는 아티스트입니다.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브할 수 있도록 돕습니다."
-                : "당신을 소개하는 문구를 작성해주세요! (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)"),
-            // 메인 커버 이미지가 없으면 기본 이미지 설정
-            coverUrl:
-              fetchedRecordData.item.coverUrl || "/images/records/No image.png",
-            // color가 없으면 기본값 설정
-            color: fetchedRecordData.item.color || "#121212",
-          };
+    // 새 레코드인 경우:
+    // 1. name, description, coverUrl이 모두 비어있고
+    // 2. 생성시간과 수정시간이 동일할 때
+    // 3. items가 비어있을 때
+    const isActuallyNewRecord =
+      itemsFromServer.length === 0 && isNewlyCreated && isRecordEmpty;
 
-          // 타임라인 아이템이 없으면 기본 아이템 1개 생성 (새 레코드인 경우에만)
-          let items = fetchedRecordData.item.recordItems || [];
-          console.log(
-            "[LOAD] Fetched items:",
-            items.map((it) => ({
-              id: it.id,
-              title: it.title,
-              images: it.images,
-              imagesLength: it.images?.length,
-            })),
-          );
-          const originalName = fetchedRecordData.item.name?.trim();
-          const originalDescription =
-            fetchedRecordData.item.description?.trim();
-          const originalCoverUrl = fetchedRecordData.item.coverUrl;
-          const createdAt = fetchedRecordData.item.createdAt;
-          const updatedAt = fetchedRecordData.item.updatedAt;
+    // 새 레코드인 경우에만 기본 아이템 생성
+    // 사용자가 저장 후 모든 항목을 삭제한 경우에는 기본 아이템을 생성하지 않음
+    const items = isActuallyNewRecord
+      ? [
+          {
+            id: crypto.randomUUID(),
+            title: INIT_DATA.items[0].title,
+            date: date2String(),
+            location: "",
+            description: INIT_DATA.items[0].description,
+            color: "",
+            isHighlight: false,
+            coverUrl: null,
+            images: [],
+          },
+        ]
+      : itemsFromServer;
 
-          const timeDiff =
-            createdAt && updatedAt
-              ? new Date(updatedAt).getTime() - new Date(createdAt).getTime()
-              : Infinity;
-          const isNewlyCreated = timeDiff < 30000;
+    const initialData = {
+      record,
+      items,
+    };
 
-          const hasBeenSaved = !!(
-            originalName ||
-            originalDescription ||
-            originalCoverUrl
-          );
-
-          // 새 레코드인 경우:
-          // 1. name, description, coverUrl이 모두 비어있고
-          // 2. 아이템도 없고
-          // 3. 생성 후 거의 수정되지 않았고
-          // 4. 한 번도 저장된 적이 없어야 함
-          const isActuallyNewRecord =
-            !originalName &&
-            !originalDescription &&
-            !originalCoverUrl &&
-            items.length === 0 &&
-            isNewlyCreated &&
-            !hasBeenSaved;
-
-          // 새 레코드인 경우에만 기본 아이템 생성
-          // 사용자가 저장 후 모든 항목을 삭제한 경우에는 기본 아이템을 생성하지 않음
-          if (isActuallyNewRecord) {
-            const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, "0");
-            const day = String(today.getDate()).padStart(2, "0");
-            const dateStr = `${year}.${month}.${day}`;
-
-            // 초기 항목에도 임시 ID 부여 (key 중복 방지)
-            const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            items = [
-              {
-                id: tempId, // 임시 ID 부여
-                title: "첫 번째 순간(예:출생)",
-                date: dateStr,
-                location: "",
-                description:
-                  "기록할 만한 일들이 있나요? 작은 일들도 좋아요.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브해보세요.",
-                color: "",
-                isHighlight: false,
-                coverUrl: null, // 더미 아이템은 coverUrl을 null로 설정
-                images: [], // 더미 아이템은 images 배열도 빈 배열로 설정
-              },
-            ];
-          }
-
-          const initialData = {
-            record,
-            items,
-          };
-          setData(initialData);
-          setOriginalData(JSON.parse(JSON.stringify(initialData)));
-          setIsSaved(true);
-        } else {
-          throw new Error("데이터를 불러올 수 없습니다.");
-        }
-      } catch (e) {
-        console.error("[edit records] load error:", e);
-        setError(e.message || "데이터를 불러오는 중 오류가 발생했습니다.");
-      } finally {
-        setIsLoading(false);
-      }
-    })();
-  }, [authLoading, token, username, user]);
+    setData(initialData);
+    setOriginalData(structuredClone(initialData));
+    setIsSaved(true);
+  }, [item.id]);
 
   // 페이지를 떠날 때 자동저장
   useEffect(() => {
@@ -261,7 +204,7 @@ export default function Temp({ fetchedRecordData }) {
     return () => {
       clearTimeout(autoSaveTimer);
     };
-  }, [data, isPreview, isSaving, isSaved, token, recordId, originalData]);
+  }, [data, isPreview, isSaving, isSaved, token, originalData]);
 
   // 마이페이지로 이동하기 전에 자동저장
   const mypage = async () => {
@@ -519,11 +462,6 @@ export default function Temp({ fetchedRecordData }) {
     }
   };
 
-  //로그아웃
-  const logout = () => {
-    router.push("/login");
-  };
-
   const addTimelineItem = () => {
     if (!data) return;
 
@@ -627,12 +565,9 @@ export default function Temp({ fetchedRecordData }) {
         // 삭제 후 DB에서 최신 데이터 다시 불러오기
         const result = await fetchRecordDetails({
           token,
-          identifier: username,
+          identifier,
         });
         if (result?.ok && result?.item) {
-          // 레코드의 userName을 사용 (제작할 대상의 성함)
-          const userName = result.item.userName || user?.userName || "사용자";
-
           // 메인 레코드가 비어있으면 가이드라인 표시
           const isNewRecord =
             !result.item.name?.trim() &&
@@ -643,7 +578,9 @@ export default function Temp({ fetchedRecordData }) {
             ...result.item,
             name:
               result.item.name?.trim() ||
-              (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
+              (isNewRecord
+                ? "나의 라이프 레코드"
+                : `${recordUserName}의 이야기`),
             description:
               result.item.description?.trim() ||
               (isNewRecord
@@ -955,14 +892,6 @@ export default function Temp({ fetchedRecordData }) {
     setIsUploadingImage(false);
   };
 
-  const handleCropComplete = async (croppedFile) => {
-    // 크롭 기능 제거됨 - 사용되지 않음
-  };
-
-  const handleCropCancel = () => {
-    // 크롭 기능 제거됨 - 사용되지 않음
-  };
-
   const handleImageDelete = (itemId, imageIndex) => {
     if (!data || !itemId) return;
 
@@ -995,20 +924,12 @@ export default function Temp({ fetchedRecordData }) {
     setIsSaved(false);
   };
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
-  //       불러오는 중…
-  //     </div>
-  //   );
-  // }
-
   if (error && !data) {
     return (
       <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
         <div className="text-center">
           <p className="mb-4 text-xl">{error}</p>
-          <p className="text-sm text-white/60">identifier: {username}</p>
+          <p className="text-sm text-white/60">identifier: {identifier}</p>
         </div>
       </div>
     );
@@ -1019,7 +940,7 @@ export default function Temp({ fetchedRecordData }) {
       <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
         <div className="text-center">
           <p className="mb-4 text-xl">데이터를 찾을 수 없습니다.</p>
-          <p className="text-sm text-white/60">identifier: {username}</p>
+          <p className="text-sm text-white/60">identifier: {identifier}</p>
         </div>
       </div>
     );
@@ -1073,7 +994,6 @@ export default function Temp({ fetchedRecordData }) {
         mypage={mypage}
         preview={preview}
         save={save}
-        logout={logout}
         addItem={addTimelineItem}
         onColorChange={handleColorChange}
         currentColor={activeItem?.color || data?.record?.color || "#121212"}
@@ -1118,9 +1038,6 @@ export default function Temp({ fetchedRecordData }) {
           onActiveItemChange={setActiveItem}
           isUploadingImage={isUploadingImage}
           onNavigateToItem={navigateToItem}
-          onCropComplete={handleCropComplete}
-          onCropCancel={handleCropCancel}
-          aspectRatio={1}
           width={width}
         />
       )}

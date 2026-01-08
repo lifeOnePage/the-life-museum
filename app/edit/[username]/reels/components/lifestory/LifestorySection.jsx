@@ -23,7 +23,7 @@ import {
   saveLifestory,
   incrementLifestoryUsage,
   generateStory,
-} from "@/app/edit/[username]/editApi";
+} from "@/app/edit/[identifier]/editApi";
 
 const STYLE_OPTIONS = ["진중한", "낭만적인", "재치있는", "신비로운"];
 const COUNT_OPTIONS = [5, 10];
@@ -93,13 +93,12 @@ export default forwardRef(function LifestorySection(
     save: async () => {
       // 프리뷰든 아니든, 이 컴포넌트가 마운트돼 있다면 저장 시도 가능
       // 변경 없으면 스킵
-      console.log("lifestory saved by saveall")
+      console.log("lifestory saved by saveall");
       if (!computeDirty()) return { ok: true, skipped: true };
       await handleSave();
       return { ok: true };
     },
   }));
-
 
   // 초기 로드
   useEffect(() => {

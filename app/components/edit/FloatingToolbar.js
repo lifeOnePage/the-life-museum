@@ -9,7 +9,7 @@ import { IoMdCheckmarkCircleOutline } from "react-icons/io";
 import { MdAdd } from "react-icons/md";
 import { MdPalette } from "react-icons/md";
 import { MdMusicNote } from "react-icons/md";
-import BgmSelector from "@/app/records/edit/[username]/components/BgmSelector";
+import BgmSelector from "@/app/records/edit/[identifier]/components/BgmSelector";
 
 const BG_THEME_PALETTE = [
   { name: "Coal", bg: "#121212", text: "#F2F2F2" },
@@ -34,7 +34,6 @@ export default function FloatingToolbar({
   mypage,
   preview,
   save,
-  logout,
   addItem,
   onColorChange,
   currentColor,

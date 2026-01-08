@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from "react";
 import { useRouter } from "next/navigation";
-import ImageCropOverlay from "@/app/records/edit/[username]/components/ImageCropOverlay";
+import ImageCropOverlay from "@/app/records/edit/[identifier]/components/ImageCropOverlay";
 import { HiStar, HiHome, HiOutlineStar, HiTrash } from "react-icons/hi";
 import {
   IoIosArrowDropleftCircle,
@@ -43,9 +43,6 @@ export default function LifeRecordDesktop({
   onActiveItemChange,
   isUploadingImage = false,
   onNavigateToItem,
-  onCropComplete,
-  onCropCancel,
-  aspectRatio = 1,
   autoSlideEnabled: propAutoSlideEnabled,
   onAutoSlideEnabledChange,
   onImageModalOpen,

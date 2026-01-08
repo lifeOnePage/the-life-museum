@@ -5,12 +5,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/app/contexts/AuthContext";
 
 // 기존 parts 컴포넌트들 임포트
-import Header from "@/app/edit/[username]/reels/components/lifestory/parts/Header";
-import StylePicker from "@/app/edit/[username]/reels/components/lifestory/parts/StylePicker";
-import CountPicker from "@/app/edit/[username]/reels/components/lifestory/parts/CountPicker";
-import QACard from "@/app/edit/[username]/reels/components/lifestory/parts/QACard";
-import ProgressDots from "@/app/edit/[username]/reels/components/lifestory/parts/ProgressDots";
-import { Primary, Secondary } from "@/app/edit/[username]/reels/components/lifestory/parts/Buttons";
+import Header from "@/app/edit/[identifier]/reels/components/lifestory/parts/Header";
+import StylePicker from "@/app/edit/[identifier]/reels/components/lifestory/parts/StylePicker";
+import CountPicker from "@/app/edit/[identifier]/reels/components/lifestory/parts/CountPicker";
+import QACard from "@/app/edit/[identifier]/reels/components/lifestory/parts/QACard";
+import ProgressDots from "@/app/edit/[identifier]/reels/components/lifestory/parts/ProgressDots";
+import {
+  Primary,
+  Secondary,
+} from "@/app/edit/[identifier]/reels/components/lifestory/parts/Buttons";
 
 const STYLE_OPTIONS = ["진중한", "낭만적인", "재치있는", "신비로운"];
 const COUNT_OPTIONS = [5, 10];
@@ -101,14 +104,17 @@ export default function LifestoryGuide({
   }, [step, selectedStyle, questionCount, shouldFetchOnQA]); // eslint-disable-line
 
   // 현재 진행 상황 데이터
-  const currentProgressData = useMemo(() => ({
-    style: selectedStyle,
-    questions,
-    answers,
-    story: generatedStory,
-    tokenUsage,
-    currentStep: step,
-  }), [selectedStyle, questions, answers, generatedStory, tokenUsage, step]);
+  const currentProgressData = useMemo(
+    () => ({
+      style: selectedStyle,
+      questions,
+      answers,
+      story: generatedStory,
+      tokenUsage,
+      currentStep: step,
+    }),
+    [selectedStyle, questions, answers, generatedStory, tokenUsage, step],
+  );
 
   const fadeSlide = {
     initial: { x: 24, opacity: 0 },
@@ -191,12 +197,12 @@ export default function LifestoryGuide({
   };
 
   return (
-    <div className="flex w-full flex-col text-white relative">
+    <div className="relative flex w-full flex-col text-white">
       {/* 우상단 닫기 버튼 (프로필 편집으로 돌아가기) - 스티키 */}
-      <div className="sticky top-0 z-20 flex justify-end pt-4 pr-4 bg-gradient-to-b from-black-100/40 to-transparent">
+      <div className="from-black-100/40 sticky top-0 z-20 flex justify-end bg-gradient-to-b to-transparent pt-4 pr-4">
         <button
           onClick={handleBack}
-          className="text-white/60 hover:text-white transition-colors"
+          className="text-white/60 transition-colors hover:text-white"
           title="프로필 편집으로 돌아가기"
         >
           <svg
@@ -223,7 +229,7 @@ export default function LifestoryGuide({
             <motion.section
               key="intro"
               {...fadeSlide}
-              className="flex w-full flex-col items-center justify-center text-center py-8"
+              className="flex w-full flex-col items-center justify-center py-8 text-center"
             >
               <motion.h2
                 initial={{ opacity: 0, y: 6 }}
@@ -257,7 +263,7 @@ export default function LifestoryGuide({
               {/* 좌측 이전 버튼 */}
               <button
                 onClick={() => setStep("intro")}
-                className="text-white/70 hover:text-white text-sm underline underline-offset-4 transition-colors self-start mb-4"
+                className="mb-4 self-start text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white"
               >
                 이전으로
               </button>
@@ -288,7 +294,7 @@ export default function LifestoryGuide({
               {/* 좌측 이전 버튼 */}
               <button
                 onClick={() => setStep("style")}
-                className="text-white/70 hover:text-white text-sm underline underline-offset-4 transition-colors self-start mb-4"
+                className="mb-4 self-start text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white"
               >
                 이전으로
               </button>
@@ -319,7 +325,7 @@ export default function LifestoryGuide({
               {/* 좌측 이전 버튼 */}
               <button
                 onClick={handlePrevQA}
-                className="text-white/70 hover:text-white text-sm underline underline-offset-4 transition-colors self-start mb-4"
+                className="mb-4 self-start text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white"
               >
                 이전으로
               </button>
@@ -394,7 +400,7 @@ export default function LifestoryGuide({
                   setStep("qa");
                   setCurrentIdx(questions.length - 1);
                 }}
-                className="text-white/70 hover:text-white text-sm underline underline-offset-4 transition-colors self-start mb-4"
+                className="mb-4 self-start text-sm text-white/70 underline underline-offset-4 transition-colors hover:text-white"
               >
                 이전으로
               </button>
@@ -408,9 +414,9 @@ export default function LifestoryGuide({
                 }}
               />
               <div className="relative mt-3">
-                <div className="bg-black-100 rounded-lg p-4 border border-white/10">
-                  <h3 className="text-base font-bold mb-3">생성된 생애문</h3>
-                  <div className="whitespace-pre-wrap text-sm leading-relaxed">
+                <div className="bg-black-100 rounded-lg border border-white/10 p-4">
+                  <h3 className="mb-3 text-base font-bold">생성된 생애문</h3>
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
                     {generatedStory}
                   </div>
                 </div>

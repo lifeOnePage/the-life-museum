@@ -2,11 +2,11 @@
 
 import { useParams } from "next/navigation";
 
-/** 보호막 - username이 없으면 렌더링하지 않음 */
+/** 가드 - identifier가 없으면 렌더링하지 않음 */
 
 export default function EditRecordsLayout({ children }) {
-  const { username } = useParams();
+  const { identifier } = useParams();
 
-  if (!username) return;
+  if (!identifier) return;
   return <>{children}</>;
 }

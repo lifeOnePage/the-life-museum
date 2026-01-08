@@ -4,27 +4,27 @@ const nextConfig = {
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev',
-        pathname: '/reel/**', // R2에서 사용하는 경로 패턴
+        protocol: "https",
+        hostname: "pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev",
+        pathname: "/reel/**", // R2에서 사용하는 경로 패턴
       },
       {
-        protocol: 'https',
-        hostname: 'pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev',
-        pathname: '/reels/**', // R2에서 사용하는 경로 패턴
+        protocol: "https",
+        hostname: "pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev",
+        pathname: "/reels/**", // R2에서 사용하는 경로 패턴
       },
     ],
   },
   async redirects() {
     return [
       {
-        source: '/edit/:username/records',
-        destination: '/records/edit/:username',
+        source: "/edit/:identifier/records",
+        destination: "/records/edit/:identifier",
         permanent: false,
       },
       {
-        source: '/view/:identifier/records',
-        destination: '/records/view/:identifier',
+        source: "/view/:identifier/records",
+        destination: "/records/view/:identifier",
         permanent: false,
       },
     ];

@@ -36,7 +36,7 @@ app/view
    ┣ records/
    ┗ reels/
 app/edit
- ┗ [username]
+ ┗ [identifier]
    ┣ records/
    ┣ reels/
    ┣ editApi.js

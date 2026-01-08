@@ -10,17 +10,13 @@ export async function getRecordDetailsServer({ identifier }) {
     throw new Error("unauthorized");
   }
   const payload = verifyJwt(token);
-
-  if (!payload?.sub) {
-    throw new Error("unauthorized");
-  }
   const viewerId = Number(payload?.sub);
   if (!Number.isFinite(viewerId)) throw new Error("unauthorized");
 
-  const records = await client.record.findFirst({
+  const record = await client.record.findFirst({
     where: {
       identifier,
-      userId: Number(payload.sub),
+      userId: viewerId,
     },
     select: {
       id: true,
@@ -56,5 +52,9 @@ export async function getRecordDetailsServer({ identifier }) {
     },
   });
 
-  return { ok: true, item: records };
+  if (!record) {
+    throw new Error("not_found");
+  }
+
+  return { ok: true, item: record };
 }

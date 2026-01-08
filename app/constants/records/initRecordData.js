@@ -1,4 +1,4 @@
-export const INIT_DATA = {
+export const INIT_RECORD_DATA = {
   name: "나의 라이프 레코드",
   description:
     "당신을 소개하는 문구를 작성해주세요! (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)",

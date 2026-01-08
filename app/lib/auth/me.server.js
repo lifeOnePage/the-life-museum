@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
-import { verifyJwt } from "./auth";
-import client from "../client";
+import { verifyJwt } from "../auth";
+import client from "../../client";
 
 export async function getMeServer() {
   const cookieStore = await cookies();

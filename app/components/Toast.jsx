@@ -28,12 +28,14 @@ export default function ToastStack({ toasts = [], onDismiss }) {
               animate={{ y: 4, opacity: 1 }}
               exit={{ y: 0, opacity: 0 }}
               transition={{ type: "spring", stiffness: 400, damping: 30 }}
-              className={`pointer-events-auto relative rounded-xl bg-black-200/90 text-white shadow-xl backdrop-blur border border-white/10 ${toneStyles[t.tone] ?? ""}`}
+              className={`bg-black-200/90 pointer-events-auto relative rounded-xl border border-white/10 text-white shadow-xl backdrop-blur ${toneStyles[t.tone] ?? ""}`}
               role="status"
               aria-live="polite"
             >
               <div className="flex items-start gap-3 px-4 py-3">
-                <div className="mt-[2px]">{toneIcon[t.tone] ?? toneIcon.info}</div>
+                <div className="mt-[2px]">
+                  {toneIcon[t.tone] ?? toneIcon.info}
+                </div>
                 <div className="flex-1 text-sm leading-5">{t.message}</div>
                 <button
                   onClick={() => onDismiss?.(t.id)}
@@ -47,7 +49,7 @@ export default function ToastStack({ toasts = [], onDismiss }) {
               {/* 진행바 */}
               {t.showProgress && t.duration > 0 && (
                 <motion.div
-                  className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/15 overflow-hidden rounded-b-xl"
+                  className="absolute right-0 bottom-0 left-0 h-[3px] overflow-hidden rounded-b-xl bg-white/15"
                   initial={false}
                 >
                   <motion.div
@@ -60,7 +62,7 @@ export default function ToastStack({ toasts = [], onDismiss }) {
                 </motion.div>
               )}
               {t.showProgress && t.duration === 0 && (
-                <div className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/15 overflow-hidden rounded-b-xl">
+                <div className="absolute right-0 bottom-0 left-0 h-[3px] overflow-hidden rounded-b-xl bg-white/15">
                   <motion.div
                     className="h-full w-[40%] bg-white/80"
                     initial={{ x: "-40%" }}

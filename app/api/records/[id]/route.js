@@ -5,9 +5,8 @@ import client from "@/app/client";
 
 export const runtime = "nodejs";
 
-import { getRecordDetailsServer } from "@/app/lib/records.server";
 import { cookies } from "next/headers";
-import { requireAuthPayload } from "@/app/lib/auth.server";
+import { requireAuthPayload } from "@/app/lib/auth/auth.server";
 
 export async function GET(req, { params }) {
   try {

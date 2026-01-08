@@ -1,6 +1,6 @@
 // app/api/auth/me/route.js
 import { NextResponse } from "next/server";
-import { getMeServer } from "@/app/lib/me.server";
+import { getMeServer } from "@/app/lib/auth/me.server";
 
 export const runtime = "nodejs";
 

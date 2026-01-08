@@ -2,7 +2,7 @@
 import { NextResponse } from "next/server";
 import { verifyJwt } from "@/app/api/_lib/jwt";
 import client from "@/app/client";
-import { requireAuthPayload } from "@/app/lib/auth.server";
+import { requireAuthPayload } from "@/app/lib/auth/auth.server";
 
 export async function POST(req) {
   const payload = await requireAuthPayload();

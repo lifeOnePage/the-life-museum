@@ -1,7 +1,7 @@
 // app/api/users/create/route.js
 import { NextResponse } from "next/server";
 import client from "@/app/client"; // app/ 디렉토리의 client Client (경로 맞게 조정)
-import { requireAuthPayload } from "@/app/lib/auth.server";
+import { requireAuthPayload } from "@/app/lib/auth/auth.server";
 
 export const runtime = "nodejs";
 

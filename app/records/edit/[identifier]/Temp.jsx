@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import FloatingToolbar from "@/app/components/edit/FloatingToolbar";
 import ToastStack from "@/app/components/Toast";
@@ -19,18 +19,10 @@ import ImageAddModal from "./components/ImageAddModal";
 import "@/app/records/(common)/styles/cardPage.css";
 import "@/app/records/(common)/styles/cardPage-mobile.css";
 import useWindowSize from "@/app/hooks/useWindowSize";
-import { INIT_DATA } from "./constants/initData";
-import { date2String } from "@/app/utils/date2String";
 
-export default function Temp({
-  identifier,
-  fetchedRecordData,
-  fetchedUserData,
-}) {
+export default function Temp({ identifier, initialData, fetchedUserData }) {
   const { width } = useWindowSize();
-  const item = fetchedRecordData.item;
-  const recordId = item?.id;
-
+  const recordId = initialData?.id;
   const { token } = useAuth();
   const router = useRouter();
   const [isSaved, setIsSaved] = useState(true);
@@ -95,68 +87,14 @@ export default function Temp({
 
   // 데이터 초기화
   useEffect(() => {
-    //⭐️ auth token이 없는 에러는 서버에서 이미 처리.
-
-    /**
-     * 처음 생성하는건지 판단한 후,
-     * 기본값을 세팅한다.
-     */
-    if (!item) return;
-    setError(null);
-
-    const trimmedName = item.name?.trim() ?? "";
-    const trimmedDescription = item.description?.trim() ?? "";
-    //기본값 준비
-    const record = {
-      ...item,
-      name: trimmedName || INIT_DATA.name,
-      description: trimmedDescription || INIT_DATA.description,
-      coverUrl: item.coverUrl || INIT_DATA.coverUrl,
-      color: item.color || INIT_DATA.color,
-    };
-
-    const itemsFromServer = item.recordItems ?? [];
-
-    //새 레코드인지 판단
-    const isRecordEmpty = !(trimmedName && trimmedDescription && item.coverUrl);
-
-    const isNewlyCreated =
-      new Date(item.createdAt).getTime() === new Date(item.updatedAt).getTime();
-
-    // 새 레코드인 경우:
-    // 1. name, description, coverUrl이 모두 비어있고
-    // 2. 생성시간과 수정시간이 동일할 때
-    // 3. items가 비어있을 때
-    const isActuallyNewRecord =
-      itemsFromServer.length === 0 && isNewlyCreated && isRecordEmpty;
-
-    // 새 레코드인 경우에만 기본 아이템 생성
-    // 사용자가 저장 후 모든 항목을 삭제한 경우에는 기본 아이템을 생성하지 않음
-    const items = isActuallyNewRecord
-      ? [
-          {
-            id: crypto.randomUUID(),
-            title: INIT_DATA.items[0].title,
-            date: date2String(),
-            location: "",
-            description: INIT_DATA.items[0].description,
-            color: "",
-            isHighlight: false,
-            coverUrl: null,
-            images: [],
-          },
-        ]
-      : itemsFromServer;
-
-    const initialData = {
-      record,
-      items,
-    };
+    if (!initialData) return;
 
     setData(initialData);
+
+    // 자동 저장 시 비교를 위해 원본 데이터도 저장
     setOriginalData(structuredClone(initialData));
     setIsSaved(true);
-  }, [item.id]);
+  }, [initialData?.id]);
 
   // 페이지를 떠날 때 자동저장
   useEffect(() => {

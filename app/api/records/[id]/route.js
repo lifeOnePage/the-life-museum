@@ -5,137 +5,118 @@ import client from "@/app/client";
 
 export const runtime = "nodejs";
 
-// GET: identifier로 record 조회 (인증 필요)
-// export async function GET(req, { params }) {
-//   try {
-//     const auth = req.headers.get("authorization") || "";
-//     const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-//     const payload = token ? verifyJwt(token) : null;
-//     if (!payload) {
-//       return NextResponse.json(
-//         { ok: false, error: "unauthorized" },
-//         { status: 401 },
-//       );
-//     }
-
-//     const { id } = await params;
-//     const identifier = String(id || "").trim();
-
-//     // identifier로 record 찾기 (본인 소유만)
-//     const record = await client.record.findFirst({
-//       where: {
-//         identifier,
-//         userId: Number(payload.sub),
-//       },
-//       select: {
-//         id: true,
-//         identifier: true,
-//         coverUrl: true,
-//         name: true,
-//         subName: true,
-//         description: true,
-//         pageTitle: true,
-//         pageSubtitle: true,
-//         bgm: true,
-//         color: true,
-//         birthDate: true,
-//         displayMode: true,
-//         userName: true,
-//         createdAt: true,
-//         updatedAt: true,
-//         recordItems: {
-//           select: {
-//             id: true,
-//             title: true,
-//             date: true,
-//             location: true,
-//             description: true,
-//             color: true,
-//             isHighlight: true,
-//             coverUrl: true,
-//             images: true,
-//             createdAt: true,
-//           },
-//           orderBy: { createdAt: "asc" },
-//         },
-//       },
-//     });
-
-//     if (!record) {
-//       return NextResponse.json(
-//         { ok: false, error: "not found" },
-//         { status: 404 },
-//       );
-//     }
-
-//     return NextResponse.json({
-//       ok: true,
-//       item: {
-//         record: {
-//           id: record.id,
-//           identifier: record.identifier,
-//           coverUrl: record.coverUrl,
-//           name: record.name,
-//           subName: record.subName,
-//           description: record.description,
-//           pageTitle: record.pageTitle,
-//           pageSubtitle: record.pageSubtitle,
-//           bgm: record.bgm,
-//           color: record.color,
-//           birthDate: record.birthDate || null,
-//           displayMode: record.displayMode || "year",
-//           userName: record.userName || null,
-//           createdAt: record.createdAt,
-//           updatedAt: record.updatedAt,
-//         },
-//         recordItems: (record.recordItems || []).map((item) => {
-//           console.log(
-//             "[API GET /records/[id]] Item:",
-//             item.id,
-//             "images from DB:",
-//             item.images,
-//           );
-//           return {
-//             id: item.id,
-//             title: item.title || "",
-//             date: item.date || "",
-//             location: item.location || "",
-//             description: item.description || "",
-//             color: item.color || "",
-//             isHighlight: item.isHighlight || false,
-//             coverUrl: item.coverUrl || "",
-//             images: item.images || [],
-//             createdAt: item.createdAt,
-//           };
-//         }),
-//       },
-//     });
-//   } catch (e) {
-//     console.error("[records:GET]", e);
-//     return NextResponse.json(
-//       { ok: false, error: "server error" },
-//       { status: 500 },
-//     );
-//   }
-// }
-
 import { getRecordDetailsServer } from "@/app/lib/records.server";
 import { cookies } from "next/headers";
+import { requireAuthPayload } from "@/app/lib/auth.server";
 
-export async function GET(_req, { params }) {
-  const token = (await cookies()).get("app_token")?.value;
-  if (!token) {
-    return NextResponse.json({ ok: false }, { status: 401 });
-  }
-
+export async function GET(req, { params }) {
   try {
-    const data = await getRecordDetailsServer({
-      token,
-      identifier: params.identifier,
+    const payload = await requireAuthPayload();
+    if (!payload) {
+      return NextResponse.json(
+        { ok: false, error: "unauthorized" },
+        { status: 401 },
+      );
+    }
+
+    const { id } = await params;
+    const identifier = String(id || "").trim();
+
+    // identifier로 record 찾기 (본인 소유만)
+    const record = await client.record.findFirst({
+      where: {
+        identifier,
+        userId: Number(payload.sub),
+      },
+      select: {
+        id: true,
+        identifier: true,
+        coverUrl: true,
+        name: true,
+        subName: true,
+        description: true,
+        pageTitle: true,
+        pageSubtitle: true,
+        bgm: true,
+        color: true,
+        birthDate: true,
+        displayMode: true,
+        userName: true,
+        createdAt: true,
+        updatedAt: true,
+        recordItems: {
+          select: {
+            id: true,
+            title: true,
+            date: true,
+            location: true,
+            description: true,
+            color: true,
+            isHighlight: true,
+            coverUrl: true,
+            images: true,
+            createdAt: true,
+          },
+          orderBy: { createdAt: "asc" },
+        },
+      },
     });
-    return NextResponse.json(data);
+
+    if (!record) {
+      return NextResponse.json(
+        { ok: false, error: "not found" },
+        { status: 404 },
+      );
+    }
+
+    return NextResponse.json({
+      ok: true,
+      item: {
+        record: {
+          id: record.id,
+          identifier: record.identifier,
+          coverUrl: record.coverUrl,
+          name: record.name,
+          subName: record.subName,
+          description: record.description,
+          pageTitle: record.pageTitle,
+          pageSubtitle: record.pageSubtitle,
+          bgm: record.bgm,
+          color: record.color,
+          birthDate: record.birthDate || null,
+          displayMode: record.displayMode || "year",
+          userName: record.userName || null,
+          createdAt: record.createdAt,
+          updatedAt: record.updatedAt,
+        },
+        recordItems: (record.recordItems || []).map((item) => {
+          console.log(
+            "[API GET /records/[id]] Item:",
+            item.id,
+            "images from DB:",
+            item.images,
+          );
+          return {
+            id: item.id,
+            title: item.title || "",
+            date: item.date || "",
+            location: item.location || "",
+            description: item.description || "",
+            color: item.color || "",
+            isHighlight: item.isHighlight || false,
+            coverUrl: item.coverUrl || "",
+            images: item.images || [],
+            createdAt: item.createdAt,
+          };
+        }),
+      },
+    });
   } catch (e) {
-    return NextResponse.json({ ok: false }, { status: 404 });
+    console.error("[records:GET]", e);
+    return NextResponse.json(
+      { ok: false, error: "server error" },
+      { status: 500 },
+    );
   }
 }
 

@@ -9,11 +9,14 @@ import { authedFetch } from "@/app/utils/authedFetch";
  * @returns {Promise<any>}
  */
 export async function fetchRecordDetails({ token, identifier }) {
-  const res = await authedFetch(`/api/records/${identifier}`, {
-    token,
-    method: "GET",
-    headers: { "Content-Type": "application/json" },
-  });
+  const res = await authedFetch(
+    `${process.env.NEXT_PUBLIC_APP_URL}/api/records/${identifier}`,
+    {
+      token,
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
   if (!res.ok) throw new Error("get record failed");
   const json = await res.json();
   if (!json.ok) throw new Error("get record failed");

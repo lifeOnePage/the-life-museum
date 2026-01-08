@@ -145,11 +145,8 @@ export async function updateMyProfile(token, payload) {
 // ========== Scene APIs ==========
 
 export async function fetchMyScenes(token) {
-  console.group("----fetchMyScenes----");
-  console.log(token);
-  console.groupEnd();
   const res = await fetch("/api/scenes", {
-    headers: { Authorization: `Bearer ${token}` },
+    credentials: "include",
     cache: "no-store",
   });
   const json = await res.json();

@@ -12,7 +12,7 @@ export async function GET(req) {
     if (!authHeader) {
       return NextResponse.json(
         { ok: false, error: "No authorization header" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -22,7 +22,7 @@ export async function GET(req) {
     if (!payload?.sub) {
       return NextResponse.json(
         { ok: false, error: "Invalid token" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -44,7 +44,7 @@ export async function GET(req) {
     console.error("[GET /api/scenes]", error);
     return NextResponse.json(
       { ok: false, error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -60,7 +60,7 @@ export async function POST(req) {
     if (!authHeader) {
       return NextResponse.json(
         { ok: false, error: "No authorization header" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -70,7 +70,7 @@ export async function POST(req) {
     if (!payload?.sub) {
       return NextResponse.json(
         { ok: false, error: "Invalid token" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -80,7 +80,7 @@ export async function POST(req) {
     if (!identifier) {
       return NextResponse.json(
         { ok: false, error: "identifier is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -92,7 +92,7 @@ export async function POST(req) {
     if (existing) {
       return NextResponse.json(
         { ok: false, error: "identifier already exists" },
-        { status: 409 }
+        { status: 409 },
       );
     }
 
@@ -110,7 +110,7 @@ export async function POST(req) {
     console.error("[POST /api/scenes]", error);
     return NextResponse.json(
       { ok: false, error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -8,25 +8,54 @@ export async function getRecordDetailsServer({ token, identifier }) {
   if (!payload?.sub) {
     throw new Error("unauthorized");
   }
+  const viewerId = Number(payload?.sub);
+  if (!Number.isFinite(viewerId)) throw new Error("unauthorized");
 
-  const record = await client.record.findFirst({
+  const owner = await client.user.findUnique({
+    where: { id: viewerId }, // 또는 mobile / username 등
+    select: { id: true },
+  });
+  if (!owner) throw new Error("user_not_found");
+
+  // 2) 그 유저의 records 목록
+  const records = await client.record.findFirst({
     where: {
       identifier,
-      userId: payload.sub,
+      userId: Number(payload.sub),
     },
-    include: {
-      // 필요한 관계들
+    select: {
+      id: true,
+      identifier: true,
+      coverUrl: true,
+      name: true,
+      subName: true,
+      description: true,
+      pageTitle: true,
+      pageSubtitle: true,
+      bgm: true,
+      color: true,
+      birthDate: true,
+      displayMode: true,
+      userName: true,
+      createdAt: true,
+      updatedAt: true,
+      recordItems: {
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          location: true,
+          description: true,
+          color: true,
+          isHighlight: true,
+          coverUrl: true,
+          images: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
-  if (!record) {
-    throw new Error("record not found");
-  }
-
-  return {
-    ok: true,
-    item: {
-      record,
-    },
-  };
+  return { ok: true, item: records };
 }

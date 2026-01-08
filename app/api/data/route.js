@@ -2,17 +2,16 @@
 import { NextResponse } from "next/server";
 import { verifyJwt } from "@/app/lib/jwt";
 import client from "@/app/client";
+import { requireAuthPayload } from "@/app/lib/auth.server";
 
 export const runtime = "nodejs";
 
 export async function GET(req) {
-  const auth = req.headers.get("Authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : null;
-  const payload = token ? verifyJwt(token) : null;
-  console.group("token parsing");
-  console.log("token: ", token);
-  console.log("payload: ", payload);
-  console.groupEnd();
+  const payload = await requireAuthPayload();
+  // console.group("token parsing");
+  // console.log("token: ", token);
+  // console.log("payload: ", payload);
+  // console.groupEnd();
   if (!payload)
     return NextResponse.json(
       { ok: false, error: "unauthorized" },

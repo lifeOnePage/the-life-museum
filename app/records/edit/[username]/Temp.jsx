@@ -102,36 +102,33 @@ export default function Temp({ fetchedRecordData }) {
         setError(null);
 
         if (fetchedRecordData?.ok && fetchedRecordData?.item) {
-          setRecordId(fetchedRecordData.item.record.id);
+          setRecordId(fetchedRecordData.item.id);
 
           // 레코드의 userName을 사용 (제작할 대상의 성함)
           const userName =
-            fetchedRecordData.item.record.userName ||
-            user?.userName ||
-            "사용자";
+            fetchedRecordData.item.userName || user?.userName || "사용자";
 
           // 메인 레코드가 비어있으면 가이드라인 표시
           const isNewRecord =
-            !fetchedRecordData.item.record.name?.trim() &&
-            !fetchedRecordData.item.record.description?.trim() &&
-            !fetchedRecordData.item.record.coverUrl;
+            !fetchedRecordData.item.name?.trim() &&
+            !fetchedRecordData.item.description?.trim() &&
+            !fetchedRecordData.item.coverUrl;
 
           const record = {
-            ...fetchedRecordData.item.record,
+            ...fetchedRecordData.item,
             name:
-              fetchedRecordData.item.record.name?.trim() ||
+              fetchedRecordData.item.name?.trim() ||
               (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
             description:
-              fetchedRecordData.item.record.description?.trim() ||
+              fetchedRecordData.item.description?.trim() ||
               (isNewRecord
                 ? "일상의 작은 순간들을 관찰하고 기록하는 아티스트입니다.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브할 수 있도록 돕습니다."
                 : "당신을 소개하는 문구를 작성해주세요! (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)"),
             // 메인 커버 이미지가 없으면 기본 이미지 설정
             coverUrl:
-              fetchedRecordData.item.record.coverUrl ||
-              "/images/records/No image.png",
+              fetchedRecordData.item.coverUrl || "/images/records/No image.png",
             // color가 없으면 기본값 설정
-            color: fetchedRecordData.item.record.color || "#121212",
+            color: fetchedRecordData.item.color || "#121212",
           };
 
           // 타임라인 아이템이 없으면 기본 아이템 1개 생성 (새 레코드인 경우에만)
@@ -145,12 +142,12 @@ export default function Temp({ fetchedRecordData }) {
               imagesLength: it.images?.length,
             })),
           );
-          const originalName = fetchedRecordData.item.record.name?.trim();
+          const originalName = fetchedRecordData.item.name?.trim();
           const originalDescription =
-            fetchedRecordData.item.record.description?.trim();
-          const originalCoverUrl = fetchedRecordData.item.record.coverUrl;
-          const createdAt = fetchedRecordData.item.record.createdAt;
-          const updatedAt = fetchedRecordData.item.record.updatedAt;
+            fetchedRecordData.item.description?.trim();
+          const originalCoverUrl = fetchedRecordData.item.coverUrl;
+          const createdAt = fetchedRecordData.item.createdAt;
+          const updatedAt = fetchedRecordData.item.updatedAt;
 
           const timeDiff =
             createdAt && updatedAt
@@ -639,28 +636,26 @@ export default function Temp({ fetchedRecordData }) {
         });
         if (result?.ok && result?.item) {
           // 레코드의 userName을 사용 (제작할 대상의 성함)
-          const userName =
-            result.item.record.userName || user?.userName || "사용자";
+          const userName = result.item.userName || user?.userName || "사용자";
 
           // 메인 레코드가 비어있으면 가이드라인 표시
           const isNewRecord =
-            !result.item.record.name?.trim() &&
-            !result.item.record.description?.trim() &&
-            !result.item.record.coverUrl;
+            !result.item.name?.trim() &&
+            !result.item.description?.trim() &&
+            !result.item.coverUrl;
 
           const record = {
-            ...result.item.record,
+            ...result.item,
             name:
-              result.item.record.name?.trim() ||
+              result.item.name?.trim() ||
               (isNewRecord ? "나의 라이프 레코드" : `${userName}의 이야기`),
             description:
-              result.item.record.description?.trim() ||
+              result.item.description?.trim() ||
               (isNewRecord
                 ? "일상의 작은 순간들을 관찰하고 기록하는 아티스트입니다.\n일상의 경험을 이야기로 엮어 자신만의 시간을 아카이브할 수 있도록 돕습니다."
                 : "당신을 소개하는 문구를 작성해보세요. (예: 일상 속 작은 변화를 관찰하고 기록하는 것을 좋아한다. 배운 것을 가족과 이웃과 나누며, 오늘의 기록이 내일의 기억이 된다고 믿는다.)"),
-            coverUrl:
-              result.item.record.coverUrl || "/images/records/No image.png",
-            color: result.item.record.color || "#121212",
+            coverUrl: result.item.coverUrl || "/images/records/No image.png",
+            color: result.item.color || "#121212",
           };
           // 삭제 후에는 서버에서 반환된 그대로의 데이터를 사용
           // (삭제 후 기본 아이템을 자동 생성하지 않음)

@@ -95,8 +95,6 @@ export default function LifeRecordMobile({
   onActiveItemChange,
   isUploadingImage = false,
   onNavigateToItem,
-  autoSlideEnabled: propAutoSlideEnabled,
-  onAutoSlideEnabledChange,
   onImageModalOpen,
 }) {
   const router = useRouter();

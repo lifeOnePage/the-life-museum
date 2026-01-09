@@ -89,7 +89,6 @@ export async function saveSignupProfileWithJwt({ payload }) {
   const res = await fetch("/api/users", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    credentials: "include",
     body: JSON.stringify({
       name: payload.name,
       mobile,

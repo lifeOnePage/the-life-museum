@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import client from "@/app/client";
 import { verifyJwt } from "@/app/lib/auth";
+import { requireAuthPayload } from "@/app/lib/auth/auth.server";
 
 const ALLOWED_RECORD_FIELDS = [
   "coverUrl",
@@ -32,10 +33,8 @@ const pick = (obj, keys) =>
     Object.entries(obj || {}).filter(([k]) => keys.includes(k)),
   );
 
-async function getAuthedUser(req) {
-  const auth = req.headers.get("authorization") || "";
-  const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-  const payload = token ? verifyJwt(token) : null;
+async function getAuthedUser() {
+  const payload = await requireAuthPayload();
   if (!payload?.sub) return null;
   return { userId: Number(payload.sub) };
 }
@@ -143,7 +142,7 @@ export async function GET(req, { params }) {
 
 export async function PATCH(req, { params }) {
   try {
-    const user = await getAuthedUser(req);
+    const user = await getAuthedUser();
     if (!user)
       return NextResponse.json(
         { ok: false, error: "unauthorized" },

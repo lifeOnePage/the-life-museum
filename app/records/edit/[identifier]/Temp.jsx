@@ -22,7 +22,7 @@ import useWindowSize from "@/app/hooks/useWindowSize";
 
 export default function Temp({ identifier, initialData, fetchedUserData }) {
   const { width } = useWindowSize();
-  const recordId = initialData?.id;
+  const recordId = initialData.id;
   const { token } = useAuth();
   const router = useRouter();
   const [isSaved, setIsSaved] = useState(true);
@@ -31,6 +31,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
   const [error, setError] = useState(null);
   const [toasts, setToasts] = useState([]);
   const toastTimers = useRef(new Map());
+  const [isDirty, setIsDirty] = useState(false);
 
   const removeToast = (id) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
@@ -77,7 +78,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
     }
   };
 
-  const [data, setData] = useState(null);
+  const [currentData, setCurrentData] = useState(null);
   const [originalData, setOriginalData] = useState(null); // 원본 데이터 저장
   const [isImageModalOpen, setIsImageModalOpen] = useState(false);
   const [imageModalItemId, setImageModalItemId] = useState(null);
@@ -89,7 +90,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
   useEffect(() => {
     if (!initialData) return;
 
-    setData(initialData);
+    setCurrentData(initialData);
 
     // 자동 저장 시 비교를 위해 원본 데이터도 저장
     setOriginalData(structuredClone(initialData));
@@ -99,7 +100,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
   // 페이지를 떠날 때 자동저장
   useEffect(() => {
     const handleBeforeUnload = async (e) => {
-      if (!isSaved && !isSaving && data && originalData) {
+      if (!isSaved && !isSaving && currentData && originalData) {
         // 비동기 저장은 beforeunload에서 완료할 수 없으므로 경고만 표시
         e.preventDefault();
         e.returnValue =
@@ -112,7 +113,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isSaved, isSaving, data, originalData]);
+  }, [isSaved, isSaving, currentData, originalData]);
 
   // 데이터 변경 시 자동저장 (debounce)
   useEffect(() => {
@@ -121,7 +122,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
       isPreview ||
       isSaving ||
       isSaved ||
-      !data ||
+      !currentData ||
       !originalData ||
       !token ||
       !recordId
@@ -142,7 +143,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
     return () => {
       clearTimeout(autoSaveTimer);
     };
-  }, [data, isPreview, isSaving, isSaved, token, originalData]);
+  }, [currentData, isPreview, isSaving, isSaved, token, originalData]);
 
   // 마이페이지로 이동하기 전에 자동저장
   const mypage = async () => {
@@ -180,15 +181,13 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
       return;
     }
 
-    const workingData = overrideData || data;
-    if (!token || !recordId || !workingData || !originalData) {
-      showToast("저장할 데이터가 없습니다.", { tone: "error" });
-      return;
-    }
+    //데이터를 넣지 않았으면 currentData 사용
+    const workingData = overrideData || currentData;
 
     try {
       setIsSaving(true);
       setError(null);
+
       const toastId = showToast("저장 중...", {
         tone: "neutral",
         duration: 0,
@@ -208,7 +207,9 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
         "birthDate",
         "displayMode",
       ];
+
       const changedRecordFields = {};
+
       recordFields.forEach((field) => {
         const currentValue = workingData.record[field];
         const originalValue = originalData.record[field];
@@ -236,6 +237,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
       const existingItems = workingData.items.filter(
         (item) => item.id && typeof item.id === "number",
       );
+
       const newItems = workingData.items.filter(
         (item) =>
           !item.id ||
@@ -372,9 +374,9 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
         ...workingData,
         items: updatedItems,
       };
-      setData(newData);
+      setCurrentData(newData);
       // 원본 데이터도 업데이트 (서버에서 처리된 형식으로 저장)
-      setOriginalData(JSON.parse(JSON.stringify(newData)));
+      setOriginalData(structuredClone(newData));
 
       // 삭제된 items 제거 (필요시 구현)
       // 삭제는 별도로 처리하거나, handleDataChange에서 관리
@@ -401,7 +403,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
   };
 
   const addTimelineItem = () => {
-    if (!data) return;
+    if (!currentData) return;
 
     // 빈 아이템 생성 (null 값)
     const tempId = `temp-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -417,10 +419,10 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
       isHighlight: false,
     };
 
-    const newItems = [...(data.items || []), emptyItem];
+    const newItems = [...(currentData.items || []), emptyItem];
 
-    setData({
-      ...data,
+    setCurrentData({
+      ...currentData,
       items: newItems,
     });
 
@@ -448,9 +450,9 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
   };
 
   const handleImageModalSave = async (images) => {
-    if (!data || !imageModalItemId) return;
+    if (!currentData || !imageModalItemId) return;
 
-    const newItems = data.items.map((item) =>
+    const newItems = currentData.items.map((item) =>
       item.id === imageModalItemId
         ? {
             ...item,
@@ -461,14 +463,14 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
     );
 
     const newData = {
-      ...data,
+      ...currentData,
       items: newItems,
     };
 
     setIsSaved(false);
     setImageModalItemId(null);
     setIsUploadingImage(true);
-    setData(newData);
+    setCurrentData(newData);
     try {
       await save(newData);
     } finally {
@@ -478,7 +480,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
   };
 
   const handleDataChange = (newData) => {
-    setData(newData);
+    setCurrentData(newData);
     setIsSaved(false);
   };
 
@@ -534,7 +536,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
             record,
             items,
           };
-          setData(newData);
+          setCurrentData(newData);
 
           setOriginalData(JSON.parse(JSON.stringify(newData)));
 
@@ -549,13 +551,15 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
         setIsSaved(true);
       } else {
         // 임시 ID를 가진 항목은 로컬에서만 제거
-        const deletedIndex = data.items.findIndex((item) => item.id === itemId);
-        const newItems = data.items.filter((item) => item.id !== itemId);
+        const deletedIndex = currentData.items.findIndex(
+          (item) => item.id === itemId,
+        );
+        const newItems = currentData.items.filter((item) => item.id !== itemId);
         const newData = {
-          ...data,
+          ...currentData,
           items: newItems,
         };
-        setData(newData);
+        setCurrentData(newData);
         setOriginalData(JSON.parse(JSON.stringify(newData)));
         const targetIndex = Math.max(0, deletedIndex);
         setTimeout(() => {
@@ -571,14 +575,14 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
   };
 
   const handleColorChange = (color) => {
-    if (!data) return;
+    if (!currentData) return;
 
     // 활성화된 item이 main이면 record의 color 변경
     if (activeItem && activeItem.kind === "main") {
-      setData({
-        ...data,
+      setCurrentData({
+        ...currentData,
         record: {
-          ...data.record,
+          ...currentData.record,
           color: color,
         },
       });
@@ -586,11 +590,11 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
       // 타임라인 항목의 color 변경 (임시 ID를 가진 새 항목도 포함)
       if (activeItem.id) {
         // 기존 항목 또는 임시 ID를 가진 항목: id로 찾아서 변경
-        const newItems = data.items.map((item) =>
+        const newItems = currentData.items.map((item) =>
           item.id === activeItem.id ? { ...item, color: color } : item,
         );
-        setData({
-          ...data,
+        setCurrentData({
+          ...currentData,
           items: newItems,
         });
       } else {
@@ -599,17 +603,17 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
         const itemIndex =
           activeItem.index !== undefined ? activeItem.index - 1 : -1;
 
-        if (itemIndex >= 0 && itemIndex < data.items.length) {
-          const newItems = data.items.map((item, idx) =>
+        if (itemIndex >= 0 && itemIndex < currentData.items.length) {
+          const newItems = currentData.items.map((item, idx) =>
             idx === itemIndex ? { ...item, color: color } : item,
           );
-          setData({
-            ...data,
+          setCurrentData({
+            ...currentData,
             items: newItems,
           });
         } else {
           // 인덱스를 찾을 수 없는 경우, title과 date로 매칭
-          const newItems = data.items.map((item) => {
+          const newItems = currentData.items.map((item) => {
             if (
               (!item.id ||
                 (typeof item.id === "string" && item.id.startsWith("temp-"))) &&
@@ -622,18 +626,18 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
             }
             return item;
           });
-          setData({
-            ...data,
+          setCurrentData({
+            ...currentData,
             items: newItems,
           });
         }
       }
     } else {
       // 기본적으로 record의 color 변경
-      setData({
-        ...data,
+      setCurrentData({
+        ...currentData,
         record: {
-          ...data.record,
+          ...currentData.record,
           color: color,
         },
       });
@@ -680,10 +684,10 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
           file,
           prefix: `records/${recordId}/main`,
         });
-        setData({
-          ...data,
+        setCurrentData({
+          ...currentData,
           record: {
-            ...data.record,
+            ...currentData.record,
             coverUrl: uploadUrl,
           },
         });
@@ -707,7 +711,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
           file,
           prefix: `records/${recordId}/timeline`,
         });
-        const newItems = data.items.map((item) => {
+        const newItems = currentData.items.map((item) => {
           if (item.id === itemId) {
             // 기존 images 배열을 깊은 복사 (원본 배열 수정 방지)
             let currentImages = Array.isArray(item.images)
@@ -805,8 +809,8 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
           }
           return item;
         });
-        setData({
-          ...data,
+        setCurrentData({
+          ...currentData,
           items: newItems,
         });
         console.log("[UPLOAD] Data updated, newItems:", newItems);
@@ -831,9 +835,9 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
   };
 
   const handleImageDelete = (itemId, imageIndex) => {
-    if (!data || !itemId) return;
+    if (!currentData || !itemId) return;
 
-    const newItems = data.items.map((item) => {
+    const newItems = currentData.items.map((item) => {
       if (item.id === itemId) {
         const currentImages = item.images || [];
 
@@ -855,14 +859,14 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
       return item;
     });
 
-    setData({
-      ...data,
+    setCurrentData({
+      ...currentData,
       items: newItems,
     });
     setIsSaved(false);
   };
 
-  if (error && !data) {
+  if (error && !currentData) {
     return (
       <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
         <div className="text-center">
@@ -873,7 +877,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
     );
   }
 
-  if (!data) {
+  if (!currentData) {
     return (
       <div className="bg-black-100 grid min-h-screen w-screen place-items-center text-white/80">
         <div className="text-center">
@@ -902,9 +906,9 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
         }}
         onSave={handleImageModalSave}
         currentImages={
-          imageModalItemId && data
+          imageModalItemId && currentData
             ? (() => {
-                const item = data.items.find(
+                const item = currentData.items.find(
                   (item) => item.id === imageModalItemId,
                 );
                 if (!item) return Array(5).fill(null);
@@ -934,26 +938,28 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
         save={save}
         addItem={addTimelineItem}
         onColorChange={handleColorChange}
-        currentColor={activeItem?.color || data?.record?.color || "#121212"}
+        currentColor={
+          activeItem?.color || currentData?.record?.color || "#121212"
+        }
         onBgmChange={(bgmUrl) => {
-          if (!data) return;
-          setData({
-            ...data,
+          if (!currentData) return;
+          setCurrentData({
+            ...currentData,
             record: {
-              ...data.record,
+              ...currentData.record,
               bgm: bgmUrl,
             },
           });
           setIsSaved(false);
         }}
-        currentBgm={data?.record?.bgm || ""}
+        currentBgm={currentData?.record?.bgm || ""}
         isSaved={isSaved}
         isPreview={isPreview}
         isSaving={isSaving}
       />
       {width <= 768 ? (
         <LifeRecordMobile
-          data={data}
+          data={currentData}
           isEditing={!isPreview}
           onDataChange={isPreview ? undefined : handleDataChange}
           onDeleteItem={isPreview ? undefined : handleDeleteItem}
@@ -966,7 +972,7 @@ export default function Temp({ identifier, initialData, fetchedUserData }) {
         />
       ) : (
         <LifeRecordDesktop
-          data={data}
+          data={currentData}
           isEditing={!isPreview}
           onDataChange={isPreview ? undefined : handleDataChange}
           onDeleteItem={isPreview ? undefined : handleDeleteItem}

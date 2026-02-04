@@ -18,24 +18,47 @@ export async function POST(req) {
     // console.group("api/auth/exchange");
     // console.log("firebaseAdmin: ", await firebaseAdmin.auth());
     const decoded = await firebaseAdmin.auth().verifyIdToken(idToken);
-    const { uid, phone_number: phoneNumber } = decoded;
+    const {
+      uid,
+      phone_number: phoneNumber,
+      email,
+      name: displayName,
+    } = decoded;
 
     // console.log("phoneNumber: ", phoneNumber);
     // console.log("idToken: ", idToken);
     // console.groupEnd();
 
-    const user = await client.user.upsert({
-      where: { mobile: phoneNumber || "" }, // mobile이 유니크이므로 우선 mobile로 upsert
-      update: {
-        /* 로그인 시점에 변경할 필드가 있으면 추가 */
-      },
-      create: {
-        name: "", // 가입 이전에는 비워둠
-        mobile: phoneNumber || "", // E.164
-        birthDate: "", // 가입 이전에는 비워둠
-        email: null,
-      },
+    let user = await client.user.findUnique({
+      where: { firebaseUid: uid },
     });
+
+    if (!user && phoneNumber) {
+      user = await client.user.findUnique({
+        where: { mobile: phoneNumber },
+      });
+    }
+
+    if (user) {
+      user = await client.user.update({
+        where: { id: user.id },
+        data: {
+          firebaseUid: uid,
+          mobile: phoneNumber || user.mobile,
+          email: email ?? user.email,
+        },
+      });
+    } else {
+      user = await client.user.create({
+        data: {
+          firebaseUid: uid,
+          name: displayName || "",
+          mobile: phoneNumber || null,
+          birthDate: null,
+          email: email ?? null,
+        },
+      });
+    }
 
     const token = signJwt({ sub: user.id, mobile: user.mobile });
 

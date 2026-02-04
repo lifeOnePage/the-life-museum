@@ -8,7 +8,7 @@ import { useAuth } from "../contexts/AuthContext";
 
 import Header from "./components/Header";
 import FieldBlock from "./components/FieldBlock";
-import { PrimaryButton, SecondaryButton } from "./components/Buttons";
+import { PrimaryButton } from "./components/Buttons";
 import SlideScreen from "./components/SlideScreen";
 import ErrorToast from "./components/ErrorToast";
 import CountryCodeSelect from "./components/CountryCodeSelect";
@@ -18,15 +18,14 @@ import {
   sendOtp,
   verifyOtp,
   saveSignupProfileWithJwt,
-  verifyBirthdateWithJwt,
-  normalizeToYMD,
+  loginWithGoogle,
 } from "./services/loginApi";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { token, user, signinWithToken } = useAuth();
+  const { token, signinWithToken } = useAuth();
 
-  const [stage, setStage] = useState("phone"); // phone → otp → signup | login
+  const [stage, setStage] = useState("phone"); // phone → otp → signup
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("+82"); // 국가 코드 상태 추가
   const [otp, setOtp] = useState("");
@@ -36,10 +35,8 @@ export default function LoginPage() {
   const [confirmation, setConfirmation] = useState(null);
   const [verificationId, setVerificationId] = useState(null);
 
-  const [isNewUser, setIsNewUser] = useState(null);
-  const [knownName, setKnownName] = useState("");
 
-  // 회원가입 입력(스키마 기반: name, birth, email(선택))
+  // 회원가입 입력(스키마 기반: name, phone)
   const signupFields = useMemo(
     () => [
       {
@@ -50,35 +47,24 @@ export default function LoginPage() {
         type: "text",
       },
       {
-        key: "birth",
-        label: "생년월일을 입력해주세요.",
-        placeholder: "YYYYMMDD",
+        key: "phone",
+        label: "전화번호를 입력해주세요.",
+        placeholder: "01012345678",
         required: true,
-        type: "text",
-      },
-      {
-        key: "email",
-        label: "이메일을 입력해주세요 (선택)",
-        placeholder: "name@example.com",
-        required: false,
-        type: "email",
-        optional: true,
-        skippable: true,
+        type: "tel",
       },
     ],
-    []
+    [],
   );
   const [signupIndex, setSignupIndex] = useState(0);
   const [signupData, setSignupData] = useState({
     name: "",
-    birth: "",
-    email: "",
+    phone: "",
   });
   const currentSignupField = signupFields[signupIndex];
 
   const containerRef = useRef(null);
   const fieldRefs = useRef({});
-  const [loginBirth, setLoginBirth] = useState("");
 
   useEffect(() => {
     setupRecaptcha("recaptcha-container");
@@ -101,7 +87,6 @@ export default function LoginPage() {
       else setStage("otp");
       return;
     }
-    if (stage === "login") return setStage("otp");
   };
 
   // 1) OTP 보내기
@@ -117,7 +102,10 @@ export default function LoginPage() {
       setStage("otp");
     } catch (e) {
       console.error(e);
-      setError(e.message || "인증번호 전송에 실패했어요. 새로고침 후 다시 시도해주세요.");
+      setError(
+        e.message ||
+          "인증번호 전송에 실패했어요. 새로고침 후 다시 시도해주세요.",
+      );
     } finally {
       setLoading(false);
     }
@@ -138,10 +126,17 @@ export default function LoginPage() {
       // JWT + 사용자 컨텍스트 저장
       await signinWithToken(result.jwt, result.pgUser);
 
-      setKnownName(result.pgUser?.name || "");
-      setIsNewUser(result.isNewUser);
-      setStage(result.isNewUser ? "signup" : "login");
-      if (result.isNewUser) setSignupIndex(0);
+      if (result.isNewUser) {
+        setSignupData((d) => ({
+          ...d,
+          name: result.pgUser?.name || d.name,
+          phone: phone || d.phone,
+        }));
+        setStage("signup");
+        setSignupIndex(0);
+      } else {
+        router.push("/mypage");
+      }
     } catch (e) {
       console.error(e);
       setError("인증에 실패했어요. 인증번호를 확인해주세요.");
@@ -166,11 +161,9 @@ export default function LoginPage() {
         const saved = await saveSignupProfileWithJwt({
           token,
           payload: {
-            phone,
+            phone: signupData.phone.trim(),
             countryCode, // 국가 코드 추가
             name: signupData.name.trim(),
-            birth: signupData.birth.trim(),
-            email: (signupData.email || "").trim() || null,
           },
         });
         // 서버가 최신 user 반환
@@ -179,7 +172,7 @@ export default function LoginPage() {
       } catch (e) {
         console.error(e);
         setError(
-          "회원가입 저장 중 문제가 발생했어요. 잠시 후 다시 시도해주세요."
+          "회원가입 저장 중 문제가 발생했어요. 잠시 후 다시 시도해주세요.",
         );
       } finally {
         setLoading(false);
@@ -187,28 +180,6 @@ export default function LoginPage() {
     }
   };
 
-  const onSkipEmail = async () => {
-    setSignupData((d) => ({ ...d, email: "" }));
-    if (signupIndex < signupFields.length - 1) setSignupIndex((i) => i + 1);
-  };
-
-  // 3b) 기존 유저 본인확인(생년월일)
-  const onSubmitLogin = async () => {
-    setError("");
-    const birth = loginBirth.trim();
-    if (!birth) return setError("생년월일을 입력해주세요");
-    try {
-      setLoading(true);
-      const res = await verifyBirthdateWithJwt({ token, birth });
-      await signinWithToken(token, res.user); // 혹시 서버에서 보정된 user 반환 시 반영
-      router.push("/mypage");
-    } catch (e) {
-      console.error(e);
-      setError("본인 확인에 실패했어요. 생년월일을 확인해주세요.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const containerStyle = {
     width: "100vw",
@@ -231,6 +202,76 @@ export default function LoginPage() {
     fontFamily:
       "pretendard, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Helvetica, Arial, sans-serif",
   };
+  const socialButtonBase = {
+    width: "100%",
+    height: 44,
+    marginTop: 10,
+    borderRadius: 12,
+    fontSize: 15,
+    fontWeight: 600,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    cursor: "pointer",
+  };
+  const socialProviders = [
+    {
+      key: "google",
+      label: "구글로 로그인",
+      style: {
+        background: "#fff",
+        color: "#111",
+        border: "1px solid #e5e7eb",
+      },
+    },
+    {
+      key: "naver",
+      label: "네이버로 로그인",
+      style: {
+        background: "#03C75A",
+        color: "#fff",
+        border: "1px solid #03C75A",
+      },
+    },
+    {
+      key: "apple",
+      label: "Apple로 로그인",
+      style: {
+        background: "#000",
+        color: "#fff",
+        border: "1px solid #333",
+      },
+    },
+  ];
+
+  const onSocialLogin = (provider) => {
+    if (provider !== "google") {
+      setError("현재 구글 로그인만 지원합니다.");
+      return;
+    }
+    setError("");
+    setLoading(true);
+    loginWithGoogle()
+      .then(async (result) => {
+        await signinWithToken(result.jwt, result.pgUser);
+        if (result.isNewUser) {
+          setSignupData((d) => ({
+            ...d,
+            name: result.pgUser?.name || d.name,
+          }));
+          setStage("signup");
+          setSignupIndex(0);
+        } else {
+          router.push("/mypage");
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+        setError("구글 로그인에 실패했어요. 잠시 후 다시 시도해주세요.");
+      })
+      .finally(() => setLoading(false));
+  };
 
   return (
     <div style={containerStyle}>
@@ -243,7 +284,7 @@ export default function LoginPage() {
               zIndex: 100,
               width: "100%",
               height: 36,
-              marginTop:60,
+              marginTop: 60,
               border: "none",
               background: "transparent",
               cursor: "pointer",
@@ -264,9 +305,7 @@ export default function LoginPage() {
           </button>
         )}
 
-        <div
-          style={{ padding: "4px 24px" }}
-        >
+        <div style={{ padding: "4px 24px" }}>
           <AnimatePresence mode="wait" initial={false}>
             {stage === "phone" && (
               <SlideScreen key="stage-phone">
@@ -296,7 +335,9 @@ export default function LoginPage() {
                         type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
-                        placeholder={countryCode === "+82" ? "01012345678" : "Phone number"}
+                        placeholder={
+                          countryCode === "+82" ? "01012345678" : "Phone number"
+                        }
                         autoFocus
                         style={{
                           width: "100%",
@@ -311,21 +352,62 @@ export default function LoginPage() {
                           transition: "all 0.2s",
                         }}
                         onFocus={(e) => {
-                          e.target.style.background = "rgba(255, 255, 255, 0.15)";
-                          e.target.style.borderColor = "rgba(255, 255, 255, 0.3)";
+                          e.target.style.background =
+                            "rgba(255, 255, 255, 0.15)";
+                          e.target.style.borderColor =
+                            "rgba(255, 255, 255, 0.3)";
                         }}
                         onBlur={(e) => {
-                          e.target.style.background = "rgba(255, 255, 255, 0.1)";
-                          e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                          e.target.style.background =
+                            "rgba(255, 255, 255, 0.1)";
+                          e.target.style.borderColor =
+                            "rgba(255, 255, 255, 0.2)";
                         }}
                       />
                     </div>
                   </div>
                 </div>
-
                 <PrimaryButton disabled={loading} onClick={onSendOtp}>
                   {loading ? "전송 중..." : "인증번호 받기"}
                 </PrimaryButton>
+                <div style={{ marginTop: 18 }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 12,
+                      color: "#9ca3af",
+                      fontSize: 13,
+                      marginBottom: 6,
+                    }}
+                  >
+                    <div
+                      style={{
+                        flex: 1,
+                        height: 1,
+                        background: "rgba(255, 255, 255, 0.15)",
+                      }}
+                    />
+                    또는 소셜 로그인
+                    <div
+                      style={{
+                        flex: 1,
+                        height: 1,
+                        background: "rgba(255, 255, 255, 0.15)",
+                      }}
+                    />
+                  </div>
+                  {socialProviders.map((provider) => (
+                    <button
+                      key={provider.key}
+                      type="button"
+                      onClick={() => onSocialLogin(provider.key)}
+                      style={{ ...socialButtonBase, ...provider.style }}
+                    >
+                      {provider.label}
+                    </button>
+                  ))}
+                </div>
               </SlideScreen>
             )}
 
@@ -364,7 +446,7 @@ export default function LoginPage() {
                   {(() => {
                     const shownIdxs = Array.from(
                       { length: signupIndex + 1 },
-                      (_, i) => i
+                      (_, i) => i,
                     );
                     const orderedIdxs = [
                       signupIndex,
@@ -373,6 +455,41 @@ export default function LoginPage() {
                     return orderedIdxs.map((origIdx) => {
                       const f = signupFields[origIdx];
                       const isCurrent = origIdx === signupIndex;
+                      if (f.key === "phone") {
+                        return (
+                          <SlideScreen.Row key={f.key}>
+                            <div style={{ display: "flex", gap: 8 }}>
+                              <CountryCodeSelect
+                                value={countryCode}
+                                onChange={setCountryCode}
+                              />
+                              <div style={{ flex: 1 }}>
+                                <FieldBlock
+                                  label={f.label}
+                                  subLabel={f.subLabel}
+                                  value={signupData[f.key]}
+                                  onChange={(v) =>
+                                    setSignupData((d) => ({
+                                      ...d,
+                                      [f.key]: v,
+                                    }))
+                                  }
+                                  placeholder={
+                                    countryCode === "+82"
+                                      ? "01012345678"
+                                      : "Phone number"
+                                  }
+                                  type={f.type}
+                                  autoFocus={isCurrent}
+                                  inputRef={(el) =>
+                                    (fieldRefs.current[f.key] = el)
+                                  }
+                                />
+                              </div>
+                            </div>
+                          </SlideScreen.Row>
+                        );
+                      }
                       return (
                         <SlideScreen.Row key={f.key}>
                           <FieldBlock
@@ -394,17 +511,6 @@ export default function LoginPage() {
                 </div>
 
                 <div style={{ marginTop: 8 }}>
-                  {/* {currentSignupField?.skippable && (
-                    <SecondaryButton
-                      onClick={async () => {
-                        onSkipEmail();
-                        await onSubmitSignupField();
-                      }}
-                      disabled={loading}
-                    >
-                      이메일이 없어요 / 입력하지 않고 넘어가기
-                    </SecondaryButton>
-                  )} */}
                   <PrimaryButton
                     onClick={onSubmitSignupField}
                     disabled={loading}
@@ -412,40 +518,13 @@ export default function LoginPage() {
                     {signupIndex < signupFields.length - 1
                       ? "다음"
                       : loading
-                      ? "저장 중..."
-                      : "완료"}
+                        ? "저장 중..."
+                        : "완료"}
                   </PrimaryButton>
                 </div>
               </SlideScreen>
             )}
 
-            {stage === "login" && (
-              <SlideScreen key="stage-login">
-                <Header>
-                  {knownName ? <>반가워요, {knownName}님</> : <>반가워요!</>}
-                </Header>
-                <p
-                  style={{
-                    fontSize: "0.95rem",
-                    color: "#aaa",
-                    margin: "8px 0px",
-                  }}
-                >
-                  생년월일을 입력해주세요
-                </p>
-                <FieldBlock
-                  label="생년월일"
-                  value={loginBirth}
-                  onChange={setLoginBirth}
-                  placeholder="YYYYMMDD"
-                  type="text"
-                  autoFocus
-                />
-                <PrimaryButton onClick={onSubmitLogin} disabled={loading}>
-                  {loading ? "확인 중..." : "확인"}
-                </PrimaryButton>
-              </SlideScreen>
-            )}
           </AnimatePresence>
         </div>
 

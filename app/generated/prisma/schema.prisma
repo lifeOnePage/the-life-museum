@@ -15,16 +15,15 @@ datasource db {
 }
 
 model User {
-  id          Int      @id @default(autoincrement())
-  firebaseUid String?  @unique
-  name        String
-  mobile      String?  @unique
-  plan        String   @default("free")
-  birthDate   String?
-  email       String?  @unique
-  records     Record[]
-  reels       Reel[]
-  scenes      Scene[]
+  id        Int      @id @default(autoincrement())
+  name      String
+  mobile    String   @unique
+  plan      String   @default("free")
+  birthDate String
+  email     String?  @unique
+  records   Record[]
+  reels     Reel[]
+  scenes    Scene[]
 }
 
 model Reel {

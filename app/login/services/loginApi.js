@@ -8,7 +8,6 @@ import {
   setupRecaptcha as setupRecaptchaRaw,
 } from "../../auth/phoneAuth";
 import { auth } from "../../firebase/firebaseConfig";
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 
 // YYYY-MM-DD|YYYY.MM.DD|YYYY/MM/DD -> "YYYY.MM.DD"
 export function normalizeToYMD(input) {
@@ -39,23 +38,6 @@ export async function sendOtp(phone, countryCode = "+82") {
   return { res, verificationId: res.verificationId };
 }
 
-async function exchangeIdToken(idToken) {
-  const res = await fetch("/api/auth/exchange", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken }),
-  });
-  const json = await res.json().catch(() => ({}));
-  if (!res.ok || !json.ok) {
-    const msg =
-      json?.error ||
-      json?.message ||
-      `exchange_failed_${res.status || "unknown"}`;
-    throw new Error(msg);
-  }
-  return json;
-}
-
 // Firebase 확인 → ID 토큰 발급 → 우리 서버에 교환(JWT 발급 & 사용자 upsert/조회)
 export async function verifyOtp(confirmation, code) {
   await confirmCode(confirmation, code); // Firebase sign-in
@@ -64,30 +46,20 @@ export async function verifyOtp(confirmation, code) {
 
   const idToken = await u.getIdToken();
 
-  const json = await exchangeIdToken(idToken);
+  console.group("verifyOtp: before fetch /api/auth/exchange");
+  console.log("idToken: ", idToken);
+  console.groupEnd();
+
+  const res = await fetch("/api/auth/exchange", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ idToken }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error("토큰 교환 실패");
 
   const pgUser = json.user; // Postgres에 있는 사용자(없으면 최소한 mobile만 채워질 수 있음)
-  const isNewUser = !(pgUser?.name && pgUser?.mobile); // 프로필 미완료면 회원가입 단계로
-
-  return {
-    uid: u.uid,
-    name: pgUser?.name || "",
-    jwt: json.token,
-    pgUser,
-    isNewUser,
-  };
-}
-
-export async function loginWithGoogle() {
-  const provider = new GoogleAuthProvider();
-  await signInWithPopup(auth, provider);
-  const u = auth.currentUser;
-  if (!u) throw new Error("로그인 실패");
-  const idToken = await u.getIdToken();
-  const json = await exchangeIdToken(idToken);
-
-  const pgUser = json.user;
-  const isNewUser = !(pgUser?.name && pgUser?.mobile);
+  const isNewUser = !(pgUser?.name && pgUser?.birthDate); // 프로필 미완료면 회원가입 단계로
 
   return {
     uid: u.uid,
@@ -100,12 +72,16 @@ export async function loginWithGoogle() {
 
 // 회원가입 저장 (JWT 보호) -> Postgres User 생성/업데이트
 export async function saveSignupProfileWithJwt({ token, payload }) {
-  // payload: { name, phone, countryCode }
+  // payload: { name, phone, birth, email, countryCode }
   const mobile = toE164(payload.phone, payload.countryCode || "+82");
+  const birthDate = normalizeToYMD(payload.birth);
   if (!mobile) throw new Error("휴대폰번호 형식 오류");
+  if (!birthDate) throw new Error("생년월일 형식 오류");
   console.group("save signup user /api/users");
   console.log("name: ", payload.name);
   console.log("mobile: ", mobile);
+  console.log("birthDate: ", birthDate);
+  console.log("email: ", payload.email);
   console.groupEnd();
 
   const res = await fetch("/api/users", {
@@ -117,9 +93,29 @@ export async function saveSignupProfileWithJwt({ token, payload }) {
     body: JSON.stringify({
       name: payload.name,
       mobile,
+      birthDate,
+      email: payload.email || null,
     }),
   });
   const json = await res.json();
   if (!json.ok) throw new Error(json.error || "save failed");
+  return json; // { ok: true, user }
+}
+
+// (기존유저) 생일 확인 (JWT 보호)
+export async function verifyBirthdateWithJwt({ token, birth }) {
+  const birthDate = normalizeToYMD(birth);
+  if (!birthDate) throw new Error("생년월일 형식 오류");
+
+  const res = await fetch("/api/auth/verify-birth", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ birthDate }),
+  });
+  const json = await res.json();
+  if (!json.ok) throw new Error("verify failed");
   return json; // { ok: true, user }
 }

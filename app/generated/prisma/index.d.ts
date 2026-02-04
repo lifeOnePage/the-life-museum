@@ -2044,7 +2044,6 @@ export namespace Prisma {
 
   export type UserMinAggregateOutputType = {
     id: number | null
-    firebaseUid: string | null
     name: string | null
     mobile: string | null
     plan: string | null
@@ -2054,7 +2053,6 @@ export namespace Prisma {
 
   export type UserMaxAggregateOutputType = {
     id: number | null
-    firebaseUid: string | null
     name: string | null
     mobile: string | null
     plan: string | null
@@ -2064,7 +2062,6 @@ export namespace Prisma {
 
   export type UserCountAggregateOutputType = {
     id: number
-    firebaseUid: number
     name: number
     mobile: number
     plan: number
@@ -2084,7 +2081,6 @@ export namespace Prisma {
 
   export type UserMinAggregateInputType = {
     id?: true
-    firebaseUid?: true
     name?: true
     mobile?: true
     plan?: true
@@ -2094,7 +2090,6 @@ export namespace Prisma {
 
   export type UserMaxAggregateInputType = {
     id?: true
-    firebaseUid?: true
     name?: true
     mobile?: true
     plan?: true
@@ -2104,7 +2099,6 @@ export namespace Prisma {
 
   export type UserCountAggregateInputType = {
     id?: true
-    firebaseUid?: true
     name?: true
     mobile?: true
     plan?: true
@@ -2201,11 +2195,10 @@ export namespace Prisma {
 
   export type UserGroupByOutputType = {
     id: number
-    firebaseUid: string | null
     name: string
-    mobile: string | null
+    mobile: string
     plan: string
-    birthDate: string | null
+    birthDate: string
     email: string | null
     _count: UserCountAggregateOutputType | null
     _avg: UserAvgAggregateOutputType | null
@@ -2230,7 +2223,6 @@ export namespace Prisma {
 
   export type UserSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    firebaseUid?: boolean
     name?: boolean
     mobile?: boolean
     plan?: boolean
@@ -2244,7 +2236,6 @@ export namespace Prisma {
 
   export type UserSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    firebaseUid?: boolean
     name?: boolean
     mobile?: boolean
     plan?: boolean
@@ -2254,7 +2245,6 @@ export namespace Prisma {
 
   export type UserSelectUpdateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
     id?: boolean
-    firebaseUid?: boolean
     name?: boolean
     mobile?: boolean
     plan?: boolean
@@ -2264,7 +2254,6 @@ export namespace Prisma {
 
   export type UserSelectScalar = {
     id?: boolean
-    firebaseUid?: boolean
     name?: boolean
     mobile?: boolean
     plan?: boolean
@@ -2272,7 +2261,7 @@ export namespace Prisma {
     email?: boolean
   }
 
-  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "firebaseUid" | "name" | "mobile" | "plan" | "birthDate" | "email", ExtArgs["result"]["user"]>
+  export type UserOmit<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetOmit<"id" | "name" | "mobile" | "plan" | "birthDate" | "email", ExtArgs["result"]["user"]>
   export type UserInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     records?: boolean | User$recordsArgs<ExtArgs>
     reels?: boolean | User$reelsArgs<ExtArgs>
@@ -2291,11 +2280,10 @@ export namespace Prisma {
     }
     scalars: $Extensions.GetPayloadResult<{
       id: number
-      firebaseUid: string | null
       name: string
-      mobile: string | null
+      mobile: string
       plan: string
-      birthDate: string | null
+      birthDate: string
       email: string | null
     }, ExtArgs["result"]["user"]>
     composites: {}
@@ -2724,7 +2712,6 @@ export namespace Prisma {
    */
   interface UserFieldRefs {
     readonly id: FieldRef<"User", 'Int'>
-    readonly firebaseUid: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
     readonly mobile: FieldRef<"User", 'String'>
     readonly plan: FieldRef<"User", 'String'>
@@ -15236,7 +15223,6 @@ export namespace Prisma {
 
   export const UserScalarFieldEnum: {
     id: 'id',
-    firebaseUid: 'firebaseUid',
     name: 'name',
     mobile: 'mobile',
     plan: 'plan',
@@ -15536,11 +15522,10 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     id?: IntFilter<"User"> | number
-    firebaseUid?: StringNullableFilter<"User"> | string | null
     name?: StringFilter<"User"> | string
-    mobile?: StringNullableFilter<"User"> | string | null
+    mobile?: StringFilter<"User"> | string
     plan?: StringFilter<"User"> | string
-    birthDate?: StringNullableFilter<"User"> | string | null
+    birthDate?: StringFilter<"User"> | string
     email?: StringNullableFilter<"User"> | string | null
     records?: RecordListRelationFilter
     reels?: ReelListRelationFilter
@@ -15549,11 +15534,10 @@ export namespace Prisma {
 
   export type UserOrderByWithRelationInput = {
     id?: SortOrder
-    firebaseUid?: SortOrderInput | SortOrder
     name?: SortOrder
-    mobile?: SortOrderInput | SortOrder
+    mobile?: SortOrder
     plan?: SortOrder
-    birthDate?: SortOrderInput | SortOrder
+    birthDate?: SortOrder
     email?: SortOrderInput | SortOrder
     records?: RecordOrderByRelationAggregateInput
     reels?: ReelOrderByRelationAggregateInput
@@ -15562,7 +15546,6 @@ export namespace Prisma {
 
   export type UserWhereUniqueInput = Prisma.AtLeast<{
     id?: number
-    firebaseUid?: string
     mobile?: string
     email?: string
     AND?: UserWhereInput | UserWhereInput[]
@@ -15570,19 +15553,18 @@ export namespace Prisma {
     NOT?: UserWhereInput | UserWhereInput[]
     name?: StringFilter<"User"> | string
     plan?: StringFilter<"User"> | string
-    birthDate?: StringNullableFilter<"User"> | string | null
+    birthDate?: StringFilter<"User"> | string
     records?: RecordListRelationFilter
     reels?: ReelListRelationFilter
     scenes?: SceneListRelationFilter
-  }, "id" | "firebaseUid" | "mobile" | "email">
+  }, "id" | "mobile" | "email">
 
   export type UserOrderByWithAggregationInput = {
     id?: SortOrder
-    firebaseUid?: SortOrderInput | SortOrder
     name?: SortOrder
-    mobile?: SortOrderInput | SortOrder
+    mobile?: SortOrder
     plan?: SortOrder
-    birthDate?: SortOrderInput | SortOrder
+    birthDate?: SortOrder
     email?: SortOrderInput | SortOrder
     _count?: UserCountOrderByAggregateInput
     _avg?: UserAvgOrderByAggregateInput
@@ -15596,11 +15578,10 @@ export namespace Prisma {
     OR?: UserScalarWhereWithAggregatesInput[]
     NOT?: UserScalarWhereWithAggregatesInput | UserScalarWhereWithAggregatesInput[]
     id?: IntWithAggregatesFilter<"User"> | number
-    firebaseUid?: StringNullableWithAggregatesFilter<"User"> | string | null
     name?: StringWithAggregatesFilter<"User"> | string
-    mobile?: StringNullableWithAggregatesFilter<"User"> | string | null
+    mobile?: StringWithAggregatesFilter<"User"> | string
     plan?: StringWithAggregatesFilter<"User"> | string
-    birthDate?: StringNullableWithAggregatesFilter<"User"> | string | null
+    birthDate?: StringWithAggregatesFilter<"User"> | string
     email?: StringNullableWithAggregatesFilter<"User"> | string | null
   }
 
@@ -16448,11 +16429,10 @@ export namespace Prisma {
   }
 
   export type UserCreateInput = {
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
     records?: RecordCreateNestedManyWithoutUserInput
     reels?: ReelCreateNestedManyWithoutUserInput
@@ -16461,11 +16441,10 @@ export namespace Prisma {
 
   export type UserUncheckedCreateInput = {
     id?: number
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
     records?: RecordUncheckedCreateNestedManyWithoutUserInput
     reels?: ReelUncheckedCreateNestedManyWithoutUserInput
@@ -16473,11 +16452,10 @@ export namespace Prisma {
   }
 
   export type UserUpdateInput = {
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     records?: RecordUpdateManyWithoutUserNestedInput
     reels?: ReelUpdateManyWithoutUserNestedInput
@@ -16486,11 +16464,10 @@ export namespace Prisma {
 
   export type UserUncheckedUpdateInput = {
     id?: IntFieldUpdateOperationsInput | number
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     records?: RecordUncheckedUpdateManyWithoutUserNestedInput
     reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
@@ -16499,30 +16476,27 @@ export namespace Prisma {
 
   export type UserCreateManyInput = {
     id?: number
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
   }
 
   export type UserUpdateManyMutationInput = {
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type UserUncheckedUpdateManyInput = {
     id?: IntFieldUpdateOperationsInput | number
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
@@ -17427,21 +17401,6 @@ export namespace Prisma {
     not?: NestedIntFilter<$PrismaModel> | number
   }
 
-  export type StringNullableFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedStringNullableFilter<$PrismaModel> | string | null
-  }
-
   export type StringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -17455,6 +17414,21 @@ export namespace Prisma {
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     mode?: QueryMode
     not?: NestedStringFilter<$PrismaModel> | string
+  }
+
+  export type StringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
   export type RecordListRelationFilter = {
@@ -17494,7 +17468,6 @@ export namespace Prisma {
 
   export type UserCountOrderByAggregateInput = {
     id?: SortOrder
-    firebaseUid?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
     plan?: SortOrder
@@ -17508,7 +17481,6 @@ export namespace Prisma {
 
   export type UserMaxOrderByAggregateInput = {
     id?: SortOrder
-    firebaseUid?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
     plan?: SortOrder
@@ -17518,7 +17490,6 @@ export namespace Prisma {
 
   export type UserMinOrderByAggregateInput = {
     id?: SortOrder
-    firebaseUid?: SortOrder
     name?: SortOrder
     mobile?: SortOrder
     plan?: SortOrder
@@ -17546,24 +17517,6 @@ export namespace Prisma {
     _max?: NestedIntFilter<$PrismaModel>
   }
 
-  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    mode?: QueryMode
-    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
-    _count?: NestedIntNullableFilter<$PrismaModel>
-    _min?: NestedStringNullableFilter<$PrismaModel>
-    _max?: NestedStringNullableFilter<$PrismaModel>
-  }
-
   export type StringWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -17580,6 +17533,24 @@ export namespace Prisma {
     _count?: NestedIntFilter<$PrismaModel>
     _min?: NestedStringFilter<$PrismaModel>
     _max?: NestedStringFilter<$PrismaModel>
+  }
+
+  export type StringNullableWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    mode?: QueryMode
+    not?: NestedStringNullableWithAggregatesFilter<$PrismaModel> | string | null
+    _count?: NestedIntNullableFilter<$PrismaModel>
+    _min?: NestedStringNullableFilter<$PrismaModel>
+    _max?: NestedStringNullableFilter<$PrismaModel>
   }
 
   export type DateTimeFilter<$PrismaModel = never> = {
@@ -18370,12 +18341,12 @@ export namespace Prisma {
     connect?: SceneWhereUniqueInput | SceneWhereUniqueInput[]
   }
 
-  export type NullableStringFieldUpdateOperationsInput = {
-    set?: string | null
-  }
-
   export type StringFieldUpdateOperationsInput = {
     set?: string
+  }
+
+  export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null
   }
 
   export type RecordUpdateManyWithoutUserNestedInput = {
@@ -19060,20 +19031,6 @@ export namespace Prisma {
     not?: NestedIntFilter<$PrismaModel> | number
   }
 
-  export type NestedStringNullableFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel> | null
-    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedStringNullableFilter<$PrismaModel> | string | null
-  }
-
   export type NestedStringFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel>
     in?: string[] | ListStringFieldRefInput<$PrismaModel>
@@ -19086,6 +19043,20 @@ export namespace Prisma {
     startsWith?: string | StringFieldRefInput<$PrismaModel>
     endsWith?: string | StringFieldRefInput<$PrismaModel>
     not?: NestedStringFilter<$PrismaModel> | string
+  }
+
+  export type NestedStringNullableFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel> | null
+    in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringNullableFilter<$PrismaModel> | string | null
   }
 
   export type NestedIntWithAggregatesFilter<$PrismaModel = never> = {
@@ -19115,6 +19086,23 @@ export namespace Prisma {
     not?: NestedFloatFilter<$PrismaModel> | number
   }
 
+  export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
+    equals?: string | StringFieldRefInput<$PrismaModel>
+    in?: string[] | ListStringFieldRefInput<$PrismaModel>
+    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
+    lt?: string | StringFieldRefInput<$PrismaModel>
+    lte?: string | StringFieldRefInput<$PrismaModel>
+    gt?: string | StringFieldRefInput<$PrismaModel>
+    gte?: string | StringFieldRefInput<$PrismaModel>
+    contains?: string | StringFieldRefInput<$PrismaModel>
+    startsWith?: string | StringFieldRefInput<$PrismaModel>
+    endsWith?: string | StringFieldRefInput<$PrismaModel>
+    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
+    _count?: NestedIntFilter<$PrismaModel>
+    _min?: NestedStringFilter<$PrismaModel>
+    _max?: NestedStringFilter<$PrismaModel>
+  }
+
   export type NestedStringNullableWithAggregatesFilter<$PrismaModel = never> = {
     equals?: string | StringFieldRefInput<$PrismaModel> | null
     in?: string[] | ListStringFieldRefInput<$PrismaModel> | null
@@ -19141,23 +19129,6 @@ export namespace Prisma {
     gt?: number | IntFieldRefInput<$PrismaModel>
     gte?: number | IntFieldRefInput<$PrismaModel>
     not?: NestedIntNullableFilter<$PrismaModel> | number | null
-  }
-
-  export type NestedStringWithAggregatesFilter<$PrismaModel = never> = {
-    equals?: string | StringFieldRefInput<$PrismaModel>
-    in?: string[] | ListStringFieldRefInput<$PrismaModel>
-    notIn?: string[] | ListStringFieldRefInput<$PrismaModel>
-    lt?: string | StringFieldRefInput<$PrismaModel>
-    lte?: string | StringFieldRefInput<$PrismaModel>
-    gt?: string | StringFieldRefInput<$PrismaModel>
-    gte?: string | StringFieldRefInput<$PrismaModel>
-    contains?: string | StringFieldRefInput<$PrismaModel>
-    startsWith?: string | StringFieldRefInput<$PrismaModel>
-    endsWith?: string | StringFieldRefInput<$PrismaModel>
-    not?: NestedStringWithAggregatesFilter<$PrismaModel> | string
-    _count?: NestedIntFilter<$PrismaModel>
-    _min?: NestedStringFilter<$PrismaModel>
-    _max?: NestedStringFilter<$PrismaModel>
   }
 
   export type NestedDateTimeFilter<$PrismaModel = never> = {
@@ -19565,11 +19536,10 @@ export namespace Prisma {
   }
 
   export type UserCreateWithoutReelsInput = {
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
     records?: RecordCreateNestedManyWithoutUserInput
     scenes?: SceneCreateNestedManyWithoutUserInput
@@ -19577,11 +19547,10 @@ export namespace Prisma {
 
   export type UserUncheckedCreateWithoutReelsInput = {
     id?: number
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
     records?: RecordUncheckedCreateNestedManyWithoutUserInput
     scenes?: SceneUncheckedCreateNestedManyWithoutUserInput
@@ -19726,11 +19695,10 @@ export namespace Prisma {
   }
 
   export type UserUpdateWithoutReelsInput = {
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     records?: RecordUpdateManyWithoutUserNestedInput
     scenes?: SceneUpdateManyWithoutUserNestedInput
@@ -19738,11 +19706,10 @@ export namespace Prisma {
 
   export type UserUncheckedUpdateWithoutReelsInput = {
     id?: IntFieldUpdateOperationsInput | number
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     records?: RecordUncheckedUpdateManyWithoutUserNestedInput
     scenes?: SceneUncheckedUpdateManyWithoutUserNestedInput
@@ -20343,11 +20310,10 @@ export namespace Prisma {
   }
 
   export type UserCreateWithoutRecordsInput = {
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
     reels?: ReelCreateNestedManyWithoutUserInput
     scenes?: SceneCreateNestedManyWithoutUserInput
@@ -20355,11 +20321,10 @@ export namespace Prisma {
 
   export type UserUncheckedCreateWithoutRecordsInput = {
     id?: number
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
     reels?: ReelUncheckedCreateNestedManyWithoutUserInput
     scenes?: SceneUncheckedCreateNestedManyWithoutUserInput
@@ -20419,11 +20384,10 @@ export namespace Prisma {
   }
 
   export type UserUpdateWithoutRecordsInput = {
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     reels?: ReelUpdateManyWithoutUserNestedInput
     scenes?: SceneUpdateManyWithoutUserNestedInput
@@ -20431,11 +20395,10 @@ export namespace Prisma {
 
   export type UserUncheckedUpdateWithoutRecordsInput = {
     id?: IntFieldUpdateOperationsInput | number
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     reels?: ReelUncheckedUpdateManyWithoutUserNestedInput
     scenes?: SceneUncheckedUpdateManyWithoutUserNestedInput
@@ -20566,11 +20529,10 @@ export namespace Prisma {
   }
 
   export type UserCreateWithoutScenesInput = {
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
     records?: RecordCreateNestedManyWithoutUserInput
     reels?: ReelCreateNestedManyWithoutUserInput
@@ -20578,11 +20540,10 @@ export namespace Prisma {
 
   export type UserUncheckedCreateWithoutScenesInput = {
     id?: number
-    firebaseUid?: string | null
     name: string
-    mobile?: string | null
+    mobile: string
     plan?: string
-    birthDate?: string | null
+    birthDate: string
     email?: string | null
     records?: RecordUncheckedCreateNestedManyWithoutUserInput
     reels?: ReelUncheckedCreateNestedManyWithoutUserInput
@@ -20636,11 +20597,10 @@ export namespace Prisma {
   }
 
   export type UserUpdateWithoutScenesInput = {
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     records?: RecordUpdateManyWithoutUserNestedInput
     reels?: ReelUpdateManyWithoutUserNestedInput
@@ -20648,11 +20608,10 @@ export namespace Prisma {
 
   export type UserUncheckedUpdateWithoutScenesInput = {
     id?: IntFieldUpdateOperationsInput | number
-    firebaseUid?: NullableStringFieldUpdateOperationsInput | string | null
     name?: StringFieldUpdateOperationsInput | string
-    mobile?: NullableStringFieldUpdateOperationsInput | string | null
+    mobile?: StringFieldUpdateOperationsInput | string
     plan?: StringFieldUpdateOperationsInput | string
-    birthDate?: NullableStringFieldUpdateOperationsInput | string | null
+    birthDate?: StringFieldUpdateOperationsInput | string
     email?: NullableStringFieldUpdateOperationsInput | string | null
     records?: RecordUncheckedUpdateManyWithoutUserNestedInput
     reels?: ReelUncheckedUpdateManyWithoutUserNestedInput

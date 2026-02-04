@@ -12,8 +12,6 @@ export async function GET(req) {
     const headers = new Headers();
     const range = req.headers.get("range");
     if (range) headers.set("range", range);
-    const auth = req.headers.get("authorization");
-    if (auth) headers.set("authorization", auth);
 
     const upstream = await fetch(raw, {
       headers,

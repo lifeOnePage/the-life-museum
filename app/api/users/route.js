@@ -15,6 +15,11 @@ function isLikelyE164(mobile) {
   return /^\+?[1-9]\d{6,14}$/.test(String(mobile || "").trim());
 }
 
+/** "YYYY.MM.DD" 포맷 여부(클라이언트에서 normalizeToYMD를 거친 값 기대) */
+function isYMD(s) {
+  return /^\d{4}\d{2}\d{2}$/.test(String(s || "").trim());
+}
+
 export async function POST(req) {
   try {
     console.log("----------create----------");
@@ -35,6 +40,7 @@ export async function POST(req) {
     console.log("body: ", body);
     const name = String(body?.name ?? "").trim();
     const mobile = String(body?.mobile ?? "").trim();
+    const birthDate = String(body?.birthDate ?? "").trim();
     const email =
       body?.email == null || String(body.email).trim() === ""
         ? null
@@ -45,6 +51,8 @@ export async function POST(req) {
     if (!name) errors.name = "name is required";
     if (!mobile || !isLikelyE164(mobile))
       errors.mobile = "mobile must be E.164-like";
+    if (!birthDate || !isYMD(birthDate))
+      errors.birthDate = 'birthDate must be "YYYY.MM.DD"';
     if (email && !isEmail(email)) errors.email = "email is invalid";
     console.log("errors: ", errors);
     if (Object.keys(errors).length) {
@@ -63,12 +71,14 @@ export async function POST(req) {
           // plan 은 스키마 default("free")라 여기서는 건드리지 않음
           name,
           mobile,
+          birthDate,
           email,
         },
         select: {
           id: true,
           name: true,
           mobile: true,
+          birthDate: true,
           email: true,
           plan: true,
         },
@@ -77,11 +87,12 @@ export async function POST(req) {
       // P2025: Record not found → 생성으로 폴백
       if (e?.code === "P2025") {
         user = await client.user.create({
-          data: { name, mobile, email }, // plan은 default
+          data: { name, mobile, birthDate, email }, // plan은 default
           select: {
             id: true,
             name: true,
             mobile: true,
+            birthDate: true,
             email: true,
             plan: true,
           },

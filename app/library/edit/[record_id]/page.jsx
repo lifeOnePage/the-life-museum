@@ -95,6 +95,7 @@ const Index = ({ params }) => {
 
                 <TabsContent value="cover">
                   <CoverImageEditor
+                    record_id={record_id}
                     onImageGenerated={setFrontCover}
                     onTitleChange={setAlbumTitle}
                     onArtistChange={setArtistName}

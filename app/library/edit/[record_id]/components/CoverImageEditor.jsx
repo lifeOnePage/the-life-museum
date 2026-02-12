@@ -14,21 +14,41 @@ const CoverImageEditor = ({
   frontCover,
   onSave,
   onCancel,
+  record_id,
 }) => {
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [generatedImages, setGeneratedImages] = useState([]);
+  const [selectedFile, setSelectedFile] = useState(null);
+
+  const urlToFile = async (url, filename) => {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const file = new File([blob], filename, { type: blob.type });
+    return file;
+  };
+
+  const handleSelectPlaceholder = async (imgUrl) => {
+    try {
+      const filename = imgUrl.split("/").pop();
+      const file = await urlToFile(imgUrl, filename);
+      setSelectedFile(file);
+      onImageGenerated(imgUrl);
+    } catch (err) {
+      setError("이미지 로드에 실패했습니다");
+    }
+  };
 
   const handleGenerate = () => {
     if (!prompt.trim()) return;
     setIsGenerating(true);
     setTimeout(() => {
       const placeholders = [
-        "../images/gif/1.gif",
-        "../images/gif/2.gif",
-        "../images/gif/3.gif",
+        "/images/gif/1.gif",
+        "/images/gif/2.gif",
+        "/images/gif/3.gif",
       ];
       setGeneratedImages(placeholders);
       setIsGenerating(false);
@@ -36,28 +56,26 @@ const CoverImageEditor = ({
   };
 
   const handleSave = async () => {
-    if (!frontCover && !albumTitle.trim()) return;
+    if (!selectedFile && !frontCover) return;
     setIsSaving(true);
     setError("");
 
     try {
-      const token = localStorage.getItem("app_token");
-      const recordId = localStorage.getItem("record_id");
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
+      const formData = new FormData();
+      if (selectedFile) {
+        formData.append("file", selectedFile);
+      }
+
       const response = await fetch(
-        `${apiUrl}/api/v1/record/${recordId}/cover/temp`,
+        `${apiUrl}/api/v1/record/${record_id}/cover/temp`,
         {
           method: "POST",
           headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            "X-Dev-Key": "tlm2026",
           },
-          body: JSON.stringify({
-            coverImage: frontCover,
-            albumTitle,
-            artistName,
-          }),
+          body: formData,
         },
       );
 
@@ -81,6 +99,7 @@ const CoverImageEditor = ({
     onArtistChange("");
     setPrompt("");
     setGeneratedImages([]);
+    setSelectedFile(null);
     setError("");
     onCancel?.();
   };
@@ -150,7 +169,7 @@ const CoverImageEditor = ({
                 key={i}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => onImageGenerated(img)}
+                onClick={() => handleSelectPlaceholder(img)}
                 className="aspect-square overflow-hidden border-2 border-transparent transition-colors hover:border-gray-900"
               >
                 <img
@@ -177,6 +196,7 @@ const CoverImageEditor = ({
             onChange={(e) => {
               const file = e.target.files?.[0];
               if (file) {
+                setSelectedFile(file);
                 const url = URL.createObjectURL(file);
                 onImageGenerated(url);
               }

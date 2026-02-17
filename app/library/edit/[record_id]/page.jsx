@@ -67,9 +67,7 @@ const Index = ({ params }) => {
           let timelineData = [];
           if (data.timeline?.events) {
             timelineData = data.timeline.events.map((event) => ({
-              year: event.timestamp
-                ? new Date(event.timestamp).getFullYear().toString()
-                : "",
+              year: event.timestamp ? event.timestamp : "",
               event: `${event.title}${event.description ? ` - ${event.description}` : ""}`,
             }));
           }
@@ -238,7 +236,7 @@ const Index = ({ params }) => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Preview */}
-        <div className="w-[400px] shrink-0 border-r border-gray-200 bg-gray-50">
+        <div className="w-[500px] shrink-0 border-r border-gray-200 bg-gray-50">
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}

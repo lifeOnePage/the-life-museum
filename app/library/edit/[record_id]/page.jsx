@@ -1,9 +1,10 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Image, FileText, Clock } from "lucide-react";
+import { BookOpen, BookOpenCheck, FileText, Clock, Save, RefreshCw } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { Button } from "./components/ui/button";
 import AlbumPreview from "./components/AlbumPreview";
 import CoverImageEditor from "./components/CoverImageEditor";
 import BioEditor from "./components/BioEditor";
@@ -18,6 +19,18 @@ const Index = ({ params }) => {
   const [bio, setBio] = useState("");
   const [mood, setMood] = useState("");
   const [timeline, setTimeline] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const coverRef = useRef(null);
+  const bioRef = useRef(null);
+  const timelineRef = useRef(null);
+  const initialState = useRef({
+    frontCover: null,
+    albumTitle: "",
+    artistName: "",
+    bio: "",
+    timeline: [],
+  });
 
   useEffect(() => {
     const fetchRecord = async () => {
@@ -34,31 +47,36 @@ const Index = ({ params }) => {
         if (result.ok && result.data) {
           const data = result.data;
 
-          // Cover Image
-          if (data.coverImage?.url) {
-            setFrontCover(data.coverImage.url);
-          }
+          const coverUrl = data.coverImage?.url || null;
+          const title = data.title || "";
+          const subtitle = data.subtitle || "";
+          const bioContent = data.lifestory?.content || "";
+          const moodValue = data.lifestory?.mood || "";
 
-          // Title & Subtitle
-          setAlbumTitle(data.title || "");
-          setArtistName(data.subtitle || "");
-
-          // Lifestory
-          if (data.lifestory) {
-            setBio(data.lifestory.content || "");
-            setMood(data.lifestory.mood || "");
-          }
-
-          // Timeline - transform API format to editor format
+          let timelineData = [];
           if (data.timeline?.events) {
-            const transformedTimeline = data.timeline.events.map((event) => ({
+            timelineData = data.timeline.events.map((event) => ({
               year: event.timestamp
                 ? new Date(event.timestamp).getFullYear().toString()
                 : "",
               event: `${event.title}${event.description ? ` - ${event.description}` : ""}`,
             }));
-            setTimeline(transformedTimeline);
           }
+
+          setFrontCover(coverUrl);
+          setAlbumTitle(title);
+          setArtistName(subtitle);
+          setBio(bioContent);
+          setMood(moodValue);
+          setTimeline(timelineData);
+
+          initialState.current = {
+            frontCover: coverUrl,
+            albumTitle: title,
+            artistName: subtitle,
+            bio: bioContent,
+            timeline: timelineData,
+          };
         }
       } catch (error) {
         console.error("레코드 불러오기 실패:", error);
@@ -72,29 +90,88 @@ const Index = ({ params }) => {
     }
   }, [record_id]);
 
-  const handleCoverSave = (data) => {
-    console.log("커버 이미지 저장 완료:", data);
+  const handleSaveAll = async () => {
+    const isCoverDirty =
+      frontCover !== initialState.current.frontCover ||
+      albumTitle !== initialState.current.albumTitle ||
+      artistName !== initialState.current.artistName;
+    const isBioDirty = bio !== initialState.current.bio;
+    const isTimelineDirty =
+      JSON.stringify(timeline) !== JSON.stringify(initialState.current.timeline);
+
+    if (!isCoverDirty && !isBioDirty && !isTimelineDirty) return;
+
+    setIsSaving(true);
+
+    const promises = [];
+
+    if (isCoverDirty && coverRef.current) {
+      promises.push(
+        coverRef.current
+          .save()
+          .then(() => ({ editor: "cover", success: true }))
+          .catch((err) => ({ editor: "cover", success: false, error: err })),
+      );
+    }
+
+    if (isBioDirty && bioRef.current) {
+      promises.push(
+        bioRef.current
+          .save()
+          .then(() => ({ editor: "bio", success: true }))
+          .catch((err) => ({ editor: "bio", success: false, error: err })),
+      );
+    }
+
+    if (isTimelineDirty && timelineRef.current) {
+      promises.push(
+        timelineRef.current
+          .save()
+          .then(() => ({ editor: "timeline", success: true }))
+          .catch((err) => ({ editor: "timeline", success: false, error: err })),
+      );
+    }
+
+    const results = await Promise.allSettled(promises);
+
+    const allSucceeded = results.every(
+      (r) => r.status === "fulfilled" && r.value.success,
+    );
+
+    if (allSucceeded) {
+      initialState.current = {
+        frontCover,
+        albumTitle,
+        artistName,
+        bio,
+        timeline: [...timeline],
+      };
+    } else {
+      // Update only the successfully saved editors' initial state
+      for (const r of results) {
+        if (r.status === "fulfilled" && r.value.success) {
+          if (r.value.editor === "cover") {
+            initialState.current.frontCover = frontCover;
+            initialState.current.albumTitle = albumTitle;
+            initialState.current.artistName = artistName;
+          } else if (r.value.editor === "bio") {
+            initialState.current.bio = bio;
+          } else if (r.value.editor === "timeline") {
+            initialState.current.timeline = [...timeline];
+          }
+        }
+      }
+    }
+
+    setIsSaving(false);
   };
 
-  const handleCoverCancel = () => {
-    console.log("커버 이미지 편집 취소");
-  };
-
-  const handleBioSave = (data) => {
-    console.log("생애문 저장 완료:", data);
-  };
-
-  const handleBioCancel = () => {
-    console.log("생애문 편집 취소");
-  };
-
-  const handleTimelineSave = (data) => {
-    console.log("타임라인 저장 완료:", data);
-  };
-
-  const handleTimelineCancel = () => {
-    console.log("타임라인 편집 취소");
-  };
+  const isDirty =
+    frontCover !== initialState.current.frontCover ||
+    albumTitle !== initialState.current.albumTitle ||
+    artistName !== initialState.current.artistName ||
+    bio !== initialState.current.bio ||
+    JSON.stringify(timeline) !== JSON.stringify(initialState.current.timeline);
 
   if (isLoading) {
     return (
@@ -107,8 +184,23 @@ const Index = ({ params }) => {
   return (
     <div className="flex min-h-screen flex-col bg-white">
       {/* Header */}
-      <header className="flex items-center gap-3 border-b border-gray-200 px-6 py-4">
+      <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
         <h1 className="text-xl font-semibold text-gray-900">{albumTitle || "앨범 편집"}</h1>
+        <Button
+          onClick={handleSaveAll}
+          disabled={isSaving || !isDirty}
+          className="min-w-[100px]"
+        >
+          {isSaving ? (
+            <>
+              <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> 저장 중...
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" /> 저장
+            </>
+          )}
+        </Button>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -129,64 +221,80 @@ const Index = ({ params }) => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <Tabs defaultValue="cover" className="w-full">
-                <TabsList className="mb-8 w-full border border-gray-200 bg-gray-100">
+              <Tabs defaultValue="front" className="w-full">
+                <TabsList className="mb-8 h-12 w-full rounded-lg border border-gray-200 bg-gray-100 p-1">
                   <TabsTrigger
-                    value="cover"
-                    className="flex-1 gap-2 data-[state=active]:bg-[#000000] data-[state=active]:text-white"
+                    value="front"
+                    className="flex-1 gap-2 rounded-md text-base font-semibold data-[state=active]:bg-[#000000] data-[state=active]:text-white data-[state=active]:shadow-md"
                   >
-                    <Image className="h-4 w-4" />
-                    커버 이미지
+                    <BookOpen className="h-5 w-5" />
+                    앞면
                   </TabsTrigger>
                   <TabsTrigger
-                    value="bio"
-                    className="flex-1 gap-2 data-[state=active]:bg-[#000000] data-[state=active]:text-white"
+                    value="back"
+                    className="flex-1 gap-2 rounded-md text-base font-semibold data-[state=active]:bg-[#000000] data-[state=active]:text-white data-[state=active]:shadow-md"
                   >
-                    <FileText className="h-4 w-4" />
-                    생애문
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="timeline"
-                    className="flex-1 gap-2 data-[state=active]:bg-[#000000] data-[state=active]:text-white"
-                  >
-                    <Clock className="h-4 w-4" />
-                    타임라인
+                    <BookOpenCheck className="h-5 w-5" />
+                    뒷면
                   </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="cover">
+                <TabsContent value="front">
                   <CoverImageEditor
+                    ref={coverRef}
                     record_id={record_id}
                     onImageGenerated={setFrontCover}
                     onTitleChange={setAlbumTitle}
                     onArtistChange={setArtistName}
-                    albumTitle={albumTitle}
-                    artistName={artistName}
                     frontCover={frontCover}
-                    onSave={handleCoverSave}
-                    onCancel={handleCoverCancel}
+                    initialFrontCover={initialState.current.frontCover}
+                    initialAlbumTitle={initialState.current.albumTitle}
+                    initialArtistName={initialState.current.artistName}
                   />
                 </TabsContent>
 
-                <TabsContent value="bio">
-                  <BioEditor
-                    record_id={record_id}
-                    bio={bio}
-                    onBioChange={setBio}
-                    initialMood={mood}
-                    onSave={handleBioSave}
-                    onCancel={handleBioCancel}
-                  />
-                </TabsContent>
+                <TabsContent value="back">
+                  <p className="mb-4 text-sm text-gray-500">
+                    뒷면은 생애문 또는 타임라인을 선택할 수 있습니다.
+                  </p>
+                  <Tabs defaultValue="bio" className="w-full">
+                    <TabsList className="mb-6 h-10 w-fit rounded-full border border-gray-200 bg-gray-100 p-1">
+                      <TabsTrigger
+                        value="bio"
+                        className="gap-1.5 rounded-full px-4 text-sm font-medium text-gray-500 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-sm"
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        생애문
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="timeline"
+                        className="gap-1.5 rounded-full px-4 text-sm font-medium text-gray-500 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-sm"
+                      >
+                        <Clock className="h-3.5 w-3.5" />
+                        타임라인
+                      </TabsTrigger>
+                    </TabsList>
 
-                <TabsContent value="timeline">
-                  <TimelineEditor
-                    record_id={record_id}
-                    timeline={timeline}
-                    onTimelineChange={setTimeline}
-                    onSave={handleTimelineSave}
-                    onCancel={handleTimelineCancel}
-                  />
+                    <TabsContent value="bio">
+                      <BioEditor
+                        ref={bioRef}
+                        record_id={record_id}
+                        bio={bio}
+                        onBioChange={setBio}
+                        initialBio={initialState.current.bio}
+                      />
+                    </TabsContent>
+
+                    <TabsContent value="timeline">
+                      <TimelineEditor
+                        ref={timelineRef}
+                        record_id={record_id}
+                        timeline={timeline}
+                        onTimelineChange={setTimeline}
+                        initialTimeline={initialState.current.timeline}
+                      />
+                    </TabsContent>
+                  </Tabs>
                 </TabsContent>
               </Tabs>
             </motion.div>

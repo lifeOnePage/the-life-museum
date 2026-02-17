@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
+import { getDominantColor } from "@rtcoder/dominant-color";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import CoverImageEditor from "./components/CoverImageEditor";
 import BioEditor from "./components/BioEditor";
@@ -29,6 +30,9 @@ const Index = ({ params }) => {
   const [bio, setBio] = useState("");
   const [mood, setMood] = useState("");
   const [timeline, setTimeline] = useState([]);
+  const [backTextColor, setBackTextColor] = useState("#1c1917");
+  const [backBgColor, setBackBgColor] = useState("");
+  const [backKeyColor, setBackKeyColor] = useState("#b45309");
   const [isSaving, setIsSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
 
@@ -72,12 +76,19 @@ const Index = ({ params }) => {
             }));
           }
 
+          const textColor = data.color || "#1c1917";
+          const bgColorVal = data.bgColor || "";
+          const keyColorVal = data.keyColor || "#b45309";
+
           setFrontCover(coverUrl);
           setAlbumTitle(title);
           setArtistName(subtitle);
           setBio(bioContent);
           setMood(moodValue);
           setTimeline(timelineData);
+          setBackTextColor(textColor);
+          setBackBgColor(bgColorVal);
+          setBackKeyColor(keyColorVal);
 
           initialState.current = {
             frontCover: coverUrl,
@@ -98,6 +109,26 @@ const Index = ({ params }) => {
       fetchRecord();
     }
   }, [record_id]);
+
+  // Extract dominant color from cover image as bgColor fallback
+  useEffect(() => {
+    if (!frontCover || typeof document === "undefined") return;
+    if (backBgColor) return; // already set by API or user
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      getDominantColor(img, {
+        downScaleFactor: 4,
+        skipPixels: 5,
+        colorFormat: "hex",
+        callback: (color) => {
+          setBackBgColor((prev) => prev || color);
+        },
+      });
+    };
+    img.src = frontCover;
+  }, [frontCover, backBgColor]);
 
   const handleSaveAll = async () => {
     const isCoverDirty =
@@ -241,6 +272,9 @@ const Index = ({ params }) => {
             frontCover={frontCover}
             bio={bio}
             timeline={timeline}
+            textColor={backTextColor}
+            bgColor={backBgColor}
+            keyColor={backKeyColor}
           />
         </div>
 
@@ -287,6 +321,38 @@ const Index = ({ params }) => {
                   <p className="mb-4 text-sm text-gray-500">
                     뒷면은 생애문 또는 타임라인을 선택할 수 있습니다.
                   </p>
+
+                  {/* Color Pickers */}
+                  <div className="mb-6 flex items-center gap-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <label className="flex items-center gap-2 text-xs text-gray-500">
+                      배경
+                      <input
+                        type="color"
+                        value={backBgColor || "#ffffff"}
+                        onChange={(e) => setBackBgColor(e.target.value)}
+                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-500">
+                      텍스트
+                      <input
+                        type="color"
+                        value={backTextColor}
+                        onChange={(e) => setBackTextColor(e.target.value)}
+                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-500">
+                      포인트
+                      <input
+                        type="color"
+                        value={backKeyColor}
+                        onChange={(e) => setBackKeyColor(e.target.value)}
+                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
+                      />
+                    </label>
+                  </div>
+
                   <Tabs defaultValue="bio" className="w-full">
                     <TabsList className="mb-6 h-10 w-fit rounded-full border border-gray-200 bg-gray-100 p-1">
                       <TabsTrigger

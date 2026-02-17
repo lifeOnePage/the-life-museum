@@ -7,7 +7,7 @@ import { useFrame } from "@react-three/fiber";
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
   x: 0,
-  y: 0.6,
+  y: 0.9,
   z: 1.5,
 };
 
@@ -101,6 +101,7 @@ export default function AlbumCover3D({
   backImage = null,
   isSelected = false,
   isFlipped = false,
+  edgeColor = null,
   onClick,
   onHoverChange,
 }) {
@@ -217,30 +218,31 @@ export default function AlbumCover3D({
   const materials = useMemo(() => {
     const actualFrontTex = frontTexture || placeholderFront;
     const actualBackTex = backTexture || placeholderBack;
+    const sideColor = edgeColor || "#efefef";
 
     // 6면 머티리얼: [+X, -X, +Y, -Y, +Z(앞면), -Z(뒷면)]
     return [
       // 오른쪽 측면
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 왼쪽 측면
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 위쪽
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 아래쪽
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
@@ -257,7 +259,7 @@ export default function AlbumCover3D({
         metalness: 0.1,
       }),
     ];
-  }, [frontTexture, backTexture, placeholderFront, placeholderBack]);
+  }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
 
   // 커서 변경
   useEffect(() => {

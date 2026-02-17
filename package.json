@@ -20,6 +20,7 @@
     "@react-three/drei": "^10.7.6",
     "@react-three/fiber": "^9.4.0",
     "@react-three/postprocessing": "^3.0.4",
+    "@rtcoder/dominant-color": "^0.1.4",
     "aws-sdk": "^2.1692.0",
     "firebase": "^12.4.0",
     "firebase-admin": "^13.5.0",

@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
-import AlbumPreview from "./components/AlbumPreview";
+import AlbumPreview3D from "./components/AlbumPreview3D";
 import CoverImageEditor from "./components/CoverImageEditor";
 import BioEditor from "./components/BioEditor";
 import TimelineEditor from "./components/TimelineEditor";
@@ -67,9 +67,7 @@ const Index = ({ params }) => {
           let timelineData = [];
           if (data.timeline?.events) {
             timelineData = data.timeline.events.map((event) => ({
-              year: event.timestamp
-                ? new Date(event.timestamp).getFullYear().toString()
-                : "",
+              year: event.timestamp ? event.timestamp : "",
               event: `${event.title}${event.description ? ` - ${event.description}` : ""}`,
             }));
           }
@@ -238,12 +236,11 @@ const Index = ({ params }) => {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Preview */}
-        <div className="w-[400px] shrink-0 overflow-y-auto border-r border-gray-200 bg-gray-50">
-          <AlbumPreview
+        <div className="w-[500px] shrink-0 border-r border-gray-200 bg-gray-50">
+          <AlbumPreview3D
             frontCover={frontCover}
-            backCover={{ bio, timeline }}
-            albumTitle={albumTitle}
-            artistName={artistName}
+            bio={bio}
+            timeline={timeline}
           />
         </div>
 

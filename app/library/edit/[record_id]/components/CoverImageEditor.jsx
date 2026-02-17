@@ -59,6 +59,7 @@ const CoverImageEditor = forwardRef(
           return data;
         } catch (err) {
           setError(err.message);
+          console.error(err);
           throw err;
         } finally {
           setIsSaving(false);
@@ -182,7 +183,9 @@ const CoverImageEditor = forwardRef(
                 }
               }}
             />
-            <span className="text-sm text-gray-500">클릭하여 이미지 업로드</span>
+            <span className="text-sm text-gray-500">
+              클릭하여 이미지 업로드
+            </span>
           </label>
         </div>
 

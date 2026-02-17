@@ -3,7 +3,15 @@
 import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { BookOpen, BookOpenCheck, FileText, Clock, Save, RefreshCw, ArrowLeft } from "lucide-react";
+import {
+  BookOpen,
+  BookOpenCheck,
+  FileText,
+  Clock,
+  Save,
+  RefreshCw,
+  ArrowLeft,
+} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
 import AlbumPreview from "./components/AlbumPreview";
@@ -100,7 +108,8 @@ const Index = ({ params }) => {
       artistName !== initialState.current.artistName;
     const isBioDirty = bio !== initialState.current.bio;
     const isTimelineDirty =
-      JSON.stringify(timeline) !== JSON.stringify(initialState.current.timeline);
+      JSON.stringify(timeline) !==
+      JSON.stringify(initialState.current.timeline);
 
     if (!isCoverDirty && !isBioDirty && !isTimelineDirty) return;
 
@@ -206,7 +215,9 @@ const Index = ({ params }) => {
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          <h1 className="text-xl font-semibold text-gray-900">{albumTitle || "앨범 편집"}</h1>
+          <h1 className="text-xl font-semibold text-gray-900">
+            {albumTitle || "앨범 편집"}
+          </h1>
         </div>
         <Button
           onClick={handleSaveAll}
@@ -357,7 +368,7 @@ const Index = ({ params }) => {
                       나가기
                     </Button>
                     <Button onClick={handleSaveAndExit} className="flex-1">
-                      <Save className="mr-2 h-4 w-4" /> 저장
+                      <Save className="mr-2 h-4 w-4" /> 저장하고 나가기
                     </Button>
                   </>
                 ) : (

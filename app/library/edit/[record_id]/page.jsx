@@ -11,9 +11,12 @@ import {
   Save,
   RefreshCw,
   ArrowLeft,
+  Pencil,
+  X,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
+import { getDominantColor } from "@rtcoder/dominant-color";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import CoverImageEditor from "./components/CoverImageEditor";
 import BioEditor from "./components/BioEditor";
@@ -29,8 +32,26 @@ const Index = ({ params }) => {
   const [bio, setBio] = useState("");
   const [mood, setMood] = useState("");
   const [timeline, setTimeline] = useState([]);
+  const [backTextColor, setBackTextColor] = useState("#1c1917");
+  const [backBgColor, setBackBgColor] = useState("");
+  const [backKeyColor, setBackKeyColor] = useState("#b45309");
   const [isSaving, setIsSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+
+  // Record edit dialog
+  const [showRecordEditDialog, setShowRecordEditDialog] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editSubtitle, setEditSubtitle] = useState("");
+  const [editGooglePhotoUrl, setEditGooglePhotoUrl] = useState("");
+  const [editIcloudUrl, setEditIcloudUrl] = useState("");
+  const [editMyboxUrl, setEditMyboxUrl] = useState("");
+  const [isRecordSaving, setIsRecordSaving] = useState(false);
+  const [recordError, setRecordError] = useState("");
+
+  // URLs from API (for display in edit dialog)
+  const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
+  const [icloudUrl, setIcloudUrl] = useState("");
+  const [myboxUrl, setMyboxUrl] = useState("");
 
   const coverRef = useRef(null);
   const bioRef = useRef(null);
@@ -41,6 +62,9 @@ const Index = ({ params }) => {
     artistName: "",
     bio: "",
     timeline: [],
+    backTextColor: "#1c1917",
+    backBgColor: "",
+    backKeyColor: "#b45309",
   });
 
   useEffect(() => {
@@ -72,12 +96,22 @@ const Index = ({ params }) => {
             }));
           }
 
+          const textColor = data.color || "#1c1917";
+          const bgColorVal = data.bgColor || "";
+          const keyColorVal = data.keyColor || "#b45309";
+
           setFrontCover(coverUrl);
           setAlbumTitle(title);
           setArtistName(subtitle);
           setBio(bioContent);
           setMood(moodValue);
           setTimeline(timelineData);
+          setBackTextColor(textColor);
+          setBackBgColor(bgColorVal);
+          setBackKeyColor(keyColorVal);
+          setGooglePhotoUrl(data.googlePhotoUrl || "");
+          setIcloudUrl(data.icloudUrl || "");
+          setMyboxUrl(data.myboxUrl || "");
 
           initialState.current = {
             frontCover: coverUrl,
@@ -85,6 +119,9 @@ const Index = ({ params }) => {
             artistName: subtitle,
             bio: bioContent,
             timeline: timelineData,
+            backTextColor: textColor,
+            backBgColor: bgColorVal,
+            backKeyColor: keyColorVal,
           };
         }
       } catch (error) {
@@ -99,6 +136,48 @@ const Index = ({ params }) => {
     }
   }, [record_id]);
 
+  // Extract dominant color from cover image as bgColor fallback
+  useEffect(() => {
+    if (!frontCover || typeof document === "undefined") return;
+    if (backBgColor) return;
+
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      getDominantColor(img, {
+        downScaleFactor: 4,
+        skipPixels: 5,
+        colorFormat: "hex",
+        callback: (color) => {
+          setBackBgColor((prev) => prev || color);
+        },
+      });
+    };
+    img.src = frontCover;
+  }, [frontCover, backBgColor]);
+
+  const saveRecordColors = async () => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Dev-Key": "tlm2026",
+      },
+      body: JSON.stringify({
+        color: backTextColor,
+        bgColor: backBgColor,
+        keyColor: backKeyColor,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "컬러 저장에 실패했습니다");
+    }
+    return data;
+  };
+
   const handleSaveAll = async () => {
     const isCoverDirty =
       frontCover !== initialState.current.frontCover ||
@@ -108,8 +187,13 @@ const Index = ({ params }) => {
     const isTimelineDirty =
       JSON.stringify(timeline) !==
       JSON.stringify(initialState.current.timeline);
+    const isColorDirty =
+      backTextColor !== initialState.current.backTextColor ||
+      backBgColor !== initialState.current.backBgColor ||
+      backKeyColor !== initialState.current.backKeyColor;
 
-    if (!isCoverDirty && !isBioDirty && !isTimelineDirty) return;
+    if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isColorDirty)
+      return;
 
     setIsSaving(true);
 
@@ -142,33 +226,30 @@ const Index = ({ params }) => {
       );
     }
 
+    if (isColorDirty) {
+      promises.push(
+        saveRecordColors()
+          .then(() => ({ editor: "color", success: true }))
+          .catch((err) => ({ editor: "color", success: false, error: err })),
+      );
+    }
+
     const results = await Promise.allSettled(promises);
 
-    const allSucceeded = results.every(
-      (r) => r.status === "fulfilled" && r.value.success,
-    );
-
-    if (allSucceeded) {
-      initialState.current = {
-        frontCover,
-        albumTitle,
-        artistName,
-        bio,
-        timeline: [...timeline],
-      };
-    } else {
-      // Update only the successfully saved editors' initial state
-      for (const r of results) {
-        if (r.status === "fulfilled" && r.value.success) {
-          if (r.value.editor === "cover") {
-            initialState.current.frontCover = frontCover;
-            initialState.current.albumTitle = albumTitle;
-            initialState.current.artistName = artistName;
-          } else if (r.value.editor === "bio") {
-            initialState.current.bio = bio;
-          } else if (r.value.editor === "timeline") {
-            initialState.current.timeline = [...timeline];
-          }
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value.success) {
+        if (r.value.editor === "cover") {
+          initialState.current.frontCover = frontCover;
+          initialState.current.albumTitle = albumTitle;
+          initialState.current.artistName = artistName;
+        } else if (r.value.editor === "bio") {
+          initialState.current.bio = bio;
+        } else if (r.value.editor === "timeline") {
+          initialState.current.timeline = [...timeline];
+        } else if (r.value.editor === "color") {
+          initialState.current.backTextColor = backTextColor;
+          initialState.current.backBgColor = backBgColor;
+          initialState.current.backKeyColor = backKeyColor;
         }
       }
     }
@@ -181,7 +262,11 @@ const Index = ({ params }) => {
     albumTitle !== initialState.current.albumTitle ||
     artistName !== initialState.current.artistName ||
     bio !== initialState.current.bio ||
-    JSON.stringify(timeline) !== JSON.stringify(initialState.current.timeline);
+    JSON.stringify(timeline) !==
+      JSON.stringify(initialState.current.timeline) ||
+    backTextColor !== initialState.current.backTextColor ||
+    backBgColor !== initialState.current.backBgColor ||
+    backKeyColor !== initialState.current.backKeyColor;
 
   const handleExit = () => {
     router.push("/library");
@@ -190,6 +275,57 @@ const Index = ({ params }) => {
   const handleSaveAndExit = async () => {
     await handleSaveAll();
     router.push("/library");
+  };
+
+  const openRecordEditDialog = () => {
+    setEditTitle(albumTitle);
+    setEditSubtitle(artistName);
+    setEditGooglePhotoUrl(googlePhotoUrl);
+    setEditIcloudUrl(icloudUrl);
+    setEditMyboxUrl(myboxUrl);
+    setRecordError("");
+    setShowRecordEditDialog(true);
+  };
+
+  const handleRecordEditSave = async () => {
+    setIsRecordSaving(true);
+    setRecordError("");
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Dev-Key": "tlm2026",
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          subTitle: editSubtitle,
+          googlePhotoUrl: editGooglePhotoUrl,
+          icloudUrl: editIcloudUrl,
+          myboxUrl: editMyboxUrl,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "저장에 실패했습니다");
+      }
+
+      setAlbumTitle(editTitle);
+      setArtistName(editSubtitle);
+      setGooglePhotoUrl(editGooglePhotoUrl);
+      setIcloudUrl(editIcloudUrl);
+      setMyboxUrl(editMyboxUrl);
+      initialState.current.albumTitle = editTitle;
+      initialState.current.artistName = editSubtitle;
+      setShowRecordEditDialog(false);
+    } catch (err) {
+      setRecordError(err.message);
+    } finally {
+      setIsRecordSaving(false);
+    }
   };
 
   if (isLoading) {
@@ -216,6 +352,14 @@ const Index = ({ params }) => {
           <h1 className="text-xl font-semibold text-gray-900">
             {albumTitle || "앨범 편집"}
           </h1>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={openRecordEditDialog}
+            className="text-gray-400 hover:text-gray-900"
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
         </div>
         <Button
           onClick={handleSaveAll}
@@ -241,6 +385,9 @@ const Index = ({ params }) => {
             frontCover={frontCover}
             bio={bio}
             timeline={timeline}
+            textColor={backTextColor}
+            bgColor={backBgColor}
+            keyColor={backKeyColor}
           />
         </div>
 
@@ -287,6 +434,38 @@ const Index = ({ params }) => {
                   <p className="mb-4 text-sm text-gray-500">
                     뒷면은 생애문 또는 타임라인을 선택할 수 있습니다.
                   </p>
+
+                  {/* Color Pickers */}
+                  <div className="mb-6 flex items-center gap-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                    <label className="flex items-center gap-2 text-xs text-gray-500">
+                      배경
+                      <input
+                        type="color"
+                        value={backBgColor || "#ffffff"}
+                        onChange={(e) => setBackBgColor(e.target.value)}
+                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-500">
+                      텍스트
+                      <input
+                        type="color"
+                        value={backTextColor}
+                        onChange={(e) => setBackTextColor(e.target.value)}
+                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
+                      />
+                    </label>
+                    <label className="flex items-center gap-2 text-xs text-gray-500">
+                      포인트
+                      <input
+                        type="color"
+                        value={backKeyColor}
+                        onChange={(e) => setBackKeyColor(e.target.value)}
+                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
+                      />
+                    </label>
+                  </div>
+
                   <Tabs defaultValue="bio" className="w-full">
                     <TabsList className="mb-6 h-10 w-fit rounded-full border border-gray-200 bg-gray-100 p-1">
                       <TabsTrigger
@@ -373,6 +552,130 @@ const Index = ({ params }) => {
                     나가기
                   </Button>
                 )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Record Edit Dialog */}
+      <AnimatePresence>
+        {showRecordEditDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setShowRecordEditDialog(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  앨범 정보 수정
+                </h2>
+                <button
+                  onClick={() => setShowRecordEditDialog(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">
+                    제목
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">
+                    부제목
+                  </label>
+                  <input
+                    type="text"
+                    value={editSubtitle}
+                    onChange={(e) => setEditSubtitle(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">
+                    Google Photo URL
+                  </label>
+                  <input
+                    type="text"
+                    value={editGooglePhotoUrl}
+                    onChange={(e) => setEditGooglePhotoUrl(e.target.value)}
+                    placeholder="https://photos.google.com/..."
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">
+                    iCloud URL
+                  </label>
+                  <input
+                    type="text"
+                    value={editIcloudUrl}
+                    onChange={(e) => setEditIcloudUrl(e.target.value)}
+                    placeholder="https://icloud.com/..."
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">
+                    Mybox URL
+                  </label>
+                  <input
+                    type="text"
+                    value={editMyboxUrl}
+                    onChange={(e) => setEditMyboxUrl(e.target.value)}
+                    placeholder="https://mybox.naver.com/..."
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
+                  />
+                </div>
+              </div>
+
+              {recordError && (
+                <p className="mt-3 text-sm text-red-500">{recordError}</p>
+              )}
+
+              <div className="mt-6 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRecordEditDialog(false)}
+                  className="flex-1 border-gray-300 text-gray-500"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleRecordEditSave}
+                  disabled={isRecordSaving}
+                  className="flex-1"
+                >
+                  {isRecordSaving ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> 저장
+                      중...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" /> 저장
+                    </>
+                  )}
+                </Button>
               </div>
             </motion.div>
           </motion.div>

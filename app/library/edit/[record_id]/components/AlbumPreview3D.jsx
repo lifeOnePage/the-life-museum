@@ -7,7 +7,7 @@ import AlbumCover3D from "./AlbumCover3D";
 
 const ALBUM_CONFIG = {
   size: 1.8,
-  thickness: 0.02,
+  thickness: 0.03,
   tiltAngle: 0,
 };
 
@@ -56,7 +56,7 @@ function drawSectionHeader(ctx, text, y, left, right) {
   ctx.textAlign = "left";
 }
 
-function generateBackCoverDataUrl(bio, timeline) {
+function generateBackCoverDataUrl(bio, timeline, bgColor, textColor, keyColor) {
   const size = 1024;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -64,7 +64,7 @@ function generateBackCoverDataUrl(bio, timeline) {
   const ctx = canvas.getContext("2d");
 
   // Background
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = bgColor || "#ffffff";
   ctx.fillRect(0, 0, size, size);
 
   // Subtle border
@@ -94,7 +94,7 @@ function generateBackCoverDataUrl(bio, timeline) {
     let cursorY = topY + 60;
 
     ctx.font = "italic 24px sans-serif";
-    ctx.fillStyle = "#1c1917";
+    ctx.fillStyle = textColor || "#1c1917";
     const bioLines = wrapText(ctx, bio, bioColW);
     const maxBioLines = 22;
     const displayLines = bioLines.slice(0, maxBioLines);
@@ -154,21 +154,21 @@ function generateBackCoverDataUrl(bio, timeline) {
       // Dot
       ctx.beginPath();
       ctx.arc(dotX, cursorY, 5, 0, Math.PI * 2);
-      ctx.fillStyle = "#d97706";
+      ctx.fillStyle = keyColor || "#d97706";
       ctx.fill();
-      ctx.strokeStyle = "rgba(217, 119, 6, 0.5)";
+      ctx.strokeStyle = (keyColor || "#d97706") + "80";
       ctx.lineWidth = 1.5;
       ctx.stroke();
 
       // Year
       ctx.font = "bold 22px sans-serif";
-      ctx.fillStyle = "#b45309";
+      ctx.fillStyle = keyColor || "#b45309";
       ctx.fillText(item.year, textX, cursorY + 7);
 
       // Event
       const yearWidth = ctx.measureText(item.year).width;
       ctx.font = "20px sans-serif";
-      ctx.fillStyle = "#78716c";
+      ctx.fillStyle = textColor || "#78716c";
       const eventText =
         item.event.length > maxEventLen
           ? item.event.slice(0, maxEventLen) + "..."
@@ -181,11 +181,7 @@ function generateBackCoverDataUrl(bio, timeline) {
     if (timeline.length > maxItems) {
       ctx.font = "20px sans-serif";
       ctx.fillStyle = "rgba(120, 113, 108, 0.5)";
-      ctx.fillText(
-        `+${timeline.length - maxItems}개 더`,
-        textX,
-        cursorY + 4,
-      );
+      ctx.fillText(`+${timeline.length - maxItems}개 더`, textX, cursorY + 4);
     }
   }
 
@@ -218,14 +214,28 @@ function CameraZoom({ zoom }) {
   return null;
 }
 
-export default function AlbumPreview3D({ frontCover, bio, timeline }) {
+export default function AlbumPreview3D({ frontCover, bio, timeline, textColor, bgColor, keyColor }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [zoom, setZoom] = useState(ZOOM_DEFAULT);
+  const dragStartX = useRef(null);
+
+  const handlePointerDown = (e) => {
+    dragStartX.current = e.clientX;
+  };
+
+  const handlePointerUp = (e) => {
+    if (dragStartX.current === null) return;
+    const dx = e.clientX - dragStartX.current;
+    if (Math.abs(dx) > 50) {
+      setIsFlipped((f) => !f);
+    }
+    dragStartX.current = null;
+  };
 
   const backCoverDataUrl = useMemo(() => {
     if (typeof document === "undefined") return null;
-    return generateBackCoverDataUrl(bio || "", timeline || []);
-  }, [bio, timeline]);
+    return generateBackCoverDataUrl(bio || "", timeline || [], bgColor || "#ffffff", textColor, keyColor);
+  }, [bio, timeline, bgColor, textColor, keyColor]);
 
   return (
     <div className="flex h-full w-full flex-col items-center">
@@ -251,7 +261,12 @@ export default function AlbumPreview3D({ frontCover, bio, timeline }) {
           <ZoomIn className="h-4 w-4" />
         </button>
       </div>
-      <div className="min-h-0 w-full flex-1">
+      <div
+        className="min-h-0 w-full flex-1 cursor-grab active:cursor-grabbing"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={() => { dragStartX.current = null; }}
+      >
         <Canvas
           camera={{ position: [0, 1.6, 6], fov: 45 }}
           gl={{ antialias: true }}
@@ -268,6 +283,7 @@ export default function AlbumPreview3D({ frontCover, bio, timeline }) {
             tiltAngle={ALBUM_CONFIG.tiltAngle}
             frontImage={frontCover}
             backImage={backCoverDataUrl}
+            edgeColor={bgColor}
             isSelected={true}
             isFlipped={isFlipped}
             onClick={() => setIsFlipped((f) => !f)}

@@ -21,9 +21,7 @@ const TimelineEditor = forwardRef(
           const events = timeline.map((item) => {
             const [title, ...descParts] = item.event.split(" - ");
             const description = descParts.join(" - ");
-            const timestamp = item.year
-              ? `${item.year}-01-01T00:00:00+09:00`
-              : null;
+            const timestamp = item.year ? item.year : null;
 
             return {
               title: title || "",
@@ -137,7 +135,9 @@ const TimelineEditor = forwardRef(
 
         {timeline.length === 0 && (
           <div className="py-8 text-center">
-            <p className="text-sm text-gray-400">타임라인 항목을 추가해보세요</p>
+            <p className="text-sm text-gray-400">
+              타임라인 항목을 추가해보세요
+            </p>
             <p className="mt-1 text-xs text-gray-300">
               주요 사건과 연도를 기록합니다
             </p>

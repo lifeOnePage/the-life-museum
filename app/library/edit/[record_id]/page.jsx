@@ -393,25 +393,23 @@ const Index = ({ params }) => {
 
         {/* Right: Editor */}
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-2xl p-8">
+          <div className="mx-auto max-w-2xl p-4">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <Tabs defaultValue="front" className="w-full">
-                <TabsList className="mb-8 h-12 w-full rounded-lg border border-gray-200 bg-gray-100 p-1">
+                <TabsList className="mb-8 h-10 w-full rounded-3xl border border-gray-200 bg-gray-100 p-1">
                   <TabsTrigger
                     value="front"
-                    className="flex-1 gap-2 rounded-md text-base font-semibold data-[state=active]:bg-[#000000] data-[state=active]:text-white data-[state=active]:shadow-md"
+                    className="flex-1 gap-2 rounded-3xl text-base font-semibold data-[state=active]:bg-[#000000] data-[state=active]:text-white data-[state=active]:shadow-md"
                   >
-                    <BookOpen className="h-5 w-5" />
                     앞면
                   </TabsTrigger>
                   <TabsTrigger
                     value="back"
-                    className="flex-1 gap-2 rounded-md text-base font-semibold data-[state=active]:bg-[#000000] data-[state=active]:text-white data-[state=active]:shadow-md"
+                    className="flex-1 gap-2 rounded-3xl text-base font-semibold data-[state=active]:bg-[#000000] data-[state=active]:text-white data-[state=active]:shadow-md"
                   >
-                    <BookOpenCheck className="h-5 w-5" />
                     뒷면
                   </TabsTrigger>
                 </TabsList>

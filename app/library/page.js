@@ -6,6 +6,7 @@ import { useAuth } from "../contexts/AuthContext";
 import ShelfCanvas from "./components/ShelfCanvas";
 import InfoBlock from "./components/InfoBlock";
 import CreateAlbumModal from "./components/CreateAlbumModal";
+import Header from "../components/Header";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -115,11 +116,11 @@ export default function MyShelfPage() {
 
       {/* DOM 오버레이 UI */}
       <div className="pointer-events-none absolute inset-0">
-        <InfoBlock onClickCreate={() => setShowCreateModal(true)} />
+        <InfoBlock user={user} onClickCreate={() => setShowCreateModal(true)} />
         {/* 상단 헤더 */}
         <div className="pointer-events-auto absolute top-0 right-0 left-0 flex items-center justify-between p-4">
           {/* 좌상단: 앨범 선택 시 X 버튼, 아니면 타이틀 */}
-          {selectedAlbum ? (
+          {/* {selectedAlbum ? (
             <button
               onClick={handleCloseAlbum}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl text-black backdrop-blur-sm transition hover:bg-white/20"
@@ -129,7 +130,7 @@ export default function MyShelfPage() {
             </button>
           ) : (
             <h1 className="text-xl font-bold text-black"></h1>
-          )}
+          )} */}
 
           {/* 우상단: 카메라 컨트롤 (앨범 미선택 시에만 표시) */}
           {/* {!selectedAlbum && (

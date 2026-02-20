@@ -7,6 +7,7 @@ import ShelfCanvas from "./components/ShelfCanvas";
 import InfoBlock from "./components/InfoBlock";
 import CreateAlbumModal from "./components/CreateAlbumModal";
 import Header from "../components/Header";
+import generateBackCoverDataUrl from "./utils/generateBackCover";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -45,6 +46,7 @@ export default function MyShelfPage() {
               subtitle: item.subtitle,
               frontImage: item.coverImage?.url ?? null,
               backImage: null,
+              edgeColor: null,
             })),
           );
         }
@@ -53,10 +55,53 @@ export default function MyShelfPage() {
   }, []);
 
   // 앨범 클릭 핸들러 (3D에서 호출됨)
-  const handleAlbumClick = useCallback((albumIndex, albumData) => {
-    setSelectedAlbum({ index: albumIndex, data: albumData });
-    setIsFlipped(false);
-  }, []);
+  const handleAlbumClick = useCallback(
+    (albumIndex, albumData) => {
+      setSelectedAlbum({ index: albumIndex, data: albumData });
+      setIsFlipped(false);
+
+      // 이미 detail이 로드된 경우 skip
+      if (albumData?.backImage && albumData?.edgeColor) return;
+      if (!albumData?.id) return;
+
+      // record detail fetch → back cover 생성
+      fetch(`${BASE_URL}/record/${albumData.id}`, {
+        headers: { "X-Dev-Key": "tlm2026" },
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (!json.ok || !json.data) return;
+          const d = json.data;
+
+          const bio = d.lifestory?.content || "";
+          const timeline = (d.timeline?.events || []).map((e) => ({
+            year: e.timestamp,
+            event: e.title,
+          }));
+          const bgColor = d.bgColor || "#ffffff";
+          const textColor = d.color || "#1c1917";
+          const keyColor = d.keyColor || "#d97706";
+
+          const backCoverUrl = generateBackCoverDataUrl(
+            bio,
+            timeline,
+            bgColor,
+            textColor,
+            keyColor,
+          );
+
+          setAlbums((prev) =>
+            prev.map((a, i) =>
+              a.id === albumData.id
+                ? { ...a, backImage: backCoverUrl, edgeColor: bgColor }
+                : a,
+            ),
+          );
+        })
+        .catch((err) => console.error("Failed to fetch record detail:", err));
+    },
+    [],
+  );
 
   // 앨범 플립 핸들러 (선택된 앨범 클릭 시)
   const handleFlipAlbum = useCallback(() => {
@@ -94,6 +139,7 @@ export default function MyShelfPage() {
         subtitle: newAlbum.subtitle,
         frontImage: newAlbum.coverImage?.url ?? null,
         backImage: null,
+        edgeColor: null,
       },
     ]);
   }, []);

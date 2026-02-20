@@ -124,6 +124,7 @@ export default function ShelfScene({
               tiltAngle={ALBUM_CONFIG.tiltAngle}
               frontImage={album.frontImage}
               backImage={album.backImage}
+              edgeColor={album.edgeColor}
               isSelected={isSelectedAlbum}
               isFlipped={isSelectedAlbum && isFlipped}
               onClick={() => {

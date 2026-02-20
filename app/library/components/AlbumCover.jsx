@@ -220,6 +220,7 @@ export default function AlbumCover({
   tiltAngle = -0.15,
   frontImage = null,
   backImage = null,
+  edgeColor = null,
   isSelected = false,
   isFlipped = false,
   onClick,
@@ -402,30 +403,31 @@ export default function AlbumCover({
   const materials = useMemo(() => {
     const actualFrontTex = frontTexture || placeholderFront;
     const actualBackTex = backTexture || placeholderBack;
+    const sideColor = edgeColor || "#efefef";
 
     // 6면 머티리얼: [+X, -X, +Y, -Y, +Z(앞면), -Z(뒷면)]
     return [
       // 오른쪽 측면
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 왼쪽 측면
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 위쪽
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 아래쪽
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
@@ -442,7 +444,7 @@ export default function AlbumCover({
         metalness: 0.1,
       }),
     ];
-  }, [frontTexture, backTexture, placeholderFront, placeholderBack]);
+  }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
 
   // 커서 변경
   useEffect(() => {

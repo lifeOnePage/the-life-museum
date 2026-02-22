@@ -5,9 +5,6 @@ import { useRef, useMemo, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { parseGIF, decompressFrames } from "gifuct-js";
 
-// Three.js render layers
-const FOREGROUND_LAYER = 1; // 선택된 앨범: blur 적용 안됨, blur composite 위에 그려짐
-
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
   x: 0,
@@ -228,6 +225,7 @@ export default function AlbumCover({
   isFlipped = false,
   onClick,
   onHoverChange,
+  onGroupRef,
 }) {
   const meshRef = useRef();
   const groupRef = useRef();
@@ -348,11 +346,11 @@ export default function AlbumCover({
   // 호버 시 살짝 앞으로
   useEffect(() => {
     if (!isSelected && hovered) {
-      animationState.current.targetZ = originalPosition.z + 0.15;
+      animationState.current.targetY = originalPosition.y + 0.15;
     } else if (!isSelected) {
-      animationState.current.targetZ = originalPosition.z;
+      animationState.current.targetY = originalPosition.y;
     }
-  }, [hovered, isSelected, originalPosition.z]);
+  }, [hovered, isSelected, originalPosition.y]);
 
   // 프레임 루프 - 부드러운 애니메이션
   useFrame((_, delta) => {
@@ -449,13 +447,22 @@ export default function AlbumCover({
     ];
   }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
 
-  // 선택 상태에 따라 Three.js layer / renderOrder / depthTest 관리
-  // - 선택됨: layer 1 (blur FBO 렌더에서 제외) + renderOrder 1000 (blur composite 위에 그려짐)
-  // - 미선택: layer 0 (blur 대상) + renderOrder 0
+  // 선택 상태에 따라 renderOrder 관리
+  // - 선택됨: renderOrder 1000 (blur composite renderOrder 999보다 나중에 그려짐)
+  // - 미선택: renderOrder 0
+  // layer는 변경하지 않음 → raycasting이 항상 layer 0에서 정상 작동
   useEffect(() => {
     if (!meshRef.current) return;
-    meshRef.current.layers.set(isSelected ? FOREGROUND_LAYER : 0);
     meshRef.current.renderOrder = isSelected ? 1000 : 0;
+  }, [isSelected]);
+
+  // 선택 시 outerGroupRef를 부모에 노출 → BlurLayer가 FBO 캡처 시 임시 숨김에 사용
+  useEffect(() => {
+    if (isSelected && outerGroupRef.current) {
+      onGroupRef?.(outerGroupRef.current);
+      return () => onGroupRef?.(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelected]);
 
   useEffect(() => {

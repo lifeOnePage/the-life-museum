@@ -79,7 +79,8 @@ const FRAG_V = `
     weights[7] = 0.00881;
     weights[8] = 0.00382;
 
-    result += texture(tDiffuse, vUv) * weights[0] +0.3;
+    // float bias = texture(tDiffuse, vUv) * weights[0] > 0.5 ? 0 : 0.2;
+    result += texture(tDiffuse, vUv) * weights[0];
     for (int i = 1; i < 9; i++) {
       float offset = float(i) * uBlurAmount;
       result += texture(tDiffuse, vUv + vec2(0.0, texelSize.y * offset)) * weights[i];
@@ -102,9 +103,11 @@ const FRAG_COMPOSITE = `
   }
 `;
 
-const BACKGROUND_LAYER = 0;
-
-export default function BlurLayer({ isActive = false, blurStrength = 3.0 }) {
+export default function BlurLayer({
+  isActive = false,
+  blurStrength = 3.0,
+  hiddenDuringBlur = null,
+}) {
   const meshRef = useRef();
   const { gl, scene, camera, size } = useThree();
 
@@ -187,16 +190,8 @@ export default function BlurLayer({ isActive = false, blurStrength = 3.0 }) {
     return () => blurScene.remove(blurMesh);
   }, [blurScene, blurMesh]);
 
-  // composite mesh 자신은 layer 1 → FBO 캡처에서 제외
-  useEffect(() => {
-    if (meshRef.current) meshRef.current.layers.set(1);
-  }, []);
-
-  // main camera가 layer 0, 1 모두 보이도록
-  useEffect(() => {
-    camera.layers.enable(0);
-    camera.layers.enable(1);
-  }, [camera]);
+  // composite mesh는 FBO 캡처 중 useFrame에서 visible=false로 제외됨
+  // 별도 layer 조작 불필요
 
   animState.current.targetOpacity = isActive ? 1.0 : 0.0;
 
@@ -223,12 +218,13 @@ export default function BlurLayer({ isActive = false, blurStrength = 3.0 }) {
     blurMaterialV.uniforms.uResolution.value.set(pw, ph);
     blurMaterialV.uniforms.uBlurAmount.value = blurStrength;
 
-    // 1. 배경(layer 0)만 sceneFBO에 렌더링
-    const savedMask = camera.layers.mask;
-    camera.layers.set(BACKGROUND_LAYER);
+    // 1. 씬을 sceneFBO에 렌더링
+    //    - composite 메시: 이미 visible=false (위에서 처리)
+    //    - 선택된 앨범 그룹: 임시 숨김 → 블러에서 제외
+    if (hiddenDuringBlur?.current) hiddenDuringBlur.current.visible = false;
     gl.setRenderTarget(sceneFBO);
     gl.render(scene, camera);
-    camera.layers.mask = savedMask;
+    if (hiddenDuringBlur?.current) hiddenDuringBlur.current.visible = true;
 
     // 2. Round 1 – Horizontal
     blurMesh.material = blurMaterialH;

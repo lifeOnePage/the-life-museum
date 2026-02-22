@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useCallback } from "react";
 import { Html } from "@react-three/drei";
 import Wall from "./Wall";
 import Shelf from "./Shelf";
@@ -75,6 +75,12 @@ export default function ShelfScene({
   // 호버된 앨범 인덱스
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
+  // 선택된 앨범의 Three.js Group ref (BlurLayer가 FBO 캡처 시 임시 숨김에 사용)
+  const selectedGroupRef = useRef(null);
+  const handleGroupRef = useCallback((ref) => {
+    selectedGroupRef.current = ref;
+  }, []);
+
   return (
     <group onPointerMissed={() => onCloseAlbum?.()}>
       {/* 바닥 */}
@@ -105,7 +111,11 @@ export default function ShelfScene({
       ))}
 
       {/* 배경 블러 레이어: 앨범 선택 시 선반/다른 앨범을 흐리게 */}
-      <BlurLayer isActive={!!selectedAlbum} blurStrength={3} />
+      <BlurLayer
+        isActive={!!selectedAlbum}
+        blurStrength={3}
+        hiddenDuringBlur={selectedGroupRef}
+      />
 
       {/* 앨범 커버들 (albums 개수만큼) */}
       {albumPositions
@@ -134,6 +144,7 @@ export default function ShelfScene({
                   onAlbumClick?.(index, album);
                 }
               }}
+              onGroupRef={handleGroupRef}
               onHoverChange={(hovered) => {
                 setHoveredIndex(hovered ? index : null);
               }}

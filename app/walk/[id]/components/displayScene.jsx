@@ -5,18 +5,16 @@ import { Suspense, useMemo, useState, useEffect, useCallback } from "react";
 import * as THREE from "three";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import Scene from "./scene/Scene";
-import { API_BASE, SEED } from "./lib/constants";
+import { API_BASE, SEED, CAMERA_SPEED } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
 
 // Playback Controls UI
 function PlaybackControls({
   isPlaying,
   onTogglePlay,
-  duration,
-  onDurationChange,
+  cameraSpeed,
+  onCameraSpeedChange,
 }) {
-  const durationOptions = [3, 5, 7, 10, 15];
-
   return (
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
       <button
@@ -45,18 +43,14 @@ function PlaybackControls({
         )}
       </button>
 
-      <select
-        value={duration}
-        onChange={(e) => onDurationChange(Number(e.target.value))}
-        className="rounded bg-white/20 px-3 py-1 text-sm text-white outline-none"
-        disabled={isPlaying}
-      >
-        {durationOptions.map((sec) => (
-          <option key={sec} value={sec} className="bg-gray-800">
-            {sec}s
-          </option>
-        ))}
-      </select>
+      <input
+        type="range"
+        min={5}
+        max={50}
+        value={cameraSpeed}
+        onChange={(e) => onCameraSpeedChange(Number(e.target.value))}
+        className="w-24 accent-white"
+      />
     </div>
   );
 }
@@ -66,7 +60,7 @@ export default function DisplayScene({ recordId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
-  const [displayDuration, setDisplayDuration] = useState(5);
+  const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
 
   // API fetch
   useEffect(() => {
@@ -154,8 +148,8 @@ export default function DisplayScene({ recordId }) {
       <PlaybackControls
         isPlaying={isPlaying}
         onTogglePlay={handleTogglePlay}
-        duration={displayDuration}
-        onDurationChange={setDisplayDuration}
+        cameraSpeed={cameraSpeed}
+        onCameraSpeedChange={setCameraSpeed}
       />
 
       <Canvas
@@ -175,14 +169,14 @@ export default function DisplayScene({ recordId }) {
         style={{ width: "100%", height: "100%" }}
       >
         <Suspense fallback={null}>
-          <Scene planes={planes} isPlaying={isPlaying} />
+          <Scene
+            planes={planes}
+            isPlaying={isPlaying}
+            cameraSpeed={cameraSpeed}
+          />
         </Suspense>
         <EffectComposer>
-          <Bloom
-            intensity={0.5}
-            luminanceThreshold={0.8}
-            radius={0.8}
-          />
+          <Bloom intensity={0.5} luminanceThreshold={0.8} radius={0.8} />
         </EffectComposer>
       </Canvas>
     </div>

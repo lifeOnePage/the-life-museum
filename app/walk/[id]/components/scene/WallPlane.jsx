@@ -1,7 +1,7 @@
 import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { getProxiedUrl } from "../lib/constants";
+import { getProxiedUrl, FOCUS_FADE_SPEED } from "../lib/constants";
 
 const BOX_DEPTH = 10;
 const FRAME_COLOR = "#1a1a2e";
@@ -68,6 +68,13 @@ export default function WallPlane({
     active: false,
     elapsed: 0,
     done: false,
+  });
+
+  // Manual focus fade state
+  const manualFade = useRef({
+    opacity: 1,
+    target: 1,
+    prevFocusMode: "none",
   });
 
   // Original rotation: face toward corridor center
@@ -166,6 +173,35 @@ export default function WallPlane({
       state.targetRot = [...originalRotation];
       state.targetScale = [...wallScaleRef.current];
     }
+
+    // Fade in/out for manual focus (same behaviour as FocusClone for auto)
+    const fade = manualFade.current;
+    const isManual =
+      focusMode === "manual-fly" || focusMode === "manual-display";
+    const wasManual =
+      fade.prevFocusMode === "manual-fly" ||
+      fade.prevFocusMode === "manual-display";
+
+    if (isManual && !wasManual) {
+      // Entering manual: snap to 0 and fade in
+      fade.opacity = 0;
+      fade.target = 0.8;
+      // Immediately apply so there is no one-frame flash
+      if (meshRef.current) {
+        const mats = meshRef.current.material;
+        if (Array.isArray(mats)) {
+          mats.forEach((mat) => {
+            mat.transparent = true;
+            mat.opacity = 0;
+            mat.needsUpdate = true;
+          });
+        }
+      }
+    } else if (!isManual && wasManual) {
+      // Leaving manual: fade back to fully opaque
+      fade.target = 1;
+    }
+    fade.prevFocusMode = focusMode;
   }, [
     focusMode,
     cameraPosition,
@@ -194,6 +230,27 @@ export default function WallPlane({
     meshRef.current.position.set(...state.currentPos);
     meshRef.current.rotation.set(...state.currentRot);
     meshRef.current.scale.set(...state.currentScale);
+
+    // Manual focus fade animation (all faces)
+    const fade = manualFade.current;
+    if (Math.abs(fade.opacity - fade.target) > 0.001) {
+      const dir = fade.target > fade.opacity ? 1 : -1;
+      fade.opacity += dir * FOCUS_FADE_SPEED * delta;
+      if (dir > 0) fade.opacity = Math.min(fade.target, fade.opacity);
+      else fade.opacity = Math.max(fade.target, fade.opacity);
+
+      const mats = meshRef.current.material;
+      if (Array.isArray(mats)) {
+        const needsTransparent = fade.opacity < 0.999;
+        mats.forEach((mat) => {
+          if (mat.transparent !== needsTransparent) {
+            mat.transparent = needsTransparent;
+            mat.needsUpdate = true;
+          }
+          mat.opacity = fade.opacity;
+        });
+      }
+    }
 
     // TV flicker animation on front material
     const mat = frontMatRef.current;

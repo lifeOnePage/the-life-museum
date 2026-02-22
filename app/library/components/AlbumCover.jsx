@@ -5,11 +5,14 @@ import { useRef, useMemo, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { parseGIF, decompressFrames } from "gifuct-js";
 
+// Three.js render layers
+const FOREGROUND_LAYER = 1; // 선택된 앨범: blur 적용 안됨, blur composite 위에 그려짐
+
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
   x: 0,
-  y: 1.6,
-  z: 3.5,
+  y: 1.5,
+  z: 2.5,
 };
 
 // 마우스 tilt 효과 설정
@@ -445,6 +448,30 @@ export default function AlbumCover({
       }),
     ];
   }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
+
+  // 선택 상태에 따라 Three.js layer / renderOrder / depthTest 관리
+  // - 선택됨: layer 1 (blur FBO 렌더에서 제외) + renderOrder 1000 (blur composite 위에 그려짐)
+  // - 미선택: layer 0 (blur 대상) + renderOrder 0
+  useEffect(() => {
+    if (!meshRef.current) return;
+    meshRef.current.layers.set(isSelected ? FOREGROUND_LAYER : 0);
+    meshRef.current.renderOrder = isSelected ? 1000 : 0;
+  }, [isSelected]);
+
+  useEffect(() => {
+    if (!meshRef.current) return;
+    const mats = meshRef.current.material;
+    if (!mats) return;
+    const arr = Array.isArray(mats) ? mats : [mats];
+    arr.forEach((mat) => {
+      // 선택 시 transparent pass로 이동: Three.js는 opaque를 전부 먼저 그린 뒤
+      // transparent를 나중에 그리므로, transparent=true여야 renderOrder 1000이
+      // BlurLayer composite(renderOrder 999, transparent)보다 나중에 그려짐
+      mat.transparent = isSelected;
+      mat.depthTest = !isSelected;
+      mat.needsUpdate = true;
+    });
+  }, [isSelected, materials]);
 
   // 커서 변경
   useEffect(() => {

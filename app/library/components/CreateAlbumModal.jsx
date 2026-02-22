@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
+export default function CreateAlbumModal({ onClose, onCreated, baseUrl, token }) {
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
@@ -19,7 +19,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-Dev-Key": "tlm2026",
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           title: title.trim(),

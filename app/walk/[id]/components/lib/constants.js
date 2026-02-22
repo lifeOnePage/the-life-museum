@@ -21,11 +21,11 @@ export const CAMERA_SPEED = 15;
 export const CAMERA_START_Z = 0;
 
 // Focus system
-export const DISPLAY_OFFSET_Z = 200;
+export const DISPLAY_OFFSET_Z = 500;
 export const DISPLAY_SCALE = 0.8;
 export const FOCUS_SEARCH_RANGE = 800;
-export const FOCUS_DISMISS_DISTANCE = 100;
-export const FOCUS_FADE_SPEED = 1.5; // 0→1 in ~0.67s
+export const FOCUS_DISMISS_DISTANCE = 56;
+export const FOCUS_FADE_SPEED = 0.2; // 0→1 in ~0.67s
 
 // Floor
 export const FLOOR_Y = -0;

@@ -7,7 +7,6 @@ import FocusClone from "./FocusClone";
 import MirrorReflection from "./MirrorReflection";
 import GlowBorder from "./GlowBorder";
 import {
-  CAMERA_SPEED,
   CAMERA_START_Z,
   DISPLAY_OFFSET_Z,
   DISPLAY_SCALE,
@@ -22,7 +21,7 @@ import {
   BASE_HEIGHT,
 } from "../lib/constants";
 
-export default function Scene({ planes, isPlaying }) {
+export default function Scene({ planes, isPlaying, cameraSpeed }) {
   const { camera } = useThree();
   const controlsRef = useRef();
   const dirLightRef = useRef();
@@ -176,7 +175,7 @@ export default function Scene({ planes, isPlaying }) {
     const s = state.current;
 
     // 1. Camera always advances
-    s.cameraZ -= CAMERA_SPEED * delta;
+    s.cameraZ -= cameraSpeed * delta;
     camera.position.z = s.cameraZ;
 
     // Keep directional light following camera (forward direction)
@@ -263,7 +262,7 @@ export default function Scene({ planes, isPlaying }) {
       <fog attach="fog" args={[FOG_COLOR, FOG_NEAR, FOG_FAR]} />
 
       {/* Lighting */}
-      <ambientLight intensity={6} />
+      <ambientLight intensity={3} />
       <directionalLight ref={dirLightRef} intensity={10} />
       <pointLight position={[-300, 80, camZ]} intensity={0.4} distance={2000} />
       <pointLight position={[300, 80, camZ]} intensity={0.4} distance={2000} />

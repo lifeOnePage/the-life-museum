@@ -104,8 +104,8 @@ export default function ShelfScene({
         />
       ))}
 
-      {/* 배경 블러 레이어 */}
-      {/* <BlurLayer isActive={!!selectedAlbum} /> */}
+      {/* 배경 블러 레이어: 앨범 선택 시 선반/다른 앨범을 흐리게 */}
+      <BlurLayer isActive={!!selectedAlbum} blurStrength={3} />
 
       {/* 앨범 커버들 (albums 개수만큼) */}
       {albumPositions
@@ -147,13 +147,12 @@ export default function ShelfScene({
         albumPositions[hoveredIndex] && (
           <Html
             position={[
-              albumPositions[hoveredIndex].position[0],
+              albumPositions[hoveredIndex].position[0] - ALBUM_CONFIG.size / 2,
               albumPositions[hoveredIndex].position[1] +
                 ALBUM_CONFIG.size / 2 +
                 0.08,
               albumPositions[hoveredIndex].position[2] + 0.5,
             ]}
-            center
             style={{ pointerEvents: "none" }}
           >
             <div

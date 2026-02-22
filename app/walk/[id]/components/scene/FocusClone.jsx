@@ -32,7 +32,7 @@ export default function FocusClone({
         map={texture}
         side={THREE.DoubleSide}
         transparent
-        opacity={0}
+        opacity={0.1}
       />
     </mesh>
   );

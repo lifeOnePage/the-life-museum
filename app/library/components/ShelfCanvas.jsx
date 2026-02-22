@@ -64,7 +64,7 @@ export default function ShelfCanvas({
     <Canvas
       shadows
       camera={{
-        position: [0, 1.5, 5],
+        position: [0, 1.4, 4.2],
         fov: 50,
         near: 0.1,
         far: 100,

@@ -6,12 +6,14 @@ import { useAuth } from "../contexts/AuthContext";
 import ShelfCanvas from "./components/ShelfCanvas";
 import InfoBlock from "./components/InfoBlock";
 import CreateAlbumModal from "./components/CreateAlbumModal";
+import Header from "../components/Header";
+import generateBackCoverDataUrl from "./utils/generateBackCover";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
 
 export default function MyShelfPage() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const router = useRouter();
 
   // API에서 받아온 전체 앨범 목록
@@ -32,19 +34,39 @@ export default function MyShelfPage() {
   // API fetch
   useEffect(() => {
     fetch(`${BASE_URL}/library`, {
-      headers: { "X-Dev-Key": "tlm2026" },
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((json) => {
         if (json.ok && Array.isArray(json.data)) {
           setAlbums(
-            json.data.map((item) => ({
-              id: item.id,
-              title: item.title,
-              subtitle: item.subtitle,
-              frontImage: item.coverImage?.url ?? null,
-              backImage: null,
-            })),
+            json.data.map((item) => {
+              const bio = item.lifestory?.content || "";
+              const timeline = (item.timeline?.events || []).map((e) => ({
+                year: e.timestamp,
+                event: e.title,
+              }));
+              const bgColor = item.bgColor || "#ffffff";
+              const textColor = item.color || "#1c1917";
+              const keyColor = item.keyColor || "#d97706";
+
+              const backImage = generateBackCoverDataUrl(
+                bio,
+                timeline,
+                bgColor,
+                textColor,
+                keyColor,
+              );
+
+              return {
+                id: item.id,
+                title: item.title,
+                subtitle: item.subtitle,
+                frontImage: item.coverImage?.url ?? null,
+                backImage,
+                edgeColor: bgColor,
+              };
+            }),
           );
         }
       })
@@ -52,10 +74,53 @@ export default function MyShelfPage() {
   }, []);
 
   // 앨범 클릭 핸들러 (3D에서 호출됨)
-  const handleAlbumClick = useCallback((albumIndex, albumData) => {
-    setSelectedAlbum({ index: albumIndex, data: albumData });
-    setIsFlipped(false);
-  }, []);
+  const handleAlbumClick = useCallback(
+    (albumIndex, albumData) => {
+      setSelectedAlbum({ index: albumIndex, data: albumData });
+      setIsFlipped(false);
+
+      // 이미 detail이 로드된 경우 skip
+      if (albumData?.backImage && albumData?.edgeColor) return;
+      if (!albumData?.id) return;
+
+      // record detail fetch → back cover 생성
+      fetch(`${BASE_URL}/record/${albumData.id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => res.json())
+        .then((json) => {
+          if (!json.ok || !json.data) return;
+          const d = json.data;
+
+          const bio = d.lifestory?.content || "";
+          const timeline = (d.timeline?.events || []).map((e) => ({
+            year: e.timestamp,
+            event: e.title,
+          }));
+          const bgColor = d.bgColor || "#ffffff";
+          const textColor = d.color || "#1c1917";
+          const keyColor = d.keyColor || "#d97706";
+
+          const backCoverUrl = generateBackCoverDataUrl(
+            bio,
+            timeline,
+            bgColor,
+            textColor,
+            keyColor,
+          );
+
+          setAlbums((prev) =>
+            prev.map((a, i) =>
+              a.id === albumData.id
+                ? { ...a, backImage: backCoverUrl, edgeColor: bgColor }
+                : a,
+            ),
+          );
+        })
+        .catch((err) => console.error("Failed to fetch record detail:", err));
+    },
+    [],
+  );
 
   // 앨범 플립 핸들러 (선택된 앨범 클릭 시)
   const handleFlipAlbum = useCallback(() => {
@@ -93,6 +158,7 @@ export default function MyShelfPage() {
         subtitle: newAlbum.subtitle,
         frontImage: newAlbum.coverImage?.url ?? null,
         backImage: null,
+        edgeColor: null,
       },
     ]);
   }, []);
@@ -115,11 +181,15 @@ export default function MyShelfPage() {
 
       {/* DOM 오버레이 UI */}
       <div className="pointer-events-none absolute inset-0">
-        <InfoBlock onClickCreate={() => setShowCreateModal(true)} />
+        <InfoBlock
+          user={user}
+          onClickCreate={() => setShowCreateModal(true)}
+          onCloseAlbum={selectedAlbum ? handleCloseAlbum : undefined}
+        />
         {/* 상단 헤더 */}
         <div className="pointer-events-auto absolute top-0 right-0 left-0 flex items-center justify-between p-4">
           {/* 좌상단: 앨범 선택 시 X 버튼, 아니면 타이틀 */}
-          {selectedAlbum ? (
+          {/* {selectedAlbum ? (
             <button
               onClick={handleCloseAlbum}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-xl text-black backdrop-blur-sm transition hover:bg-white/20"
@@ -129,7 +199,7 @@ export default function MyShelfPage() {
             </button>
           ) : (
             <h1 className="text-xl font-bold text-black"></h1>
-          )}
+          )} */}
 
           {/* 우상단: 카메라 컨트롤 (앨범 미선택 시에만 표시) */}
           {/* {!selectedAlbum && (
@@ -201,6 +271,7 @@ export default function MyShelfPage() {
       {showCreateModal && (
         <CreateAlbumModal
           baseUrl={BASE_URL}
+          token={token}
           onClose={() => setShowCreateModal(false)}
           onCreated={handleAlbumCreated}
         />

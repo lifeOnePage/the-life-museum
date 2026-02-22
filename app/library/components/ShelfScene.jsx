@@ -67,7 +67,7 @@ export default function ShelfScene({
   // 선반 위치 계산 (2단)
   const shelfPositions = useMemo(() => {
     return Array.from({ length: ROWS }, (_, row) => ({
-      y: SHELF_CONFIG.spacing * (ROWS - 1 - row),
+      y: SHELF_CONFIG.spacing * (ROWS - 1 - row) - 0.03,
       z: -SHELF_CONFIG.wallOffset,
     }));
   }, []);
@@ -104,72 +104,78 @@ export default function ShelfScene({
         />
       ))}
 
-      {/* 배경 블러 레이어 */}
-      {/* <BlurLayer isActive={!!selectedAlbum} /> */}
+      {/* 배경 블러 레이어: 앨범 선택 시 선반/다른 앨범을 흐리게 */}
+      <BlurLayer isActive={!!selectedAlbum} blurStrength={3} />
 
       {/* 앨범 커버들 (albums 개수만큼) */}
-      {albumPositions.slice(0, albums.length).map(({ index, position, row, col }) => {
-        const album = albums[index] || {};
-        const isSelectedAlbum = selectedAlbum?.index === index;
+      {albumPositions
+        .slice(0, albums.length)
+        .map(({ index, position, row, col }) => {
+          const album = albums[index] || {};
+          const isSelectedAlbum = selectedAlbum?.index === index;
 
-        return (
-          <AlbumCover
-            key={`album-${index}`}
-            index={index}
-            position={position}
-            size={ALBUM_CONFIG.size}
-            thickness={ALBUM_CONFIG.thickness}
-            tiltAngle={ALBUM_CONFIG.tiltAngle}
-            frontImage={album.frontImage}
-            backImage={album.backImage}
-            isSelected={isSelectedAlbum}
-            isFlipped={isSelectedAlbum && isFlipped}
-            onClick={() => {
-              if (isSelectedAlbum) {
-                onFlipAlbum?.();
-              } else {
-                onAlbumClick?.(index, album);
-              }
-            }}
-            onHoverChange={(hovered) => {
-              setHoveredIndex(hovered ? index : null);
-            }}
-          />
-        );
-      })}
+          return (
+            <AlbumCover
+              key={`album-${index}`}
+              index={index}
+              position={position}
+              size={ALBUM_CONFIG.size}
+              thickness={ALBUM_CONFIG.thickness}
+              tiltAngle={ALBUM_CONFIG.tiltAngle}
+              frontImage={album.frontImage}
+              backImage={album.backImage}
+              edgeColor={album.edgeColor}
+              isSelected={isSelectedAlbum}
+              isFlipped={isSelectedAlbum && isFlipped}
+              onClick={() => {
+                if (isSelectedAlbum) {
+                  onFlipAlbum?.();
+                } else {
+                  onAlbumClick?.(index, album);
+                }
+              }}
+              onHoverChange={(hovered) => {
+                setHoveredIndex(hovered ? index : null);
+              }}
+            />
+          );
+        })}
 
       {/* 호버 툴팁 (포커싱 없을 때만) */}
-      {!selectedAlbum && hoveredIndex != null && albumPositions[hoveredIndex] && (
-        <Html
-          position={[
-            albumPositions[hoveredIndex].position[0],
-            albumPositions[hoveredIndex].position[1] + ALBUM_CONFIG.size / 2 + 0.08,
-            albumPositions[hoveredIndex].position[2] + 0.5,
-          ]}
-          center
-          style={{ pointerEvents: "none" }}
-        >
-          <div
-            style={{
-              whiteSpace: "nowrap",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              opacity: 1,
-              transition: "opacity 0.2s ease",
-            }}
+      {!selectedAlbum &&
+        hoveredIndex != null &&
+        albumPositions[hoveredIndex] && (
+          <Html
+            position={[
+              albumPositions[hoveredIndex].position[0] - ALBUM_CONFIG.size / 2,
+              albumPositions[hoveredIndex].position[1] +
+                ALBUM_CONFIG.size / 2 +
+                0.08,
+              albumPositions[hoveredIndex].position[2] + 0.5,
+            ]}
+            style={{ pointerEvents: "none" }}
           >
-            <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
-              {albums[hoveredIndex]?.title}
-            </span>
-            {albums[hoveredIndex]?.subtitle && (
-              <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-                {albums[hoveredIndex].subtitle}
+            <div
+              style={{
+                whiteSpace: "nowrap",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                opacity: 1,
+                transition: "opacity 0.2s ease",
+              }}
+            >
+              <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
+                {albums[hoveredIndex]?.title}
               </span>
-            )}
-          </div>
-        </Html>
-      )}
+              {albums[hoveredIndex]?.subtitle && (
+                <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+                  {albums[hoveredIndex].subtitle}
+                </span>
+              )}
+            </div>
+          </Html>
+        )}
     </group>
   );
 }

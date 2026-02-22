@@ -3,136 +3,16 @@
 import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
-import { parseGIF, decompressFrames } from "gifuct-js";
-
-// Three.js render layers
-const FOREGROUND_LAYER = 1; // 선택된 앨범: blur 적용 안됨, blur composite 위에 그려짐
 
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
   x: 0,
-  y: 1.5,
-  z: 2.5,
+  y: 0.9,
+  z: 1.5,
 };
 
-// 마우스 tilt 효과 설정
-const TILT_CONFIG = {
-  maxAngle: 0.5, // 최대 기울기 각도 (라디안, 약 8.5도)
-  smoothing: 0.08, // 보간 속도 (낮을수록 부드러움)
-};
-
-function isGifUrl(url) {
-  if (!url) return false;
-  try {
-    const pathname = new URL(url).pathname;
-    return pathname.toLowerCase().endsWith(".gif");
-  } catch {
-    return url.toLowerCase().includes(".gif");
-  }
-}
-
-// GIF 애니메이션 텍스처 훅
-function useGifTexture(imageUrl) {
-  const canvasRef = useRef(null);
-  const ctxRef = useRef(null);
-  const framesRef = useRef([]);
-  const frameIndexRef = useRef(0);
-  const elapsedRef = useRef(0);
-  const textureRef = useRef(null);
-  const [ready, setReady] = useState(false);
-
-  useEffect(() => {
-    if (!imageUrl) {
-      setReady(false);
-      return;
-    }
-
-    let cancelled = false;
-
-    (async () => {
-      try {
-        const resp = await fetch(imageUrl);
-        const buff = await resp.arrayBuffer();
-        const parsed = parseGIF(buff);
-        const frames = decompressFrames(parsed, true);
-        if (cancelled || frames.length === 0) return;
-
-        const { width, height } = parsed.lsd;
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-
-        canvasRef.current = canvas;
-        ctxRef.current = ctx;
-        framesRef.current = frames;
-        frameIndexRef.current = 0;
-        elapsedRef.current = 0;
-
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        textureRef.current = texture;
-
-        // 첫 프레임 그리기
-        drawFrame(ctx, frames[0], width, height);
-        texture.needsUpdate = true;
-
-        setReady(true);
-      } catch {
-        setReady(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      textureRef.current?.dispose();
-      textureRef.current = null;
-      setReady(false);
-    };
-  }, [imageUrl]);
-
-  // useFrame으로 프레임 갱신
-  useFrame((_, delta) => {
-    if (!ready) return;
-    const frames = framesRef.current;
-    if (frames.length <= 1) return;
-
-    elapsedRef.current += delta * 1000; // ms
-    const currentFrame = frames[frameIndexRef.current];
-    const delay = currentFrame.delay * 1.5 || 100;
-
-    if (elapsedRef.current >= delay) {
-      elapsedRef.current -= delay;
-      frameIndexRef.current = (frameIndexRef.current + 1) % frames.length;
-
-      const ctx = ctxRef.current;
-      const canvas = canvasRef.current;
-      drawFrame(
-        ctx,
-        frames[frameIndexRef.current],
-        canvas.width,
-        canvas.height,
-      );
-      textureRef.current.needsUpdate = true;
-    }
-  });
-
-  return ready ? textureRef.current : null;
-}
-
-// GIF 프레임을 canvas에 그리는 헬퍼
-function drawFrame(ctx, frame, canvasW, canvasH) {
-  const { dims, patch } = frame;
-  // patch(디코딩된 RGBA)를 ImageData로 변환
-  const imageData = ctx.createImageData(dims.width, dims.height);
-  imageData.data.set(patch);
-  // 전체 클리어 후 프레임 위치에 그리기
-  ctx.clearRect(0, 0, canvasW, canvasH);
-  ctx.putImageData(imageData, dims.left, dims.top);
-}
-
-// 정적 이미지 텍스처 훅
-function useStaticTexture(imageUrl) {
+// 이미지 텍스처 로딩 컴포넌트
+function useAlbumTexture(imageUrl, fallbackColor) {
   const [texture, setTexture] = useState(null);
 
   useEffect(() => {
@@ -151,23 +31,19 @@ function useStaticTexture(imageUrl) {
         setTexture(loadedTexture);
       },
       undefined,
-      () => setTexture(null),
+      () => {
+        setTexture(null);
+      },
     );
 
     return () => {
-      texture?.dispose();
+      if (texture) {
+        texture.dispose();
+      }
     };
   }, [imageUrl]);
 
   return texture;
-}
-
-// 이미지 URL에 따라 GIF/정적 텍스처를 자동 선택하는 훅
-function useAlbumTexture(imageUrl) {
-  const gif = isGifUrl(imageUrl);
-  const gifTexture = useGifTexture(gif ? imageUrl : null);
-  const staticTexture = useStaticTexture(gif ? null : imageUrl);
-  return gif ? gifTexture : staticTexture;
 }
 
 // 플레이스홀더 텍스처 생성
@@ -215,17 +91,17 @@ function createPlaceholderTexture(index, isFront = true) {
   return texture;
 }
 
-export default function AlbumCover({
+export default function AlbumCover3D({
   index = 0,
   position = [0, 0, 0],
   size = 0.8,
   thickness = 0.02,
-  tiltAngle = -0.15,
+  tiltAngle = 0,
   frontImage = null,
   backImage = null,
-  edgeColor = null,
   isSelected = false,
   isFlipped = false,
+  edgeColor = null,
   onClick,
   onHoverChange,
 }) {
@@ -277,37 +153,6 @@ export default function AlbumCover({
   // 호버 상태
   const [hovered, setHovered] = useState(false);
 
-  // 마우스 tilt 효과용 상태
-  const mouseState = useRef({
-    // 마우스 위치 (정규화: -1 ~ 1)
-    mouseX: 0,
-    mouseY: 0,
-    // 현재 tilt 값 (보간용)
-    currentTiltX: 0,
-    currentTiltY: 0,
-  });
-
-  // 선택된 상태에서 마우스 이벤트 리스너
-  useEffect(() => {
-    if (!isSelected) {
-      // 선택 해제 시 tilt 초기화
-      mouseState.current.mouseX = 0;
-      mouseState.current.mouseY = 0;
-      return;
-    }
-
-    const handleMouseMove = (e) => {
-      // 화면 중앙 기준 -1 ~ 1로 정규화
-      const x = (e.clientX / window.innerWidth) * 2 - 1;
-      const y = (e.clientY / window.innerHeight) * 2 - 1;
-      mouseState.current.mouseX = x;
-      mouseState.current.mouseY = y;
-    };
-
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
-  }, [isSelected]);
-
   // 텍스처
   const frontTexture = useAlbumTexture(frontImage, null);
   const backTexture = useAlbumTexture(backImage, null);
@@ -345,15 +190,6 @@ export default function AlbumCover({
     }
   }, [isSelected, isFlipped, originalPosition, tiltAngle]);
 
-  // 호버 시 살짝 앞으로
-  useEffect(() => {
-    if (!isSelected && hovered) {
-      animationState.current.targetZ = originalPosition.z + 0.15;
-    } else if (!isSelected) {
-      animationState.current.targetZ = originalPosition.z;
-    }
-  }, [hovered, isSelected, originalPosition.z]);
-
   // 프레임 루프 - 부드러운 애니메이션
   useFrame((_, delta) => {
     if (!outerGroupRef.current || !groupRef.current) return;
@@ -376,30 +212,6 @@ export default function AlbumCover({
     outerGroupRef.current.position.z = state.currentZ;
     outerGroupRef.current.rotation.x = state.currentRotX;
     outerGroupRef.current.rotation.y = state.currentRotY;
-
-    // 마우스 tilt 효과 (선택된 상태에서만)
-    const mouse = mouseState.current;
-    if (isSelected) {
-      // 목표 tilt 값 계산
-      const targetTiltY = mouse.mouseX * TILT_CONFIG.maxAngle;
-      const targetTiltX = -mouse.mouseY * TILT_CONFIG.maxAngle;
-
-      // 부드럽게 보간
-      mouse.currentTiltX +=
-        (targetTiltX - mouse.currentTiltX) * TILT_CONFIG.smoothing;
-      mouse.currentTiltY +=
-        (targetTiltY - mouse.currentTiltY) * TILT_CONFIG.smoothing;
-
-      // groupRef에 tilt 적용 (outerGroup의 회전과 별도로)
-      groupRef.current.rotation.x = mouse.currentTiltX;
-      groupRef.current.rotation.y = mouse.currentTiltY;
-    } else {
-      // 선택 해제 시 tilt 초기화
-      mouse.currentTiltX += (0 - mouse.currentTiltX) * TILT_CONFIG.smoothing;
-      mouse.currentTiltY += (0 - mouse.currentTiltY) * TILT_CONFIG.smoothing;
-      groupRef.current.rotation.x = mouse.currentTiltX;
-      groupRef.current.rotation.y = mouse.currentTiltY;
-    }
   });
 
   // 머티리얼 생성
@@ -448,30 +260,6 @@ export default function AlbumCover({
       }),
     ];
   }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
-
-  // 선택 상태에 따라 Three.js layer / renderOrder / depthTest 관리
-  // - 선택됨: layer 1 (blur FBO 렌더에서 제외) + renderOrder 1000 (blur composite 위에 그려짐)
-  // - 미선택: layer 0 (blur 대상) + renderOrder 0
-  useEffect(() => {
-    if (!meshRef.current) return;
-    meshRef.current.layers.set(isSelected ? FOREGROUND_LAYER : 0);
-    meshRef.current.renderOrder = isSelected ? 1000 : 0;
-  }, [isSelected]);
-
-  useEffect(() => {
-    if (!meshRef.current) return;
-    const mats = meshRef.current.material;
-    if (!mats) return;
-    const arr = Array.isArray(mats) ? mats : [mats];
-    arr.forEach((mat) => {
-      // 선택 시 transparent pass로 이동: Three.js는 opaque를 전부 먼저 그린 뒤
-      // transparent를 나중에 그리므로, transparent=true여야 renderOrder 1000이
-      // BlurLayer composite(renderOrder 999, transparent)보다 나중에 그려짐
-      mat.transparent = isSelected;
-      mat.depthTest = !isSelected;
-      mat.needsUpdate = true;
-    });
-  }, [isSelected, materials]);
 
   // 커서 변경
   useEffect(() => {

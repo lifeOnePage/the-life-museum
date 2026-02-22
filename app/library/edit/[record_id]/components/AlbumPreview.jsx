@@ -47,7 +47,7 @@ const AlbumPreview = ({ frontCover, backCover, albumTitle, artistName }) => {
             </p> */}
           </div>
         )}
-        <div className="bg-primary/80 text-primary-foreground absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-medium">
+        <div className="absolute top-2 right-2 rounded-full bg-stone-700/80 px-2 py-0.5 text-[10px] font-medium text-stone-300">
           앞면
         </div>
       </motion.div>
@@ -57,40 +57,59 @@ const AlbumPreview = ({ frontCover, backCover, albumTitle, artistName }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="bg-card relative h-72 w-72 overflow-hidden rounded-lg shadow-2xl"
+        className="relative h-72 w-72 overflow-hidden rounded-lg bg-white shadow-2xl"
       >
-        <div className="from-secondary to-card flex h-full w-full flex-col overflow-y-auto bg-linear-to-br p-5">
+        <div className="flex h-full w-full flex-col overflow-y-auto p-5">
           {backCover.bio ? (
-            <div className="mb-4">
-              <p className="text-foreground/60 mb-2 text-[10px] tracking-widest uppercase">
-                생애문
-              </p>
-              <p className="text-foreground/80 line-clamp-4 text-xs leading-relaxed">
+            <div className="mb-3">
+              <div className="mb-2 flex items-center gap-1.5">
+                <div className="h-px flex-1 bg-stone-700/40" />
+                <p className="shrink-0 text-[9px] tracking-[0.2em] text-stone-600/70 uppercase">
+                  생애문
+                </p>
+                <div className="h-px flex-1 bg-stone-700/40" />
+              </div>
+              <p className="line-clamp-5 text-[11px] leading-[1.7] font-light text-stone-900 italic">
                 {backCover.bio}
               </p>
             </div>
           ) : (
-            <div className="mb-4 flex flex-1 items-center justify-center">
-              <p className="text-muted-foreground/40 text-xs">뒷면 콘텐츠</p>
+            <div className="mb-3 flex flex-1 items-center justify-center">
+              <p className="text-xs text-stone-600">뒷면 콘텐츠</p>
             </div>
           )}
 
           {backCover.timeline.length > 0 && (
             <div className="mt-auto">
-              <p className="text-foreground/60 mb-2 text-[10px] tracking-widest uppercase">
-                타임라인
-              </p>
-              <div className="space-y-1.5">
-                {backCover.timeline.slice(0, 4).map((item, i) => (
-                  <div key={i} className="flex gap-2 text-[10px]">
-                    <span className="text-primary shrink-0 font-semibold">
-                      {item.year}
-                    </span>
-                    <span className="text-foreground/70">{item.event}</span>
-                  </div>
-                ))}
+              <div className="mb-2.5 flex items-center gap-1.5">
+                <div className="h-px flex-1 bg-stone-700/40" />
+                <p className="shrink-0 text-[9px] tracking-[0.2em] text-stone-600/70 uppercase">
+                  타임라인
+                </p>
+                <div className="h-px flex-1 bg-stone-700/40" />
+              </div>
+              <div className="relative ml-2">
+                <div className="absolute top-0.5 bottom-0.5 left-[3px] w-px bg-stone-600/50" />
+                <div className="space-y-2">
+                  {backCover.timeline.slice(0, 4).map((item, i) => (
+                    <div
+                      key={i}
+                      className="flex items-start gap-2.5 text-[10px]"
+                    >
+                      <div className="relative mt-[5px] h-[7px] w-[7px] shrink-0 rounded-full border border-amber-600/80 bg-amber-500/80" />
+                      <div className="min-w-0">
+                        <span className="font-semibold text-amber-500/90">
+                          {item.year}
+                        </span>
+                        <span className="ml-1.5 text-stone-400">
+                          {item.event}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
                 {backCover.timeline.length > 4 && (
-                  <p className="text-muted-foreground/40 text-[10px]">
+                  <p className="mt-1.5 pl-4 text-[9px] text-stone-600">
                     +{backCover.timeline.length - 4}개 더
                   </p>
                 )}
@@ -98,7 +117,7 @@ const AlbumPreview = ({ frontCover, backCover, albumTitle, artistName }) => {
             </div>
           )}
         </div>
-        <div className="bg-primary/80 text-primary-foreground absolute top-2 right-2 rounded-full px-2 py-0.5 text-[10px] font-medium">
+        <div className="absolute top-2 right-2 rounded-full bg-stone-700/80 px-2 py-0.5 text-[10px] font-medium text-stone-300">
           뒷면
         </div>
       </motion.div>

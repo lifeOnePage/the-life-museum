@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
+import { parseGIF, decompressFrames } from "gifuct-js";
 
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
@@ -17,12 +18,118 @@ const TILT_CONFIG = {
   smoothing: 0.08, // 보간 속도 (낮을수록 부드러움)
 };
 
-// Layer 설정: 선택된 앨범은 layer 1, 나머지는 layer 0
-const BACKGROUND_LAYER = 0;
-const FOREGROUND_LAYER = 1;
+function isGifUrl(url) {
+  if (!url) return false;
+  try {
+    const pathname = new URL(url).pathname;
+    return pathname.toLowerCase().endsWith(".gif");
+  } catch {
+    return url.toLowerCase().includes(".gif");
+  }
+}
 
-// 이미지 텍스처 로딩 컴포넌트
-function useAlbumTexture(imageUrl, fallbackColor) {
+// GIF 애니메이션 텍스처 훅
+function useGifTexture(imageUrl) {
+  const canvasRef = useRef(null);
+  const ctxRef = useRef(null);
+  const framesRef = useRef([]);
+  const frameIndexRef = useRef(0);
+  const elapsedRef = useRef(0);
+  const textureRef = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!imageUrl) {
+      setReady(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const resp = await fetch(imageUrl);
+        const buff = await resp.arrayBuffer();
+        const parsed = parseGIF(buff);
+        const frames = decompressFrames(parsed, true);
+        if (cancelled || frames.length === 0) return;
+
+        const { width, height } = parsed.lsd;
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+
+        canvasRef.current = canvas;
+        ctxRef.current = ctx;
+        framesRef.current = frames;
+        frameIndexRef.current = 0;
+        elapsedRef.current = 0;
+
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        textureRef.current = texture;
+
+        // 첫 프레임 그리기
+        drawFrame(ctx, frames[0], width, height);
+        texture.needsUpdate = true;
+
+        setReady(true);
+      } catch {
+        setReady(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      textureRef.current?.dispose();
+      textureRef.current = null;
+      setReady(false);
+    };
+  }, [imageUrl]);
+
+  // useFrame으로 프레임 갱신
+  useFrame((_, delta) => {
+    if (!ready) return;
+    const frames = framesRef.current;
+    if (frames.length <= 1) return;
+
+    elapsedRef.current += delta * 1000; // ms
+    const currentFrame = frames[frameIndexRef.current];
+    const delay = currentFrame.delay * 1.5 || 100;
+
+    if (elapsedRef.current >= delay) {
+      elapsedRef.current -= delay;
+      frameIndexRef.current = (frameIndexRef.current + 1) % frames.length;
+
+      const ctx = ctxRef.current;
+      const canvas = canvasRef.current;
+      drawFrame(
+        ctx,
+        frames[frameIndexRef.current],
+        canvas.width,
+        canvas.height,
+      );
+      textureRef.current.needsUpdate = true;
+    }
+  });
+
+  return ready ? textureRef.current : null;
+}
+
+// GIF 프레임을 canvas에 그리는 헬퍼
+function drawFrame(ctx, frame, canvasW, canvasH) {
+  const { dims, patch } = frame;
+  // patch(디코딩된 RGBA)를 ImageData로 변환
+  const imageData = ctx.createImageData(dims.width, dims.height);
+  imageData.data.set(patch);
+  // 전체 클리어 후 프레임 위치에 그리기
+  ctx.clearRect(0, 0, canvasW, canvasH);
+  ctx.putImageData(imageData, dims.left, dims.top);
+}
+
+// 정적 이미지 텍스처 훅
+function useStaticTexture(imageUrl) {
   const [texture, setTexture] = useState(null);
 
   useEffect(() => {
@@ -41,19 +148,23 @@ function useAlbumTexture(imageUrl, fallbackColor) {
         setTexture(loadedTexture);
       },
       undefined,
-      () => {
-        setTexture(null);
-      },
+      () => setTexture(null),
     );
 
     return () => {
-      if (texture) {
-        texture.dispose();
-      }
+      texture?.dispose();
     };
   }, [imageUrl]);
 
   return texture;
+}
+
+// 이미지 URL에 따라 GIF/정적 텍스처를 자동 선택하는 훅
+function useAlbumTexture(imageUrl) {
+  const gif = isGifUrl(imageUrl);
+  const gifTexture = useGifTexture(gif ? imageUrl : null);
+  const staticTexture = useStaticTexture(gif ? null : imageUrl);
+  return gif ? gifTexture : staticTexture;
 }
 
 // 플레이스홀더 텍스처 생성
@@ -109,6 +220,7 @@ export default function AlbumCover({
   tiltAngle = -0.15,
   frontImage = null,
   backImage = null,
+  edgeColor = null,
   isSelected = false,
   isFlipped = false,
   onClick,
@@ -291,30 +403,31 @@ export default function AlbumCover({
   const materials = useMemo(() => {
     const actualFrontTex = frontTexture || placeholderFront;
     const actualBackTex = backTexture || placeholderBack;
+    const sideColor = edgeColor || "#efefef";
 
     // 6면 머티리얼: [+X, -X, +Y, -Y, +Z(앞면), -Z(뒷면)]
     return [
       // 오른쪽 측면
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 왼쪽 측면
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 위쪽
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
       // 아래쪽
       new THREE.MeshStandardMaterial({
-        color: "#efefef",
+        color: sideColor,
         roughness: 0.8,
         metalness: 0.1,
       }),
@@ -331,7 +444,7 @@ export default function AlbumCover({
         metalness: 0.1,
       }),
     ];
-  }, [frontTexture, backTexture, placeholderFront, placeholderBack]);
+  }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
 
   // 커서 변경
   useEffect(() => {

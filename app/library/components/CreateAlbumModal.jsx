@@ -12,6 +12,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
     e.preventDefault();
     if (!title.trim()) return;
 
+    console.log("subtitle", subtitle);
     setSubmitting(true);
     try {
       const res = await fetch(`${baseUrl}/record`, {

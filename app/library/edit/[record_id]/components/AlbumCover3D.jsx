@@ -4,10 +4,10 @@ import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 
-// 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
+// 카메라 앞 고정 위치 (카메라 위치 [0, 0, 6] 기준)
 const CAMERA_FRONT_POSITION = {
   x: 0,
-  y: 0.9,
+  y: 0,
   z: 1.5,
 };
 

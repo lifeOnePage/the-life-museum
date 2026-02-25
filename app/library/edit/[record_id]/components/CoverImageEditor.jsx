@@ -18,7 +18,7 @@ const CoverImageEditor = forwardRef(
     },
     ref,
   ) => {
-    // "menu" = initial two-card view, "generate" = AI generation form
+    // "menu" = initial view with AI + upload sections, "generate" = AI generation form
     const [view, setView] = useState("menu");
     const [prompt, setPrompt] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
@@ -131,10 +131,10 @@ const CoverImageEditor = forwardRef(
             >
               {/* Header */}
               <div className="mb-4">
-                <h3 className="text-base font-bold text-slate-600">
+                <h3 className="text-base font-bold text-[#475569]">
                   표지 디자인
                 </h3>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-1 text-xs text-[#64748b]">
                   AI로 만들거나, 업로드 할수 있어요~(안내 문구)
                 </p>
               </div>
@@ -144,19 +144,19 @@ const CoverImageEditor = forwardRef(
                 {/* AI Generate card */}
                 <button
                   onClick={() => setView("generate")}
-                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-slate-300 bg-[rgba(231,6,160,0.1)] px-4 py-8 transition-all hover:border-[#833f6e] hover:shadow-sm"
+                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-[rgba(103,173,209,0.1)] px-4 py-8 transition-all hover:border-[#67add1] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                    <Sparkles className="h-4 w-4 text-slate-600" />
+                    <Sparkles className="h-4 w-4 text-[#475569]" />
                   </div>
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-[#334155]">
                     이미지 생성하기
                   </span>
                   <div className="h-5" />
                 </button>
 
                 {/* Upload card */}
-                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-8 transition-all hover:border-slate-400 hover:shadow-sm">
+                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-4 py-8 transition-all hover:border-[#67add1] hover:shadow-sm">
                   <input
                     type="file"
                     accept="image/*"
@@ -164,12 +164,12 @@ const CoverImageEditor = forwardRef(
                     onChange={handleFileUpload}
                   />
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                    <ImagePlus className="h-[18px] w-[18px] text-slate-600" />
+                    <ImagePlus className="h-[18px] w-[18px] text-[#475569]" />
                   </div>
-                  <span className="text-sm font-medium text-slate-700">
+                  <span className="text-sm font-medium text-[#334155]">
                     직접 업로드
                   </span>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-[#94a3b8]">
                     JPG, PNG 최대 10MB
                   </p>
                 </label>
@@ -189,13 +189,13 @@ const CoverImageEditor = forwardRef(
               <div className="mb-4">
                 <button
                   onClick={() => setView("menu")}
-                  className="mb-2 flex items-center gap-2 text-slate-600 transition-colors hover:text-slate-900"
+                  className="mb-2 flex items-center gap-2 text-[#475569] transition-colors hover:text-[#1e1e1e]"
                 >
                   <ChevronLeft className="h-[18px] w-[9px]" />
                   <span className="text-base font-bold">표지 디자인</span>
                 </button>
-                <p className="text-xs text-slate-500">
-                  AI로 만들거나, 업로드 할수 있어요~(안내 문구)
+                <p className="text-xs text-[#64748b]">
+                  원하는 분위기나 장면을 상세히 묘사하면 AI가 세상에 하나뿐인 표지 이미지를 만들어 드립니다.
                 </p>
               </div>
 
@@ -204,15 +204,15 @@ const CoverImageEditor = forwardRef(
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="예: 따뜻한 햇살이 비치는 고요한 숲속, 수채화 일러스트 느낌으로 그려줘"
-                className="w-full resize-none rounded-lg bg-[#f1f1f3] px-4 pb-14 pt-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
+                className="w-full resize-none rounded-lg bg-[#cfcfd1] px-4 pb-14 pt-3 text-sm text-gray-900 placeholder:text-[#6b7280] focus:outline-none"
                 rows={3}
               />
 
-              {/* Generate button - gradient */}
+              {/* Generate button */}
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating || !prompt.trim()}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ed02a4] to-[#833f6e] py-[10px] text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#67add1] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#5a9cc0] disabled:opacity-50"
               >
                 {isGenerating ? (
                   <>
@@ -240,7 +240,7 @@ const CoverImageEditor = forwardRef(
                       onClick={() => handleSelectImage(i)}
                       className={`h-[100px] flex-1 overflow-hidden rounded-md transition-all ${
                         selectedImageIndex === i
-                          ? "ring-2 ring-[#833f6e] ring-offset-2"
+                          ? "ring-2 ring-[#67add1] ring-offset-2"
                           : "hover:opacity-80"
                       }`}
                     >
@@ -260,17 +260,17 @@ const CoverImageEditor = forwardRef(
                   {[0, 1, 2].map((i) => (
                     <div
                       key={i}
-                      className="h-[100px] flex-1 rounded-md bg-[#f1f1f3]"
+                      className="h-[100px] flex-1 rounded-md bg-[#cfcfd1]"
                     />
                   ))}
                 </div>
               )}
 
-              {/* Apply button - gradient */}
+              {/* Apply button */}
               <button
                 onClick={handleApply}
                 disabled={selectedImageIndex < 0}
-                className="mt-4 flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-[#ed02a4] to-[#833f6e] py-[10px] text-sm font-medium text-white transition-opacity disabled:opacity-50"
+                className="mt-4 flex w-full items-center justify-center rounded-lg bg-[#67add1] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#5a9cc0] disabled:opacity-50"
               >
                 적용하기
               </button>
@@ -281,7 +281,7 @@ const CoverImageEditor = forwardRef(
         </AnimatePresence>
 
         {isSaving && (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-[#64748b]">
             <RefreshCw className="h-4 w-4 animate-spin" /> 저장 중...
           </div>
         )}

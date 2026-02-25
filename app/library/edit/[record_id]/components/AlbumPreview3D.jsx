@@ -196,10 +196,10 @@ function generateBackCoverDataUrl(bio, timeline, bgColor, textColor, keyColor) {
   return canvas.toDataURL("image/png");
 }
 
-const ZOOM_MIN = 4;
-const ZOOM_MAX = 8;
-const ZOOM_STEP = 0.5;
-const ZOOM_DEFAULT = 6;
+const ZOOM_MIN = 3;
+const ZOOM_MAX = 5;
+const ZOOM_STEP = 0.25;
+const ZOOM_DEFAULT = 4;
 
 function CameraZoom({ zoom }) {
   const { camera } = useThree();
@@ -214,7 +214,15 @@ function CameraZoom({ zoom }) {
   return null;
 }
 
-export default function AlbumPreview3D({ frontCover, bio, timeline, textColor, bgColor, keyColor, flipped }) {
+export default function AlbumPreview3D({
+  frontCover,
+  bio,
+  timeline,
+  textColor,
+  bgColor,
+  keyColor,
+  flipped,
+}) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [zoom, setZoom] = useState(ZOOM_DEFAULT);
 
@@ -241,7 +249,13 @@ export default function AlbumPreview3D({ frontCover, bio, timeline, textColor, b
 
   const backCoverDataUrl = useMemo(() => {
     if (typeof document === "undefined") return null;
-    return generateBackCoverDataUrl(bio || "", timeline || [], bgColor || "#ffffff", textColor, keyColor);
+    return generateBackCoverDataUrl(
+      bio || "",
+      timeline || [],
+      bgColor || "#ffffff",
+      textColor,
+      keyColor,
+    );
   }, [bio, timeline, bgColor, textColor, keyColor]);
 
   return (
@@ -272,7 +286,9 @@ export default function AlbumPreview3D({ frontCover, bio, timeline, textColor, b
         className="min-h-0 w-full flex-1 cursor-grab active:cursor-grabbing"
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
-        onPointerLeave={() => { dragStartX.current = null; }}
+        onPointerLeave={() => {
+          dragStartX.current = null;
+        }}
       >
         <Canvas
           camera={{ position: [0, 1.6, 6], fov: 45 }}

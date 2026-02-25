@@ -58,14 +58,14 @@ const LayoutSelector = ({ selectedLayout, onLayoutChange }) => {
             onClick={() => onLayoutChange(option.key)}
             className={`flex flex-1 flex-col items-center gap-2 rounded-lg border p-3 transition-all ${
               isSelected
-                ? "border-[#833f6e] bg-[#833f6e]/5"
+                ? "border-[#67add1] bg-[#67add1]/5"
                 : "border-gray-200 bg-white hover:border-gray-300"
             }`}
           >
             <div className="h-10 w-10">{option.icon}</div>
             <span
               className={`text-[11px] font-medium ${
-                isSelected ? "text-[#833f6e]" : "text-gray-500"
+                isSelected ? "text-[#67add1]" : "text-gray-500"
               }`}
             >
               {option.name}

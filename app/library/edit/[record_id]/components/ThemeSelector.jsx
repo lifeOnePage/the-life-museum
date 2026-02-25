@@ -38,7 +38,7 @@ const ThemeSelector = ({ selectedTheme, onThemeChange }) => {
             onClick={() => onThemeChange(option.key)}
             className={`flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-all ${
               isSelected
-                ? "border-[#833f6e] bg-[#833f6e]/5"
+                ? "border-[#67add1] bg-[#67add1]/5"
                 : "border-gray-200 bg-white hover:border-gray-300"
             }`}
           >
@@ -91,7 +91,7 @@ const ThemeSelector = ({ selectedTheme, onThemeChange }) => {
             <div
               className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
                 isSelected
-                  ? "border-[#833f6e] bg-[#833f6e]"
+                  ? "border-[#67add1] bg-[#67add1]"
                   : "border-gray-300"
               }`}
             >

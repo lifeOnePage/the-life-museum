@@ -21,6 +21,22 @@ import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Textarea } from "./components/ui/textarea";
 import { getDominantColor } from "@rtcoder/dominant-color";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import CoverImageEditor from "./components/CoverImageEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import ThemeSelector from "./components/ThemeSelector";
@@ -70,6 +86,58 @@ const STYLE_OPTIONS = [
   { value: "신비로운", label: "신비로운" },
 ];
 
+// Sortable timeline item component
+function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group flex items-start gap-1.5"
+    >
+      <div
+        className="cursor-grab pt-2 text-gray-300 active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </div>
+      <Input
+        value={item.year}
+        onChange={(e) => onUpdate(index, "year", e.target.value)}
+        placeholder="연도"
+        className="h-8 w-[70px] border-gray-200 bg-white text-xs placeholder:text-gray-400"
+      />
+      <Input
+        value={item.event}
+        onChange={(e) => onUpdate(index, "event", e.target.value)}
+        placeholder="사건을 입력하세요..."
+        className="h-8 flex-1 border-gray-200 bg-white text-xs placeholder:text-gray-400"
+      />
+      <button
+        onClick={() => onRemove(index)}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 const Index = ({ params }) => {
   const { record_id } = use(params);
   const router = useRouter();
@@ -113,6 +181,8 @@ const Index = ({ params }) => {
   const [editGooglePhotoUrl, setEditGooglePhotoUrl] = useState("");
   const [editIcloudUrl, setEditIcloudUrl] = useState("");
   const [editMyboxUrl, setEditMyboxUrl] = useState("");
+  const [selectedUrlType, setSelectedUrlType] = useState("google");
+  const [editUrlValue, setEditUrlValue] = useState("");
   const [isRecordSaving, setIsRecordSaving] = useState(false);
   const [recordError, setRecordError] = useState("");
 
@@ -120,6 +190,16 @@ const Index = ({ params }) => {
   const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
   const [icloudUrl, setIcloudUrl] = useState("");
   const [myboxUrl, setMyboxUrl] = useState("");
+
+  // Stable ID counter for timeline items
+  const nextIdRef = useRef(1);
+  const timelineIdsRef = useRef([]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const coverRef = useRef(null);
   const initialState = useRef({
@@ -169,6 +249,8 @@ const Index = ({ params }) => {
           setAlbumTitle(title);
           setArtistName(subtitle);
           setBio(bioContent);
+          // Initialize timeline IDs for drag reorder
+          timelineIdsRef.current = timelineData.map(() => `tl-${nextIdRef.current++}`);
           setTimeline(timelineData);
           setBackTextColor(textColor);
           setBackBgColor(bgColorVal);
@@ -441,8 +523,21 @@ const Index = ({ params }) => {
     }
   };
 
+  // Sync timeline IDs when timeline length changes
+  const ensureTimelineIds = (items) => {
+    while (timelineIdsRef.current.length < items.length) {
+      timelineIdsRef.current.push(`tl-${nextIdRef.current++}`);
+    }
+    if (timelineIdsRef.current.length > items.length) {
+      timelineIdsRef.current = timelineIdsRef.current.slice(0, items.length);
+    }
+  };
+  ensureTimelineIds(timeline);
+
   // Timeline helpers
   const addTimelineItem = () => {
+    const newId = `tl-${nextIdRef.current++}`;
+    timelineIdsRef.current = [...timelineIdsRef.current, newId];
     setTimeline([...timeline, { year: "", event: "" }]);
   };
 
@@ -454,7 +549,20 @@ const Index = ({ params }) => {
   };
 
   const removeTimelineItem = (index) => {
+    timelineIdsRef.current = timelineIdsRef.current.filter((_, i) => i !== index);
     setTimeline(timeline.filter((_, i) => i !== index));
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = timelineIdsRef.current.indexOf(active.id);
+    const newIndex = timelineIdsRef.current.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    timelineIdsRef.current = arrayMove(timelineIdsRef.current, oldIndex, newIndex);
+    setTimeline(arrayMove(timeline, oldIndex, newIndex));
   };
 
   // Record edit dialog
@@ -464,6 +572,17 @@ const Index = ({ params }) => {
     setEditGooglePhotoUrl(googlePhotoUrl);
     setEditIcloudUrl(icloudUrl);
     setEditMyboxUrl(myboxUrl);
+    // Determine which URL type is selected based on existing data
+    if (myboxUrl) {
+      setSelectedUrlType("mybox");
+      setEditUrlValue(myboxUrl);
+    } else if (icloudUrl) {
+      setSelectedUrlType("icloud");
+      setEditUrlValue(icloudUrl);
+    } else {
+      setSelectedUrlType("google");
+      setEditUrlValue(googlePhotoUrl);
+    }
     setRecordError("");
     setShowRecordEditDialog(true);
   };
@@ -471,6 +590,10 @@ const Index = ({ params }) => {
   const handleRecordEditSave = async () => {
     setIsRecordSaving(true);
     setRecordError("");
+
+    const finalGoogleUrl = selectedUrlType === "google" ? editUrlValue : "";
+    const finalIcloudUrl = selectedUrlType === "icloud" ? editUrlValue : "";
+    const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
     try {
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -483,9 +606,9 @@ const Index = ({ params }) => {
         body: JSON.stringify({
           title: editTitle,
           subTitle: editSubtitle,
-          googlePhotoUrl: editGooglePhotoUrl,
-          icloudUrl: editIcloudUrl,
-          myboxUrl: editMyboxUrl,
+          googlePhotoUrl: finalGoogleUrl,
+          icloudUrl: finalIcloudUrl,
+          myboxUrl: finalMyboxUrl,
         }),
       });
 
@@ -496,9 +619,9 @@ const Index = ({ params }) => {
 
       setAlbumTitle(editTitle);
       setArtistName(editSubtitle);
-      setGooglePhotoUrl(editGooglePhotoUrl);
-      setIcloudUrl(editIcloudUrl);
-      setMyboxUrl(editMyboxUrl);
+      setGooglePhotoUrl(finalGoogleUrl);
+      setIcloudUrl(finalIcloudUrl);
+      setMyboxUrl(finalMyboxUrl);
       initialState.current.albumTitle = editTitle;
       initialState.current.artistName = editSubtitle;
       setShowRecordEditDialog(false);
@@ -518,9 +641,9 @@ const Index = ({ params }) => {
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#f8f7f6]">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
+      <header className="flex items-center justify-between border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9] px-4 py-3">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setShowExitDialog(true)}
@@ -550,33 +673,33 @@ const Index = ({ params }) => {
         </div>
 
         {/* Mode toggle */}
-        <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-[11px]">
+        <div className="flex items-center rounded-xl bg-[#cfcfd1] p-1 text-[11px]">
           <button
             onClick={() => setDetailMode(false)}
-            className={`rounded-full px-3 py-1 font-medium transition-all ${
+            className={`rounded-lg px-3 py-1 font-medium transition-all ${
               !detailMode
                 ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-400"
+                : "text-[#64748b]"
             }`}
           >
             초보자모드
           </button>
           <button
             onClick={() => setDetailMode(true)}
-            className={`rounded-full px-3 py-1 font-medium transition-all ${
+            className={`rounded-lg px-3 py-1 font-bold transition-all ${
               detailMode
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-400"
+                ? "bg-white text-[#67add1] shadow-sm"
+                : "text-[#64748b]"
             }`}
           >
-            디테일모드
+            디테일 모드
           </button>
         </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Preview Panel */}
-        <div className="flex-1 border-r border-gray-200 bg-gray-50">
+        <div className="flex-1 bg-[#dedbd3]">
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}
@@ -589,7 +712,7 @@ const Index = ({ params }) => {
         </div>
 
         {/* Right: Editor Sidebar */}
-        <div className="w-[420px] shrink-0 overflow-y-auto border-l border-gray-200 bg-white">
+        <div className="w-[420px] shrink-0 overflow-y-auto border-l border-[#e2e8f0] bg-[#f0eee9]">
           <div className="p-5">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -597,16 +720,16 @@ const Index = ({ params }) => {
             >
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 {/* Tab triggers - underline style */}
-                <TabsList className="mb-6 flex h-auto w-full rounded-none border-b border-gray-200 bg-transparent p-0">
+                <TabsList className="mb-6 flex h-auto w-full rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
                   <TabsTrigger
                     value="front"
-                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-1 pb-3 text-sm font-medium text-gray-400 transition-colors hover:text-gray-600 data-[state=active]:border-[#833f6e] data-[state=active]:bg-transparent data-[state=active]:text-gray-900 data-[state=active]:shadow-none"
+                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
                   >
                     앞면
                   </TabsTrigger>
                   <TabsTrigger
                     value="back"
-                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-1 pb-3 text-sm font-medium text-gray-400 transition-colors hover:text-gray-600 data-[state=active]:border-[#833f6e] data-[state=active]:bg-transparent data-[state=active]:text-gray-900 data-[state=active]:shadow-none"
+                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
                   >
                     뒷면
                   </TabsTrigger>
@@ -766,51 +889,27 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="space-y-2 border-t border-gray-100 px-4 pt-3 pb-4">
-                              <AnimatePresence>
-                                {timeline.map((item, index) => (
-                                  <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: "auto" }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="group flex items-start gap-1.5"
-                                  >
-                                    <div className="cursor-grab pt-2 text-gray-300">
-                                      <GripVertical className="h-3.5 w-3.5" />
-                                    </div>
-                                    <Input
-                                      value={item.year}
-                                      onChange={(e) =>
-                                        updateTimelineItem(
-                                          index,
-                                          "year",
-                                          e.target.value,
-                                        )
-                                      }
-                                      placeholder="연도"
-                                      className="h-8 w-[70px] border-gray-200 bg-white text-xs placeholder:text-gray-400"
+                              <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                              >
+                                <SortableContext
+                                  items={timelineIdsRef.current}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  {timeline.map((item, index) => (
+                                    <SortableTimelineItem
+                                      key={timelineIdsRef.current[index]}
+                                      id={timelineIdsRef.current[index]}
+                                      item={item}
+                                      index={index}
+                                      onUpdate={updateTimelineItem}
+                                      onRemove={removeTimelineItem}
                                     />
-                                    <Input
-                                      value={item.event}
-                                      onChange={(e) =>
-                                        updateTimelineItem(
-                                          index,
-                                          "event",
-                                          e.target.value,
-                                        )
-                                      }
-                                      placeholder="사건을 입력하세요..."
-                                      className="h-8 flex-1 border-gray-200 bg-white text-xs placeholder:text-gray-400"
-                                    />
-                                    <button
-                                      onClick={() => removeTimelineItem(index)}
-                                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
-                                    >
-                                      <Trash2 className="h-3.5 w-3.5" />
-                                    </button>
-                                  </motion.div>
-                                ))}
-                              </AnimatePresence>
+                                  ))}
+                                </SortableContext>
+                              </DndContext>
 
                               <button
                                 onClick={addTimelineItem}
@@ -967,38 +1066,44 @@ const Index = ({ params }) => {
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">
-                    Google Photo URL
+                  <label className="mb-2 block text-xs font-medium text-gray-500">
+                    사진 저장소
                   </label>
+                  <div className="mb-3 flex gap-2">
+                    {[
+                      { key: "google", label: "Google Photo" },
+                      { key: "icloud", label: "iCloud" },
+                      { key: "mybox", label: "Mybox" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => {
+                          setSelectedUrlType(opt.key);
+                          setEditUrlValue(
+                            opt.key === "google" ? editGooglePhotoUrl :
+                            opt.key === "icloud" ? editIcloudUrl : editMyboxUrl
+                          );
+                        }}
+                        className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                          selectedUrlType === opt.key
+                            ? "border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
+                            : "border-gray-200 text-gray-500 hover:border-gray-300"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
                   <input
                     type="text"
-                    value={editGooglePhotoUrl}
-                    onChange={(e) => setEditGooglePhotoUrl(e.target.value)}
-                    placeholder="https://photos.google.com/..."
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">
-                    iCloud URL
-                  </label>
-                  <input
-                    type="text"
-                    value={editIcloudUrl}
-                    onChange={(e) => setEditIcloudUrl(e.target.value)}
-                    placeholder="https://icloud.com/..."
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">
-                    Mybox URL
-                  </label>
-                  <input
-                    type="text"
-                    value={editMyboxUrl}
-                    onChange={(e) => setEditMyboxUrl(e.target.value)}
-                    placeholder="https://mybox.naver.com/..."
+                    value={editUrlValue}
+                    onChange={(e) => setEditUrlValue(e.target.value)}
+                    placeholder={
+                      selectedUrlType === "google" ? "https://photos.google.com/..." :
+                      selectedUrlType === "icloud" ? "https://icloud.com/..." :
+                      "https://mybox.naver.com/..."
+                    }
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
                   />
                 </div>

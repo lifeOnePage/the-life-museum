@@ -15,6 +15,7 @@ import {
   Trash2,
   GripVertical,
   Sparkles,
+  RotateCcw,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -75,17 +76,17 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
         value={item.year}
         onChange={(e) => onUpdate(index, "year", e.target.value)}
         placeholder="연도"
-        className="h-8 w-[70px] border-gray-200 bg-white text-xs placeholder:text-gray-400"
+        className="h-8 w-[70px] rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
       />
       <Input
         value={item.event}
         onChange={(e) => onUpdate(index, "event", e.target.value)}
         placeholder="사건을 입력하세요..."
-        className="h-8 flex-1 border-gray-200 bg-white text-xs placeholder:text-gray-400"
+        className="h-8 flex-1 rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
       />
       <button
         onClick={() => onRemove(index)}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-50 transition-opacity group-hover:opacity-100 hover:text-red-500"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -528,6 +529,7 @@ const Index = ({ params }) => {
       setEditUrlValue(googlePhotoUrl);
     }
     setRecordError("");
+    setShowDeleteConfirm(false);
     setShowRecordEditDialog(true);
   };
 
@@ -576,6 +578,44 @@ const Index = ({ params }) => {
     }
   };
 
+  const handleReset = () => {
+    const s = initialState.current;
+    setFrontCover(s.frontCover);
+    setAlbumTitle(s.albumTitle);
+    setArtistName(s.artistName);
+    setBio(s.bio);
+    timelineIdsRef.current = s.timeline.map(() => `tl-${nextIdRef.current++}`);
+    setTimeline([...s.timeline]);
+    setSelectedTheme(s.selectedTheme);
+    setUsedChips(new Set());
+  };
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteRecord = async () => {
+    setIsDeleting(true);
+    setRecordError("");
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+        method: "DELETE",
+        headers: {
+          "X-Dev-Key": "tlm2026",
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "삭제에 실패했습니다");
+      }
+      router.push("/library");
+    } catch (err) {
+      setRecordError(err.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
@@ -607,12 +647,26 @@ const Index = ({ params }) => {
                 </p>
               )}
             </div>
-            <button
-              onClick={openRecordEditDialog}
-              className="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Pencil className="h-3 w-3" />
-            </button>
+            <div className="group relative">
+              <button
+                onClick={openRecordEditDialog}
+                className="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+              <span className="pointer-events-none absolute left-1/2 top-full mt-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+                레코드 수정
+              </span>
+            </div>
+            {isDirty && (
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500"
+              >
+                <RotateCcw className="h-3 w-3" />
+                변경사항 초기화
+              </button>
+            )}
           </div>
         </div>
 
@@ -698,7 +752,7 @@ const Index = ({ params }) => {
                 </TabsContent>
 
                 {/* Back tab - Redesigned */}
-                <TabsContent className="px-6" value="back">
+                <TabsContent className="px-5" value="back">
                   <div className="space-y-5">
                     {/* Story Section - Collapsible */}
                     <div className="rounded-lg border border-gray-300">
@@ -730,7 +784,7 @@ const Index = ({ params }) => {
                                 value={bio}
                                 onChange={(e) => setBio(e.target.value)}
                                 placeholder="키워드를 선택하거나 직접 작성하세요..."
-                                className="min-h-[140px] resize-none border-gray-200 bg-white text-sm leading-relaxed text-gray-900 placeholder:text-gray-400"
+                                className="min-h-50 w-full resize-none rounded-lg border-none bg-[#cfcfd1] px-4 pt-3 pb-14 text-sm text-gray-600 placeholder:text-[#6b7280] focus:outline-none"
                               />
                               <div className="flex flex-wrap gap-1.5">
                                 {KEYWORD_CHIPS.map((chip) => {
@@ -841,7 +895,7 @@ const Index = ({ params }) => {
 
                               <button
                                 onClick={addTimelineItem}
-                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 text-xs text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-900"
+                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#67ADD1] text-xs text-[#67ADD1] transition-colors hover:border-solid hover:bg-[#67ADD1] hover:text-white"
                               >
                                 <Plus className="h-3 w-3" /> 항목 추가
                               </button>
@@ -1059,6 +1113,48 @@ const Index = ({ params }) => {
                     </>
                   )}
                 </Button>
+              </div>
+
+              {/* Delete record */}
+              <div className="mt-6 border-t border-gray-100 pt-4">
+                {!showDeleteConfirm ? (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full rounded-lg py-2.5 text-center text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+                  >
+                    <Trash2 className="mr-1.5 inline h-3.5 w-3.5" />
+                    앨범 삭제하기
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-center text-xs text-red-500">
+                      정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex-1 border-gray-300 text-xs text-gray-500"
+                        size="sm"
+                      >
+                        취소
+                      </Button>
+                      <Button
+                        onClick={handleDeleteRecord}
+                        disabled={isDeleting}
+                        className="flex-1 bg-red-500 text-xs hover:bg-red-600"
+                        size="sm"
+                      >
+                        {isDeleting ? (
+                          <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="mr-1 h-3 w-3" />
+                        )}
+                        {isDeleting ? "삭제 중..." : "삭제"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </motion.div>
           </motion.div>

@@ -12,7 +12,7 @@ export async function POST(req) {
       { status: 401 },
     );
 
-  const { prompt, albumTitle } = await req.json();
+  const { prompt, albumTitle, artistName } = await req.json();
 
   if (!prompt || !prompt.trim()) {
     return NextResponse.json(
@@ -26,6 +26,7 @@ export async function POST(req) {
 사용자가 입력한 키워드나 문장을 바탕으로, 앨범에 기록할 감성적인 글을 작성합니다.
 
 ${albumTitle ? `앨범 제목: ${albumTitle}` : ""}
+${artistName ? `앨범 부제목: ${artistName}` : ""}
 
 사용자 입력: ${prompt}
 

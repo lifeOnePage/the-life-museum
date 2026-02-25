@@ -206,7 +206,7 @@ const CoverImageEditor = forwardRef(
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="예: 따뜻한 햇살이 비치는 고요한 숲속, 수채화 일러스트 느낌으로 그려줘"
-                className="w-full resize-none rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-14 text-sm text-gray-900 placeholder:text-[#6b7280] focus:outline-none"
+                className="w-full resize-none rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-14 text-sm text-gray-600 placeholder:text-[#6b7280] focus:outline-none"
                 rows={3}
               />
 

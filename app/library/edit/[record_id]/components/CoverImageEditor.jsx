@@ -82,7 +82,8 @@ const CoverImageEditor = forwardRef(
     };
 
     const handleApply = async () => {
-      if (selectedImageIndex < 0 || !generatedImages[selectedImageIndex]) return;
+      if (selectedImageIndex < 0 || !generatedImages[selectedImageIndex])
+        return;
       const imgUrl = generatedImages[selectedImageIndex];
       try {
         const filename = imgUrl.split("/").pop();
@@ -135,7 +136,7 @@ const CoverImageEditor = forwardRef(
                   표지 디자인
                 </h3>
                 <p className="mt-1 text-xs text-[#64748b]">
-                  AI로 만들거나, 업로드 할수 있어요~(안내 문구)
+                  앨범 표지를 AI로 생성하거나, 직접 업로드 할 수 있습니다.
                 </p>
               </div>
 
@@ -195,7 +196,8 @@ const CoverImageEditor = forwardRef(
                   <span className="text-base font-bold">표지 디자인</span>
                 </button>
                 <p className="text-xs text-[#64748b]">
-                  원하는 분위기나 장면을 상세히 묘사하면 AI가 세상에 하나뿐인 표지 이미지를 만들어 드립니다.
+                  원하는 분위기나 장면을 상세히 묘사하면 AI가 세상에 하나뿐인
+                  표지 이미지를 만들어 드립니다.
                 </p>
               </div>
 
@@ -204,7 +206,7 @@ const CoverImageEditor = forwardRef(
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="예: 따뜻한 햇살이 비치는 고요한 숲속, 수채화 일러스트 느낌으로 그려줘"
-                className="w-full resize-none rounded-lg bg-[#cfcfd1] px-4 pb-14 pt-3 text-sm text-gray-900 placeholder:text-[#6b7280] focus:outline-none"
+                className="w-full resize-none rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-14 text-sm text-gray-900 placeholder:text-[#6b7280] focus:outline-none"
                 rows={3}
               />
 

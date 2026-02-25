@@ -20,7 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import { Textarea } from "./components/ui/textarea";
-import { getDominantColor } from "@rtcoder/dominant-color";
 import {
   DndContext,
   closestCenter,
@@ -40,43 +39,7 @@ import { CSS } from "@dnd-kit/utilities";
 import CoverImageEditor from "./components/CoverImageEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import ThemeSelector from "./components/ThemeSelector";
-import LayoutSelector from "./components/LayoutSelector";
-
-// Theme color mappings
-const THEMES = {
-  elegant: {
-    bg: "#fefbea",
-    text: "#475569",
-    year: "#f64b16",
-    divider: "#fefbea",
-    branding: "#94a3b8",
-    accent: "#833f6e",
-  },
-  mono: {
-    bg: "#ffffff",
-    text: "#1e293b",
-    year: "#000000",
-    divider: "#e2e8f0",
-    branding: "#94a3b8",
-    accent: "#000000",
-  },
-  violet: {
-    bg: "#fcf8ff",
-    text: "#581c87",
-    year: "#d8b4fe",
-    divider: "#e9d5ff",
-    branding: "#c084fc",
-    accent: "#7c3aed",
-  },
-  dark: {
-    bg: "#211811",
-    text: "#c7c7c7",
-    year: "#eeeeee",
-    divider: "#333",
-    branding: "#666",
-    accent: "#fbbf24",
-  },
-};
+import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
 // Style options for AI bio generation
 const STYLE_OPTIONS = [
@@ -147,16 +110,12 @@ const Index = ({ params }) => {
   const [artistName, setArtistName] = useState("");
   const [bio, setBio] = useState("");
   const [timeline, setTimeline] = useState([]);
-  const [backTextColor, setBackTextColor] = useState("#1c1917");
-  const [backBgColor, setBackBgColor] = useState("");
-  const [backKeyColor, setBackKeyColor] = useState("#b45309");
   const [isSaving, setIsSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
 
   // Tab & Theme & Layout state
   const [activeTab, setActiveTab] = useState("front");
-  const [selectedTheme, setSelectedTheme] = useState("elegant");
-  const [selectedLayout, setSelectedLayout] = useState("split-view");
+  const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
 
   // Collapsible sections
   const [storyOpen, setStoryOpen] = useState(true);
@@ -208,9 +167,7 @@ const Index = ({ params }) => {
     artistName: "",
     bio: "",
     timeline: [],
-    backTextColor: "#1c1917",
-    backBgColor: "",
-    backKeyColor: "#b45309",
+    selectedTheme: DEFAULT_THEME,
   });
 
   useEffect(() => {
@@ -241,9 +198,7 @@ const Index = ({ params }) => {
             }));
           }
 
-          const textColor = data.color || "#1c1917";
-          const bgColorVal = data.bgColor || "";
-          const keyColorVal = data.keyColor || "#b45309";
+          const savedTheme = data.themeKey || DEFAULT_THEME;
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -252,9 +207,7 @@ const Index = ({ params }) => {
           // Initialize timeline IDs for drag reorder
           timelineIdsRef.current = timelineData.map(() => `tl-${nextIdRef.current++}`);
           setTimeline(timelineData);
-          setBackTextColor(textColor);
-          setBackBgColor(bgColorVal);
-          setBackKeyColor(keyColorVal);
+          setSelectedTheme(savedTheme);
           setGooglePhotoUrl(data.googlePhotoUrl || "");
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
@@ -265,9 +218,7 @@ const Index = ({ params }) => {
             artistName: subtitle,
             bio: bioContent,
             timeline: timelineData,
-            backTextColor: textColor,
-            backBgColor: bgColorVal,
-            backKeyColor: keyColorVal,
+            selectedTheme: savedTheme,
           };
         }
       } catch (error) {
@@ -282,38 +233,13 @@ const Index = ({ params }) => {
     }
   }, [record_id]);
 
-  // Extract dominant color from cover image as bgColor fallback
-  useEffect(() => {
-    if (!frontCover || typeof document === "undefined") return;
-    if (backBgColor) return;
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      getDominantColor(img, {
-        downScaleFactor: 4,
-        skipPixels: 5,
-        colorFormat: "hex",
-        callback: (color) => {
-          setBackBgColor((prev) => prev || color);
-        },
-      });
-    };
-    img.src = frontCover;
-  }, [frontCover, backBgColor]);
-
-  // Apply theme colors when theme changes
+  // Apply theme change
   const handleThemeChange = (themeKey) => {
     setSelectedTheme(themeKey);
-    const theme = THEMES[themeKey];
-    if (theme) {
-      setBackBgColor(theme.bg);
-      setBackTextColor(theme.text);
-      setBackKeyColor(theme.year);
-    }
   };
 
   const saveRecordColors = async () => {
+    const theme = UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
       method: "PATCH",
@@ -322,9 +248,10 @@ const Index = ({ params }) => {
         "X-Dev-Key": "tlm2026",
       },
       body: JSON.stringify({
-        color: backTextColor,
-        bgColor: backBgColor,
-        keyColor: backKeyColor,
+        color: theme.text,
+        bgColor: theme.bg,
+        keyColor: theme.accent,
+        themeKey: selectedTheme,
       }),
     });
 
@@ -404,12 +331,10 @@ const Index = ({ params }) => {
     const isTimelineDirty =
       JSON.stringify(timeline) !==
       JSON.stringify(initialState.current.timeline);
-    const isColorDirty =
-      backTextColor !== initialState.current.backTextColor ||
-      backBgColor !== initialState.current.backBgColor ||
-      backKeyColor !== initialState.current.backKeyColor;
+    const isThemeDirty =
+      selectedTheme !== initialState.current.selectedTheme;
 
-    if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isColorDirty)
+    if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isThemeDirty)
       return;
 
     setIsSaving(true);
@@ -441,11 +366,11 @@ const Index = ({ params }) => {
       );
     }
 
-    if (isColorDirty) {
+    if (isThemeDirty) {
       promises.push(
         saveRecordColors()
-          .then(() => ({ editor: "color", success: true }))
-          .catch((err) => ({ editor: "color", success: false, error: err })),
+          .then(() => ({ editor: "theme", success: true }))
+          .catch((err) => ({ editor: "theme", success: false, error: err })),
       );
     }
 
@@ -461,10 +386,8 @@ const Index = ({ params }) => {
           initialState.current.bio = bio;
         } else if (r.value.editor === "timeline") {
           initialState.current.timeline = [...timeline];
-        } else if (r.value.editor === "color") {
-          initialState.current.backTextColor = backTextColor;
-          initialState.current.backBgColor = backBgColor;
-          initialState.current.backKeyColor = backKeyColor;
+        } else if (r.value.editor === "theme") {
+          initialState.current.selectedTheme = selectedTheme;
         }
       }
     }
@@ -479,9 +402,7 @@ const Index = ({ params }) => {
     bio !== initialState.current.bio ||
     JSON.stringify(timeline) !==
       JSON.stringify(initialState.current.timeline) ||
-    backTextColor !== initialState.current.backTextColor ||
-    backBgColor !== initialState.current.backBgColor ||
-    backKeyColor !== initialState.current.backKeyColor;
+    selectedTheme !== initialState.current.selectedTheme;
 
   const handleExit = () => {
     router.push("/library");
@@ -704,9 +625,8 @@ const Index = ({ params }) => {
             frontCover={frontCover}
             bio={bio}
             timeline={timeline}
-            textColor={backTextColor}
-            bgColor={backBgColor}
-            keyColor={backKeyColor}
+            selectedTheme={selectedTheme}
+            albumTitle={albumTitle}
             flipped={activeTab === "back"}
           />
         </div>
@@ -948,16 +868,6 @@ const Index = ({ params }) => {
                       />
                     </div>
 
-                    {/* Layout Section */}
-                    <div>
-                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
-                        레이아웃
-                      </h3>
-                      <LayoutSelector
-                        selectedLayout={selectedLayout}
-                        onLayoutChange={setSelectedLayout}
-                      />
-                    </div>
                   </div>
                 </TabsContent>
               </Tabs>

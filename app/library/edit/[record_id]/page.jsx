@@ -193,7 +193,7 @@ const Index = ({ params }) => {
             }));
           }
 
-          const savedTheme = data.themeKey || DEFAULT_THEME;
+          const savedTheme = data.theme || DEFAULT_THEME;
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -249,7 +249,7 @@ const Index = ({ params }) => {
         color: theme.text,
         bgColor: theme.bg,
         keyColor: theme.accent,
-        themeKey: selectedTheme,
+        theme: selectedTheme,
       }),
     });
 

@@ -152,10 +152,33 @@ body {
 
 /* 스크롤바 숨기기 유틸리티 */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Chrome, Safari, Opera */
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* Editor sidebar scrollbar */
+.scrollbar-accent {
+  scrollbar-width: thin;
+  scrollbar-color: #67add1 #f0eee9;
+}
+
+.scrollbar-accent::-webkit-scrollbar {
+  width: 4px;
+}
+
+.scrollbar-accent::-webkit-scrollbar-track {
+  background: #f0eee9;
+}
+
+.scrollbar-accent::-webkit-scrollbar-thumb {
+  background: #67add1;
+  border-radius: 3px;
+}
+
+.scrollbar-accent::-webkit-scrollbar-thumb:hover {
+  background: #67add1;
 }

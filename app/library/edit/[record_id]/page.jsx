@@ -41,14 +41,6 @@ import AlbumPreview3D from "./components/AlbumPreview3D";
 import ThemeSelector from "./components/ThemeSelector";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
-// Style options for AI bio generation
-const STYLE_OPTIONS = [
-  { value: "진중한", label: "진중한" },
-  { value: "낭만적인", label: "낭만적인" },
-  { value: "재치있는", label: "재치있는" },
-  { value: "신비로운", label: "신비로운" },
-];
-
 // Sortable timeline item component
 function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
   const {
@@ -124,10 +116,8 @@ const Index = ({ params }) => {
   // Mode toggle
   const [detailMode, setDetailMode] = useState(false);
 
-  // AI Bio generation state
-  const [userName, setUserName] = useState("");
-  const [keywords, setKeywords] = useState("");
-  const [style, setStyle] = useState("진중한");
+  // AI story generation state
+  const [storyPrompt, setStoryPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [bioError, setBioError] = useState("");
 
@@ -157,7 +147,9 @@ const Index = ({ params }) => {
   // DnD sensors
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
   );
 
   const coverRef = useRef(null);
@@ -205,7 +197,9 @@ const Index = ({ params }) => {
           setArtistName(subtitle);
           setBio(bioContent);
           // Initialize timeline IDs for drag reorder
-          timelineIdsRef.current = timelineData.map(() => `tl-${nextIdRef.current++}`);
+          timelineIdsRef.current = timelineData.map(
+            () => `tl-${nextIdRef.current++}`,
+          );
           setTimeline(timelineData);
           setSelectedTheme(savedTheme);
           setGooglePhotoUrl(data.googlePhotoUrl || "");
@@ -239,7 +233,8 @@ const Index = ({ params }) => {
   };
 
   const saveRecordColors = async () => {
-    const theme = UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
+    const theme =
+      UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
       method: "PATCH",
@@ -275,11 +270,7 @@ const Index = ({ params }) => {
           "X-Dev-Key": "tlm2026",
         },
         body: JSON.stringify({
-          qaList: [
-            { question: "성함과 관계", answer: userName },
-            { question: "키워드", answer: keywords },
-          ],
-          mood: style,
+          prompt: storyPrompt,
           result: bio,
         }),
       },
@@ -331,8 +322,7 @@ const Index = ({ params }) => {
     const isTimelineDirty =
       JSON.stringify(timeline) !==
       JSON.stringify(initialState.current.timeline);
-    const isThemeDirty =
-      selectedTheme !== initialState.current.selectedTheme;
+    const isThemeDirty = selectedTheme !== initialState.current.selectedTheme;
 
     if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isThemeDirty)
       return;
@@ -413,15 +403,14 @@ const Index = ({ params }) => {
     router.push("/library");
   };
 
-  // AI Bio generation
+  // AI story generation
   const handleGenerate = async () => {
-    if (!userName.trim() || !keywords.trim()) return;
+    if (!storyPrompt.trim()) return;
     setIsGenerating(true);
     setBioError("");
 
     try {
       const token = localStorage.getItem("app_token");
-      const messages = [{ sender: "user", text: keywords }];
 
       const response = await fetch("/api/gpt-story", {
         method: "POST",
@@ -429,7 +418,7 @@ const Index = ({ params }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ messages, style, userName }),
+        body: JSON.stringify({ prompt: storyPrompt, albumTitle }),
       });
 
       const data = await response.json();
@@ -442,6 +431,33 @@ const Index = ({ params }) => {
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const KEYWORD_CHIPS = [
+    "가족",
+    "여행",
+    "추억",
+    "사랑",
+    "우정",
+    "성장",
+    "도전",
+    "감사",
+    "일상",
+    "꿈",
+    "고향",
+    "음악",
+    "첫만남",
+    "계절",
+    "약속",
+    "이별",
+  ];
+
+  const handleChipClick = (chip) => {
+    setStoryPrompt((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return chip;
+      return trimmed + " " + chip;
+    });
   };
 
   // Sync timeline IDs when timeline length changes
@@ -470,7 +486,9 @@ const Index = ({ params }) => {
   };
 
   const removeTimelineItem = (index) => {
-    timelineIdsRef.current = timelineIdsRef.current.filter((_, i) => i !== index);
+    timelineIdsRef.current = timelineIdsRef.current.filter(
+      (_, i) => i !== index,
+    );
     setTimeline(timeline.filter((_, i) => i !== index));
   };
 
@@ -482,7 +500,11 @@ const Index = ({ params }) => {
     const newIndex = timelineIdsRef.current.indexOf(over.id);
     if (oldIndex === -1 || newIndex === -1) return;
 
-    timelineIdsRef.current = arrayMove(timelineIdsRef.current, oldIndex, newIndex);
+    timelineIdsRef.current = arrayMove(
+      timelineIdsRef.current,
+      oldIndex,
+      newIndex,
+    );
     setTimeline(arrayMove(timeline, oldIndex, newIndex));
   };
 
@@ -633,12 +655,16 @@ const Index = ({ params }) => {
 
         {/* Right: Editor Sidebar */}
         <div className="w-[420px] shrink-0 overflow-y-auto border-l border-[#e2e8f0] bg-[#f0eee9]">
-          <div className="p-5">
+          <div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
                 {/* Tab triggers - underline style */}
                 <TabsList className="mb-6 flex h-auto w-full rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
                   <TabsTrigger
@@ -656,7 +682,7 @@ const Index = ({ params }) => {
                 </TabsList>
 
                 {/* Front tab - CoverImageEditor (preserved) */}
-                <TabsContent value="front">
+                <TabsContent className="px-8" value="front">
                   <CoverImageEditor
                     ref={coverRef}
                     record_id={record_id}
@@ -671,10 +697,10 @@ const Index = ({ params }) => {
                 </TabsContent>
 
                 {/* Back tab - Redesigned */}
-                <TabsContent value="back">
+                <TabsContent className="px-6" value="back">
                   <div className="space-y-5">
                     {/* Story Section - Collapsible */}
-                    <div className="rounded-lg border border-gray-200">
+                    <div className="rounded-lg border border-gray-300">
                       <button
                         onClick={() => setStoryOpen(!storyOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
@@ -702,32 +728,28 @@ const Index = ({ params }) => {
                               {/* AI Generation */}
                               <div className="space-y-2">
                                 <label className="flex items-center gap-1 text-xs font-medium text-gray-500">
-                                  <Sparkles className="h-3 w-3" />
-                                  AI 생애문 생성
+                                  AI 글 생성
                                 </label>
-                                <Input
-                                  value={userName}
-                                  onChange={(e) => setUserName(e.target.value)}
-                                  placeholder="이름을 입력하세요"
-                                  className="h-9 border-gray-200 bg-white text-sm placeholder:text-gray-400"
+                                <Textarea
+                                  value={storyPrompt}
+                                  onChange={(e) =>
+                                    setStoryPrompt(e.target.value)
+                                  }
+                                  placeholder="아래 키워드를 선택하고 보충 설명을 추가하여 AI가 생애문을 생성할 수 있도록 도와주세요."
+                                  className="min-h-[72px] resize-none border-gray-200 bg-white text-sm leading-relaxed text-gray-900 placeholder:text-gray-400"
                                 />
-                                <Input
-                                  value={keywords}
-                                  onChange={(e) => setKeywords(e.target.value)}
-                                  placeholder="키워드 예: 피아니스트, 서울"
-                                  className="h-9 border-gray-200 bg-white text-sm placeholder:text-gray-400"
-                                />
-                                <select
-                                  value={style}
-                                  onChange={(e) => setStyle(e.target.value)}
-                                  className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-900"
-                                >
-                                  {STYLE_OPTIONS.map((opt) => (
-                                    <option key={opt.value} value={opt.value}>
-                                      {opt.label}
-                                    </option>
+                                <div className="flex flex-wrap gap-1.5">
+                                  {KEYWORD_CHIPS.map((chip) => (
+                                    <button
+                                      key={chip}
+                                      type="button"
+                                      onClick={() => handleChipClick(chip)}
+                                      className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-900"
+                                    >
+                                      {chip}
+                                    </button>
                                   ))}
-                                </select>
+                                </div>
                                 {bioError && (
                                   <p className="text-xs text-red-500">
                                     {bioError}
@@ -735,13 +757,9 @@ const Index = ({ params }) => {
                                 )}
                                 <Button
                                   onClick={handleGenerate}
-                                  disabled={
-                                    isGenerating ||
-                                    !userName.trim() ||
-                                    !keywords.trim()
-                                  }
+                                  disabled={isGenerating || !storyPrompt.trim()}
                                   size="sm"
-                                  className="h-8 w-full text-xs"
+                                  className="h-8 w-full bg-[#67add1] text-xs"
                                 >
                                   {isGenerating ? (
                                     <>
@@ -750,8 +768,8 @@ const Index = ({ params }) => {
                                     </>
                                   ) : (
                                     <>
-                                      <Sparkles className="mr-1.5 h-3 w-3" />
-                                      생애문 생성
+                                      <Sparkles className="mr-1.5 h-3 w-3" />글
+                                      생성
                                     </>
                                   )}
                                 </Button>
@@ -779,7 +797,7 @@ const Index = ({ params }) => {
                     </div>
 
                     {/* Timeline Section - Collapsible */}
-                    <div className="rounded-lg border border-gray-200">
+                    <div className="rounded-lg border border-gray-300">
                       <button
                         onClick={() => setTimelineOpen(!timelineOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
@@ -867,7 +885,6 @@ const Index = ({ params }) => {
                         onThemeChange={handleThemeChange}
                       />
                     </div>
-
                   </div>
                 </TabsContent>
               </Tabs>
@@ -991,8 +1008,11 @@ const Index = ({ params }) => {
                         onClick={() => {
                           setSelectedUrlType(opt.key);
                           setEditUrlValue(
-                            opt.key === "google" ? editGooglePhotoUrl :
-                            opt.key === "icloud" ? editIcloudUrl : editMyboxUrl
+                            opt.key === "google"
+                              ? editGooglePhotoUrl
+                              : opt.key === "icloud"
+                                ? editIcloudUrl
+                                : editMyboxUrl,
                           );
                         }}
                         className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
@@ -1010,9 +1030,11 @@ const Index = ({ params }) => {
                     value={editUrlValue}
                     onChange={(e) => setEditUrlValue(e.target.value)}
                     placeholder={
-                      selectedUrlType === "google" ? "https://photos.google.com/..." :
-                      selectedUrlType === "icloud" ? "https://icloud.com/..." :
-                      "https://mybox.naver.com/..."
+                      selectedUrlType === "google"
+                        ? "https://photos.google.com/..."
+                        : selectedUrlType === "icloud"
+                          ? "https://icloud.com/..."
+                          : "https://mybox.naver.com/..."
                     }
                     className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
                   />

@@ -654,7 +654,7 @@ const Index = ({ params }) => {
               >
                 <Pencil className="h-3 w-3" />
               </button>
-              <span className="pointer-events-none absolute left-1/2 top-full mt-1.5 -translate-x-1/2 whitespace-nowrap rounded bg-gray-800 px-2 py-1 text-[10px] text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                 레코드 수정
               </span>
             </div>
@@ -709,7 +709,7 @@ const Index = ({ params }) => {
         </div>
 
         {/* Right: Editor Sidebar */}
-        <div className="w-[420px] shrink-0 overflow-y-auto border-l border-[#e2e8f0] bg-[#f0eee9]">
+        <div className="scrollbar-accent w-[420px] shrink-0 overflow-y-auto border-l border-[#e2e8f0] bg-[#f0eee9]">
           <div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -753,7 +753,7 @@ const Index = ({ params }) => {
 
                 {/* Back tab - Redesigned */}
                 <TabsContent className="px-5" value="back">
-                  <div className="space-y-5">
+                  <div className="space-y-5 pb-10">
                     {/* Story Section - Collapsible */}
                     <div className="rounded-lg border border-gray-300">
                       <button

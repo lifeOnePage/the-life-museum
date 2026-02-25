@@ -159,3 +159,26 @@ body {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Chrome, Safari, Opera */
 }
+
+/* Editor sidebar scrollbar */
+.scrollbar-accent {
+  scrollbar-width: thin;
+  scrollbar-color: #67ADD1 #F0EEE9;
+}
+
+.scrollbar-accent::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-accent::-webkit-scrollbar-track {
+  background: #F0EEE9;
+}
+
+.scrollbar-accent::-webkit-scrollbar-thumb {
+  background: #67ADD1;
+  border-radius: 3px;
+}
+
+.scrollbar-accent::-webkit-scrollbar-thumb:hover {
+  background: #5a9cc0;
+}

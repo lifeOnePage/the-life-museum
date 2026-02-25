@@ -214,9 +214,16 @@ function CameraZoom({ zoom }) {
   return null;
 }
 
-export default function AlbumPreview3D({ frontCover, bio, timeline, textColor, bgColor, keyColor }) {
+export default function AlbumPreview3D({ frontCover, bio, timeline, textColor, bgColor, keyColor, flipped }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [zoom, setZoom] = useState(ZOOM_DEFAULT);
+
+  // Sync with external flipped prop (tab switch)
+  useEffect(() => {
+    if (flipped !== undefined) {
+      setIsFlipped(flipped);
+    }
+  }, [flipped]);
   const dragStartX = useRef(null);
 
   const handlePointerDown = (e) => {

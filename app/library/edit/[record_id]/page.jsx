@@ -4,23 +4,71 @@ import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BookOpen,
-  BookOpenCheck,
-  FileText,
-  Clock,
-  Save,
-  RefreshCw,
   ArrowLeft,
   Pencil,
+  Save,
+  RefreshCw,
   X,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Trash2,
+  GripVertical,
+  Sparkles,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Textarea } from "./components/ui/textarea";
 import { getDominantColor } from "@rtcoder/dominant-color";
-import AlbumPreview3D from "./components/AlbumPreview3D";
 import CoverImageEditor from "./components/CoverImageEditor";
-import BioEditor from "./components/BioEditor";
-import TimelineEditor from "./components/TimelineEditor";
+import AlbumPreview3D from "./components/AlbumPreview3D";
+import ThemeSelector from "./components/ThemeSelector";
+import LayoutSelector from "./components/LayoutSelector";
+
+// Theme color mappings
+const THEMES = {
+  elegant: {
+    bg: "#fefbea",
+    text: "#475569",
+    year: "#f64b16",
+    divider: "#fefbea",
+    branding: "#94a3b8",
+    accent: "#833f6e",
+  },
+  mono: {
+    bg: "#ffffff",
+    text: "#1e293b",
+    year: "#000000",
+    divider: "#e2e8f0",
+    branding: "#94a3b8",
+    accent: "#000000",
+  },
+  violet: {
+    bg: "#fcf8ff",
+    text: "#581c87",
+    year: "#d8b4fe",
+    divider: "#e9d5ff",
+    branding: "#c084fc",
+    accent: "#7c3aed",
+  },
+  dark: {
+    bg: "#211811",
+    text: "#c7c7c7",
+    year: "#eeeeee",
+    divider: "#333",
+    branding: "#666",
+    accent: "#fbbf24",
+  },
+};
+
+// Style options for AI bio generation
+const STYLE_OPTIONS = [
+  { value: "진중한", label: "진중한" },
+  { value: "낭만적인", label: "낭만적인" },
+  { value: "재치있는", label: "재치있는" },
+  { value: "신비로운", label: "신비로운" },
+];
 
 const Index = ({ params }) => {
   const { record_id } = use(params);
@@ -30,13 +78,33 @@ const Index = ({ params }) => {
   const [albumTitle, setAlbumTitle] = useState("");
   const [artistName, setArtistName] = useState("");
   const [bio, setBio] = useState("");
-  const [mood, setMood] = useState("");
   const [timeline, setTimeline] = useState([]);
   const [backTextColor, setBackTextColor] = useState("#1c1917");
   const [backBgColor, setBackBgColor] = useState("");
   const [backKeyColor, setBackKeyColor] = useState("#b45309");
   const [isSaving, setIsSaving] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+
+  // Tab & Theme & Layout state
+  const [activeTab, setActiveTab] = useState("front");
+  const [selectedTheme, setSelectedTheme] = useState("elegant");
+  const [selectedLayout, setSelectedLayout] = useState("split-view");
+
+  // Collapsible sections
+  const [storyOpen, setStoryOpen] = useState(true);
+  const [timelineOpen, setTimelineOpen] = useState(true);
+
+  // Mode toggle
+  const [detailMode, setDetailMode] = useState(false);
+
+  // AI Bio generation state
+  const [userName, setUserName] = useState("");
+  const [keywords, setKeywords] = useState("");
+  const [style, setStyle] = useState("진중한");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [bioError, setBioError] = useState("");
+
+  const [timelineError, setTimelineError] = useState("");
 
   // Record edit dialog
   const [showRecordEditDialog, setShowRecordEditDialog] = useState(false);
@@ -48,14 +116,12 @@ const Index = ({ params }) => {
   const [isRecordSaving, setIsRecordSaving] = useState(false);
   const [recordError, setRecordError] = useState("");
 
-  // URLs from API (for display in edit dialog)
+  // URLs from API
   const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
   const [icloudUrl, setIcloudUrl] = useState("");
   const [myboxUrl, setMyboxUrl] = useState("");
 
   const coverRef = useRef(null);
-  const bioRef = useRef(null);
-  const timelineRef = useRef(null);
   const initialState = useRef({
     frontCover: null,
     albumTitle: "",
@@ -86,7 +152,6 @@ const Index = ({ params }) => {
           const title = data.title || "";
           const subtitle = data.subtitle || "";
           const bioContent = data.lifestory?.content || "";
-          const moodValue = data.lifestory?.mood || "";
 
           let timelineData = [];
           if (data.timeline?.events) {
@@ -104,7 +169,6 @@ const Index = ({ params }) => {
           setAlbumTitle(title);
           setArtistName(subtitle);
           setBio(bioContent);
-          setMood(moodValue);
           setTimeline(timelineData);
           setBackTextColor(textColor);
           setBackBgColor(bgColorVal);
@@ -156,6 +220,17 @@ const Index = ({ params }) => {
     img.src = frontCover;
   }, [frontCover, backBgColor]);
 
+  // Apply theme colors when theme changes
+  const handleThemeChange = (themeKey) => {
+    setSelectedTheme(themeKey);
+    const theme = THEMES[themeKey];
+    if (theme) {
+      setBackBgColor(theme.bg);
+      setBackTextColor(theme.text);
+      setBackKeyColor(theme.year);
+    }
+  };
+
   const saveRecordColors = async () => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
@@ -174,6 +249,66 @@ const Index = ({ params }) => {
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || "컬러 저장에 실패했습니다");
+    }
+    return data;
+  };
+
+  // Bio save logic (from BioEditor)
+  const saveBio = async () => {
+    if (!bio.trim()) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(
+      `${apiUrl}/api/v1/record/${record_id}/lifestory`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Dev-Key": "tlm2026",
+        },
+        body: JSON.stringify({
+          qaList: [
+            { question: "성함과 관계", answer: userName },
+            { question: "키워드", answer: keywords },
+          ],
+          mood: style,
+          result: bio,
+        }),
+      },
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "저장에 실패했습니다");
+    }
+    return data;
+  };
+
+  // Timeline save logic (from TimelineEditor)
+  const saveTimeline = async () => {
+    if (timeline.length === 0) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const events = timeline.map((item) => {
+      const [title, ...descParts] = item.event.split(" - ");
+      const description = descParts.join(" - ");
+      return {
+        title: title || "",
+        timestamp: item.year || null,
+        description: description || "",
+      };
+    });
+    const response = await fetch(
+      `${apiUrl}/api/v1/record/${record_id}/timeline`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Dev-Key": "tlm2026",
+        },
+        body: JSON.stringify({ events }),
+      },
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "저장에 실패했습니다");
     }
     return data;
   };
@@ -208,19 +343,17 @@ const Index = ({ params }) => {
       );
     }
 
-    if (isBioDirty && bioRef.current) {
+    if (isBioDirty) {
       promises.push(
-        bioRef.current
-          .save()
+        saveBio()
           .then(() => ({ editor: "bio", success: true }))
           .catch((err) => ({ editor: "bio", success: false, error: err })),
       );
     }
 
-    if (isTimelineDirty && timelineRef.current) {
+    if (isTimelineDirty) {
       promises.push(
-        timelineRef.current
-          .save()
+        saveTimeline()
           .then(() => ({ editor: "timeline", success: true }))
           .catch((err) => ({ editor: "timeline", success: false, error: err })),
       );
@@ -277,6 +410,54 @@ const Index = ({ params }) => {
     router.push("/library");
   };
 
+  // AI Bio generation
+  const handleGenerate = async () => {
+    if (!userName.trim() || !keywords.trim()) return;
+    setIsGenerating(true);
+    setBioError("");
+
+    try {
+      const token = localStorage.getItem("app_token");
+      const messages = [{ sender: "user", text: keywords }];
+
+      const response = await fetch("/api/gpt-story", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ messages, style, userName }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "생성에 실패했습니다");
+      }
+      setBio(data.story);
+    } catch (err) {
+      setBioError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Timeline helpers
+  const addTimelineItem = () => {
+    setTimeline([...timeline, { year: "", event: "" }]);
+  };
+
+  const updateTimelineItem = (index, field, value) => {
+    const updated = timeline.map((item, i) =>
+      i === index ? { ...item, [field]: value } : item,
+    );
+    setTimeline(updated);
+  };
+
+  const removeTimelineItem = (index) => {
+    setTimeline(timeline.filter((_, i) => i !== index));
+  };
+
+  // Record edit dialog
   const openRecordEditDialog = () => {
     setEditTitle(albumTitle);
     setEditSubtitle(artistName);
@@ -337,50 +518,65 @@ const Index = ({ params }) => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-white">
+    <div className="flex h-screen flex-col overflow-hidden bg-white">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+      <header className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
             onClick={() => setShowExitDialog(true)}
-            className="text-gray-500 hover:text-gray-900"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
           >
             <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-semibold text-gray-900">
-            {albumTitle || "앨범 편집"}
-          </h1>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={openRecordEditDialog}
-            className="text-gray-400 hover:text-gray-900"
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
+          </button>
+          {/* Title area */}
+          <div className="flex items-center gap-2">
+            <div>
+              <h1 className="text-sm leading-tight font-semibold text-gray-900">
+                {albumTitle || "앨범 편집"}
+              </h1>
+              {artistName && (
+                <p className="text-[11px] leading-tight text-gray-400">
+                  {artistName}
+                </p>
+              )}
+            </div>
+            <button
+              onClick={openRecordEditDialog}
+              className="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            >
+              <Pencil className="h-3 w-3" />
+            </button>
+          </div>
         </div>
-        <Button
-          onClick={handleSaveAll}
-          disabled={isSaving || !isDirty}
-          className="min-w-[100px]"
-        >
-          {isSaving ? (
-            <>
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> 저장 중...
-            </>
-          ) : (
-            <>
-              <Save className="mr-2 h-4 w-4" /> 저장
-            </>
-          )}
-        </Button>
+
+        {/* Mode toggle */}
+        <div className="flex items-center rounded-full border border-gray-200 bg-gray-50 p-0.5 text-[11px]">
+          <button
+            onClick={() => setDetailMode(false)}
+            className={`rounded-full px-3 py-1 font-medium transition-all ${
+              !detailMode
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-400"
+            }`}
+          >
+            초보자모드
+          </button>
+          <button
+            onClick={() => setDetailMode(true)}
+            className={`rounded-full px-3 py-1 font-medium transition-all ${
+              detailMode
+                ? "bg-white text-gray-900 shadow-sm"
+                : "text-gray-400"
+            }`}
+          >
+            디테일모드
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Preview */}
-        <div className="w-[500px] shrink-0 border-r border-gray-200 bg-gray-50">
+        {/* Left: Preview Panel */}
+        <div className="flex-1 border-r border-gray-200 bg-gray-50">
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}
@@ -388,32 +584,35 @@ const Index = ({ params }) => {
             textColor={backTextColor}
             bgColor={backBgColor}
             keyColor={backKeyColor}
+            flipped={activeTab === "back"}
           />
         </div>
 
-        {/* Right: Editor */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto max-w-2xl p-4">
+        {/* Right: Editor Sidebar */}
+        <div className="w-[420px] shrink-0 overflow-y-auto border-l border-gray-200 bg-white">
+          <div className="p-5">
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
             >
-              <Tabs defaultValue="front" className="w-full">
-                <TabsList className="mb-8 h-10 w-full rounded-3xl border border-gray-200 bg-gray-100 p-1">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                {/* Tab triggers - underline style */}
+                <TabsList className="mb-6 flex h-auto w-full rounded-none border-b border-gray-200 bg-transparent p-0">
                   <TabsTrigger
                     value="front"
-                    className="flex-1 gap-2 rounded-3xl text-base font-semibold data-[state=active]:bg-[#000000] data-[state=active]:text-white data-[state=active]:shadow-md"
+                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-1 pb-3 text-sm font-medium text-gray-400 transition-colors hover:text-gray-600 data-[state=active]:border-[#833f6e] data-[state=active]:bg-transparent data-[state=active]:text-gray-900 data-[state=active]:shadow-none"
                   >
                     앞면
                   </TabsTrigger>
                   <TabsTrigger
                     value="back"
-                    className="flex-1 gap-2 rounded-3xl text-base font-semibold data-[state=active]:bg-[#000000] data-[state=active]:text-white data-[state=active]:shadow-md"
+                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-1 pb-3 text-sm font-medium text-gray-400 transition-colors hover:text-gray-600 data-[state=active]:border-[#833f6e] data-[state=active]:bg-transparent data-[state=active]:text-gray-900 data-[state=active]:shadow-none"
                   >
                     뒷면
                   </TabsTrigger>
                 </TabsList>
 
+                {/* Front tab - CoverImageEditor (preserved) */}
                 <TabsContent value="front">
                   <CoverImageEditor
                     ref={coverRef}
@@ -428,80 +627,239 @@ const Index = ({ params }) => {
                   />
                 </TabsContent>
 
+                {/* Back tab - Redesigned */}
                 <TabsContent value="back">
-                  <p className="mb-4 text-sm text-gray-500">
-                    뒷면은 생애문 또는 타임라인을 선택할 수 있습니다.
-                  </p>
+                  <div className="space-y-5">
+                    {/* Story Section - Collapsible */}
+                    <div className="rounded-lg border border-gray-200">
+                      <button
+                        onClick={() => setStoryOpen(!storyOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">
+                          스토리
+                        </span>
+                        {storyOpen ? (
+                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
 
-                  {/* Color Pickers */}
-                  <div className="mb-6 flex items-center gap-6 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                    <label className="flex items-center gap-2 text-xs text-gray-500">
-                      배경
-                      <input
-                        type="color"
-                        value={backBgColor || "#ffffff"}
-                        onChange={(e) => setBackBgColor(e.target.value)}
-                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
+                      <AnimatePresence initial={false}>
+                        {storyOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-4 border-t border-gray-100 px-4 pt-3 pb-4">
+                              {/* AI Generation */}
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-1 text-xs font-medium text-gray-500">
+                                  <Sparkles className="h-3 w-3" />
+                                  AI 생애문 생성
+                                </label>
+                                <Input
+                                  value={userName}
+                                  onChange={(e) => setUserName(e.target.value)}
+                                  placeholder="이름을 입력하세요"
+                                  className="h-9 border-gray-200 bg-white text-sm placeholder:text-gray-400"
+                                />
+                                <Input
+                                  value={keywords}
+                                  onChange={(e) => setKeywords(e.target.value)}
+                                  placeholder="키워드 예: 피아니스트, 서울"
+                                  className="h-9 border-gray-200 bg-white text-sm placeholder:text-gray-400"
+                                />
+                                <select
+                                  value={style}
+                                  onChange={(e) => setStyle(e.target.value)}
+                                  className="h-9 w-full rounded-md border border-gray-200 bg-white px-3 text-sm text-gray-900"
+                                >
+                                  {STYLE_OPTIONS.map((opt) => (
+                                    <option key={opt.value} value={opt.value}>
+                                      {opt.label}
+                                    </option>
+                                  ))}
+                                </select>
+                                {bioError && (
+                                  <p className="text-xs text-red-500">
+                                    {bioError}
+                                  </p>
+                                )}
+                                <Button
+                                  onClick={handleGenerate}
+                                  disabled={
+                                    isGenerating ||
+                                    !userName.trim() ||
+                                    !keywords.trim()
+                                  }
+                                  size="sm"
+                                  className="h-8 w-full text-xs"
+                                >
+                                  {isGenerating ? (
+                                    <>
+                                      <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
+                                      생성 중...
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles className="mr-1.5 h-3 w-3" />
+                                      생애문 생성
+                                    </>
+                                  )}
+                                </Button>
+                              </div>
+
+                              {/* Bio text editor */}
+                              <div>
+                                <label className="mb-1 block text-xs font-medium text-gray-500">
+                                  생애문 편집
+                                </label>
+                                <Textarea
+                                  value={bio}
+                                  onChange={(e) => setBio(e.target.value)}
+                                  placeholder="생애문을 직접 작성하거나 AI로 생성하세요..."
+                                  className="min-h-[140px] resize-none border-gray-200 bg-white text-sm leading-relaxed text-gray-900 placeholder:text-gray-400"
+                                />
+                                <p className="mt-1 text-right text-[11px] text-gray-300">
+                                  {bio.length}자
+                                </p>
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Timeline Section - Collapsible */}
+                    <div className="rounded-lg border border-gray-200">
+                      <button
+                        onClick={() => setTimelineOpen(!timelineOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">
+                            타임라인
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            {timeline.length}개
+                          </span>
+                        </div>
+                        {timelineOpen ? (
+                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+
+                      <AnimatePresence initial={false}>
+                        {timelineOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-2 border-t border-gray-100 px-4 pt-3 pb-4">
+                              <AnimatePresence>
+                                {timeline.map((item, index) => (
+                                  <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: "auto" }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="group flex items-start gap-1.5"
+                                  >
+                                    <div className="cursor-grab pt-2 text-gray-300">
+                                      <GripVertical className="h-3.5 w-3.5" />
+                                    </div>
+                                    <Input
+                                      value={item.year}
+                                      onChange={(e) =>
+                                        updateTimelineItem(
+                                          index,
+                                          "year",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="연도"
+                                      className="h-8 w-[70px] border-gray-200 bg-white text-xs placeholder:text-gray-400"
+                                    />
+                                    <Input
+                                      value={item.event}
+                                      onChange={(e) =>
+                                        updateTimelineItem(
+                                          index,
+                                          "event",
+                                          e.target.value,
+                                        )
+                                      }
+                                      placeholder="사건을 입력하세요..."
+                                      className="h-8 flex-1 border-gray-200 bg-white text-xs placeholder:text-gray-400"
+                                    />
+                                    <button
+                                      onClick={() => removeTimelineItem(index)}
+                                      className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-0 transition-opacity group-hover:opacity-100 hover:text-red-500"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </button>
+                                  </motion.div>
+                                ))}
+                              </AnimatePresence>
+
+                              <button
+                                onClick={addTimelineItem}
+                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 text-xs text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-900"
+                              >
+                                <Plus className="h-3 w-3" /> 항목 추가
+                              </button>
+
+                              {timeline.length === 0 && (
+                                <div className="py-4 text-center">
+                                  <p className="text-xs text-gray-400">
+                                    타임라인 항목을 추가해보세요
+                                  </p>
+                                </div>
+                              )}
+
+                              {timelineError && (
+                                <p className="text-xs text-red-500">
+                                  {timelineError}
+                                </p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Theme Section */}
+                    <div>
+                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                        테마
+                      </h3>
+                      <ThemeSelector
+                        selectedTheme={selectedTheme}
+                        onThemeChange={handleThemeChange}
                       />
-                    </label>
-                    <label className="flex items-center gap-2 text-xs text-gray-500">
-                      텍스트
-                      <input
-                        type="color"
-                        value={backTextColor}
-                        onChange={(e) => setBackTextColor(e.target.value)}
-                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
+                    </div>
+
+                    {/* Layout Section */}
+                    <div>
+                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                        레이아웃
+                      </h3>
+                      <LayoutSelector
+                        selectedLayout={selectedLayout}
+                        onLayoutChange={setSelectedLayout}
                       />
-                    </label>
-                    <label className="flex items-center gap-2 text-xs text-gray-500">
-                      포인트
-                      <input
-                        type="color"
-                        value={backKeyColor}
-                        onChange={(e) => setBackKeyColor(e.target.value)}
-                        className="h-7 w-7 cursor-pointer rounded border border-gray-300 bg-transparent p-0.5"
-                      />
-                    </label>
+                    </div>
                   </div>
-
-                  <Tabs defaultValue="bio" className="w-full">
-                    <TabsList className="mb-6 h-10 w-fit rounded-full border border-gray-200 bg-gray-100 p-1">
-                      <TabsTrigger
-                        value="bio"
-                        className="gap-1.5 rounded-full px-4 text-sm font-medium text-gray-500 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-sm"
-                      >
-                        <FileText className="h-3.5 w-3.5" />
-                        생애문
-                      </TabsTrigger>
-                      <TabsTrigger
-                        value="timeline"
-                        className="gap-1.5 rounded-full px-4 text-sm font-medium text-gray-500 data-[state=active]:bg-black data-[state=active]:text-white data-[state=active]:shadow-sm"
-                      >
-                        <Clock className="h-3.5 w-3.5" />
-                        타임라인
-                      </TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="bio">
-                      <BioEditor
-                        ref={bioRef}
-                        record_id={record_id}
-                        bio={bio}
-                        onBioChange={setBio}
-                        initialBio={initialState.current.bio}
-                      />
-                    </TabsContent>
-
-                    <TabsContent value="timeline">
-                      <TimelineEditor
-                        ref={timelineRef}
-                        record_id={record_id}
-                        timeline={timeline}
-                        onTimelineChange={setTimeline}
-                        initialTimeline={initialState.current.timeline}
-                      />
-                    </TabsContent>
-                  </Tabs>
                 </TabsContent>
               </Tabs>
             </motion.div>

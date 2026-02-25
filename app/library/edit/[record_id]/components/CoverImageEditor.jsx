@@ -1,8 +1,8 @@
+"use client";
+
 import { useState, forwardRef, useImperativeHandle } from "react";
-import { motion } from "framer-motion";
-import { Sparkles, Upload, RefreshCw, RotateCcw } from "lucide-react";
-import { Button } from "./ui/button";
-import { Textarea } from "./ui/textarea";
+import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, ImagePlus, RefreshCw, ChevronLeft } from "lucide-react";
 
 const CoverImageEditor = forwardRef(
   (
@@ -18,12 +18,15 @@ const CoverImageEditor = forwardRef(
     },
     ref,
   ) => {
+    // "menu" = initial two-card view, "generate" = AI generation form
+    const [view, setView] = useState("menu");
     const [prompt, setPrompt] = useState("");
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
     const [generatedImages, setGeneratedImages] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
 
     useImperativeHandle(ref, () => ({
       save: async () => {
@@ -74,7 +77,13 @@ const CoverImageEditor = forwardRef(
       return file;
     };
 
-    const handleSelectPlaceholder = async (imgUrl) => {
+    const handleSelectImage = (index) => {
+      setSelectedImageIndex(index);
+    };
+
+    const handleApply = async () => {
+      if (selectedImageIndex < 0 || !generatedImages[selectedImageIndex]) return;
+      const imgUrl = generatedImages[selectedImageIndex];
       try {
         const filename = imgUrl.split("/").pop();
         const file = await urlToFile(imgUrl, filename);
@@ -88,6 +97,7 @@ const CoverImageEditor = forwardRef(
     const handleGenerate = () => {
       if (!prompt.trim()) return;
       setIsGenerating(true);
+      setSelectedImageIndex(-1);
       setTimeout(() => {
         const placeholders = [
           "/images/gif/1.gif",
@@ -99,113 +109,182 @@ const CoverImageEditor = forwardRef(
       }, 2000);
     };
 
-    const handleReset = () => {
-      onImageGenerated(initialFrontCover);
-      onTitleChange(initialAlbumTitle);
-      onArtistChange(initialArtistName);
-      setPrompt("");
-      setGeneratedImages([]);
-      setSelectedFile(null);
-      setError("");
+    const handleFileUpload = (e) => {
+      const file = e.target.files?.[0];
+      if (file) {
+        setSelectedFile(file);
+        const url = URL.createObjectURL(file);
+        onImageGenerated(url);
+      }
     };
 
     return (
-      <div className="space-y-6">
-        <div>
-          <label className="mb-2 block text-xs tracking-widest text-gray-500 uppercase">
-            <Sparkles className="mr-1 inline h-3 w-3" />
-            AI 커버 이미지 생성
-          </label>
-          <Textarea
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            placeholder="원하는 커버 이미지를 설명하세요... 예: 밤하늘 아래 피아노가 있는 풍경"
-            className="min-h-20 resize-none border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400"
-          />
-          <Button
-            onClick={handleGenerate}
-            disabled={isGenerating || !prompt.trim()}
-            className="mt-3 w-full"
-          >
-            {isGenerating ? (
-              <>
-                <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> 생성 중...
-              </>
-            ) : (
-              <>
-                <Sparkles className="mr-2 h-4 w-4" /> 이미지 생성
-              </>
-            )}
-          </Button>
-        </div>
+      <div className="space-y-7">
+        <AnimatePresence mode="wait">
+          {view === "menu" ? (
+            <motion.div
+              key="menu"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Header */}
+              <div className="mb-4">
+                <h3 className="text-base font-bold text-slate-600">
+                  표지 디자인
+                </h3>
+                <p className="mt-1 text-xs text-slate-500">
+                  AI로 만들거나, 업로드 할수 있어요~(안내 문구)
+                </p>
+              </div>
 
-        {generatedImages.length > 0 && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-            <label className="mb-3 block text-xs tracking-widest text-gray-500 uppercase">
-              생성된 이미지 선택
-            </label>
-            <div className="grid grid-cols-3 gap-3">
-              {generatedImages.map((img, i) => (
-                <motion.button
-                  key={i}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => handleSelectPlaceholder(img)}
-                  className="aspect-square overflow-hidden border-2 border-transparent transition-colors hover:border-gray-900"
+              {/* Two option cards */}
+              <div className="flex gap-4">
+                {/* AI Generate card */}
+                <button
+                  onClick={() => setView("generate")}
+                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-slate-300 bg-[rgba(231,6,160,0.1)] px-4 py-8 transition-all hover:border-[#833f6e] hover:shadow-sm"
                 >
-                  <img
-                    src={img}
-                    alt={`생성 ${i + 1}`}
-                    className="h-full w-full object-cover"
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+                    <Sparkles className="h-4 w-4 text-slate-600" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">
+                    이미지 생성하기
+                  </span>
+                  <div className="h-5" />
+                </button>
+
+                {/* Upload card */}
+                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-8 transition-all hover:border-slate-400 hover:shadow-sm">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
                   />
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        )}
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+                    <ImagePlus className="h-[18px] w-[18px] text-slate-600" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-700">
+                    직접 업로드
+                  </span>
+                  <p className="mt-1 text-xs text-slate-400">
+                    JPG, PNG 최대 10MB
+                  </p>
+                </label>
+              </div>
 
-        <div className="border-t border-gray-200 pt-4">
-          <label className="mb-2 block text-xs tracking-widest text-gray-500 uppercase">
-            <Upload className="mr-1 inline h-3 w-3" />
-            직접 업로드
-          </label>
-          <label className="flex h-24 w-full cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 transition-colors hover:border-gray-400">
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  setSelectedFile(file);
-                  const url = URL.createObjectURL(file);
-                  onImageGenerated(url);
-                }
-              }}
-            />
-            <span className="text-sm text-gray-500">
-              클릭하여 이미지 업로드
-            </span>
-          </label>
-        </div>
+              {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="generate"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Header with back arrow */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setView("menu")}
+                  className="mb-2 flex items-center gap-2 text-slate-600 transition-colors hover:text-slate-900"
+                >
+                  <ChevronLeft className="h-[18px] w-[9px]" />
+                  <span className="text-base font-bold">표지 디자인</span>
+                </button>
+                <p className="text-xs text-slate-500">
+                  AI로 만들거나, 업로드 할수 있어요~(안내 문구)
+                </p>
+              </div>
 
-        {error && <p className="text-sm text-red-500">{error}</p>}
+              {/* Prompt textarea */}
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="예: 따뜻한 햇살이 비치는 고요한 숲속, 수채화 일러스트 느낌으로 그려줘"
+                className="w-full resize-none rounded-lg bg-[#f1f1f3] px-4 pb-14 pt-3 text-sm text-gray-900 placeholder:text-gray-500 focus:outline-none"
+                rows={3}
+              />
+
+              {/* Generate button - gradient */}
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating || !prompt.trim()}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#ed02a4] to-[#833f6e] py-[10px] text-sm font-medium text-white transition-opacity disabled:opacity-50"
+              >
+                {isGenerating ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    생성 중...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    이미지 생성하기
+                  </>
+                )}
+              </button>
+
+              {/* Generated images - 3 thumbnails */}
+              {generatedImages.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 flex gap-[15px]"
+                >
+                  {generatedImages.map((img, i) => (
+                    <button
+                      key={i}
+                      onClick={() => handleSelectImage(i)}
+                      className={`h-[100px] flex-1 overflow-hidden rounded-md transition-all ${
+                        selectedImageIndex === i
+                          ? "ring-2 ring-[#833f6e] ring-offset-2"
+                          : "hover:opacity-80"
+                      }`}
+                    >
+                      <img
+                        src={img}
+                        alt={`생성 ${i + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+
+              {/* Placeholder slots when no images generated yet */}
+              {generatedImages.length === 0 && !isGenerating && (
+                <div className="mt-4 flex gap-[15px]">
+                  {[0, 1, 2].map((i) => (
+                    <div
+                      key={i}
+                      className="h-[100px] flex-1 rounded-md bg-[#f1f1f3]"
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Apply button - gradient */}
+              <button
+                onClick={handleApply}
+                disabled={selectedImageIndex < 0}
+                className="mt-4 flex w-full items-center justify-center rounded-lg bg-gradient-to-r from-[#ed02a4] to-[#833f6e] py-[10px] text-sm font-medium text-white transition-opacity disabled:opacity-50"
+              >
+                적용하기
+              </button>
+
+              {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {isSaving && (
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <RefreshCw className="h-4 w-4 animate-spin" /> 저장 중...
           </div>
         )}
-
-        <div className="border-t border-gray-200 pt-6">
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            className="w-full border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-900"
-          >
-            <RotateCcw className="mr-2 h-4 w-4" /> 초기화
-          </Button>
-        </div>
       </div>
     );
   },

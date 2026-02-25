@@ -159,7 +159,7 @@ const CoverImageEditor = forwardRef(
                 {/* AI Generate card */}
                 <button
                   onClick={() => setView("generate")}
-                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-[rgba(103,173,209,0.1)] px-4 py-8 transition-all hover:border-[#67add1] hover:shadow-sm"
+                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <Sparkles className="h-4 w-4 text-[#475569]" />
@@ -171,7 +171,7 @@ const CoverImageEditor = forwardRef(
                 </button>
 
                 {/* Upload card */}
-                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-4 py-8 transition-all hover:border-[#67add1] hover:shadow-sm">
+                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
                   <input
                     type="file"
                     accept="image/*"

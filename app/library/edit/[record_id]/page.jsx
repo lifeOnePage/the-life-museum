@@ -16,6 +16,7 @@ import {
   GripVertical,
   Sparkles,
   RotateCcw,
+  HelpCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -39,6 +40,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import CoverImageEditor from "./components/CoverImageEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
+import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
@@ -76,17 +78,17 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
         value={item.year}
         onChange={(e) => onUpdate(index, "year", e.target.value)}
         placeholder="연도"
-        className="h-8 w-[70px] rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
+        className="h-9 w-[70px] rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
       />
       <Input
         value={item.event}
         onChange={(e) => onUpdate(index, "event", e.target.value)}
         placeholder="사건을 입력하세요..."
-        className="h-8 flex-1 rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
+        className="h-9 flex-1 rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
       />
       <button
         onClick={() => onRemove(index)}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-50 transition-opacity group-hover:opacity-100 hover:text-red-500"
+        className="flex h-9 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-50 transition-opacity group-hover:opacity-100 hover:text-red-500"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -114,8 +116,8 @@ const Index = ({ params }) => {
   const [storyOpen, setStoryOpen] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(true);
 
-  // Mode toggle
-  const [detailMode, setDetailMode] = useState(false);
+  // Tutorial
+  const [showTutorial, setShowTutorial] = useState(false);
 
   // AI story generation state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -630,6 +632,7 @@ const Index = ({ params }) => {
       <header className="flex items-center justify-between border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9] px-4 py-3">
         <div className="flex items-center gap-3">
           <button
+            data-tutorial="exit"
             onClick={() => setShowExitDialog(true)}
             className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
           >
@@ -670,34 +673,19 @@ const Index = ({ params }) => {
           </div>
         </div>
 
-        {/* Mode toggle */}
-        <div className="flex items-center rounded-xl bg-[#cfcfd1] p-1 text-[11px]">
-          <button
-            onClick={() => setDetailMode(false)}
-            className={`rounded-lg px-3 py-1 font-medium transition-all ${
-              !detailMode
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-[#64748b]"
-            }`}
-          >
-            초보자모드
-          </button>
-          <button
-            onClick={() => setDetailMode(true)}
-            className={`rounded-lg px-3 py-1 font-bold transition-all ${
-              detailMode
-                ? "bg-white text-[#67add1] shadow-sm"
-                : "text-[#64748b]"
-            }`}
-          >
-            디테일 모드
-          </button>
-        </div>
+        {/* Tutorial */}
+        <button
+          onClick={() => setShowTutorial(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[11px] font-medium text-gray-600 shadow-sm transition-colors hover:border-[#67add1] hover:text-[#67add1]"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+          튜토리얼
+        </button>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
         {/* Left: Preview Panel */}
-        <div className="flex-1 bg-[#dedbd3]">
+        <div className="flex-1 bg-[#dedbd3]" data-tutorial="preview">
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}
@@ -738,24 +726,26 @@ const Index = ({ params }) => {
 
                 {/* Front tab - CoverImageEditor (preserved) */}
                 <TabsContent className="px-8" value="front">
-                  <CoverImageEditor
-                    ref={coverRef}
-                    record_id={record_id}
-                    onImageGenerated={setFrontCover}
-                    onTitleChange={setAlbumTitle}
-                    onArtistChange={setArtistName}
-                    frontCover={frontCover}
-                    initialFrontCover={initialState.current.frontCover}
-                    initialAlbumTitle={initialState.current.albumTitle}
-                    initialArtistName={initialState.current.artistName}
-                  />
+                  <div data-tutorial="cover-editor">
+                    <CoverImageEditor
+                      ref={coverRef}
+                      record_id={record_id}
+                      onImageGenerated={setFrontCover}
+                      onTitleChange={setAlbumTitle}
+                      onArtistChange={setArtistName}
+                      frontCover={frontCover}
+                      initialFrontCover={initialState.current.frontCover}
+                      initialAlbumTitle={initialState.current.albumTitle}
+                      initialArtistName={initialState.current.artistName}
+                    />
+                  </div>
                 </TabsContent>
 
                 {/* Back tab - Redesigned */}
                 <TabsContent className="px-5" value="back">
                   <div className="space-y-5 pb-10">
                     {/* Story Section - Collapsible */}
-                    <div className="rounded-lg border border-gray-300">
+                    <div data-tutorial="story" className="rounded-lg border border-gray-300">
                       <button
                         onClick={() => setStoryOpen(!storyOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
@@ -784,7 +774,7 @@ const Index = ({ params }) => {
                                 value={bio}
                                 onChange={(e) => setBio(e.target.value)}
                                 placeholder="키워드를 선택하거나 직접 작성하세요..."
-                                className="min-h-50 w-full resize-none rounded-lg border-none bg-[#cfcfd1] px-4 pt-3 pb-14 text-sm text-gray-600 placeholder:text-[#6b7280] focus:outline-none"
+                                className="min-h-50 w-full resize-none rounded-lg border-none bg-[#cfcfd1] px-4 pt-3 pb-14 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:outline-none"
                               />
                               <div className="flex flex-wrap gap-1.5">
                                 {KEYWORD_CHIPS.map((chip) => {
@@ -841,7 +831,7 @@ const Index = ({ params }) => {
                     </div>
 
                     {/* Timeline Section - Collapsible */}
-                    <div className="rounded-lg border border-gray-300">
+                    <div data-tutorial="timeline" className="rounded-lg border border-gray-300">
                       <button
                         onClick={() => setTimelineOpen(!timelineOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
@@ -920,7 +910,7 @@ const Index = ({ params }) => {
                     </div>
 
                     {/* Theme Section */}
-                    <div>
+                    <div data-tutorial="theme">
                       <h3 className="mb-3 text-sm font-semibold text-gray-900">
                         테마
                       </h3>
@@ -1160,6 +1150,14 @@ const Index = ({ params }) => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        isActive={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
     </div>
   );
 };

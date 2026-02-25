@@ -117,9 +117,9 @@ const Index = ({ params }) => {
   const [detailMode, setDetailMode] = useState(false);
 
   // AI story generation state
-  const [storyPrompt, setStoryPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [bioError, setBioError] = useState("");
+  const [usedChips, setUsedChips] = useState(new Set());
 
   const [timelineError, setTimelineError] = useState("");
 
@@ -270,7 +270,6 @@ const Index = ({ params }) => {
           "X-Dev-Key": "tlm2026",
         },
         body: JSON.stringify({
-          prompt: storyPrompt,
           result: bio,
         }),
       },
@@ -405,7 +404,7 @@ const Index = ({ params }) => {
 
   // AI story generation
   const handleGenerate = async () => {
-    if (!storyPrompt.trim()) return;
+    if (!bio.trim()) return;
     setIsGenerating(true);
     setBioError("");
 
@@ -418,7 +417,7 @@ const Index = ({ params }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt: storyPrompt, albumTitle }),
+        body: JSON.stringify({ prompt: bio, albumTitle, artistName }),
       });
 
       const data = await response.json();
@@ -453,7 +452,9 @@ const Index = ({ params }) => {
   ];
 
   const handleChipClick = (chip) => {
-    setStoryPrompt((prev) => {
+    if (usedChips.has(chip)) return;
+    setUsedChips((prev) => new Set([...prev, chip]));
+    setBio((prev) => {
       const trimmed = prev.trim();
       if (!trimmed) return chip;
       return trimmed + " " + chip;
@@ -724,72 +725,61 @@ const Index = ({ params }) => {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <div className="space-y-4 border-t border-gray-100 px-4 pt-3 pb-4">
-                              {/* AI Generation */}
-                              <div className="space-y-2">
-                                <label className="flex items-center gap-1 text-xs font-medium text-gray-500">
-                                  AI 글 생성
-                                </label>
-                                <Textarea
-                                  value={storyPrompt}
-                                  onChange={(e) =>
-                                    setStoryPrompt(e.target.value)
-                                  }
-                                  placeholder="아래 키워드를 선택하고 보충 설명을 추가하여 AI가 생애문을 생성할 수 있도록 도와주세요."
-                                  className="min-h-[72px] resize-none border-gray-200 bg-white text-sm leading-relaxed text-gray-900 placeholder:text-gray-400"
-                                />
-                                <div className="flex flex-wrap gap-1.5">
-                                  {KEYWORD_CHIPS.map((chip) => (
+                            <div className="space-y-3 border-t border-gray-100 px-4 pt-3 pb-4">
+                              <Textarea
+                                value={bio}
+                                onChange={(e) => setBio(e.target.value)}
+                                placeholder="키워드를 선택하거나 직접 작성하세요..."
+                                className="min-h-[140px] resize-none border-gray-200 bg-white text-sm leading-relaxed text-gray-900 placeholder:text-gray-400"
+                              />
+                              <div className="flex flex-wrap gap-1.5">
+                                {KEYWORD_CHIPS.map((chip) => {
+                                  const isUsed = usedChips.has(chip);
+                                  return (
                                     <button
                                       key={chip}
                                       type="button"
+                                      disabled={isUsed}
                                       onClick={() => handleChipClick(chip)}
-                                      className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-500 transition-colors hover:border-gray-400 hover:text-gray-900"
+                                      className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
+                                        isUsed
+                                          ? "border border-[#67add1]/30 bg-[#67add1]/10 text-[#67add1]/50"
+                                          : "border border-gray-200 bg-white text-gray-500 hover:border-[#67add1] hover:text-[#67add1]"
+                                      }`}
                                     >
-                                      {chip}
+                                      {isUsed ? `${chip} ✓` : `+ ${chip}`}
                                     </button>
-                                  ))}
-                                </div>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <p className="text-[11px] text-gray-300">
+                                  {bio.length}자
+                                </p>
                                 {bioError && (
                                   <p className="text-xs text-red-500">
                                     {bioError}
                                   </p>
                                 )}
-                                <Button
-                                  onClick={handleGenerate}
-                                  disabled={isGenerating || !storyPrompt.trim()}
-                                  size="sm"
-                                  className="h-8 w-full bg-[#67add1] text-xs"
-                                >
-                                  {isGenerating ? (
-                                    <>
-                                      <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
-                                      생성 중...
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Sparkles className="mr-1.5 h-3 w-3" />글
-                                      생성
-                                    </>
-                                  )}
-                                </Button>
                               </div>
-
-                              {/* Bio text editor */}
-                              <div>
-                                <label className="mb-1 block text-xs font-medium text-gray-500">
-                                  생애문 편집
-                                </label>
-                                <Textarea
-                                  value={bio}
-                                  onChange={(e) => setBio(e.target.value)}
-                                  placeholder="생애문을 직접 작성하거나 AI로 생성하세요..."
-                                  className="min-h-[140px] resize-none border-gray-200 bg-white text-sm leading-relaxed text-gray-900 placeholder:text-gray-400"
-                                />
-                                <p className="mt-1 text-right text-[11px] text-gray-300">
-                                  {bio.length}자
-                                </p>
-                              </div>
+                              <Button
+                                onClick={handleGenerate}
+                                disabled={isGenerating || !bio.trim()}
+                                size="sm"
+                                className="h-8 w-full bg-[#67add1] text-xs"
+                              >
+                                {isGenerating ? (
+                                  <>
+                                    <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
+                                    생성 중...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="mr-1.5 h-3 w-3" />글
+                                    생성
+                                  </>
+                                )}
+                              </Button>
                             </div>
                           </motion.div>
                         )}

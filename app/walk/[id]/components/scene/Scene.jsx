@@ -9,10 +9,12 @@ import GlowBorder from "./GlowBorder";
 import {
   CAMERA_START_Z,
   DISPLAY_OFFSET_Z,
+  DISPLAY_OFFSET_PAUSED,
   DISPLAY_SCALE,
   FOCUS_SEARCH_RANGE,
   FOCUS_DISMISS_DISTANCE,
   FOCUS_FADE_SPEED,
+  FOCUS_MIN_SPEED_RATIO,
   FLOOR_Y,
   FLOOR_COLOR,
   FOG_COLOR,
@@ -49,6 +51,8 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     focusCloneZ: 0,
     // For manual: the plane flies to camera, so we track its original position
     manualPlaneOriginalPos: null,
+    // Display offset used for current manual focus (differs when paused vs playing)
+    manualDisplayOffset: DISPLAY_OFFSET_Z,
     // Seen planes for auto selection (avoid re-picking recently shown)
     recentAutoIds: new Set(),
     // Track if playing was just started
@@ -87,10 +91,9 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     textureMap.current.set(planeId, { texture, aspectRatio });
   }, []);
 
-  // Handle plane click for manual focus
+  // Handle plane click for manual focus (works both playing and paused)
   const handlePlaneClick = useCallback(
     (planeId) => {
-      if (!isPlaying) return;
       const s = state.current;
       const plane = planes.find((p) => p.id === planeId);
       if (!plane) return;
@@ -99,11 +102,15 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       const wrappedPZ = wrapZ(plane.position[2], s.cameraZ);
       if (wrappedPZ >= s.cameraZ) return;
 
+      // Use a closer display distance when paused for better inspection
+      const offset = isPlaying ? DISPLAY_OFFSET_Z : DISPLAY_OFFSET_PAUSED;
+
       // Switch to manual mode
       s.focusMode = "manual";
       s.targetPlaneId = planeId;
       s.fadeProgress = 0;
-      s.focusCloneZ = s.cameraZ - DISPLAY_OFFSET_Z;
+      s.focusCloneZ = s.cameraZ - offset;
+      s.manualDisplayOffset = offset;
       s.manualPlaneOriginalPos = [
         plane.position[0],
         plane.position[1],
@@ -146,6 +153,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       fadeProgress: 0,
       focusCloneZ: 0,
       manualPlaneOriginalPos: null,
+      manualDisplayOffset: DISPLAY_OFFSET_Z,
       recentAutoIds: new Set(),
       initialized: true,
       lastChunk: Math.floor(CAMERA_START_Z / 500),
@@ -153,20 +161,12 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     camera.position.set(0, 0, CAMERA_START_Z);
   }
 
-  if (!isPlaying) {
-    state.current.initialized = false;
-    if (state.current.focusMode !== "idle") {
-      state.current.focusMode = "idle";
-      state.current.targetPlaneId = null;
-      state.current.fadeProgress = 0;
-      state.current.manualPlaneOriginalPos = null;
-      setFocusRender({ mode: "idle", targetId: null });
-    }
-  }
+  // Note: focus state is intentionally preserved when paused so the focused
+  // plane stays visible. The camera simply stops moving.
 
-  // OrbitControls toggle
+  // OrbitControls always disabled — play/pause only controls camera movement
   if (controlsRef.current) {
-    controlsRef.current.enabled = !isPlaying;
+    controlsRef.current.enabled = false;
   }
 
   useFrame((_, delta) => {
@@ -174,8 +174,16 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
 
     const s = state.current;
 
-    // 1. Camera always advances
-    s.cameraZ -= cameraSpeed * delta;
+    // 1. Camera always advances (decelerate during focus cycles)
+    let effectiveSpeed = cameraSpeed;
+    if (s.focusMode === "auto" || s.focusMode === "manual") {
+      const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
+      const focusRange = DISPLAY_OFFSET_Z - FOCUS_DISMISS_DISTANCE;
+      // t=0 at cycle start (far from clone), t=1 at dismiss threshold (close to clone)
+      const t = 1 - Math.max(0, Math.min(1, (distToClone - FOCUS_DISMISS_DISTANCE) / focusRange));
+      effectiveSpeed = cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
+    }
+    s.cameraZ -= effectiveSpeed * delta;
     camera.position.z = s.cameraZ;
 
     // Keep directional light following camera (forward direction)
@@ -314,7 +322,11 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
               ]}
               onClick={handlePlaneClick}
               onTextureLoaded={handleTextureLoaded}
-              displayOffsetZ={DISPLAY_OFFSET_Z}
+              displayOffsetZ={
+                focusMode === "manual-display"
+                  ? state.current.manualDisplayOffset
+                  : DISPLAY_OFFSET_Z
+              }
               displayScale={DISPLAY_SCALE}
             />
           </Suspense>

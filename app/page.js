@@ -20,7 +20,7 @@ export default function Home() {
     signout();
   };
   const mypage = () => {
-    router.push(`/mypage`);
+    router.push(`/library`);
   };
   return (
     <div

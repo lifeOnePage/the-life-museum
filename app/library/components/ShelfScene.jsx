@@ -2,7 +2,7 @@
 
 import * as THREE from "three";
 import { useMemo, useState, useRef, useCallback } from "react";
-import { Html } from "@react-three/drei";
+import { useThree } from "@react-three/fiber";
 import Wall from "./Wall";
 import Shelf from "./Shelf";
 import AlbumCover from "./AlbumCover";
@@ -13,7 +13,7 @@ const SHELF_CONFIG = {
   width: 5, // 선반 너비
   depth: 0.4, // 선반 깊이
   thickness: 0.08, // 선반 두께
-  spacing: 1.2, // 선반 간 수직 간격
+  spacing: 1.4, // 선반 간 수직 간격
   wallOffset: 0.02, // 벽과의 거리
 };
 
@@ -34,7 +34,9 @@ export default function ShelfScene({
   onAlbumClick,
   onFlipAlbum,
   onCloseAlbum,
+  onHoverLabelPos,
 }) {
+  const { camera, gl } = useThree();
   // 앨범 위치 계산
   const albumPositions = useMemo(() => {
     const positions = [];
@@ -72,8 +74,25 @@ export default function ShelfScene({
     }));
   }, []);
 
-  // 호버된 앨범 인덱스
+  // 호버된 앨범 인덱스 (BlurLayer 등 내부용)
   const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  // 앨범 top-left 모서리를 화면 좌표(px)로 투영
+  const projectAlbumTopLeft = useCallback(
+    (position) => {
+      const vec = new THREE.Vector3(
+        position[0] - ALBUM_CONFIG.size / 2,
+        position[1] + ALBUM_CONFIG.size / 2 + 0.3,
+        position[2],
+      );
+      vec.project(camera);
+      const rect = gl.domElement.getBoundingClientRect();
+      const x = ((vec.x + 1) / 2) * rect.width + rect.left;
+      const y = ((-vec.y + 1) / 2) * rect.height + rect.top;
+      return { x, y };
+    },
+    [camera, gl],
+  );
 
   // 선택된 앨범의 Three.js Group ref (BlurLayer가 FBO 캡처 시 임시 숨김에 사용)
   const selectedGroupRef = useRef(null);
@@ -147,46 +166,18 @@ export default function ShelfScene({
               onGroupRef={handleGroupRef}
               onHoverChange={(hovered) => {
                 setHoveredIndex(hovered ? index : null);
+                if (hovered) {
+                  const screenPos = projectAlbumTopLeft(position);
+                  onHoverLabelPos?.({ album, ...screenPos });
+                } else {
+                  onHoverLabelPos?.(null);
+                }
               }}
             />
           );
         })}
 
-      {/* 호버 툴팁 (포커싱 없을 때만) */}
-      {!selectedAlbum &&
-        hoveredIndex != null &&
-        albumPositions[hoveredIndex] && (
-          <Html
-            position={[
-              albumPositions[hoveredIndex].position[0] - ALBUM_CONFIG.size / 2,
-              albumPositions[hoveredIndex].position[1] +
-                ALBUM_CONFIG.size / 2 +
-                0.08,
-              albumPositions[hoveredIndex].position[2] + 0.5,
-            ]}
-            style={{ pointerEvents: "none" }}
-          >
-            <div
-              style={{
-                whiteSpace: "nowrap",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                opacity: 1,
-                transition: "opacity 0.2s ease",
-              }}
-            >
-              <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
-                {albums[hoveredIndex]?.title}
-              </span>
-              {albums[hoveredIndex]?.subtitle && (
-                <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
-                  {albums[hoveredIndex].subtitle}
-                </span>
-              )}
-            </div>
-          </Html>
-        )}
+      {/* 호버 툴팁은 page.js에서 DOM으로 렌더링 (onHoverLabelPos 콜백) */}
     </group>
   );
 }

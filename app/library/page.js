@@ -13,7 +13,7 @@ const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
 
 export default function MyShelfPage() {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const router = useRouter();
 
   // API에서 받아온 전체 앨범 목록
@@ -31,8 +31,12 @@ export default function MyShelfPage() {
   // 카메라 제어를 위한 ref
   const cameraControlRef = useRef(null);
 
+  // 호버 라벨 상태 (앨범 top-left 화면 좌표 + 앨범 데이터)
+  const [hoverLabel, setHoverLabel] = useState(null);
+
   // API fetch
   useEffect(() => {
+    if (!token) return;
     fetch(`${BASE_URL}/library`, {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -71,13 +75,14 @@ export default function MyShelfPage() {
         }
       })
       .catch((err) => console.error("Failed to fetch library:", err));
-  }, []);
+  }, [token]);
 
   // 앨범 클릭 핸들러 (3D에서 호출됨)
   const handleAlbumClick = useCallback(
     (albumIndex, albumData) => {
       setSelectedAlbum({ index: albumIndex, data: albumData });
       setIsFlipped(false);
+      setHoverLabel(null);
 
       // 이미 detail이 로드된 경우 skip
       if (albumData?.backImage && albumData?.edgeColor) return;
@@ -177,12 +182,37 @@ export default function MyShelfPage() {
         onFlipAlbum={handleFlipAlbum}
         onCloseAlbum={handleCloseAlbum}
         cameraControlRef={cameraControlRef}
+        onHoverLabelPos={setHoverLabel}
       />
+
+      {/* 호버 툴팁: 앨범 top-left 화면 좌표에 DOM으로 배치 */}
+      {hoverLabel && !selectedAlbum && (
+        <div
+          style={{
+            position: "fixed",
+            left: hoverLabel.x,
+            top: hoverLabel.y,
+            pointerEvents: "none",
+            whiteSpace: "nowrap",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+          }}
+        >
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
+            {hoverLabel.album.title}
+          </span>
+          {hoverLabel.album.subtitle && (
+            <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+              {hoverLabel.album.subtitle}
+            </span>
+          )}
+        </div>
+      )}
 
       {/* DOM 오버레이 UI */}
       <div className="pointer-events-none absolute inset-0">
         <InfoBlock
-          user={user}
           onClickCreate={() => setShowCreateModal(true)}
           onCloseAlbum={selectedAlbum ? handleCloseAlbum : undefined}
         />

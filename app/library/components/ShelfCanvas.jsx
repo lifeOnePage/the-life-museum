@@ -14,6 +14,7 @@ export default function ShelfCanvas({
   onFlipAlbum,
   onCloseAlbum,
   cameraControlRef,
+  onHoverLabelPos,
 }) {
   const controlsRef = useRef(null);
   const cameraRef = useRef(null);
@@ -114,6 +115,7 @@ export default function ShelfCanvas({
           onAlbumClick={onAlbumClick}
           onFlipAlbum={onFlipAlbum}
           onCloseAlbum={onCloseAlbum}
+          onHoverLabelPos={onHoverLabelPos}
         />
       </Suspense>
 

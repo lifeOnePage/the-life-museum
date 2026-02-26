@@ -95,7 +95,7 @@ export default function ViewPage() {
   };
 
   const handleMypage = () => {
-    router.push("/mypage");
+    router.push("/library");
   };
 
   // Scene 데이터 로드 및 소유자 확인

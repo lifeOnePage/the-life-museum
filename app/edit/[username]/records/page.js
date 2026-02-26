@@ -192,7 +192,7 @@ export default function EditRecords() {
         return;
       }
     }
-    router.push("/mypage");
+    router.push("/library");
   };
 
   const preview = () => {

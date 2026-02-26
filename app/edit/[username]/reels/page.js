@@ -208,7 +208,7 @@ export default function EditReels() {
   // ---- 네비게이션 가드(미저장 경고) ----
   const mypage = async () => {
     if (isSaved) {
-      router.push("/mypage");
+      router.push("/library");
       return;
     }
     const wantSave = window.confirm(
@@ -219,8 +219,8 @@ export default function EditReels() {
     const ok = await save();
     if (!ok) return;
 
-    const go = window.confirm("저장되었습니다. 마이페이지로 이동할까요?");
-    if (go) router.push("/mypage");
+    const go = window.confirm("저장되었습니다. 라이브러리로 이동할까요?");
+    if (go) router.push("/library");
   };
 
   const logout = async () => {

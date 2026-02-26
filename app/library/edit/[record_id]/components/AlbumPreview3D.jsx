@@ -6,24 +6,37 @@ import { ZoomIn, ZoomOut } from "lucide-react";
 import AlbumCover3D from "./AlbumCover3D";
 import { UNIFIED_THEMES } from "../themeConfig";
 
-// Load Bookk Gothic fonts for canvas
+// Load custom fonts for canvas
 let bookkFontLoaded = false;
+let monoplexFontLoaded = false;
 if (typeof document !== "undefined") {
-  const light = new FontFace(
+  const bookkLight = new FontFace(
     "Bookk Gothic",
     "url(/fonts/BookkGothic_Light.woff2)",
     { weight: "300" },
   );
-  const bold = new FontFace(
+  const bookkBold = new FontFace(
     "Bookk Gothic",
     "url(/fonts/BookkGothic_Bold.woff2)",
     { weight: "700" },
   );
-  Promise.all([light.load(), bold.load()])
+  const monoplex = new FontFace(
+    "MonoplexKR",
+    "url(/fonts/MonoplexKR-Light.woff2)",
+    { weight: "300" },
+  );
+  Promise.all([bookkLight.load(), bookkBold.load()])
     .then(([l, b]) => {
       document.fonts.add(l);
       document.fonts.add(b);
       bookkFontLoaded = true;
+    })
+    .catch(() => {});
+  monoplex
+    .load()
+    .then((f) => {
+      document.fonts.add(f);
+      monoplexFontLoaded = true;
     })
     .catch(() => {});
 }
@@ -485,7 +498,7 @@ function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(cx, photoY, smallR, 0, Math.PI * 2);
+    ctx.arc(cx, cy, smallR, 0, Math.PI * 2);
     ctx.clip();
 
     const imgRatio = frontCoverImg.width / frontCoverImg.height;
@@ -516,7 +529,7 @@ function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
 
     // Circle border
     ctx.beginPath();
-    ctx.arc(cx, photoY, smallR, 0, Math.PI * 2);
+    ctx.arc(cx, cy, smallR, 0, Math.PI * 2);
     ctx.strokeStyle = theme.accent;
     ctx.lineWidth = 2.5;
     ctx.stroke();
@@ -525,53 +538,23 @@ function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
   } else {
     cursorY += 20;
   }
-
-  // Bio text (centered)
-  if (bio) {
-    ctx.font = "italic 17px sans-serif";
-    ctx.fillStyle = theme.text;
-    ctx.textAlign = "center";
-    const bioLines = wrapText(ctx, bio, innerWidth);
-    const maxLines = 5;
-    for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
-      if (cursorY > cy + radius * 0.55) break;
-      ctx.fillText(bioLines[i], cx, cursorY);
-      cursorY += 24;
-    }
-    if (bioLines.length > maxLines) {
-      ctx.fillStyle = theme.text + "60";
-      ctx.font = "14px sans-serif";
-      ctx.fillText("...", cx, cursorY);
-      cursorY += 20;
-    }
-    ctx.textAlign = "left";
-  }
-
-  // Divider
-  if (bio && timeline.length > 0) {
-    cursorY += 4;
-    ctx.strokeStyle = theme.accent + "50";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(innerLeft + 20, cursorY);
-    ctx.lineTo(innerRight - 20, cursorY);
-    ctx.stroke();
-    cursorY += 14;
-  }
-
-  // Timeline (centered, compact)
+  // Timeline (left-aligned, year + event side by side)
   if (timeline.length > 0) {
     const maxItems = 4;
     const items = timeline.slice(0, maxItems);
+    const tlLeft = innerLeft;
 
-    ctx.textAlign = "center";
+    ctx.textAlign = "left";
     for (const item of items) {
       if (cursorY > cy + radius * 0.7) break;
 
+      // Year
       ctx.font = "bold 15px sans-serif";
       ctx.fillStyle = theme.accent;
-      ctx.fillText(item.year, cx, cursorY);
+      ctx.fillText(item.year, tlLeft, cursorY);
 
+      // Event (next to year)
+      const yearW = ctx.measureText(item.year).width;
       ctx.font = "13px sans-serif";
       ctx.fillStyle = theme.text;
       const maxLen = 16;
@@ -579,9 +562,31 @@ function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
         item.event.length > maxLen
           ? item.event.slice(0, maxLen) + "..."
           : item.event;
-      ctx.fillText(eventText, cx, cursorY + 18);
+      ctx.fillText(eventText, tlLeft + yearW + 8, cursorY);
 
-      cursorY += 42;
+      cursorY += 28;
+    }
+  }
+
+  // Bio text (centered)
+  if (bio) {
+    const monoplexFont = monoplexFontLoaded ? '"MonoplexKR"' : "sans-serif";
+    ctx.font = `17px ${monoplexFont}`;
+    ctx.fillStyle = theme.text;
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "1px";
+    const bioLines = wrapText(ctx, bio, innerWidth * 0.8);
+    const maxLines = 5;
+    for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
+      if (cursorY > cy + radius * 0.55) break;
+      ctx.fillText(bioLines[i], cx, cursorY + 140);
+      cursorY += 24;
+    }
+    if (bioLines.length > maxLines) {
+      ctx.fillStyle = theme.text + "60";
+      ctx.font = "14px sans-serif";
+      ctx.fillText("...", cx, cursorY + 140);
+      cursorY += 20;
     }
     ctx.textAlign = "left";
   }

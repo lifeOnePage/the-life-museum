@@ -6,6 +6,28 @@ import { ZoomIn, ZoomOut } from "lucide-react";
 import AlbumCover3D from "./AlbumCover3D";
 import { UNIFIED_THEMES } from "../themeConfig";
 
+// Load Bookk Gothic fonts for canvas
+let bookkFontLoaded = false;
+if (typeof document !== "undefined") {
+  const light = new FontFace(
+    "Bookk Gothic",
+    "url(/fonts/BookkGothic_Light.woff2)",
+    { weight: "300" },
+  );
+  const bold = new FontFace(
+    "Bookk Gothic",
+    "url(/fonts/BookkGothic_Bold.woff2)",
+    { weight: "700" },
+  );
+  Promise.all([light.load(), bold.load()])
+    .then(([l, b]) => {
+      document.fonts.add(l);
+      document.fonts.add(b);
+      bookkFontLoaded = true;
+    })
+    .catch(() => {});
+}
+
 const ALBUM_CONFIG = {
   size: 1.8,
   thickness: 0.03,
@@ -34,44 +56,56 @@ function wrapText(ctx, text, maxWidth) {
 
 // ─── Elegant layout ───
 // 우상단 bio, 좌하단 사진, 우하단 제목+타임라인, 우측 accent line
-function drawElegantLayout(ctx, size, theme, bio, timeline, frontCoverImg, albumTitle) {
+function drawElegantLayout(
+  ctx,
+  size,
+  theme,
+  bio,
+  timeline,
+  frontCoverImg,
+  albumTitle,
+) {
   // Background
   ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, size, size);
 
   const margin = 50;
-  const midX = size * 0.45;
-  const midY = size * 0.45;
+  const midX = size * 0.4;
+  const midY = size * 0.6;
 
   // Right accent line
   ctx.fillStyle = theme.accent;
-  ctx.fillRect(size - 18, margin, 6, size - margin * 2);
+  ctx.fillRect(midX + margin, margin, 2, size - margin * 2);
 
   // Top-right: Bio section
   if (bio) {
-    const bioLeft = midX + 20;
+    const bioLeft = size - (midX - margin);
     const bioRight = size - 40;
     const bioWidth = bioRight - bioLeft;
 
-    ctx.font = "bold 18px sans-serif";
-    ctx.fillStyle = theme.accent;
-    ctx.fillText("LIFE STORY", bioLeft, margin + 24);
+    // ctx.font = "bold 18px sans-serif";
+    // ctx.fillStyle = theme.accent;
+    // ctx.fillText("LIFE STORY", bioLeft, margin + 24);
 
-    ctx.font = "italic 20px sans-serif";
-    ctx.fillStyle = theme.text;
+    const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
+    ctx.font = `20px ${bookkFont}`;
+    // ctx.fillStyle = theme.text;
+    ctx.textAlign = "right";
+    ctx.fillStyle = theme.accent;
     const bioLines = wrapText(ctx, bio, bioWidth);
     let y = margin + 56;
     const maxLines = 12;
     for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
       if (y > midY - 10) break;
-      ctx.fillText(bioLines[i], bioLeft, y);
+      ctx.fillText(bioLines[i], bioRight, y);
       y += 28;
     }
     if (bioLines.length > maxLines) {
       ctx.fillStyle = theme.text + "80";
-      ctx.font = "18px sans-serif";
-      ctx.fillText("...", bioLeft, y);
+      ctx.font = `18px ${bookkFont}`;
+      ctx.fillText("...", bioRight, y);
     }
+    ctx.textAlign = "left";
   }
 
   // Bottom-left: Front cover photo
@@ -88,7 +122,12 @@ function drawElegantLayout(ctx, size, theme, bio, timeline, frontCoverImg, album
     ctx.lineTo(photoX + photoW - r, photoY);
     ctx.quadraticCurveTo(photoX + photoW, photoY, photoX + photoW, photoY + r);
     ctx.lineTo(photoX + photoW, photoY + photoH - r);
-    ctx.quadraticCurveTo(photoX + photoW, photoY + photoH, photoX + photoW - r, photoY + photoH);
+    ctx.quadraticCurveTo(
+      photoX + photoW,
+      photoY + photoH,
+      photoX + photoW - r,
+      photoY + photoH,
+    );
     ctx.lineTo(photoX + r, photoY + photoH);
     ctx.quadraticCurveTo(photoX, photoY + photoH, photoX, photoY + photoH - r);
     ctx.lineTo(photoX, photoY + r);
@@ -111,7 +150,17 @@ function drawElegantLayout(ctx, size, theme, bio, timeline, frontCoverImg, album
       sx = 0;
       sy = (frontCoverImg.height - sh) / 2;
     }
-    ctx.drawImage(frontCoverImg, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+    ctx.drawImage(
+      frontCoverImg,
+      sx,
+      sy,
+      sw,
+      sh,
+      photoX,
+      photoY,
+      photoW,
+      photoH,
+    );
     ctx.restore();
   } else {
     // Photo placeholder
@@ -129,26 +178,30 @@ function drawElegantLayout(ctx, size, theme, bio, timeline, frontCoverImg, album
   }
 
   // Bottom-right: Title + Timeline
-  const tlLeft = midX + 20;
-  const tlRight = size - 40;
+  const tlLeft = midX + margin * 2;
+  const tlRight = size - margin;
   let cursorY = midY + 10;
 
   // Album title
   if (albumTitle) {
-    ctx.font = "bold 24px sans-serif";
-    ctx.fillStyle = theme.text;
+    ctx.font = "48px sans-serif";
+    ctx.fillStyle = theme.accent;
+    ctx.letterSpacing = "8px";
+    ctx.textAlign = "right";
     const titleLines = wrapText(ctx, albumTitle, tlRight - tlLeft);
     for (const line of titleLines.slice(0, 2)) {
-      ctx.fillText(line, tlLeft, cursorY + 20);
+      ctx.fillText(line, tlRight, cursorY + 20);
       cursorY += 30;
     }
+    ctx.letterSpacing = "0px";
+    ctx.textAlign = "left";
     cursorY += 14;
   }
 
   // Thin divider
-  ctx.fillStyle = theme.accent + "40";
-  ctx.fillRect(tlLeft, cursorY, tlRight - tlLeft, 1.5);
-  cursorY += 16;
+  // ctx.fillStyle = theme.accent + "40";
+  // ctx.fillRect(tlLeft, cursorY, tlRight - tlLeft, 1.5);
+  // cursorY += 16;
 
   // Timeline items
   if (timeline.length > 0) {
@@ -160,26 +213,29 @@ function drawElegantLayout(ctx, size, theme, bio, timeline, frontCoverImg, album
     for (const item of items) {
       if (cursorY > size - margin - 10) break;
 
-      // Dot
-      ctx.beginPath();
-      ctx.arc(dotX, cursorY, 4, 0, Math.PI * 2);
-      ctx.fillStyle = theme.accent;
-      ctx.fill();
+      // // Dot
+      // ctx.beginPath();
+      // ctx.arc(dotX, cursorY, 4, 0, Math.PI * 2);
+      // ctx.fillStyle = theme.accent;
+      // ctx.fill();
 
-      // Year
+      // Year (left-aligned)
       ctx.font = "bold 18px sans-serif";
       ctx.fillStyle = theme.accent;
-      ctx.fillText(item.year, textX, cursorY + 5);
+      ctx.textAlign = "left";
+      ctx.fillText(item.year, textX, cursorY + 30);
 
-      // Event
-      const yearW = ctx.measureText(item.year).width;
+      // Event (right-aligned)
       ctx.font = "16px sans-serif";
-      ctx.fillStyle = theme.text;
+      ctx.fillStyle = theme.accent;
+      ctx.textAlign = "right";
       const maxEventLen = 12;
-      const eventText = item.event.length > maxEventLen
-        ? item.event.slice(0, maxEventLen) + "..."
-        : item.event;
-      ctx.fillText(eventText, textX + yearW + 8, cursorY + 5);
+      const eventText =
+        item.event.length > maxEventLen
+          ? item.event.slice(0, maxEventLen) + "..."
+          : item.event;
+      ctx.fillText(eventText, tlRight, cursorY + 30);
+      ctx.textAlign = "left";
 
       cursorY += 40;
     }
@@ -225,7 +281,12 @@ function drawNaturalLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
     ctx.lineTo(photoX + photoW - r, photoY);
     ctx.quadraticCurveTo(photoX + photoW, photoY, photoX + photoW, photoY + r);
     ctx.lineTo(photoX + photoW, photoY + photoH - r);
-    ctx.quadraticCurveTo(photoX + photoW, photoY + photoH, photoX + photoW - r, photoY + photoH);
+    ctx.quadraticCurveTo(
+      photoX + photoW,
+      photoY + photoH,
+      photoX + photoW - r,
+      photoY + photoH,
+    );
     ctx.lineTo(photoX + r, photoY + photoH);
     ctx.quadraticCurveTo(photoX, photoY + photoH, photoX, photoY + photoH - r);
     ctx.lineTo(photoX, photoY + r);
@@ -247,7 +308,17 @@ function drawNaturalLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
       sx = 0;
       sy = (frontCoverImg.height - sh) / 2;
     }
-    ctx.drawImage(frontCoverImg, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+    ctx.drawImage(
+      frontCoverImg,
+      sx,
+      sy,
+      sw,
+      sh,
+      photoX,
+      photoY,
+      photoW,
+      photoH,
+    );
     ctx.restore();
   } else {
     ctx.fillStyle = theme.text + "10";
@@ -282,7 +353,10 @@ function drawNaturalLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(dotX, cursorY - 4);
-    ctx.lineTo(dotX, Math.min(cursorY + (items.length - 1) * 36, size - margin));
+    ctx.lineTo(
+      dotX,
+      Math.min(cursorY + (items.length - 1) * 36, size - margin),
+    );
     ctx.stroke();
 
     for (const item of items) {
@@ -301,9 +375,10 @@ function drawNaturalLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
       ctx.font = "14px sans-serif";
       ctx.fillStyle = theme.text;
       const maxLen = 10;
-      const eventText = item.event.length > maxLen
-        ? item.event.slice(0, maxLen) + "..."
-        : item.event;
+      const eventText =
+        item.event.length > maxLen
+          ? item.event.slice(0, maxLen) + "..."
+          : item.event;
       ctx.fillText(eventText, textX + yearW + 6, cursorY + 5);
 
       cursorY += 36;
@@ -426,7 +501,17 @@ function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
       sx = 0;
       sy = (frontCoverImg.height - sh) / 2;
     }
-    ctx.drawImage(frontCoverImg, sx, sy, sw, sh, cx - smallR, photoY - smallR, smallR * 2, smallR * 2);
+    ctx.drawImage(
+      frontCoverImg,
+      sx,
+      sy,
+      sw,
+      sh,
+      cx - smallR,
+      photoY - smallR,
+      smallR * 2,
+      smallR * 2,
+    );
     ctx.restore();
 
     // Circle border
@@ -490,9 +575,10 @@ function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
       ctx.font = "13px sans-serif";
       ctx.fillStyle = theme.text;
       const maxLen = 16;
-      const eventText = item.event.length > maxLen
-        ? item.event.slice(0, maxLen) + "..."
-        : item.event;
+      const eventText =
+        item.event.length > maxLen
+          ? item.event.slice(0, maxLen) + "..."
+          : item.event;
       ctx.fillText(eventText, cx, cursorY + 18);
 
       cursorY += 42;
@@ -510,7 +596,13 @@ function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
   }
 }
 
-function generateBackCoverDataUrl(themeKey, bio, timeline, frontCoverImg, albumTitle) {
+function generateBackCoverDataUrl(
+  themeKey,
+  bio,
+  timeline,
+  frontCoverImg,
+  albumTitle,
+) {
   const size = 1024;
   const canvas = document.createElement("canvas");
   canvas.width = size;
@@ -528,7 +620,15 @@ function generateBackCoverDataUrl(themeKey, bio, timeline, frontCoverImg, albumT
       break;
     case "elegant":
     default:
-      drawElegantLayout(ctx, size, theme, bio, timeline, frontCoverImg, albumTitle);
+      drawElegantLayout(
+        ctx,
+        size,
+        theme,
+        bio,
+        timeline,
+        frontCoverImg,
+        albumTitle,
+      );
       break;
   }
 

@@ -3,7 +3,7 @@ export const UNIFIED_THEMES = {
     key: "elegant",
     name: "Elegant",
     description: "클래식한 레이아웃, 따뜻한 톤",
-    bg: "#faf5f0",
+    bg: "#FDFAF6",
     accent: "#f64b16",
     text: "#44403c",
   },

@@ -313,7 +313,7 @@ export default function EditRecords() {
         }
       }
     }
-    router.push("/mypage");
+    router.push("/library");
   };
 
   const preview = async () => {

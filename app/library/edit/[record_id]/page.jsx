@@ -1,0 +1,1165 @@
+"use client";
+
+import { use, useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  ArrowLeft,
+  Pencil,
+  Save,
+  RefreshCw,
+  X,
+  ChevronDown,
+  ChevronRight,
+  Plus,
+  Trash2,
+  GripVertical,
+  Sparkles,
+  RotateCcw,
+  HelpCircle,
+} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
+import { Button } from "./components/ui/button";
+import { Input } from "./components/ui/input";
+import { Textarea } from "./components/ui/textarea";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import CoverImageEditor from "./components/CoverImageEditor";
+import AlbumPreview3D from "./components/AlbumPreview3D";
+import TutorialOverlay from "./components/TutorialOverlay";
+import ThemeSelector from "./components/ThemeSelector";
+import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
+
+// Sortable timeline item component
+function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="group flex items-start gap-1.5"
+    >
+      <div
+        className="cursor-grab pt-2 text-gray-300 active:cursor-grabbing"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="h-3.5 w-3.5" />
+      </div>
+      <Input
+        value={item.year}
+        onChange={(e) => onUpdate(index, "year", e.target.value)}
+        placeholder="연도"
+        className="h-9 w-[70px] rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
+      />
+      <Input
+        value={item.event}
+        onChange={(e) => onUpdate(index, "event", e.target.value)}
+        placeholder="사건을 입력하세요..."
+        className="h-9 flex-1 rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
+      />
+      <button
+        onClick={() => onRemove(index)}
+        className="flex h-9 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-50 transition-opacity group-hover:opacity-100 hover:text-red-500"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
+const Index = ({ params }) => {
+  const { record_id } = use(params);
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [frontCover, setFrontCover] = useState(null);
+  const [albumTitle, setAlbumTitle] = useState("");
+  const [artistName, setArtistName] = useState("");
+  const [bio, setBio] = useState("");
+  const [timeline, setTimeline] = useState([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
+
+  // Tab & Theme & Layout state
+  const [activeTab, setActiveTab] = useState("front");
+  const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
+
+  // Collapsible sections
+  const [storyOpen, setStoryOpen] = useState(true);
+  const [timelineOpen, setTimelineOpen] = useState(true);
+
+  // Tutorial
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // AI story generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [bioError, setBioError] = useState("");
+  const [usedChips, setUsedChips] = useState(new Set());
+
+  const [timelineError, setTimelineError] = useState("");
+
+  // Record edit dialog
+  const [showRecordEditDialog, setShowRecordEditDialog] = useState(false);
+  const [editTitle, setEditTitle] = useState("");
+  const [editSubtitle, setEditSubtitle] = useState("");
+  const [editGooglePhotoUrl, setEditGooglePhotoUrl] = useState("");
+  const [editIcloudUrl, setEditIcloudUrl] = useState("");
+  const [editMyboxUrl, setEditMyboxUrl] = useState("");
+  const [selectedUrlType, setSelectedUrlType] = useState("google");
+  const [editUrlValue, setEditUrlValue] = useState("");
+  const [isRecordSaving, setIsRecordSaving] = useState(false);
+  const [recordError, setRecordError] = useState("");
+
+  // URLs from API
+  const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
+  const [icloudUrl, setIcloudUrl] = useState("");
+  const [myboxUrl, setMyboxUrl] = useState("");
+
+  // Stable ID counter for timeline items
+  const nextIdRef = useRef(1);
+  const timelineIdsRef = useRef([]);
+
+  // DnD sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const coverRef = useRef(null);
+  const initialState = useRef({
+    frontCover: null,
+    albumTitle: "",
+    artistName: "",
+    bio: "",
+    timeline: [],
+    selectedTheme: DEFAULT_THEME,
+  });
+
+  useEffect(() => {
+    const fetchRecord = async () => {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+          headers: {
+            "X-Dev-Key": "tlm2026",
+          },
+        });
+
+        const result = await response.json();
+
+        if (result.ok && result.data) {
+          const data = result.data;
+
+          const coverUrl = data.coverImage?.url || null;
+          const title = data.title || "";
+          const subtitle = data.subtitle || "";
+          const bioContent = data.lifestory?.content || "";
+
+          let timelineData = [];
+          if (data.timeline?.events) {
+            timelineData = data.timeline.events.map((event) => ({
+              year: event.timestamp ? event.timestamp : "",
+              event: `${event.title}${event.description ? ` - ${event.description}` : ""}`,
+            }));
+          }
+
+          const savedTheme = data.theme || DEFAULT_THEME;
+
+          setFrontCover(coverUrl);
+          setAlbumTitle(title);
+          setArtistName(subtitle);
+          setBio(bioContent);
+          // Initialize timeline IDs for drag reorder
+          timelineIdsRef.current = timelineData.map(
+            () => `tl-${nextIdRef.current++}`,
+          );
+          setTimeline(timelineData);
+          setSelectedTheme(savedTheme);
+          setGooglePhotoUrl(data.googlePhotoUrl || "");
+          setIcloudUrl(data.icloudUrl || "");
+          setMyboxUrl(data.myboxUrl || "");
+
+          initialState.current = {
+            frontCover: coverUrl,
+            albumTitle: title,
+            artistName: subtitle,
+            bio: bioContent,
+            timeline: timelineData,
+            selectedTheme: savedTheme,
+          };
+        }
+      } catch (error) {
+        console.error("레코드 불러오기 실패:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (record_id) {
+      fetchRecord();
+    }
+  }, [record_id]);
+
+  // Apply theme change
+  const handleThemeChange = (themeKey) => {
+    setSelectedTheme(themeKey);
+  };
+
+  const saveRecordColors = async () => {
+    const theme =
+      UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Dev-Key": "tlm2026",
+      },
+      body: JSON.stringify({
+        color: theme.text,
+        bgColor: theme.bg,
+        keyColor: theme.accent,
+        theme: selectedTheme,
+      }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "컬러 저장에 실패했습니다");
+    }
+    return data;
+  };
+
+  // Bio save logic (from BioEditor)
+  const saveBio = async () => {
+    if (!bio.trim()) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const response = await fetch(
+      `${apiUrl}/api/v1/record/${record_id}/lifestory`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Dev-Key": "tlm2026",
+        },
+        body: JSON.stringify({
+          result: bio,
+        }),
+      },
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "저장에 실패했습니다");
+    }
+    return data;
+  };
+
+  // Timeline save logic (from TimelineEditor)
+  const saveTimeline = async () => {
+    if (timeline.length === 0) return;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const events = timeline.map((item) => {
+      const [title, ...descParts] = item.event.split(" - ");
+      const description = descParts.join(" - ");
+      return {
+        title: title || "",
+        timestamp: item.year || null,
+        description: description || "",
+      };
+    });
+    const response = await fetch(
+      `${apiUrl}/api/v1/record/${record_id}/timeline`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Dev-Key": "tlm2026",
+        },
+        body: JSON.stringify({ events }),
+      },
+    );
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || "저장에 실패했습니다");
+    }
+    return data;
+  };
+
+  const handleSaveAll = async () => {
+    const isCoverDirty =
+      frontCover !== initialState.current.frontCover ||
+      albumTitle !== initialState.current.albumTitle ||
+      artistName !== initialState.current.artistName;
+    const isBioDirty = bio !== initialState.current.bio;
+    const isTimelineDirty =
+      JSON.stringify(timeline) !==
+      JSON.stringify(initialState.current.timeline);
+    const isThemeDirty = selectedTheme !== initialState.current.selectedTheme;
+
+    if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isThemeDirty)
+      return;
+
+    setIsSaving(true);
+
+    const promises = [];
+
+    if (isCoverDirty && coverRef.current) {
+      promises.push(
+        coverRef.current
+          .save()
+          .then(() => ({ editor: "cover", success: true }))
+          .catch((err) => ({ editor: "cover", success: false, error: err })),
+      );
+    }
+
+    if (isBioDirty) {
+      promises.push(
+        saveBio()
+          .then(() => ({ editor: "bio", success: true }))
+          .catch((err) => ({ editor: "bio", success: false, error: err })),
+      );
+    }
+
+    if (isTimelineDirty) {
+      promises.push(
+        saveTimeline()
+          .then(() => ({ editor: "timeline", success: true }))
+          .catch((err) => ({ editor: "timeline", success: false, error: err })),
+      );
+    }
+
+    if (isThemeDirty) {
+      promises.push(
+        saveRecordColors()
+          .then(() => ({ editor: "theme", success: true }))
+          .catch((err) => ({ editor: "theme", success: false, error: err })),
+      );
+    }
+
+    const results = await Promise.allSettled(promises);
+
+    for (const r of results) {
+      if (r.status === "fulfilled" && r.value.success) {
+        if (r.value.editor === "cover") {
+          initialState.current.frontCover = frontCover;
+          initialState.current.albumTitle = albumTitle;
+          initialState.current.artistName = artistName;
+        } else if (r.value.editor === "bio") {
+          initialState.current.bio = bio;
+        } else if (r.value.editor === "timeline") {
+          initialState.current.timeline = [...timeline];
+        } else if (r.value.editor === "theme") {
+          initialState.current.selectedTheme = selectedTheme;
+        }
+      }
+    }
+
+    setIsSaving(false);
+  };
+
+  const isDirty =
+    frontCover !== initialState.current.frontCover ||
+    albumTitle !== initialState.current.albumTitle ||
+    artistName !== initialState.current.artistName ||
+    bio !== initialState.current.bio ||
+    JSON.stringify(timeline) !==
+      JSON.stringify(initialState.current.timeline) ||
+    selectedTheme !== initialState.current.selectedTheme;
+
+  const handleExit = () => {
+    router.push("/library");
+  };
+
+  const handleSaveAndExit = async () => {
+    await handleSaveAll();
+    router.push("/library");
+  };
+
+  // AI story generation
+  const handleGenerate = async () => {
+    if (!bio.trim()) return;
+    setIsGenerating(true);
+    setBioError("");
+
+    try {
+      const token = localStorage.getItem("app_token");
+
+      const response = await fetch("/api/gpt-story", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ prompt: bio, albumTitle, artistName }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "생성에 실패했습니다");
+      }
+      setBio(data.story);
+    } catch (err) {
+      setBioError(err.message);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const KEYWORD_CHIPS = [
+    "가족",
+    "여행",
+    "추억",
+    "사랑",
+    "우정",
+    "성장",
+    "도전",
+    "감사",
+    "일상",
+    "꿈",
+    "고향",
+    "음악",
+    "첫만남",
+    "계절",
+    "약속",
+    "이별",
+  ];
+
+  const handleChipClick = (chip) => {
+    if (usedChips.has(chip)) return;
+    setUsedChips((prev) => new Set([...prev, chip]));
+    setBio((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return chip;
+      return trimmed + " " + chip;
+    });
+  };
+
+  // Sync timeline IDs when timeline length changes
+  const ensureTimelineIds = (items) => {
+    while (timelineIdsRef.current.length < items.length) {
+      timelineIdsRef.current.push(`tl-${nextIdRef.current++}`);
+    }
+    if (timelineIdsRef.current.length > items.length) {
+      timelineIdsRef.current = timelineIdsRef.current.slice(0, items.length);
+    }
+  };
+  ensureTimelineIds(timeline);
+
+  // Timeline helpers
+  const addTimelineItem = () => {
+    const newId = `tl-${nextIdRef.current++}`;
+    timelineIdsRef.current = [...timelineIdsRef.current, newId];
+    setTimeline([...timeline, { year: "", event: "" }]);
+  };
+
+  const updateTimelineItem = (index, field, value) => {
+    const updated = timeline.map((item, i) =>
+      i === index ? { ...item, [field]: value } : item,
+    );
+    setTimeline(updated);
+  };
+
+  const removeTimelineItem = (index) => {
+    timelineIdsRef.current = timelineIdsRef.current.filter(
+      (_, i) => i !== index,
+    );
+    setTimeline(timeline.filter((_, i) => i !== index));
+  };
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = timelineIdsRef.current.indexOf(active.id);
+    const newIndex = timelineIdsRef.current.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    timelineIdsRef.current = arrayMove(
+      timelineIdsRef.current,
+      oldIndex,
+      newIndex,
+    );
+    setTimeline(arrayMove(timeline, oldIndex, newIndex));
+  };
+
+  // Record edit dialog
+  const openRecordEditDialog = () => {
+    setEditTitle(albumTitle);
+    setEditSubtitle(artistName);
+    setEditGooglePhotoUrl(googlePhotoUrl);
+    setEditIcloudUrl(icloudUrl);
+    setEditMyboxUrl(myboxUrl);
+    // Determine which URL type is selected based on existing data
+    if (myboxUrl) {
+      setSelectedUrlType("mybox");
+      setEditUrlValue(myboxUrl);
+    } else if (icloudUrl) {
+      setSelectedUrlType("icloud");
+      setEditUrlValue(icloudUrl);
+    } else {
+      setSelectedUrlType("google");
+      setEditUrlValue(googlePhotoUrl);
+    }
+    setRecordError("");
+    setShowDeleteConfirm(false);
+    setShowRecordEditDialog(true);
+  };
+
+  const handleRecordEditSave = async () => {
+    setIsRecordSaving(true);
+    setRecordError("");
+
+    const finalGoogleUrl = selectedUrlType === "google" ? editUrlValue : "";
+    const finalIcloudUrl = selectedUrlType === "icloud" ? editUrlValue : "";
+    const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
+
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "X-Dev-Key": "tlm2026",
+        },
+        body: JSON.stringify({
+          title: editTitle,
+          subTitle: editSubtitle,
+          googlePhotoUrl: finalGoogleUrl,
+          icloudUrl: finalIcloudUrl,
+          myboxUrl: finalMyboxUrl,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "저장에 실패했습니다");
+      }
+
+      setAlbumTitle(editTitle);
+      setArtistName(editSubtitle);
+      setGooglePhotoUrl(finalGoogleUrl);
+      setIcloudUrl(finalIcloudUrl);
+      setMyboxUrl(finalMyboxUrl);
+      initialState.current.albumTitle = editTitle;
+      initialState.current.artistName = editSubtitle;
+      setShowRecordEditDialog(false);
+    } catch (err) {
+      setRecordError(err.message);
+    } finally {
+      setIsRecordSaving(false);
+    }
+  };
+
+  const handleReset = () => {
+    const s = initialState.current;
+    setFrontCover(s.frontCover);
+    setAlbumTitle(s.albumTitle);
+    setArtistName(s.artistName);
+    setBio(s.bio);
+    timelineIdsRef.current = s.timeline.map(() => `tl-${nextIdRef.current++}`);
+    setTimeline([...s.timeline]);
+    setSelectedTheme(s.selectedTheme);
+    setUsedChips(new Set());
+  };
+
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleDeleteRecord = async () => {
+    setIsDeleting(true);
+    setRecordError("");
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+        method: "DELETE",
+        headers: {
+          "X-Dev-Key": "tlm2026",
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "삭제에 실패했습니다");
+      }
+      router.push("/library");
+    } catch (err) {
+      setRecordError(err.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-gray-500">불러오는 중...</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-[#f8f7f6]">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9] px-4 py-3">
+        <div className="flex items-center gap-3">
+          <button
+            data-tutorial="exit"
+            onClick={() => setShowExitDialog(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          {/* Title area */}
+          <div className="flex items-center gap-2">
+            <div>
+              <h1 className="text-sm leading-tight font-semibold text-gray-900">
+                {albumTitle || "앨범 편집"}
+              </h1>
+              {artistName && (
+                <p className="text-[11px] leading-tight text-gray-400">
+                  {artistName}
+                </p>
+              )}
+            </div>
+            <div className="group relative">
+              <button
+                onClick={openRecordEditDialog}
+                className="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
+              >
+                <Pencil className="h-3 w-3" />
+              </button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                레코드 수정
+              </span>
+            </div>
+            {isDirty && (
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500"
+              >
+                <RotateCcw className="h-3 w-3" />
+                변경사항 초기화
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Tutorial */}
+        <button
+          onClick={() => setShowTutorial(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[11px] font-medium text-gray-600 shadow-sm transition-colors hover:border-[#67add1] hover:text-[#67add1]"
+        >
+          <HelpCircle className="h-3.5 w-3.5" />
+          튜토리얼
+        </button>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
+        {/* Left: Preview Panel */}
+        <div className="flex-1 bg-[#dedbd3]" data-tutorial="preview">
+          <AlbumPreview3D
+            frontCover={frontCover}
+            bio={bio}
+            timeline={timeline}
+            selectedTheme={selectedTheme}
+            albumTitle={albumTitle}
+            flipped={activeTab === "back"}
+          />
+        </div>
+
+        {/* Right: Editor Sidebar */}
+        <div className="scrollbar-accent w-[420px] shrink-0 overflow-y-auto border-l border-[#e2e8f0] bg-[#f0eee9]">
+          <div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+            >
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="w-full"
+              >
+                {/* Tab triggers - underline style */}
+                <TabsList className="mb-6 flex h-auto w-full rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
+                  <TabsTrigger
+                    value="front"
+                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
+                  >
+                    앞면
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="back"
+                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
+                  >
+                    뒷면
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Front tab - CoverImageEditor (preserved) */}
+                <TabsContent className="px-8" value="front">
+                  <div data-tutorial="cover-editor">
+                    <CoverImageEditor
+                      ref={coverRef}
+                      record_id={record_id}
+                      onImageGenerated={setFrontCover}
+                      onTitleChange={setAlbumTitle}
+                      onArtistChange={setArtistName}
+                      frontCover={frontCover}
+                      initialFrontCover={initialState.current.frontCover}
+                      initialAlbumTitle={initialState.current.albumTitle}
+                      initialArtistName={initialState.current.artistName}
+                    />
+                  </div>
+                </TabsContent>
+
+                {/* Back tab - Redesigned */}
+                <TabsContent className="px-5" value="back">
+                  <div className="space-y-5 pb-10">
+                    {/* Story Section - Collapsible */}
+                    <div data-tutorial="story" className="rounded-lg border border-gray-300">
+                      <button
+                        onClick={() => setStoryOpen(!storyOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <span className="text-sm font-semibold text-gray-900">
+                          스토리
+                        </span>
+                        {storyOpen ? (
+                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+
+                      <AnimatePresence initial={false}>
+                        {storyOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-3 border-t border-gray-100 px-4 pt-3 pb-4">
+                              <Textarea
+                                value={bio}
+                                onChange={(e) => setBio(e.target.value)}
+                                placeholder="키워드를 선택하거나 직접 작성하세요..."
+                                className="min-h-50 w-full resize-none rounded-lg border-none bg-[#cfcfd1] px-4 pt-3 pb-14 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:outline-none"
+                              />
+                              <div className="flex flex-wrap gap-1.5">
+                                {KEYWORD_CHIPS.map((chip) => {
+                                  const isUsed = usedChips.has(chip);
+                                  return (
+                                    <button
+                                      key={chip}
+                                      type="button"
+                                      disabled={isUsed}
+                                      onClick={() => handleChipClick(chip)}
+                                      className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
+                                        isUsed
+                                          ? "border border-[#67add1]/30 bg-[#67add1]/10 text-[#67add1]/50"
+                                          : "border border-gray-200 bg-white text-gray-500 hover:border-[#67add1] hover:text-[#67add1]"
+                                      }`}
+                                    >
+                                      {isUsed ? `${chip} ✓` : `+ ${chip}`}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <p className="text-[11px] text-gray-300">
+                                  {bio.length}자
+                                </p>
+                                {bioError && (
+                                  <p className="text-xs text-red-500">
+                                    {bioError}
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                onClick={handleGenerate}
+                                disabled={isGenerating || !bio.trim()}
+                                size="sm"
+                                className="h-8 w-full bg-[#67add1] text-xs"
+                              >
+                                {isGenerating ? (
+                                  <>
+                                    <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
+                                    생성 중...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="mr-1.5 h-3 w-3" />글
+                                    생성
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Timeline Section - Collapsible */}
+                    <div data-tutorial="timeline" className="rounded-lg border border-gray-300">
+                      <button
+                        onClick={() => setTimelineOpen(!timelineOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">
+                            타임라인
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            {timeline.length}개
+                          </span>
+                        </div>
+                        {timelineOpen ? (
+                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+
+                      <AnimatePresence initial={false}>
+                        {timelineOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-2 border-t border-gray-100 px-4 pt-3 pb-4">
+                              <DndContext
+                                sensors={sensors}
+                                collisionDetection={closestCenter}
+                                onDragEnd={handleDragEnd}
+                              >
+                                <SortableContext
+                                  items={timelineIdsRef.current}
+                                  strategy={verticalListSortingStrategy}
+                                >
+                                  {timeline.map((item, index) => (
+                                    <SortableTimelineItem
+                                      key={timelineIdsRef.current[index]}
+                                      id={timelineIdsRef.current[index]}
+                                      item={item}
+                                      index={index}
+                                      onUpdate={updateTimelineItem}
+                                      onRemove={removeTimelineItem}
+                                    />
+                                  ))}
+                                </SortableContext>
+                              </DndContext>
+
+                              <button
+                                onClick={addTimelineItem}
+                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#67ADD1] text-xs text-[#67ADD1] transition-colors hover:border-solid hover:bg-[#67ADD1] hover:text-white"
+                              >
+                                <Plus className="h-3 w-3" /> 항목 추가
+                              </button>
+
+                              {timeline.length === 0 && (
+                                <div className="py-4 text-center">
+                                  <p className="text-xs text-gray-400">
+                                    타임라인 항목을 추가해보세요
+                                  </p>
+                                </div>
+                              )}
+
+                              {timelineError && (
+                                <p className="text-xs text-red-500">
+                                  {timelineError}
+                                </p>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Theme Section */}
+                    <div data-tutorial="theme">
+                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                        테마
+                      </h3>
+                      <ThemeSelector
+                        selectedTheme={selectedTheme}
+                        onThemeChange={handleThemeChange}
+                      />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Exit Dialog */}
+      <AnimatePresence>
+        {showExitDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setShowExitDialog(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+            >
+              <p className="text-center text-lg font-semibold text-gray-900">
+                {isDirty
+                  ? "변경사항이 있습니다. 저장하시겠습니까?"
+                  : "나가시겠습니까?"}
+              </p>
+              <div className="mt-6 flex gap-3">
+                {isDirty ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      onClick={handleExit}
+                      className="flex-1 border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-900"
+                    >
+                      나가기
+                    </Button>
+                    <Button onClick={handleSaveAndExit} className="flex-1">
+                      <Save className="mr-2 h-4 w-4" /> 저장하고 나가기
+                    </Button>
+                  </>
+                ) : (
+                  <Button onClick={handleExit} className="w-full">
+                    나가기
+                  </Button>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Record Edit Dialog */}
+      <AnimatePresence>
+        {showRecordEditDialog && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+            onClick={() => setShowRecordEditDialog(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              onClick={(e) => e.stopPropagation()}
+              className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-gray-900">
+                  앨범 정보 수정
+                </h2>
+                <button
+                  onClick={() => setShowRecordEditDialog(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">
+                    제목
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-gray-500">
+                    부제목
+                  </label>
+                  <input
+                    type="text"
+                    value={editSubtitle}
+                    onChange={(e) => setEditSubtitle(e.target.value)}
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-gray-500">
+                    사진 저장소
+                  </label>
+                  <div className="mb-3 flex gap-2">
+                    {[
+                      { key: "google", label: "Google Photo" },
+                      { key: "icloud", label: "iCloud" },
+                      { key: "mybox", label: "Mybox" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => {
+                          setSelectedUrlType(opt.key);
+                          setEditUrlValue(
+                            opt.key === "google"
+                              ? editGooglePhotoUrl
+                              : opt.key === "icloud"
+                                ? editIcloudUrl
+                                : editMyboxUrl,
+                          );
+                        }}
+                        className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                          selectedUrlType === opt.key
+                            ? "border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
+                            : "border-gray-200 text-gray-500 hover:border-gray-300"
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={editUrlValue}
+                    onChange={(e) => setEditUrlValue(e.target.value)}
+                    placeholder={
+                      selectedUrlType === "google"
+                        ? "https://photos.google.com/..."
+                        : selectedUrlType === "icloud"
+                          ? "https://icloud.com/..."
+                          : "https://mybox.naver.com/..."
+                    }
+                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
+                  />
+                </div>
+              </div>
+
+              {recordError && (
+                <p className="mt-3 text-sm text-red-500">{recordError}</p>
+              )}
+
+              <div className="mt-6 flex gap-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowRecordEditDialog(false)}
+                  className="flex-1 border-gray-300 text-gray-500"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleRecordEditSave}
+                  disabled={isRecordSaving}
+                  className="flex-1"
+                >
+                  {isRecordSaving ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> 저장
+                      중...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="mr-2 h-4 w-4" /> 저장
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Delete record */}
+              <div className="mt-6 border-t border-gray-100 pt-4">
+                {!showDeleteConfirm ? (
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full rounded-lg py-2.5 text-center text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+                  >
+                    <Trash2 className="mr-1.5 inline h-3.5 w-3.5" />
+                    앨범 삭제하기
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-center text-xs text-red-500">
+                      정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex-1 border-gray-300 text-xs text-gray-500"
+                        size="sm"
+                      >
+                        취소
+                      </Button>
+                      <Button
+                        onClick={handleDeleteRecord}
+                        disabled={isDeleting}
+                        className="flex-1 bg-red-500 text-xs hover:bg-red-600"
+                        size="sm"
+                      >
+                        {isDeleting ? (
+                          <RefreshCw className="mr-1 h-3 w-3 animate-spin" />
+                        ) : (
+                          <Trash2 className="mr-1 h-3 w-3" />
+                        )}
+                        {isDeleting ? "삭제 중..." : "삭제"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Tutorial Overlay */}
+      <TutorialOverlay
+        isActive={showTutorial}
+        onClose={() => setShowTutorial(false)}
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+      />
+    </div>
+  );
+};
+
+export default Index;

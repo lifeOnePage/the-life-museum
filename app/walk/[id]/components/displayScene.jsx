@@ -46,7 +46,7 @@ function PlaybackControls({
       <input
         type="range"
         min={5}
-        max={50}
+        max={100}
         value={cameraSpeed}
         onChange={(e) => onCameraSpeedChange(Number(e.target.value))}
         className="w-24 accent-white"

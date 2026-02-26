@@ -8,6 +8,12 @@ const FRAME_COLOR = "#1a1a2e";
 const BACK_COLOR = "#0a0a15";
 const SCREEN_OFF_COLOR = "#050510";
 
+// ─── 미디어 패딩 ──────────────────────────────────────────────────────────────
+// 박스 face 기준 상하좌우 여백 크기 (3D scene 단위)
+// 이 값을 변경하면 미디어와 박스 테두리 사이의 여백이 조정됩니다.
+const MEDIA_PADDING = 6;
+// ──────────────────────────────────────────────────────────────────────────────
+
 // Flicker duration in seconds
 const FLICKER_DURATION = 1.2;
 
@@ -18,7 +24,7 @@ function flickerBrightness(t) {
   if (t < 0.12) return 0;
   if (t < 0.18) return 0.3;
   if (t < 0.22) return 0;
-  if (t < 0.30) return 0.7;
+  if (t < 0.3) return 0.7;
   if (t < 0.35) return 0.1;
   if (t < 0.45) return 0.8;
   if (t < 0.48) return 0.2;
@@ -27,9 +33,9 @@ function flickerBrightness(t) {
   if (t < 0.65) return 0.95;
   if (t < 0.68) return 0.6;
   if (t < 0.78) return 1.0;
-  if (t < 0.80) return 0.7;
+  if (t < 0.8) return 0.7;
   // Final settle
-  const settle = (t - 0.80) / 0.20;
+  const settle = (t - 0.8) / 0.2;
   return 0.7 + 0.3 * Math.min(1, settle);
 }
 
@@ -51,16 +57,29 @@ export default function WallPlane({
   const frontMatRef = useRef();
 
   // All mutable state in refs (no React re-renders needed for visuals)
+  // aspectRef: 패딩 포함 박스 전체의 가로세로 비율 (boxW / boxH)
   const aspectRef = useRef(1);
-  const wallScaleRef = useRef([baseHeight * 1.2, baseHeight, 1]);
+  const wallScaleRef = useRef([
+    baseHeight * 1.2 + 2 * MEDIA_PADDING,
+    baseHeight + 2 * MEDIA_PADDING,
+    1,
+  ]);
 
   const animState = useRef({
     currentPos: [...position],
     currentRot: [0, 0, 0],
-    currentScale: [baseHeight * 1.2, baseHeight, 1],
+    currentScale: [
+      baseHeight * 1.2 + 2 * MEDIA_PADDING,
+      baseHeight + 2 * MEDIA_PADDING,
+      1,
+    ],
     targetPos: [...position],
     targetRot: [0, 0, 0],
-    targetScale: [baseHeight * 1.2, baseHeight, 1],
+    targetScale: [
+      baseHeight * 1.2 + 2 * MEDIA_PADDING,
+      baseHeight + 2 * MEDIA_PADDING,
+      1,
+    ],
   });
 
   // Flicker state
@@ -97,18 +116,42 @@ export default function WallPlane({
     img.onload = () => {
       if (disposed) return;
       try {
-        const tex = new THREE.Texture(img);
+        // ── 원본 미디어 크기 (3D scene 단위) ──────────────────────────────────
+        const mediaAspect = img.width / img.height;
+        const mediaH = baseHeight;
+        const mediaW = mediaH * mediaAspect;
+
+        // ── 패딩 포함 박스 크기 ───────────────────────────────────────────────
+        const boxH = mediaH + 2 * MEDIA_PADDING;
+        const boxW = mediaW + 2 * MEDIA_PADDING;
+        const boxAspect = boxW / boxH;
+
+        aspectRef.current = boxAspect;
+        wallScaleRef.current = [boxW, boxH, 1];
+        animState.current.currentScale = [boxW, boxH, 1];
+        animState.current.targetScale = [boxW, boxH, 1];
+
+        // ── 패딩을 포함한 캔버스 합성 텍스처 생성 ────────────────────────────
+        // 패딩 크기를 픽셀로 환산: (MEDIA_PADDING / mediaH) 비율을 img.height에 적용
+        const paddingPx = Math.round(img.height * (MEDIA_PADDING / mediaH));
+        const cW = img.width + 2 * paddingPx;
+        const cH = img.height + 2 * paddingPx;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = cW;
+        canvas.height = cH;
+        const ctx = canvas.getContext("2d");
+
+        // 배경(여백) 색상 채우기
+        ctx.fillStyle = FRAME_COLOR;
+        ctx.fillRect(0, 0, cW, cH);
+
+        // 미디어를 정중앙에 그리기
+        ctx.drawImage(img, paddingPx, paddingPx, img.width, img.height);
+
+        const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.needsUpdate = true;
-
-        const aspect = img.width / img.height;
-        aspectRef.current = aspect;
-        const h = baseHeight;
-        const w = h * aspect;
-        wallScaleRef.current = [w, h, 1];
-
-        animState.current.currentScale = [w, h, 1];
-        animState.current.targetScale = [w, h, 1];
 
         // Apply texture to front material imperatively
         const mat = frontMatRef.current;
@@ -120,7 +163,8 @@ export default function WallPlane({
         // Start flicker animation
         flickerState.current = { active: true, elapsed: 0, done: false };
 
-        onTextureLoaded?.(id, tex, aspect);
+        // boxAspect를 전달해야 FocusClone이 동일한 비율로 렌더링됨
+        onTextureLoaded?.(id, tex, boxAspect);
       } catch (err) {
         console.error("Texture creation error:", err);
       }

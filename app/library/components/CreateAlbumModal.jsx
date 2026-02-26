@@ -23,7 +23,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, token })
         },
         body: JSON.stringify({
           title: title.trim(),
-          subtitle: subtitle.trim(),
+          subTitle: subtitle.trim(),
           googlePhotoUrl: googlePhotoUrl.trim() || null,
         }),
       });

@@ -106,6 +106,7 @@ const Index = ({ params }) => {
   const [bio, setBio] = useState("");
   const [timeline, setTimeline] = useState([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSavedAt, setLastSavedAt] = useState(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
 
   // Tab & Theme & Layout state
@@ -384,6 +385,11 @@ const Index = ({ params }) => {
       }
     }
 
+    const anySuccess = results.some(
+      (r) => r.status === "fulfilled" && r.value.success,
+    );
+    if (anySuccess) setLastSavedAt(new Date());
+
     setIsSaving(false);
   };
 
@@ -407,7 +413,8 @@ const Index = ({ params }) => {
 
   // AI story generation
   const handleGenerate = async () => {
-    if (!bio.trim()) return;
+    const fullText = getFullBioText();
+    if (!fullText) return;
     setIsGenerating(true);
     setBioError("");
 
@@ -420,7 +427,7 @@ const Index = ({ params }) => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt: bio, albumTitle, artistName }),
+        body: JSON.stringify({ prompt: fullText, albumTitle, artistName }),
       });
 
       const data = await response.json();
@@ -457,11 +464,22 @@ const Index = ({ params }) => {
   const handleChipClick = (chip) => {
     if (usedChips.has(chip)) return;
     setUsedChips((prev) => new Set([...prev, chip]));
-    setBio((prev) => {
-      const trimmed = prev.trim();
-      if (!trimmed) return chip;
-      return trimmed + " " + chip;
+  };
+
+  const handleChipRemove = (chip) => {
+    setUsedChips((prev) => {
+      const next = new Set(prev);
+      next.delete(chip);
+      return next;
     });
+  };
+
+  // Combine chips + bio for API calls
+  const getFullBioText = () => {
+    const chips = [...usedChips].join(" ");
+    const text = bio.trim();
+    if (chips && text) return `${chips} ${text}`;
+    return chips || text;
   };
 
   // Sync timeline IDs when timeline length changes
@@ -629,75 +647,101 @@ const Index = ({ params }) => {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f8f7f6]">
       {/* Header */}
-      <header className="flex items-center justify-between border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9] px-4 py-3">
+      <header className="flex items-center border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9] px-4 py-3">
         <div className="flex items-center gap-3">
-          <button
-            data-tutorial="exit"
-            onClick={() => setShowExitDialog(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-          {/* Title area */}
-          <div className="flex items-center gap-2">
-            <div>
-              <h1 className="text-sm leading-tight font-semibold text-gray-900">
-                {albumTitle || "앨범 편집"}
-              </h1>
-              {artistName && (
-                <p className="text-[11px] leading-tight text-gray-400">
-                  {artistName}
-                </p>
-              )}
-            </div>
+          <div className="group relative">
+            <button
+              data-tutorial="exit"
+              onClick={() => setShowExitDialog(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              나가기
+            </span>
+          </div>
+          <div>
+            <h1 className="text-sm leading-tight font-semibold text-gray-900">
+              {albumTitle || "앨범 편집"}
+            </h1>
+            {artistName && (
+              <p className="text-[11px] leading-tight text-gray-400">
+                {artistName}
+              </p>
+            )}
+          </div>
+
+          <div className="ml-1 flex items-center gap-1.5">
+            {isDirty && (
+              <div className="group relative">
+                <button
+                  onClick={handleReset}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  변경사항 초기화
+                </span>
+              </div>
+            )}
             <div className="group relative">
               <button
                 onClick={openRecordEditDialog}
-                className="flex h-6 w-6 items-center justify-center rounded text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
               >
-                <Pencil className="h-3 w-3" />
+                <Pencil className="h-3.5 w-3.5" />
               </button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                레코드 수정
+                정보 수정
               </span>
             </div>
-            {isDirty && (
+            <div className="group relative">
               <button
-                onClick={handleReset}
-                className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500"
+                data-tutorial="save"
+                onClick={handleSaveAll}
+                disabled={isSaving || !isDirty}
+                className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                  isDirty
+                    ? "text-[#67add1] hover:bg-[#67add1]/10"
+                    : "text-gray-300 cursor-default"
+                }`}
               >
-                <RotateCcw className="h-3 w-3" />
-                변경사항 초기화
+                {isSaving ? (
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Save className="h-3.5 w-3.5" />
+                )}
               </button>
-            )}
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                저장하기
+              </span>
+            </div>
+            <div className="group relative">
+              <button
+                onClick={() => setShowTutorial(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                튜토리얼
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* Tutorial */}
-        <button
-          onClick={() => setShowTutorial(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-[11px] font-medium text-gray-600 shadow-sm transition-colors hover:border-[#67add1] hover:text-[#67add1]"
-        >
-          <HelpCircle className="h-3.5 w-3.5" />
-          튜토리얼
-        </button>
+          {lastSavedAt && (
+            <p className="text-[10px] text-gray-300">
+              마지막 저장 {lastSavedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Preview Panel */}
-        <div className="flex-1 bg-[#dedbd3]" data-tutorial="preview">
-          <AlbumPreview3D
-            frontCover={frontCover}
-            bio={bio}
-            timeline={timeline}
-            selectedTheme={selectedTheme}
-            albumTitle={albumTitle}
-            flipped={activeTab === "back"}
-          />
-        </div>
-
-        {/* Right: Editor Sidebar */}
-        <div className="scrollbar-accent w-[420px] shrink-0 overflow-y-auto border-l border-[#e2e8f0] bg-[#f0eee9]">
+        {/* Left: Editor Sidebar */}
+        <div className="scrollbar-accent w-[420px] shrink-0 overflow-y-auto border-r border-[#e2e8f0] bg-[#f0eee9]">
           <div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -770,12 +814,35 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="space-y-3 border-t border-gray-100 px-4 pt-3 pb-4">
-                              <Textarea
-                                value={bio}
-                                onChange={(e) => setBio(e.target.value)}
-                                placeholder="키워드를 선택하거나 직접 작성하세요..."
-                                className="min-h-50 w-full resize-none rounded-lg border-none bg-[#cfcfd1] px-4 pt-3 pb-14 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:outline-none"
-                              />
+                              {/* Input area with chips inside */}
+                              <div className="min-h-50 w-full rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-3">
+                                {usedChips.size > 0 && (
+                                  <div className="mb-2 flex flex-wrap gap-1.5">
+                                    {[...usedChips].map((chip) => (
+                                      <span
+                                        key={chip}
+                                        className="inline-flex items-center gap-1 rounded-full border border-[#67add1] bg-[#67add1]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#67add1]"
+                                      >
+                                        {chip}
+                                        <button
+                                          type="button"
+                                          onClick={() => handleChipRemove(chip)}
+                                          className="ml-0.5 text-[#67add1]/60 transition-colors hover:text-[#67add1]"
+                                        >
+                                          <X className="h-3 w-3" />
+                                        </button>
+                                      </span>
+                                    ))}
+                                  </div>
+                                )}
+                                <Textarea
+                                  value={bio}
+                                  onChange={(e) => setBio(e.target.value)}
+                                  placeholder={usedChips.size > 0 ? "추가로 작성하세요..." : "키워드를 선택하거나 직접 작성하세요..."}
+                                  className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:outline-none focus:ring-0"
+                                />
+                              </div>
+                              {/* Keyword chips */}
                               <div className="flex flex-wrap gap-1.5">
                                 {KEYWORD_CHIPS.map((chip) => {
                                   const isUsed = usedChips.has(chip);
@@ -783,22 +850,21 @@ const Index = ({ params }) => {
                                     <button
                                       key={chip}
                                       type="button"
-                                      disabled={isUsed}
-                                      onClick={() => handleChipClick(chip)}
+                                      onClick={() => isUsed ? handleChipRemove(chip) : handleChipClick(chip)}
                                       className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
                                         isUsed
-                                          ? "border border-[#67add1]/30 bg-[#67add1]/10 text-[#67add1]/50"
+                                          ? "border border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
                                           : "border border-gray-200 bg-white text-gray-500 hover:border-[#67add1] hover:text-[#67add1]"
                                       }`}
                                     >
-                                      {isUsed ? `${chip} ✓` : `+ ${chip}`}
+                                      {isUsed ? `${chip} ✕` : `+ ${chip}`}
                                     </button>
                                   );
                                 })}
                               </div>
                               <div className="flex items-center justify-between">
                                 <p className="text-[11px] text-gray-300">
-                                  {bio.length}자
+                                  {getFullBioText().length}자
                                 </p>
                                 {bioError && (
                                   <p className="text-xs text-red-500">
@@ -808,7 +874,7 @@ const Index = ({ params }) => {
                               </div>
                               <Button
                                 onClick={handleGenerate}
-                                disabled={isGenerating || !bio.trim()}
+                                disabled={isGenerating || !getFullBioText()}
                                 size="sm"
                                 className="h-8 w-full bg-[#67add1] text-xs"
                               >
@@ -924,6 +990,18 @@ const Index = ({ params }) => {
               </Tabs>
             </motion.div>
           </div>
+        </div>
+
+        {/* Right: Preview Panel */}
+        <div className="flex-1 bg-[#dedbd3]" data-tutorial="preview">
+          <AlbumPreview3D
+            frontCover={frontCover}
+            bio={bio}
+            timeline={timeline}
+            selectedTheme={selectedTheme}
+            albumTitle={albumTitle}
+            flipped={activeTab === "back"}
+          />
         </div>
       </div>
 

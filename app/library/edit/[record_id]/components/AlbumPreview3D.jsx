@@ -5,6 +5,7 @@ import { Canvas, useThree } from "@react-three/fiber";
 import { ZoomIn, ZoomOut } from "lucide-react";
 import AlbumCover3D from "./AlbumCover3D";
 import { UNIFIED_THEMES } from "../themeConfig";
+import { extractColors } from "extract-colors";
 
 // Load custom fonts for canvas
 let bookkFontLoaded = false;
@@ -101,7 +102,7 @@ function drawElegantLayout(
     // ctx.fillText("LIFE STORY", bioLeft, margin + 24);
 
     const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
-    ctx.font = `20px ${bookkFont}`;
+    ctx.font = `19px ${bookkFont}`;
     // ctx.fillStyle = theme.text;
     ctx.textAlign = "right";
     ctx.fillStyle = theme.accent;
@@ -233,13 +234,13 @@ function drawElegantLayout(
       // ctx.fill();
 
       // Year (left-aligned)
-      ctx.font = "bold 18px sans-serif";
+      ctx.font = "bold 19px sans-serif";
       ctx.fillStyle = theme.accent;
       ctx.textAlign = "left";
       ctx.fillText(item.year, textX, cursorY + 30);
 
       // Event (right-aligned)
-      ctx.font = "16px sans-serif";
+      ctx.font = "20px sans-serif";
       ctx.fillStyle = theme.accent;
       ctx.textAlign = "right";
       const maxEventLen = 12;
@@ -272,13 +273,22 @@ function drawElegantLayout(
 
 // ─── Natural layout ───
 // 상단 대형 사진(70%), 좌하단 타임라인, 우하단 3색dots + bio
-function drawNaturalLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
+function drawNaturalLayout(
+  ctx,
+  size,
+  theme,
+  bio,
+  timeline,
+  frontCoverImg,
+  albumTitle,
+  extractedColors,
+) {
   // Background
   ctx.fillStyle = theme.bg;
   ctx.fillRect(0, 0, size, size);
 
-  const margin = 40;
-  const photoHeight = size * 0.62;
+  const margin = 50;
+  const photoHeight = size * 0.52;
 
   // Top: large front cover photo
   if (frontCoverImg) {
@@ -288,7 +298,7 @@ function drawNaturalLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
     const photoH = photoHeight - margin;
 
     ctx.save();
-    const r = 10;
+    const r = 0;
     ctx.beginPath();
     ctx.moveTo(photoX + r, photoY);
     ctx.lineTo(photoX + photoW - r, photoY);
@@ -343,94 +353,105 @@ function drawNaturalLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
     ctx.textAlign = "left";
   }
 
-  const bottomY = photoHeight + 14;
+  const bottomY = photoHeight + 60;
   const halfW = size / 2;
 
   // Bottom-left: Timeline
   if (timeline.length > 0) {
     const tlLeft = margin;
     const dotX = tlLeft + 6;
-    const textX = dotX + 18;
+    const textX = dotX;
     let cursorY = bottomY + 10;
 
-    ctx.font = "bold 14px sans-serif";
-    ctx.fillStyle = theme.accent;
-    ctx.fillText("TIMELINE", tlLeft, cursorY);
-    cursorY += 24;
+    // ctx.font = "bold 14px sans-serif";
+    // ctx.fillStyle = theme.accent;
+    // ctx.fillText("TIMELINE", tlLeft, cursorY);
+    // cursorY += 24;
 
-    const maxItems = 6;
+    const maxItems = 10;
     const items = timeline.slice(0, maxItems);
-
-    // Vertical line
-    ctx.strokeStyle = theme.accent + "40";
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(dotX, cursorY - 4);
-    ctx.lineTo(
-      dotX,
-      Math.min(cursorY + (items.length - 1) * 36, size - margin),
-    );
-    ctx.stroke();
 
     for (const item of items) {
       if (cursorY > size - margin) break;
 
-      ctx.beginPath();
-      ctx.arc(dotX, cursorY, 3.5, 0, Math.PI * 2);
-      ctx.fillStyle = theme.accent;
-      ctx.fill();
-
-      ctx.font = "bold 16px sans-serif";
+      ctx.font = "bold 17px sans-serif";
       ctx.fillStyle = theme.accent;
       ctx.fillText(item.year, textX, cursorY + 5);
 
       const yearW = ctx.measureText(item.year).width;
-      ctx.font = "14px sans-serif";
+      ctx.font = "18px sans-serif";
       ctx.fillStyle = theme.text;
-      const maxLen = 10;
+      const maxLen = 20;
       const eventText =
         item.event.length > maxLen
           ? item.event.slice(0, maxLen) + "..."
           : item.event;
-      ctx.fillText(eventText, textX + yearW + 6, cursorY + 5);
-
+      ctx.fillText(eventText, textX + yearW + 30, cursorY + 5);
       cursorY += 36;
     }
   }
 
-  // Bottom-right: 3-color dots + bio
-  const dotsColors = theme.dots || ["#c8c4b8", "#556b2f", "#3a4a23"];
-  const bioLeft = halfW + 10;
+  // Bottom-right: 3-color squares + title + bio
+  const squareColors = extractedColors ||
+    theme.dots || ["#c8c4b8", "#556b2f", "#3a4a23"];
+  const bioLeft = halfW + 20;
   const bioRight = size - margin;
-  let bioY = bottomY + 10;
+  let bioY = bottomY;
 
-  // 3-color dots
-  const dotSpacing = 18;
-  const startDotX = bioLeft;
+  // 3-color dots (right-aligned)
+  const dotRadius = 20;
+  const dotSpacing = 15;
+  const totalDotsWidth = 3 * dotRadius * 2 + 2 * dotSpacing;
+  const dotStartX = bioRight - totalDotsWidth + dotRadius;
   for (let i = 0; i < 3; i++) {
     ctx.beginPath();
-    ctx.arc(startDotX + i * dotSpacing, bioY + 4, 5, 0, Math.PI * 2);
-    ctx.fillStyle = dotsColors[i];
+    ctx.arc(
+      dotStartX + i * (dotRadius * 2 + dotSpacing),
+      bioY + dotRadius,
+      dotRadius,
+      0,
+      Math.PI * 2,
+    );
+    ctx.fillStyle = squareColors[i];
     ctx.fill();
   }
-  bioY += 28;
+  bioY += dotRadius * 2 + 70;
 
-  // Bio text
-  if (bio) {
-    ctx.font = "italic 16px sans-serif";
+  // Album title (right-aligned)
+  const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
+  if (albumTitle) {
+    ctx.font = `50px ${bookkFont}`;
     ctx.fillStyle = theme.text;
-    const bioLines = wrapText(ctx, bio, bioRight - bioLeft);
+    ctx.textAlign = "right";
+    ctx.letterSpacing = "10px";
+    const titleLines = wrapText(ctx, albumTitle, bioRight - bioLeft);
+    for (const line of titleLines.slice(0, 2)) {
+      ctx.fillText(line, bioRight, bioY);
+      bioY += 26;
+    }
+    ctx.textAlign = "left";
+    bioY += 30;
+  }
+
+  // Bio text (right-aligned)
+  if (bio) {
+    ctx.font = `17px ${bookkFont}`;
+    ctx.fillStyle = theme.text;
+    ctx.textAlign = "right";
+    ctx.letterSpacing = "1px";
+    const bioLines = wrapText(ctx, bio, bioRight - bioLeft - 10);
     const maxLines = 8;
     for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
       if (bioY > size - margin) break;
-      ctx.fillText(bioLines[i], bioLeft, bioY);
-      bioY += 24;
+      ctx.fillText(bioLines[i], bioRight, bioY);
+      bioY += 27;
     }
     if (bioLines.length > maxLines) {
       ctx.fillStyle = theme.text + "60";
       ctx.font = "14px sans-serif";
-      ctx.fillText("...", bioLeft, bioY);
+      ctx.fillText("...", bioRight, bioY);
     }
+    ctx.textAlign = "left";
   }
 
   // Empty state
@@ -471,121 +492,98 @@ function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
     ctx.fillRect(0, 0, size, size);
   }
 
-  // White circle overlay
+  // Donut overlay (big circle with center hole punched out like a CD)
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size * 0.38;
+  const radius = size * 0.44;
+  const holeRadius = size * 0.05;
 
+  // Draw white donut using offscreen canvas to punch hole
+  const donutCanvas = document.createElement("canvas");
+  donutCanvas.width = size;
+  donutCanvas.height = size;
+  const dCtx = donutCanvas.getContext("2d");
+
+  // Draw big circle
+  dCtx.beginPath();
+  dCtx.arc(cx, cy, radius, 0, Math.PI * 2);
+  dCtx.fillStyle = theme.circle || "#ffffff";
+  dCtx.fill();
+
+  // Punch center hole
+  dCtx.globalCompositeOperation = "destination-out";
+  dCtx.beginPath();
+  dCtx.arc(cx, cy, holeRadius, 0, Math.PI * 2);
+  dCtx.fill();
+  dCtx.globalCompositeOperation = "source-over";
+
+  // Composite donut onto main canvas
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  ctx.fillStyle = theme.circle || "#ffffff";
   ctx.globalAlpha = 0.92;
-  ctx.fill();
+  ctx.drawImage(donutCanvas, 0, 0);
   ctx.globalAlpha = 1.0;
   ctx.restore();
 
-  // Content inside circle
-  const innerLeft = cx - radius * 0.7;
-  const innerRight = cx + radius * 0.7;
+  // Hole border
+  ctx.beginPath();
+  ctx.arc(cx, cy, holeRadius + 10, 0, Math.PI * 2);
+  ctx.strokeStyle = theme.accent;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  // Content inside circle (below hole)
+  const innerLeft = cx - radius * 0.4;
+  const innerRight = cx + radius * 0.4;
   const innerWidth = innerRight - innerLeft;
-  let cursorY = cy - radius * 0.6;
-
-  // Small circular photo at top of circle
-  if (frontCoverImg) {
-    const smallR = 40;
-    const photoY = cursorY + smallR + 4;
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, smallR, 0, Math.PI * 2);
-    ctx.clip();
-
-    const imgRatio = frontCoverImg.width / frontCoverImg.height;
-    let sx, sy, sw, sh;
-    if (imgRatio > 1) {
-      sh = frontCoverImg.height;
-      sw = sh;
-      sx = (frontCoverImg.width - sw) / 2;
-      sy = 0;
-    } else {
-      sw = frontCoverImg.width;
-      sh = sw;
-      sx = 0;
-      sy = (frontCoverImg.height - sh) / 2;
-    }
-    ctx.drawImage(
-      frontCoverImg,
-      sx,
-      sy,
-      sw,
-      sh,
-      cx - smallR,
-      photoY - smallR,
-      smallR * 2,
-      smallR * 2,
-    );
-    ctx.restore();
-
-    // Circle border
-    ctx.beginPath();
-    ctx.arc(cx, cy, smallR, 0, Math.PI * 2);
-    ctx.strokeStyle = theme.accent;
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    cursorY = photoY + smallR + 16;
-  } else {
-    cursorY += 20;
-  }
+  let cursorY = size / 2 - radius * 0.7;
   // Timeline (left-aligned, year + event side by side)
   if (timeline.length > 0) {
-    const maxItems = 4;
+    const maxItems = 6;
     const items = timeline.slice(0, maxItems);
     const tlLeft = innerLeft;
 
     ctx.textAlign = "left";
     for (const item of items) {
-      if (cursorY > cy + radius * 0.7) break;
+      if (cursorY > cy + radius * 0.4) break;
 
       // Year
-      ctx.font = "bold 15px sans-serif";
+      ctx.font = "bold 16px sans-serif";
       ctx.fillStyle = theme.accent;
       ctx.fillText(item.year, tlLeft, cursorY);
 
       // Event (next to year)
       const yearW = ctx.measureText(item.year).width;
-      ctx.font = "13px sans-serif";
+      ctx.font = "17px sans-serif";
       ctx.fillStyle = theme.text;
       const maxLen = 16;
       const eventText =
         item.event.length > maxLen
           ? item.event.slice(0, maxLen) + "..."
           : item.event;
-      ctx.fillText(eventText, tlLeft + yearW + 8, cursorY);
+      ctx.fillText(eventText, tlLeft + yearW + 50, cursorY);
 
-      cursorY += 28;
+      cursorY += 40;
     }
   }
 
   // Bio text (centered)
   if (bio) {
     const monoplexFont = monoplexFontLoaded ? '"MonoplexKR"' : "sans-serif";
-    ctx.font = `17px ${monoplexFont}`;
+    ctx.font = `18px ${monoplexFont}`;
     ctx.fillStyle = theme.text;
     ctx.textAlign = "center";
-    ctx.letterSpacing = "1px";
-    const bioLines = wrapText(ctx, bio, innerWidth * 0.8);
-    const maxLines = 5;
+    ctx.letterSpacing = "1.2px";
+    const bioLines = wrapText(ctx, bio, innerWidth * 1.2);
+    const maxLines = 6;
     for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
       if (cursorY > cy + radius * 0.55) break;
-      ctx.fillText(bioLines[i], cx, cursorY + 140);
+      ctx.fillText(bioLines[i], cx - 10, cursorY + 200);
       cursorY += 24;
     }
     if (bioLines.length > maxLines) {
       ctx.fillStyle = theme.text + "60";
       ctx.font = "14px sans-serif";
-      ctx.fillText("...", cx, cursorY + 140);
+      ctx.fillText("...", cx - 10, cursorY + 140);
       cursorY += 20;
     }
     ctx.textAlign = "left";
@@ -607,6 +605,7 @@ function generateBackCoverDataUrl(
   timeline,
   frontCoverImg,
   albumTitle,
+  extractedColors,
 ) {
   const size = 1024;
   const canvas = document.createElement("canvas");
@@ -618,7 +617,16 @@ function generateBackCoverDataUrl(
 
   switch (themeKey) {
     case "natural":
-      drawNaturalLayout(ctx, size, theme, bio, timeline, frontCoverImg);
+      drawNaturalLayout(
+        ctx,
+        size,
+        theme,
+        bio,
+        timeline,
+        frontCoverImg,
+        albumTitle,
+        extractedColors,
+      );
       break;
     case "circle":
       drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg);
@@ -669,11 +677,13 @@ export default function AlbumPreview3D({
   const [isFlipped, setIsFlipped] = useState(false);
   const [zoom, setZoom] = useState(ZOOM_DEFAULT);
   const [frontCoverImg, setFrontCoverImg] = useState(null);
+  const [extractedColors, setExtractedColors] = useState(null);
 
   // Load front cover as HTMLImageElement for canvas drawing
   useEffect(() => {
     if (!frontCover || typeof document === "undefined") {
       setFrontCoverImg(null);
+      setExtractedColors(null);
       return;
     }
 
@@ -683,6 +693,29 @@ export default function AlbumPreview3D({
     img.onerror = () => setFrontCoverImg(null);
     img.src = frontCover;
   }, [frontCover]);
+
+  // Extract dominant colors from front cover
+  useEffect(() => {
+    if (!frontCoverImg) {
+      setExtractedColors(null);
+      return;
+    }
+    extractColors(frontCoverImg, { pixels: 10000, distance: 0.2 })
+      .then((colors) => {
+        const main = colors.sort((a, b) => b.area - a.area)[0];
+        if (!main) return;
+        // Generate 3 brightness variants: dark, mid, light
+        const { red, green, blue } = main;
+        const variants = [0.4, 0.7, 1.0].map((factor) => {
+          const r = Math.min(255, Math.round(red * factor));
+          const g = Math.min(255, Math.round(green * factor));
+          const b = Math.min(255, Math.round(blue * factor));
+          return `rgb(${r}, ${g}, ${b})`;
+        });
+        setExtractedColors(variants);
+      })
+      .catch(() => setExtractedColors(null));
+  }, [frontCoverImg]);
 
   // Sync with external flipped prop (tab switch)
   useEffect(() => {
@@ -716,8 +749,9 @@ export default function AlbumPreview3D({
       timeline || [],
       frontCoverImg,
       albumTitle || "",
+      extractedColors,
     );
-  }, [themeKey, bio, timeline, frontCoverImg, albumTitle]);
+  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, extractedColors]);
 
   return (
     <div className="flex h-full w-full flex-col items-center">

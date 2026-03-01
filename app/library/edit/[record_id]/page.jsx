@@ -15,7 +15,7 @@ import {
   Trash2,
   GripVertical,
   Sparkles,
-  RotateCcw,
+  Undo2,
   HelpCircle,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
@@ -275,6 +275,8 @@ const Index = ({ params }) => {
         },
         body: JSON.stringify({
           result: bio,
+          qaList: [],
+          mood: "neutral",
         }),
       },
     );
@@ -673,28 +675,43 @@ const Index = ({ params }) => {
           </div>
 
           <div className="ml-1 flex items-center gap-1.5">
-            {isDirty && (
-              <div className="group relative">
-                <button
-                  onClick={handleReset}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                  변경사항 초기화
-                </span>
-              </div>
-            )}
+            <div className="group relative">
+              <button
+                onClick={() => setShowTutorial(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                튜토리얼
+              </span>
+            </div>
             <div className="group relative">
               <button
                 onClick={openRecordEditDialog}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                 정보 수정
+              </span>
+            </div>
+            <div className="group relative">
+              <button
+                disabled={!isDirty}
+                onClick={handleReset}
+                // className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500"
+                className={`flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors ${
+                  isDirty
+                    ? "hover:bg-gray-100 hover:text-red-500"
+                    : "cursor-default text-gray-300"
+                }`}
+              >
+                <Undo2 className="h-3.5 w-3.5" />
+              </button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                변경사항 초기화
               </span>
             </div>
             <div className="group relative">
@@ -705,7 +722,7 @@ const Index = ({ params }) => {
                 className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
                   isDirty
                     ? "text-[#67add1] hover:bg-[#67add1]/10"
-                    : "text-gray-300 cursor-default"
+                    : "cursor-default text-gray-300"
                 }`}
               >
                 {isSaving ? (
@@ -718,22 +735,15 @@ const Index = ({ params }) => {
                 저장하기
               </span>
             </div>
-            <div className="group relative">
-              <button
-                onClick={() => setShowTutorial(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-              </button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                튜토리얼
-              </span>
-            </div>
           </div>
 
           {lastSavedAt && (
             <p className="text-[10px] text-gray-300">
-              마지막 저장 {lastSavedAt.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}
+              마지막 저장{" "}
+              {lastSavedAt.toLocaleTimeString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
             </p>
           )}
         </div>
@@ -789,7 +799,10 @@ const Index = ({ params }) => {
                 <TabsContent className="px-5" value="back">
                   <div className="space-y-5 pb-10">
                     {/* Story Section - Collapsible */}
-                    <div data-tutorial="story" className="rounded-lg border border-gray-300">
+                    <div
+                      data-tutorial="story"
+                      className="rounded-lg border border-gray-300"
+                    >
                       <button
                         onClick={() => setStoryOpen(!storyOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
@@ -838,8 +851,12 @@ const Index = ({ params }) => {
                                 <Textarea
                                   value={bio}
                                   onChange={(e) => setBio(e.target.value)}
-                                  placeholder={usedChips.size > 0 ? "추가로 작성하세요..." : "키워드를 선택하거나 직접 작성하세요..."}
-                                  className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:outline-none focus:ring-0"
+                                  placeholder={
+                                    usedChips.size > 0
+                                      ? "추가로 작성하세요..."
+                                      : "키워드를 선택하거나 직접 작성하세요..."
+                                  }
+                                  className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:ring-0 focus:outline-none"
                                 />
                               </div>
                               {/* Keyword chips */}
@@ -850,7 +867,11 @@ const Index = ({ params }) => {
                                     <button
                                       key={chip}
                                       type="button"
-                                      onClick={() => isUsed ? handleChipRemove(chip) : handleChipClick(chip)}
+                                      onClick={() =>
+                                        isUsed
+                                          ? handleChipRemove(chip)
+                                          : handleChipClick(chip)
+                                      }
                                       className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
                                         isUsed
                                           ? "border border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
@@ -897,7 +918,10 @@ const Index = ({ params }) => {
                     </div>
 
                     {/* Timeline Section - Collapsible */}
-                    <div data-tutorial="timeline" className="rounded-lg border border-gray-300">
+                    <div
+                      data-tutorial="timeline"
+                      className="rounded-lg border border-gray-300"
+                    >
                       <button
                         onClick={() => setTimelineOpen(!timelineOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"

@@ -11,8 +11,8 @@ export default function Wall({ position = [0, 0, 0], size = [8, 4, 0.1] }) {
     canvas.height = 2000;
     const ctx = canvas.getContext("2d");
 
-    // 기본 배경색
-    ctx.fillStyle = "#efefef";
+    // 기본 배경색 (어두운 웜 차콜)
+    ctx.fillStyle = "#1a1510";
     ctx.fillRect(0, 0, 2000, 2000);
 
     // 미세한 노이즈 추가

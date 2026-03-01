@@ -3,17 +3,17 @@
 import * as THREE from "three";
 import { useMemo, useState, useRef, useCallback } from "react";
 import { useThree } from "@react-three/fiber";
-import Wall from "./Wall";
+import Niche from "./Niche";
 import Shelf from "./Shelf";
 import AlbumCover from "./AlbumCover";
-import BlurLayer from "./BlurLayer";
+// import BlurLayer from "./BlurLayer";
 
 // 레이아웃 상수
 const SHELF_CONFIG = {
   width: 5, // 선반 너비
   depth: 0.4, // 선반 깊이
   thickness: 0.08, // 선반 두께
-  spacing: 1.4, // 선반 간 수직 간격
+  spacing: 1.4, // 선반 간 수직 간격 (3행이 화각 안에 들어오도록)
   wallOffset: 0.02, // 벽과의 거리
 };
 
@@ -24,8 +24,11 @@ const ALBUM_CONFIG = {
   tiltAngle: -0.15, // 벽에 기대는 각도 (라디안)
 };
 
-const ROWS = 2; // 2행
+const ROWS = 2; // 앨범이 올라가는 행 수
 const COLS = 5; // 5열
+
+// 앨범 없는 장식용 최상단 선반 y 좌표 (동일 간격 유지)
+const DECORATIVE_SHELF_Y = SHELF_CONFIG.spacing * ROWS - 0.03; // 2.77
 
 export default function ShelfScene({
   albums,
@@ -112,13 +115,12 @@ export default function ShelfScene({
         <meshStandardMaterial color="#efefef" roughness={0.8} />
       </mesh> */}
 
-      {/* 뒷벽 */}
-      <Wall
+      {/* 아치형 틈새 구조 (뒷벽 대체) */}
+      <Niche
         position={[0, 1.5, -SHELF_CONFIG.depth / 2 - SHELF_CONFIG.wallOffset]}
-        size={[100, 100, 0.1]}
       />
 
-      {/* 선반들 (2단) */}
+      {/* 앨범 있는 선반들 */}
       {shelfPositions.map((pos, i) => (
         <Shelf
           key={`shelf-${i}`}
@@ -126,15 +128,24 @@ export default function ShelfScene({
           width={SHELF_CONFIG.width}
           depth={SHELF_CONFIG.depth}
           thickness={SHELF_CONFIG.thickness}
+          shelfOffset={SHELF_CONFIG.spacing}
         />
       ))}
 
-      {/* 배경 블러 레이어: 앨범 선택 시 선반/다른 앨범을 흐리게 */}
-      <BlurLayer
+      {/* 장식용 최상단 선반 (앨범 없음, 등간격) */}
+      <Shelf
+        position={[0, DECORATIVE_SHELF_Y, -SHELF_CONFIG.wallOffset]}
+        width={SHELF_CONFIG.width}
+        depth={SHELF_CONFIG.depth}
+        thickness={SHELF_CONFIG.thickness}
+      />
+
+      {/* 배경 블러 레이어: 비활성화 */}
+      {/* <BlurLayer
         isActive={!!selectedAlbum}
         blurStrength={3}
         hiddenDuringBlur={selectedGroupRef}
-      />
+      /> */}
 
       {/* 앨범 커버들 (albums 개수만큼) */}
       {albumPositions

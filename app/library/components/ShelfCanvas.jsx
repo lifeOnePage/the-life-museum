@@ -2,9 +2,66 @@
 
 import * as THREE from "three";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useImperativeHandle, useRef } from "react";
-import { OrbitControls } from "@react-three/drei";
+import { Suspense, useEffect, useRef } from "react";
+import {
+  EffectComposer,
+  Bloom,
+  Vignette,
+  N8AO,
+} from "@react-three/postprocessing";
 import ShelfScene from "./ShelfScene";
+import { OrbitControls, useHelper } from "@react-three/drei";
+
+const CREAM = "#f5ede0";
+const DARK_WALL = "#1a1510";
+// 씬 레이아웃 상수 (ShelfScene.jsx와 동기화)
+const SHELF_ROWS = 2;
+const SHELF_SPACING = 1.1;
+const SHELF_THICKNESS = 0.08;
+const SHELF_DEPTH = 0.4;
+const SHELF_WALL_OFFSET = 0.02;
+
+// 각 선반 row별 LED 조명 y 좌표 (선반 상판 바로 위)
+const LED_Y = Array.from({ length: SHELF_ROWS }, (_, row) => {
+  const shelfY = SHELF_SPACING * (SHELF_ROWS - 1 - row) - 0.03;
+  return shelfY + SHELF_THICKNESS + 0.12;
+});
+// LED x 포지션: 8개 균등 분산 (-2.3 ~ 2.3)
+const LED_X = Array.from({ length: 8 }, (_, i) => -2.3 + i * (4.6 / 7));
+// LED z 포지션: 선반 뒤쪽 상단 (벽 앞)
+const LED_Z = -(SHELF_DEPTH / 2 + SHELF_WALL_OFFSET) + 0.12;
+
+// Canvas 내부에서만 호출 가능한 훅(useHelper)을 사용하는 서브컴포넌트
+// castShadow=true인 경우에만 고품질 shadowMap 설정 적용
+function DirLightWithHelper({
+  position,
+  intensity,
+  color,
+  helperSize = 1,
+  castShadow = false,
+  blurSamples = 25,
+}) {
+  const lightRef = useRef();
+  useHelper(lightRef, THREE.DirectionalLightHelper, helperSize);
+  return (
+    <directionalLight
+      ref={lightRef}
+      position={position}
+      intensity={intensity}
+      color={color}
+      castShadow={castShadow}
+      shadow-mapSize={[2048, 2048]}
+      shadow-camera-near={0.5}
+      shadow-camera-far={20}
+      shadow-camera-left={-7}
+      shadow-camera-right={7}
+      shadow-camera-top={5}
+      shadow-camera-bottom={-4}
+      shadow-bias={0}
+      shadow-blurSamples={blurSamples}
+    />
+  );
+}
 
 export default function ShelfCanvas({
   albums,
@@ -63,10 +120,10 @@ export default function ShelfCanvas({
 
   return (
     <Canvas
-      shadows
+      shadows={false}
       camera={{
-        position: [0, 1.4, 4.2],
-        fov: 50,
+        position: [0, 2, 3.8],
+        fov: 52,
         near: 0.1,
         far: 100,
       }}
@@ -75,7 +132,7 @@ export default function ShelfCanvas({
         alpha: false,
         powerPreference: "high-performance",
         toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 1.2,
+        toneMappingExposure: 0.75,
       }}
       style={{
         width: "100%",
@@ -83,28 +140,83 @@ export default function ShelfCanvas({
       }}
       onCreated={({ camera }) => {
         cameraRef.current = camera;
-        // 카메라 방향벡터를 (0,0,-1)로 고정 — 정면을 바라봄
-        camera.lookAt(0, 1.5, -100);
+        // 하이앵글: 선반 중심을 내려다봄
+        camera.lookAt(0, 1.5, 0);
       }}
     >
       {/* 라이팅 설정 */}
-      <ambientLight intensity={0.6} />
-      <directionalLight
-        position={[0, 1, 5]}
-        intensity={2}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-near={1}
-        shadow-camera-far={25}
-        shadow-camera-left={-8}
-        shadow-camera-right={8}
-        shadow-camera-top={8}
-        shadow-camera-bottom={-8}
-        shadow-bias={-0.005}
+      <ambientLight intensity={2} color="#957A57" />
+      {/* 방향광 (shadow 없음 — N8AO가 contact shadow 처리) */}
+      <DirLightWithHelper
+        position={[0, 0.1, 0.2]}
+        intensity={0.4}
+        color="#D8BB95"
+        helperSize={1}
       />
-      <pointLight position={[-3, 3, 2]} intensity={1.5} />
-      <pointLight position={[3, 2, -2]} intensity={1.3} color="#ffeedd" />
+      <DirLightWithHelper
+        position={[0, 2.4, 0.5]}
+        intensity={1}
+        color="#D8BB95"
+        helperSize={1}
+      />
+      {/* <DirLightWithHelper
+        position={[0, 1.4, 0.5]}
+        intensity={1}
+        color="#D8BB95"
+        helperSize={1}
+      /> */}
+      <DirLightWithHelper
+        position={[0.05, 0, -0.09]}
+        intensity={1.5}
+        color={CREAM}
+        helperSize={1}
+      />
+      <DirLightWithHelper
+        position={[-0.05, 0, -0.09]}
+        intensity={1.5}
+        color={CREAM}
+        helperSize={1}
+      />
+      {/* <DirLightWithHelper
+        position={[0, 0, 1]}
+        intensity={1}
+        color={CREAM}
+        helperSize={1}
+        castShadow
+      /> */}
+      {/* <DirLightWithHelper
+        position={[-5, 2, 1]}
+        intensity={1}
+        color={CREAM}
+        helperSize={1}
+        castShadow
+      />
+      <DirLightWithHelper
+        position={[5, -2, 1]}
+        intensity={1}
+        color={CREAM}
+        helperSize={1}
+      />
+      <DirLightWithHelper
+        position={[-5, -2, 1]}
+        intensity={1}
+        color={CREAM}
+        helperSize={1}
+      /> */}
+
+      {/* 선반별 LED 스트립 PointLight (3row × 3lights = 9개) */}
+      {/* {LED_Y.map((y, ri) =>
+        LED_X.map((x, xi) => (
+          <pointLight
+            key={`led-${ri}-${xi}`}
+            position={[x, y, LED_Z]}
+            color="#ffaa40"
+            intensity={0.5}
+            distance={0.5}
+            decay={5}
+          />
+        )),
+      )} */}
 
       {/* 메인 씬 */}
       <Suspense fallback={null}>
@@ -119,17 +231,25 @@ export default function ShelfCanvas({
         />
       </Suspense>
 
-      {/* 카메라 컨트롤 */}
-      {/* <OrbitControls
-        ref={controlsRef}
-        enableDamping
-        dampingFactor={0.05}
-        minDistance={3}
-        maxDistance={15}
-        minPolarAngle={Math.PI * 0.2}
-        maxPolarAngle={Math.PI * 0.6}
-        target={[0, 0.5, 0]}
-      /> */}
+      {/* Post-processing: N8AO + Bloom + Vignette */}
+      <EffectComposer>
+        <N8AO
+          aoRadius={1}
+          intensity={3}
+          aoSamples={10}
+          denoiseSamples={10}
+          denoiseRadius={20}
+          color="#34221D"
+        />
+        <Bloom
+          intensity={2}
+          luminanceThreshold={0.3}
+          luminanceSmoothing={0.1}
+          radius={0.85}
+        />
+        {/* <Vignette offset={0.1} darkness={0.1} eskil={false} /> */}
+      </EffectComposer>
+      {/* <OrbitControls /> */}
     </Canvas>
   );
 }

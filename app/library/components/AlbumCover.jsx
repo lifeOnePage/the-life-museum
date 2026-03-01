@@ -8,7 +8,7 @@ import { parseGIF, decompressFrames } from "gifuct-js";
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
   x: 0,
-  y: 1.5,
+  y: 1.8,
   z: 2.5,
 };
 
@@ -176,16 +176,16 @@ function createPlaceholderTexture(index, isFront = true) {
 
   // 그라데이션 배경
   const colors = [
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
   ];
 
   const [color1, color2] = colors[index % colors.length];
@@ -411,52 +411,46 @@ export default function AlbumCover({
       // 오른쪽 측면
       new THREE.MeshStandardMaterial({
         color: sideColor,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.1,
       }),
       // 왼쪽 측면
       new THREE.MeshStandardMaterial({
         color: sideColor,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.1,
       }),
       // 위쪽
       new THREE.MeshStandardMaterial({
         color: sideColor,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.1,
       }),
       // 아래쪽
       new THREE.MeshStandardMaterial({
         color: sideColor,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.1,
       }),
-      // 앞면 (+Z) - 커버 이미지
+      // 앞면 (+Z) - 커버 이미지 (emissive로 발광감)
       new THREE.MeshStandardMaterial({
         map: actualFrontTex,
-        roughness: 0.5,
-        metalness: 0.1,
+        roughness: 0.3,
+        metalness: 1,
+        emissive: "#ffffff",
+        emissiveMap: actualFrontTex,
+        emissiveIntensity: 1,
       }),
-      // 뒷면 (-Z) - 뒤 이미지
+      // 뒷면 (-Z) - 뒤 이미지 (매트 인쇄면)
       new THREE.MeshStandardMaterial({
         map: actualBackTex,
-        roughness: 0.5,
+        roughness: 0.65,
         metalness: 0.1,
       }),
     ];
   }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
 
-  // 선택 상태에 따라 renderOrder 관리
-  // - 선택됨: renderOrder 1000 (blur composite renderOrder 999보다 나중에 그려짐)
-  // - 미선택: renderOrder 0
-  // layer는 변경하지 않음 → raycasting이 항상 layer 0에서 정상 작동
-  useEffect(() => {
-    if (!meshRef.current) return;
-    meshRef.current.renderOrder = isSelected ? 1000 : 0;
-  }, [isSelected]);
-
-  // 선택 시 outerGroupRef를 부모에 노출 → BlurLayer가 FBO 캡처 시 임시 숨김에 사용
+  // 선택 시 outerGroupRef를 부모에 노출 (BlurLayer용, 현재 비활성화)
   useEffect(() => {
     if (isSelected && outerGroupRef.current) {
       onGroupRef?.(outerGroupRef.current);
@@ -464,21 +458,6 @@ export default function AlbumCover({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelected]);
-
-  useEffect(() => {
-    if (!meshRef.current) return;
-    const mats = meshRef.current.material;
-    if (!mats) return;
-    const arr = Array.isArray(mats) ? mats : [mats];
-    arr.forEach((mat) => {
-      // 선택 시 transparent pass로 이동: Three.js는 opaque를 전부 먼저 그린 뒤
-      // transparent를 나중에 그리므로, transparent=true여야 renderOrder 1000이
-      // BlurLayer composite(renderOrder 999, transparent)보다 나중에 그려짐
-      mat.transparent = isSelected;
-      mat.depthTest = !isSelected;
-      mat.needsUpdate = true;
-    });
-  }, [isSelected, materials]);
 
   // 커서 변경
   useEffect(() => {

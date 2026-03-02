@@ -6,9 +6,9 @@ export default function Header({ page, login, logout, main, mypage }) {
   const { user, token, signout } = useAuth();
   console.log(page);
   return (
-    <div className="text-nav fixed top-0 z-1000 box-border h-18 w-[100vw] bg-transparent p-3 text-white">
+    <div className="text-nav fixed top-0 z-1000 box-border h-18 w-screen bg-transparent p-3 text-white">
       <div className="flex h-full w-full items-center border-b border-white px-3 py-1 text-white">
-        <div className="w-full flex-1">TheLifeGallery</div>
+        <div className="w-full flex-1">The Life Gallery</div>
         <div className="flex w-full flex-1">
           <div className="flex flex-1 justify-end gap-5">
             {user ? (

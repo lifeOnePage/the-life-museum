@@ -8,7 +8,7 @@ import { parseGIF, decompressFrames } from "gifuct-js";
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
   x: 0,
-  y: 1.8,
+  y: 1.6,
   z: 2.5,
 };
 

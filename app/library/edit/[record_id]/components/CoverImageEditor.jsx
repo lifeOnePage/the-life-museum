@@ -25,42 +25,62 @@ const CoverImageEditor = forwardRef(
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
-    const [generatedImages, setGeneratedImages] = useState([]);
+    const [generatedVideos, setGeneratedVideos] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
+    const [selectedVideoUrl, setSelectedVideoUrl] = useState(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
+    const [imageStrength, setImageStrength] = useState(0.5); // 0.0~1.0
 
     useImperativeHandle(ref, () => ({
       save: async () => {
-        if (!selectedFile && !frontCover) return;
+        if (!selectedFile && !selectedVideoUrl && !frontCover) return;
         setIsSaving(true);
         setError("");
 
         try {
           const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-          const formData = new FormData();
-          if (selectedFile) {
-            formData.append("file", selectedFile);
-          }
-
-          const response = await fetch(
-            `${apiUrl}/api/v1/record/${record_id}/cover/temp`,
-            {
-              method: "POST",
-              headers: {
-                "X-Dev-Key": "tlm2026",
+          // AI-generated video: use PUT /cover/url
+          if (selectedVideoUrl) {
+            const response = await fetch(
+              `${apiUrl}/api/v1/record/${record_id}/cover/url`,
+              {
+                method: "PUT",
+                headers: {
+                  "Content-Type": "application/json",
+                  "X-Dev-Key": "tlm2026",
+                },
+                body: JSON.stringify({ url: selectedVideoUrl }),
               },
-              body: formData,
-            },
-          );
-
-          const data = await response.json();
-
-          if (!response.ok) {
-            throw new Error(data.error || "저장에 실패했습니다");
+            );
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.error || "저장에 실패했습니다");
+            }
+            return data;
           }
 
-          return data;
+          // Direct file upload: use POST /cover/temp
+          if (selectedFile) {
+            const formData = new FormData();
+            formData.append("file", selectedFile);
+
+            const response = await fetch(
+              `${apiUrl}/api/v1/record/${record_id}/cover/temp`,
+              {
+                method: "POST",
+                headers: {
+                  "X-Dev-Key": "tlm2026",
+                },
+                body: formData,
+              },
+            );
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.error || "저장에 실패했습니다");
+            }
+            return data;
+          }
         } catch (err) {
           setError(err.message);
           console.error(err);
@@ -71,44 +91,64 @@ const CoverImageEditor = forwardRef(
       },
     }));
 
-    const urlToFile = async (url, filename) => {
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const file = new File([blob], filename, { type: blob.type });
-      return file;
-    };
-
     const handleSelectImage = (index) => {
       setSelectedImageIndex(index);
     };
 
-    const handleApply = async () => {
-      if (selectedImageIndex < 0 || !generatedImages[selectedImageIndex])
-        return;
-      const imgUrl = generatedImages[selectedImageIndex];
-      try {
-        const filename = imgUrl.split("/").pop();
-        const file = await urlToFile(imgUrl, filename);
-        setSelectedFile(file);
-        onImageGenerated(imgUrl);
-      } catch (err) {
-        setError("이미지 로드에 실패했습니다");
-      }
+    const handleResetVideos = () => {
+      setGeneratedVideos([]);
+      setSelectedImageIndex(-1);
     };
 
-    const handleGenerate = () => {
+    const handleApply = () => {
+      if (selectedImageIndex < 0 || !generatedVideos[selectedImageIndex])
+        return;
+      const videoUrl = generatedVideos[selectedImageIndex];
+      setSelectedVideoUrl(videoUrl);
+      setSelectedFile(null);
+      onImageGenerated(videoUrl);
+    };
+
+    const handleGenerate = async () => {
       if (!prompt.trim()) return;
       setIsGenerating(true);
       setSelectedImageIndex(-1);
-      setTimeout(() => {
-        const placeholders = [
-          "/images/gif/1.gif",
-          "/images/gif/2.gif",
-          "/images/gif/3.gif",
-        ];
-        setGeneratedImages(placeholders);
+      setError("");
+
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const formData = new FormData();
+        formData.append("prompt", prompt);
+        formData.append("image_strength", String(imageStrength));
+        if (imageRefFile) {
+          formData.append("reference_image", imageRefFile);
+        }
+
+        const response = await fetch(
+          `${apiUrl}/api/v1/record/${record_id}/cover/generate`,
+          {
+            method: "POST",
+            headers: {
+              "X-Dev-Key": "tlm2026",
+            },
+            body: formData,
+          },
+        );
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.detail || data.error || "생성에 실패했습니다");
+        }
+
+        // 기존 결과에 누적 (최대 3개) — Replicate 동시 한도로 1개씩 생성
+        const newVideos = data.data?.videos ?? [];
+        setGeneratedVideos((prev) => [...prev, ...newVideos].slice(0, 3));
+      } catch (err) {
+        setError(err.message);
+        console.error(err);
+      } finally {
         setIsGenerating(false);
-      }, 2000);
+      }
     };
 
     const handleImageRef = (e) => {
@@ -122,12 +162,14 @@ const CoverImageEditor = forwardRef(
     const removeImageRef = () => {
       setImageRefFile(null);
       setImageRefPreview(null);
+      setImageStrength(0.5);
     };
 
     const handleFileUpload = (e) => {
       const file = e.target.files?.[0];
       if (file) {
         setSelectedFile(file);
+        setSelectedVideoUrl(null);
         const url = URL.createObjectURL(file);
         onImageGenerated(url);
       }
@@ -232,18 +274,49 @@ const CoverImageEditor = forwardRef(
                 이미지 프롬프트
               </label>
               {imageRefPreview ? (
-                <div className="relative inline-block">
-                  <img
-                    src={imageRefPreview}
-                    alt="참고 이미지"
-                    className="h-20 w-20 rounded-lg object-cover"
-                  />
-                  <button
-                    onClick={removeImageRef}
-                    className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-white transition-colors hover:bg-gray-900"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
+                <div className="space-y-3">
+                  <div className="relative inline-block">
+                    <img
+                      src={imageRefPreview}
+                      alt="참고 이미지"
+                      className="h-20 w-20 rounded-lg object-cover"
+                    />
+                    <button
+                      onClick={removeImageRef}
+                      className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-white transition-colors hover:bg-gray-900"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+
+                  {/* Image strength slider — only visible when reference image is set */}
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <label className="text-xs font-medium text-[#64748b]">
+                        참고 이미지 반영 강도
+                      </label>
+                      <span className="text-xs text-[#64748b]">
+                        {imageStrength < 0.35
+                          ? "낮음"
+                          : imageStrength > 0.65
+                            ? "높음"
+                            : "보통"}
+                      </span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={imageStrength}
+                      onChange={(e) => setImageStrength(Number(e.target.value))}
+                      className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#cfcfd1] accent-[#67ADD1]"
+                    />
+                    <div className="mt-1 flex justify-between text-[10px] text-[#94a3b8]">
+                      <span>창의적</span>
+                      <span>충실하게</span>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <label className="flex h-20 w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-gray-300 bg-[#cfcfd1]/50 transition-colors hover:border-gray-400">
@@ -263,13 +336,18 @@ const CoverImageEditor = forwardRef(
               {/* Generate button */}
               <button
                 onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim()}
+                disabled={isGenerating || !prompt.trim() || generatedVideos.length >= 3}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#67ADD1] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
               >
                 {isGenerating ? (
                   <>
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    생성 중...
+                    생성 중... (최대 5분 소요)
+                  </>
+                ) : generatedVideos.length > 0 ? (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    추가 생성하기 ({generatedVideos.length}/3)
                   </>
                 ) : (
                   <>
@@ -278,31 +356,47 @@ const CoverImageEditor = forwardRef(
                   </>
                 )}
               </button>
+              {generatedVideos.length >= 3 && (
+                <p className="mt-2 text-center text-xs text-[#94a3b8]">
+                  최대 3개까지 생성할 수 있습니다.
+                </p>
+              )}
 
               {/* Results section - only shows after generation */}
-              {generatedImages.length > 0 && (
+              {generatedVideos.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="mt-6"
                 >
-                  <p className="mb-2 text-xs font-medium text-[#64748b]">
-                    생성 결과
-                  </p>
-                  <div className="flex gap-[15px]">
-                    {generatedImages.map((img, i) => (
+                  <div className="mb-2 flex items-center justify-between">
+                    <p className="text-xs font-medium text-[#64748b]">
+                      생성 결과
+                    </p>
+                    <button
+                      onClick={handleResetVideos}
+                      className="text-xs text-[#94a3b8] transition-colors hover:text-[#475569]"
+                    >
+                      초기화
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {generatedVideos.map((videoUrl, i) => (
                       <button
                         key={i}
                         onClick={() => handleSelectImage(i)}
-                        className={`h-[100px] flex-1 overflow-hidden rounded-md transition-all ${
+                        className={`aspect-square overflow-hidden rounded-md transition-all ${
                           selectedImageIndex === i
                             ? "ring-2 ring-[#3E5A81] ring-offset-2"
                             : "hover:opacity-80"
                         }`}
                       >
-                        <img
-                          src={img}
-                          alt={`생성 ${i + 1}`}
+                        <video
+                          src={videoUrl}
+                          autoPlay
+                          loop
+                          muted
+                          playsInline
                           className="h-full w-full object-cover"
                         />
                       </button>

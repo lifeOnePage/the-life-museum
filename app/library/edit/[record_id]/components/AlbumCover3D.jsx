@@ -11,8 +11,21 @@ const CAMERA_FRONT_POSITION = {
   z: 1.5,
 };
 
-// 이미지 텍스처 로딩 컴포넌트
-function useAlbumTexture(imageUrl, fallbackColor) {
+function getMediaType(url) {
+  if (!url) return null;
+  const lower = url.toLowerCase().split("?")[0];
+  if (lower.endsWith(".gif")) return "gif";
+  if (
+    lower.endsWith(".mp4") ||
+    lower.endsWith(".webm") ||
+    lower.endsWith(".mov")
+  )
+    return "video";
+  return "image";
+}
+
+// 정적 이미지 텍스처 훅
+function useStaticTexture(imageUrl) {
   const [texture, setTexture] = useState(null);
 
   useEffect(() => {
@@ -31,19 +44,80 @@ function useAlbumTexture(imageUrl, fallbackColor) {
         setTexture(loadedTexture);
       },
       undefined,
-      () => {
-        setTexture(null);
-      },
+      () => setTexture(null),
     );
 
     return () => {
-      if (texture) {
-        texture.dispose();
-      }
+      texture?.dispose();
     };
   }, [imageUrl]);
 
   return texture;
+}
+
+// 비디오 텍스처 훅
+function useVideoTexture(videoUrl) {
+  const videoRef = useRef(null);
+  const textureRef = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!videoUrl) return;
+
+    const video = document.createElement("video");
+    video.src = videoUrl;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.crossOrigin = "anonymous";
+
+    const onCanPlay = () => {
+      textureRef.current = new THREE.VideoTexture(video);
+      textureRef.current.colorSpace = THREE.SRGBColorSpace;
+      video.play().catch(() => {});
+      setReady(true);
+    };
+    video.addEventListener("canplay", onCanPlay);
+    videoRef.current = video;
+    video.load();
+
+    const onVisChange = () => {
+      if (document.hidden) {
+        video.pause();
+      } else {
+        video.play().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisChange);
+      video.removeEventListener("canplay", onCanPlay);
+      video.pause();
+      video.src = "";
+      textureRef.current?.dispose();
+      textureRef.current = null;
+      videoRef.current = null;
+      setReady(false);
+    };
+  }, [videoUrl]);
+
+  useFrame(() => {
+    if (ready && textureRef.current) {
+      textureRef.current.needsUpdate = true;
+    }
+  });
+
+  return ready ? textureRef.current : null;
+}
+
+// 이미지 URL에 따라 video/정적 텍스처를 자동 선택하는 훅
+function useAlbumTexture(imageUrl) {
+  const type = getMediaType(imageUrl);
+  // 훅 조건부 호출 금지 → null 전달로 비활성화
+  const videoTexture = useVideoTexture(type === "video" ? imageUrl : null);
+  const staticTexture = useStaticTexture(type !== "video" ? imageUrl : null);
+  return type === "video" ? videoTexture : staticTexture;
 }
 
 // 플레이스홀더 텍스처 생성
@@ -154,8 +228,8 @@ export default function AlbumCover3D({
   const [hovered, setHovered] = useState(false);
 
   // 텍스처
-  const frontTexture = useAlbumTexture(frontImage, null);
-  const backTexture = useAlbumTexture(backImage, null);
+  const frontTexture = useAlbumTexture(frontImage);
+  const backTexture = useAlbumTexture(backImage);
 
   // 플레이스홀더 텍스처 (이미지가 없을 때)
   const placeholderFront = useMemo(

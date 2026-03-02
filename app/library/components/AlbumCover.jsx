@@ -18,14 +18,17 @@ const TILT_CONFIG = {
   smoothing: 0.08, // 보간 속도 (낮을수록 부드러움)
 };
 
-function isGifUrl(url) {
-  if (!url) return false;
-  try {
-    const pathname = new URL(url).pathname;
-    return pathname.toLowerCase().endsWith(".gif");
-  } catch {
-    return url.toLowerCase().includes(".gif");
-  }
+function getMediaType(url) {
+  if (!url) return null;
+  const lower = url.toLowerCase().split("?")[0];
+  if (lower.endsWith(".gif")) return "gif";
+  if (
+    lower.endsWith(".mp4") ||
+    lower.endsWith(".webm") ||
+    lower.endsWith(".mov")
+  )
+    return "video";
+  return "image";
 }
 
 // GIF 애니메이션 텍스처 훅
@@ -159,12 +162,72 @@ function useStaticTexture(imageUrl) {
   return texture;
 }
 
-// 이미지 URL에 따라 GIF/정적 텍스처를 자동 선택하는 훅
+// 비디오 텍스처 훅
+function useVideoTexture(videoUrl) {
+  const videoRef = useRef(null);
+  const textureRef = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!videoUrl) return;
+
+    const video = document.createElement("video");
+    video.src = videoUrl;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.crossOrigin = "anonymous";
+
+    const onCanPlay = () => {
+      textureRef.current = new THREE.VideoTexture(video);
+      textureRef.current.colorSpace = THREE.SRGBColorSpace;
+      video.play().catch(() => {});
+      setReady(true);
+    };
+    video.addEventListener("canplay", onCanPlay);
+    videoRef.current = video;
+    video.load();
+
+    const onVisChange = () => {
+      if (document.hidden) {
+        video.pause();
+      } else {
+        video.play().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisChange);
+      video.removeEventListener("canplay", onCanPlay);
+      video.pause();
+      video.src = "";
+      textureRef.current?.dispose();
+      textureRef.current = null;
+      videoRef.current = null;
+      setReady(false);
+    };
+  }, [videoUrl]);
+
+  useFrame(() => {
+    if (ready && textureRef.current) {
+      textureRef.current.needsUpdate = true;
+    }
+  });
+
+  return ready ? textureRef.current : null;
+}
+
+// 이미지 URL에 따라 GIF/video/정적 텍스처를 자동 선택하는 훅
 function useAlbumTexture(imageUrl) {
-  const gif = isGifUrl(imageUrl);
-  const gifTexture = useGifTexture(gif ? imageUrl : null);
-  const staticTexture = useStaticTexture(gif ? null : imageUrl);
-  return gif ? gifTexture : staticTexture;
+  const type = getMediaType(imageUrl);
+  // 훅 조건부 호출 금지 → null 전달로 비활성화
+  const gifTexture = useGifTexture(type === "gif" ? imageUrl : null);
+  const videoTexture = useVideoTexture(type === "video" ? imageUrl : null);
+  const staticTexture = useStaticTexture(type === "image" ? imageUrl : null);
+  if (type === "gif") return gifTexture;
+  if (type === "video") return videoTexture;
+  return staticTexture;
 }
 
 // 플레이스홀더 텍스처 생성
@@ -307,8 +370,8 @@ export default function AlbumCover({
   }, [isSelected]);
 
   // 텍스처
-  const frontTexture = useAlbumTexture(frontImage, null);
-  const backTexture = useAlbumTexture(backImage, null);
+  const frontTexture = useAlbumTexture(frontImage);
+  const backTexture = useAlbumTexture(backImage);
 
   // 플레이스홀더 텍스처 (이미지가 없을 때)
   const placeholderFront = useMemo(

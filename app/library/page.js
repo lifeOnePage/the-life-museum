@@ -66,7 +66,7 @@ export default function MyShelfPage() {
                 id: item.id,
                 title: item.title,
                 subtitle: item.subtitle,
-                frontImage: item.coverImage?.url ?? null,
+                frontImage: item.coverImage?.url ?? "#ffffff",
                 backImage,
                 edgeColor: bgColor,
               };
@@ -78,54 +78,51 @@ export default function MyShelfPage() {
   }, [token]);
 
   // 앨범 클릭 핸들러 (3D에서 호출됨)
-  const handleAlbumClick = useCallback(
-    (albumIndex, albumData) => {
-      setSelectedAlbum({ index: albumIndex, data: albumData });
-      setIsFlipped(false);
-      setHoverLabel(null);
+  const handleAlbumClick = useCallback((albumIndex, albumData) => {
+    setSelectedAlbum({ index: albumIndex, data: albumData });
+    setIsFlipped(false);
+    setHoverLabel(null);
 
-      // 이미 detail이 로드된 경우 skip
-      if (albumData?.backImage && albumData?.edgeColor) return;
-      if (!albumData?.id) return;
+    // 이미 detail이 로드된 경우 skip
+    if (albumData?.backImage && albumData?.edgeColor) return;
+    if (!albumData?.id) return;
 
-      // record detail fetch → back cover 생성
-      fetch(`${BASE_URL}/record/${albumData.id}`, {
-        headers: { Authorization: `Bearer ${token}` },
+    // record detail fetch → back cover 생성
+    fetch(`${BASE_URL}/record/${albumData.id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => res.json())
+      .then((json) => {
+        if (!json.ok || !json.data) return;
+        const d = json.data;
+
+        const bio = d.lifestory?.content || "";
+        const timeline = (d.timeline?.events || []).map((e) => ({
+          year: e.timestamp,
+          event: e.title,
+        }));
+        const bgColor = d.bgColor || "#ffffff";
+        const textColor = d.color || "#1c1917";
+        const keyColor = d.keyColor || "#d97706";
+
+        const backCoverUrl = generateBackCoverDataUrl(
+          bio,
+          timeline,
+          bgColor,
+          textColor,
+          keyColor,
+        );
+
+        setAlbums((prev) =>
+          prev.map((a, i) =>
+            a.id === albumData.id
+              ? { ...a, backImage: backCoverUrl, edgeColor: bgColor }
+              : a,
+          ),
+        );
       })
-        .then((res) => res.json())
-        .then((json) => {
-          if (!json.ok || !json.data) return;
-          const d = json.data;
-
-          const bio = d.lifestory?.content || "";
-          const timeline = (d.timeline?.events || []).map((e) => ({
-            year: e.timestamp,
-            event: e.title,
-          }));
-          const bgColor = d.bgColor || "#ffffff";
-          const textColor = d.color || "#1c1917";
-          const keyColor = d.keyColor || "#d97706";
-
-          const backCoverUrl = generateBackCoverDataUrl(
-            bio,
-            timeline,
-            bgColor,
-            textColor,
-            keyColor,
-          );
-
-          setAlbums((prev) =>
-            prev.map((a, i) =>
-              a.id === albumData.id
-                ? { ...a, backImage: backCoverUrl, edgeColor: bgColor }
-                : a,
-            ),
-          );
-        })
-        .catch((err) => console.error("Failed to fetch record detail:", err));
-    },
-    [],
-  );
+      .catch((err) => console.error("Failed to fetch record detail:", err));
+  }, []);
 
   // 앨범 플립 핸들러 (선택된 앨범 클릭 시)
   const handleFlipAlbum = useCallback(() => {
@@ -168,11 +165,11 @@ export default function MyShelfPage() {
     ]);
   }, []);
 
-  // Canvas에는 최대 10개만 전달
-  const visibleAlbums = albums.slice(0, 10);
+  // Canvas에는 최대 15개만 전달 (3행×5열)
+  const visibleAlbums = albums.slice(0, 15);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-white">
+    <div className="relative h-screen w-screen overflow-hidden bg-[#1a1510]">
       {/* 3D 캔버스 */}
       <ShelfCanvas
         albums={visibleAlbums}
@@ -203,7 +200,7 @@ export default function MyShelfPage() {
             {hoverLabel.album.title}
           </span>
           {hoverLabel.album.subtitle && (
-            <span style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+            <span style={{ fontSize: 12, color: "#222", marginTop: 1 }}>
               {hoverLabel.album.subtitle}
             </span>
           )}
@@ -217,7 +214,7 @@ export default function MyShelfPage() {
           onCloseAlbum={selectedAlbum ? handleCloseAlbum : undefined}
         />
         {/* 상단 헤더 */}
-        <div className="pointer-events-auto absolute top-0 right-0 left-0 flex items-center justify-between p-4">
+        <div className="pointer-events-none absolute top-0 right-0 left-0 flex items-center justify-between p-4">
           {/* 좌상단: 앨범 선택 시 X 버튼, 아니면 타이틀 */}
           {/* {selectedAlbum ? (
             <button

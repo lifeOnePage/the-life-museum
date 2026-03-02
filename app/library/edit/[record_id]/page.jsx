@@ -779,7 +779,10 @@ const Index = ({ params }) => {
                 </TabsList>
 
                 {/* Front tab - CoverImageEditor (preserved) */}
-                <TabsContent className="px-8" value="front">
+                {/* forceMount: keeps component mounted when switching to back tab,
+                    preserving prompt/generateVideos/isGenerating state.
+                    Radix adds hidden attribute automatically when tab is inactive. */}
+                <TabsContent className="px-8 data-[state=inactive]:hidden" value="front" forceMount>
                   <div data-tutorial="cover-editor">
                     <CoverImageEditor
                       ref={coverRef}

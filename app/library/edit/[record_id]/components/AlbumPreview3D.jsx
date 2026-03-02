@@ -680,10 +680,21 @@ export default function AlbumPreview3D({
   const [extractedColors, setExtractedColors] = useState(null);
 
   // Load front cover as HTMLImageElement for canvas drawing
+  // Video URLs (mp4/webm/mov) cannot be drawn to canvas synchronously — skip loading
   useEffect(() => {
     if (!frontCover || typeof document === "undefined") {
       setFrontCoverImg(null);
       setExtractedColors(null);
+      return;
+    }
+
+    const lower = frontCover.toLowerCase().split("?")[0];
+    const isVideo =
+      lower.endsWith(".mp4") ||
+      lower.endsWith(".webm") ||
+      lower.endsWith(".mov");
+    if (isVideo) {
+      setFrontCoverImg(null);
       return;
     }
 

@@ -80,7 +80,7 @@ const FRAG_V = `
     weights[8] = 0.00382;
 
     // float bias = texture(tDiffuse, vUv) * weights[0] > 0.5 ? 0 : 0.2;
-    result += texture(tDiffuse, vUv) * weights[0];
+    result += texture(tDiffuse, vUv) * weights[0]+0.01;
     for (int i = 1; i < 9; i++) {
       float offset = float(i) * uBlurAmount;
       result += texture(tDiffuse, vUv + vec2(0.0, texelSize.y * offset)) * weights[i];

@@ -8,7 +8,7 @@ import { parseGIF, decompressFrames } from "gifuct-js";
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
   x: 0,
-  y: 1.5,
+  y: 1.8,
   z: 2.5,
 };
 
@@ -18,14 +18,17 @@ const TILT_CONFIG = {
   smoothing: 0.08, // 보간 속도 (낮을수록 부드러움)
 };
 
-function isGifUrl(url) {
-  if (!url) return false;
-  try {
-    const pathname = new URL(url).pathname;
-    return pathname.toLowerCase().endsWith(".gif");
-  } catch {
-    return url.toLowerCase().includes(".gif");
-  }
+function getMediaType(url) {
+  if (!url) return null;
+  const lower = url.toLowerCase().split("?")[0];
+  if (lower.endsWith(".gif")) return "gif";
+  if (
+    lower.endsWith(".mp4") ||
+    lower.endsWith(".webm") ||
+    lower.endsWith(".mov")
+  )
+    return "video";
+  return "image";
 }
 
 // GIF 애니메이션 텍스처 훅
@@ -159,12 +162,72 @@ function useStaticTexture(imageUrl) {
   return texture;
 }
 
-// 이미지 URL에 따라 GIF/정적 텍스처를 자동 선택하는 훅
+// 비디오 텍스처 훅
+function useVideoTexture(videoUrl) {
+  const videoRef = useRef(null);
+  const textureRef = useRef(null);
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!videoUrl) return;
+
+    const video = document.createElement("video");
+    video.src = videoUrl;
+    video.loop = true;
+    video.muted = true;
+    video.playsInline = true;
+    video.crossOrigin = "anonymous";
+
+    const onCanPlay = () => {
+      textureRef.current = new THREE.VideoTexture(video);
+      textureRef.current.colorSpace = THREE.SRGBColorSpace;
+      video.play().catch(() => {});
+      setReady(true);
+    };
+    video.addEventListener("canplay", onCanPlay);
+    videoRef.current = video;
+    video.load();
+
+    const onVisChange = () => {
+      if (document.hidden) {
+        video.pause();
+      } else {
+        video.play().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisChange);
+      video.removeEventListener("canplay", onCanPlay);
+      video.pause();
+      video.src = "";
+      textureRef.current?.dispose();
+      textureRef.current = null;
+      videoRef.current = null;
+      setReady(false);
+    };
+  }, [videoUrl]);
+
+  useFrame(() => {
+    if (ready && textureRef.current) {
+      textureRef.current.needsUpdate = true;
+    }
+  });
+
+  return ready ? textureRef.current : null;
+}
+
+// 이미지 URL에 따라 GIF/video/정적 텍스처를 자동 선택하는 훅
 function useAlbumTexture(imageUrl) {
-  const gif = isGifUrl(imageUrl);
-  const gifTexture = useGifTexture(gif ? imageUrl : null);
-  const staticTexture = useStaticTexture(gif ? null : imageUrl);
-  return gif ? gifTexture : staticTexture;
+  const type = getMediaType(imageUrl);
+  // 훅 조건부 호출 금지 → null 전달로 비활성화
+  const gifTexture = useGifTexture(type === "gif" ? imageUrl : null);
+  const videoTexture = useVideoTexture(type === "video" ? imageUrl : null);
+  const staticTexture = useStaticTexture(type === "image" ? imageUrl : null);
+  if (type === "gif") return gifTexture;
+  if (type === "video") return videoTexture;
+  return staticTexture;
 }
 
 // 플레이스홀더 텍스처 생성
@@ -176,16 +239,16 @@ function createPlaceholderTexture(index, isFront = true) {
 
   // 그라데이션 배경
   const colors = [
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
-    ["#dedede", "#efefef"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
+    ["#2a2a2a", "#1e1e1e"],
   ];
 
   const [color1, color2] = colors[index % colors.length];
@@ -307,8 +370,8 @@ export default function AlbumCover({
   }, [isSelected]);
 
   // 텍스처
-  const frontTexture = useAlbumTexture(frontImage, null);
-  const backTexture = useAlbumTexture(backImage, null);
+  const frontTexture = useAlbumTexture(frontImage);
+  const backTexture = useAlbumTexture(backImage);
 
   // 플레이스홀더 텍스처 (이미지가 없을 때)
   const placeholderFront = useMemo(
@@ -411,52 +474,46 @@ export default function AlbumCover({
       // 오른쪽 측면
       new THREE.MeshStandardMaterial({
         color: sideColor,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.1,
       }),
       // 왼쪽 측면
       new THREE.MeshStandardMaterial({
         color: sideColor,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.1,
       }),
       // 위쪽
       new THREE.MeshStandardMaterial({
         color: sideColor,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.1,
       }),
       // 아래쪽
       new THREE.MeshStandardMaterial({
         color: sideColor,
-        roughness: 0.8,
+        roughness: 0.7,
         metalness: 0.1,
       }),
-      // 앞면 (+Z) - 커버 이미지
+      // 앞면 (+Z) - 커버 이미지 (emissive로 발광감)
       new THREE.MeshStandardMaterial({
         map: actualFrontTex,
-        roughness: 0.5,
-        metalness: 0.1,
+        roughness: 0.3,
+        metalness: 1,
+        emissive: "#ffffff",
+        emissiveMap: actualFrontTex,
+        emissiveIntensity: 1,
       }),
-      // 뒷면 (-Z) - 뒤 이미지
+      // 뒷면 (-Z) - 뒤 이미지 (매트 인쇄면)
       new THREE.MeshStandardMaterial({
         map: actualBackTex,
-        roughness: 0.5,
+        roughness: 0.65,
         metalness: 0.1,
       }),
     ];
   }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
 
-  // 선택 상태에 따라 renderOrder 관리
-  // - 선택됨: renderOrder 1000 (blur composite renderOrder 999보다 나중에 그려짐)
-  // - 미선택: renderOrder 0
-  // layer는 변경하지 않음 → raycasting이 항상 layer 0에서 정상 작동
-  useEffect(() => {
-    if (!meshRef.current) return;
-    meshRef.current.renderOrder = isSelected ? 1000 : 0;
-  }, [isSelected]);
-
-  // 선택 시 outerGroupRef를 부모에 노출 → BlurLayer가 FBO 캡처 시 임시 숨김에 사용
+  // 선택 시 outerGroupRef를 부모에 노출 (BlurLayer용, 현재 비활성화)
   useEffect(() => {
     if (isSelected && outerGroupRef.current) {
       onGroupRef?.(outerGroupRef.current);
@@ -464,21 +521,6 @@ export default function AlbumCover({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelected]);
-
-  useEffect(() => {
-    if (!meshRef.current) return;
-    const mats = meshRef.current.material;
-    if (!mats) return;
-    const arr = Array.isArray(mats) ? mats : [mats];
-    arr.forEach((mat) => {
-      // 선택 시 transparent pass로 이동: Three.js는 opaque를 전부 먼저 그린 뒤
-      // transparent를 나중에 그리므로, transparent=true여야 renderOrder 1000이
-      // BlurLayer composite(renderOrder 999, transparent)보다 나중에 그려짐
-      mat.transparent = isSelected;
-      mat.depthTest = !isSelected;
-      mat.needsUpdate = true;
-    });
-  }, [isSelected, materials]);
 
   // 커서 변경
   useEffect(() => {

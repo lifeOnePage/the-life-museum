@@ -37,12 +37,12 @@ function DirLightWithHelper({
   position,
   intensity,
   color,
-  helperSize = 1,
+  helperSize = 0,
   castShadow = false,
   blurSamples = 25,
 }) {
   const lightRef = useRef();
-  useHelper(lightRef, THREE.DirectionalLightHelper, helperSize);
+  // useHelper(lightRef, THREE.DirectionalLightHelper, helperSize);
   return (
     <directionalLight
       ref={lightRef}
@@ -122,7 +122,7 @@ export default function ShelfCanvas({
     <Canvas
       shadows={false}
       camera={{
-        position: [0, 2, 3.8],
+        position: [0, 1.5, 3.8],
         fov: 52,
         near: 0.1,
         far: 100,
@@ -151,72 +151,27 @@ export default function ShelfCanvas({
         position={[0, 0.1, 0.2]}
         intensity={0.4}
         color="#D8BB95"
-        helperSize={1}
+        helperSize={0}
       />
       <DirLightWithHelper
         position={[0, 2.4, 0.5]}
         intensity={1}
         color="#D8BB95"
-        helperSize={1}
+        helperSize={0}
       />
-      {/* <DirLightWithHelper
-        position={[0, 1.4, 0.5]}
-        intensity={1}
-        color="#D8BB95"
-        helperSize={1}
-      /> */}
+
       <DirLightWithHelper
         position={[0.05, 0, -0.09]}
         intensity={1.5}
         color={CREAM}
-        helperSize={1}
+        helperSize={0}
       />
       <DirLightWithHelper
         position={[-0.05, 0, -0.09]}
         intensity={1.5}
         color={CREAM}
-        helperSize={1}
+        helperSize={0}
       />
-      {/* <DirLightWithHelper
-        position={[0, 0, 1]}
-        intensity={1}
-        color={CREAM}
-        helperSize={1}
-        castShadow
-      /> */}
-      {/* <DirLightWithHelper
-        position={[-5, 2, 1]}
-        intensity={1}
-        color={CREAM}
-        helperSize={1}
-        castShadow
-      />
-      <DirLightWithHelper
-        position={[5, -2, 1]}
-        intensity={1}
-        color={CREAM}
-        helperSize={1}
-      />
-      <DirLightWithHelper
-        position={[-5, -2, 1]}
-        intensity={1}
-        color={CREAM}
-        helperSize={1}
-      /> */}
-
-      {/* 선반별 LED 스트립 PointLight (3row × 3lights = 9개) */}
-      {/* {LED_Y.map((y, ri) =>
-        LED_X.map((x, xi) => (
-          <pointLight
-            key={`led-${ri}-${xi}`}
-            position={[x, y, LED_Z]}
-            color="#ffaa40"
-            intensity={0.5}
-            distance={0.5}
-            decay={5}
-          />
-        )),
-      )} */}
 
       {/* 메인 씬 */}
       <Suspense fallback={null}>

@@ -11,9 +11,9 @@ export const UNIFIED_THEMES = {
     key: "natural",
     name: "Natural",
     description: "자연스러운 사진 중심 레이아웃",
-    bg: "#f5f2ed",
-    accent: "#556b2f",
-    text: "#3a4a23",
+    bg: "#211811",
+    accent: "#eeeeee",
+    text: "#c7c7c7",
     dots: ["#c8c4b8", "#556b2f", "#3a4a23"],
   },
   circle: {

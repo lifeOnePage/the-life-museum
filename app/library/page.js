@@ -170,23 +170,6 @@ export default function MyShelfPage() {
     ]);
   }, []);
 
-  // 공유 제거 핸들러
-  const handleUnshare = useCallback(
-    async (albumId) => {
-      try {
-        await fetch(`${BASE_URL}/record/${albumId}/share`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setAlbums((prev) => prev.filter((a) => a.id !== albumId));
-        setSelectedAlbum(null);
-      } catch (err) {
-        console.error("Failed to unshare record:", err);
-      }
-    },
-    [token],
-  );
-
   // 필터 적용
   const filteredAlbums =
     filterType === "all"
@@ -274,7 +257,7 @@ export default function MyShelfPage() {
         {/* 선택된 앨범: 아래에 버튼 (role에 따라 분기) */}
         {selectedAlbum && (
           <div className="pointer-events-auto absolute bottom-[15vh] left-1/2 flex -translate-x-1/2 translate-y-full gap-3">
-            {selectedRole === "owner" ? (
+            {selectedRole === "owner" && (
               <button
                 onClick={() => {
                   if (selectedAlbum.data?.id) {
@@ -285,26 +268,17 @@ export default function MyShelfPage() {
               >
                 편집하기
               </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => {
-                    if (selectedAlbum.data?.id) {
-                      router.push(`/walk/${selectedAlbum.data.id}`);
-                    }
-                  }}
-                  className="rounded-full bg-black/50 px-6 py-2 font-medium text-white transition hover:bg-white hover:text-black"
-                >
-                  보러가기
-                </button>
-                <button
-                  onClick={() => handleUnshare(selectedAlbum.data?.id)}
-                  className="rounded-full bg-red-500/70 px-6 py-2 font-medium text-white transition hover:bg-red-600"
-                >
-                  공유 제거
-                </button>
-              </>
             )}
+            <button
+              onClick={() => {
+                if (selectedAlbum.data?.id) {
+                  router.push(`/walk/${selectedAlbum.data.id}`);
+                }
+              }}
+              className="rounded-full bg-black/50 px-6 py-2 font-medium text-white transition hover:bg-white hover:text-black"
+            >
+              보러가기
+            </button>
           </div>
         )}
       </div>

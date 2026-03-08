@@ -1,4 +1,4 @@
-import { Suspense, useRef, useMemo, useCallback, useState } from "react";
+import { Suspense, useRef, useMemo, useCallback, useState, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -15,6 +15,7 @@ import {
   FOCUS_DISMISS_DISTANCE,
   FOCUS_FADE_SPEED,
   FOCUS_MIN_SPEED_RATIO,
+  AUTO_RESPAWN_OFFSET,
   FLOOR_Y,
   FLOOR_COLOR,
   FOG_COLOR,
@@ -59,6 +60,8 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     initialized: false,
     // For periodic re-render trigger
     lastChunk: 0,
+    // Asymmetric lerp speed to smooth out velocity jumps on focus transitions
+    smoothSpeed: cameraSpeed,
   });
 
   // Corridor span for wrapping
@@ -157,6 +160,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       recentAutoIds: new Set(),
       initialized: true,
       lastChunk: Math.floor(CAMERA_START_Z / 500),
+      smoothSpeed: cameraSpeed,
     };
     camera.position.set(0, 0, CAMERA_START_Z);
   }
@@ -164,26 +168,83 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
   // Note: focus state is intentionally preserved when paused so the focused
   // plane stays visible. The camera simply stops moving.
 
+  // Manual movement refs (used when paused)
+  const manualVelocityRef = useRef(0);
+  const keysRef = useRef({ fwd: false, back: false });
+
+  // Event listeners for manual movement while paused
+  useEffect(() => {
+    if (isPlaying) {
+      manualVelocityRef.current = 0;
+      keysRef.current = { fwd: false, back: false };
+      return;
+    }
+    const onWheel = (e) => {
+      manualVelocityRef.current += e.deltaY * 0.8;
+    };
+    const onKeyDown = (e) => {
+      if (["ArrowUp", "w", "W"].includes(e.key)) keysRef.current.fwd = true;
+      if (["ArrowDown", "s", "S"].includes(e.key)) keysRef.current.back = true;
+    };
+    const onKeyUp = (e) => {
+      if (["ArrowUp", "w", "W"].includes(e.key)) keysRef.current.fwd = false;
+      if (["ArrowDown", "s", "S"].includes(e.key)) keysRef.current.back = false;
+    };
+    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    return () => {
+      window.removeEventListener("wheel", onWheel);
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+    };
+  }, [isPlaying]);
+
   // OrbitControls always disabled — play/pause only controls camera movement
   if (controlsRef.current) {
     controlsRef.current.enabled = false;
   }
 
   useFrame((_, delta) => {
-    if (!isPlaying) return;
-
     const s = state.current;
 
+    if (!isPlaying) {
+      // Manual movement while paused
+      const MANUAL_KEY_SPEED = 200;
+      if (keysRef.current.fwd) s.cameraZ -= MANUAL_KEY_SPEED * delta;
+      if (keysRef.current.back) s.cameraZ += MANUAL_KEY_SPEED * delta;
+
+      if (Math.abs(manualVelocityRef.current) > 0.5) {
+        s.cameraZ -= manualVelocityRef.current * delta;
+        manualVelocityRef.current *= Math.pow(0.005, delta);
+      } else {
+        manualVelocityRef.current = 0;
+      }
+      camera.position.z = s.cameraZ;
+
+      // Keep wrapped positions fresh during manual movement
+      const currentChunkManual = Math.floor(s.cameraZ / 500);
+      if (currentChunkManual !== s.lastChunk) {
+        s.lastChunk = currentChunkManual;
+        setRenderTick((t) => t + 1);
+      }
+      return;
+    }
+
     // 1. Camera always advances (decelerate during focus cycles)
-    let effectiveSpeed = cameraSpeed;
+    let targetEffectiveSpeed = cameraSpeed;
     if (s.focusMode === "auto" || s.focusMode === "manual") {
       const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
       const focusRange = DISPLAY_OFFSET_Z - FOCUS_DISMISS_DISTANCE;
       // t=0 at cycle start (far from clone), t=1 at dismiss threshold (close to clone)
       const t = 1 - Math.max(0, Math.min(1, (distToClone - FOCUS_DISMISS_DISTANCE) / focusRange));
-      effectiveSpeed = cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
+      targetEffectiveSpeed = cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
     }
-    s.cameraZ -= effectiveSpeed * delta;
+    // 비대칭 스무딩: 감속은 빠르게(k=6), 가속은 천천히(k=2)
+    // → 브레이킹 느낌 유지 + 전환 후 급가속 제거
+    const k = targetEffectiveSpeed < s.smoothSpeed ? 6 : 2;
+    s.smoothSpeed += (targetEffectiveSpeed - s.smoothSpeed) * (1 - Math.pow(0.01, delta * k));
+    s.cameraZ -= s.smoothSpeed * delta;
     camera.position.z = s.cameraZ;
 
     // Keep directional light following camera (forward direction)
@@ -233,7 +294,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
           s.focusMode = "auto";
           s.targetPlaneId = next.id;
           s.fadeProgress = 0;
-          s.focusCloneZ = s.cameraZ - DISPLAY_OFFSET_Z;
+          s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
           s.recentAutoIds.add(next.id);
           setFocusRender({ mode: "auto", targetId: next.id });
         } else {
@@ -270,10 +331,10 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       <fog attach="fog" args={[FOG_COLOR, FOG_NEAR, FOG_FAR]} />
 
       {/* Lighting */}
-      <ambientLight intensity={3} />
-      <directionalLight ref={dirLightRef} intensity={10} />
-      <pointLight position={[-300, 80, camZ]} intensity={0.4} distance={2000} />
-      <pointLight position={[300, 80, camZ]} intensity={0.4} distance={2000} />
+      <ambientLight intensity={0.8} />
+      <directionalLight ref={dirLightRef} intensity={2} />
+      <pointLight position={[-300, 80, camZ]} intensity={0.1} distance={2000} />
+      <pointLight position={[300, 80, camZ]} intensity={0.1} distance={2000} />
 
       {/* Floor - follows camera for infinite appearance */}
       <mesh
@@ -328,6 +389,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
                   : DISPLAY_OFFSET_Z
               }
               displayScale={DISPLAY_SCALE}
+              stateRef={state}
             />
           </Suspense>
         );

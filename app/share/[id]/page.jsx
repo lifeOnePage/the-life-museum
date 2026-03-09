@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
 
-const AlbumPreview3D = dynamic(
-  () => import("@/app/library/edit/[record_id]/components/AlbumPreview3D"),
+const ShareScene = dynamic(
+  () => import("./components/ShareScene"),
   { ssr: false },
 );
 
@@ -123,7 +123,7 @@ export default function SharePage({ params }) {
           ready ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"
         }`}
       >
-        <AlbumPreview3D
+        <ShareScene
           frontCover={frontCover}
           bio={bio}
           timeline={timeline}

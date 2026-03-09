@@ -103,8 +103,15 @@ const Index = ({ params }) => {
   const [frontCover, setFrontCover] = useState(null);
   const [albumTitle, setAlbumTitle] = useState("");
   const [artistName, setArtistName] = useState("");
-  const [bio, setBio] = useState("");
-  const [timeline, setTimeline] = useState([]);
+  const [bio, setBio] = useState(
+    "어린 시절, 골목길을 누비며 뛰어놀던 기억이 아직도 생생합니다. 여름이면 할머니 댁 마당에서 수박을 먹고, 겨울이면 온 동네가 하얗게 물든 눈밭 위를 걸었죠. 그 시절의 따뜻한 햇살과 웃음소리가 지금의 저를 만들어 주었습니다.",
+  );
+  const [timeline, setTimeline] = useState([
+    { year: "1995", event: "서울에서 태어남" },
+    { year: "2001", event: "초등학교 입학 - 첫 번째 친구를 만남" },
+    { year: "2014", event: "대학교 입학 - 사진 동아리 가입" },
+    { year: "2020", event: "첫 직장 - 새로운 시작" },
+  ]);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -677,31 +684,19 @@ const Index = ({ params }) => {
           <div className="ml-1 flex items-center gap-1.5">
             <div className="group relative">
               <button
-                onClick={() => setShowTutorial(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-              </button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                튜토리얼
-              </span>
-            </div>
-            <div className="group relative">
-              <button
                 onClick={openRecordEditDialog}
                 className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
               >
                 <Pencil className="h-3.5 w-3.5" />
               </button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                정보 수정
+                앨범 정보 수정
               </span>
             </div>
             <div className="group relative">
               <button
                 disabled={!isDirty}
                 onClick={handleReset}
-                // className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500"
                 className={`flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors ${
                   isDirty
                     ? "hover:bg-gray-100 hover:text-red-500"
@@ -733,6 +728,17 @@ const Index = ({ params }) => {
               </button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                 저장하기
+              </span>
+            </div>
+            <div className="group relative">
+              <button
+                onClick={() => setShowTutorial(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
+              >
+                <HelpCircle className="h-3.5 w-3.5" />
+              </button>
+              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                튜토리얼
               </span>
             </div>
           </div>
@@ -782,7 +788,11 @@ const Index = ({ params }) => {
                 {/* forceMount: keeps component mounted when switching to back tab,
                     preserving prompt/generateVideos/isGenerating state.
                     Radix adds hidden attribute automatically when tab is inactive. */}
-                <TabsContent className="px-8 data-[state=inactive]:hidden" value="front" forceMount>
+                <TabsContent
+                  className="px-8 data-[state=inactive]:hidden"
+                  value="front"
+                  forceMount
+                >
                   <div data-tutorial="cover-editor">
                     <CoverImageEditor
                       ref={coverRef}

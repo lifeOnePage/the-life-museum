@@ -2,7 +2,15 @@
 
 import { useState, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ImagePlus, RefreshCw, ChevronLeft, X } from "lucide-react";
+import {
+  Sparkles,
+  ImagePlus,
+  RefreshCw,
+  ChevronLeft,
+  X,
+  Upload,
+  FolderOpen,
+} from "lucide-react";
 
 const CoverImageEditor = forwardRef(
   (
@@ -30,6 +38,9 @@ const CoverImageEditor = forwardRef(
     const [selectedVideoUrl, setSelectedVideoUrl] = useState(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
     const [imageStrength, setImageStrength] = useState(0.5); // 0.0~1.0
+    const [photoMedia, setPhotoMedia] = useState([]);
+    const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+    const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
 
     useImperativeHandle(ref, () => ({
       save: async () => {
@@ -175,10 +186,46 @@ const CoverImageEditor = forwardRef(
       }
     };
 
+    const fetchPhotoMedia = async () => {
+      setIsLoadingPhotos(true);
+      setSelectedPhotoIndex(-1);
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+          headers: { "X-Dev-Key": "tlm2026" },
+        });
+        const data = await response.json();
+        const images = (data?.data?.mediaList ?? [])
+          .filter((m) => m.type === "image")
+          .slice(0, 9);
+        setPhotoMedia(images);
+      } catch (err) {
+        console.error(err);
+        setPhotoMedia([]);
+      } finally {
+        setIsLoadingPhotos(false);
+      }
+    };
+
+    const handleSelectPhoto = (index) => {
+      setSelectedPhotoIndex(index);
+    };
+
+    const handleApplyPhoto = () => {
+      if (selectedPhotoIndex < 0 || !photoMedia[selectedPhotoIndex]) return;
+      const media = photoMedia[selectedPhotoIndex];
+      const rawUrl = media.original_url || media.thumbnail_url;
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const url = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+      setSelectedVideoUrl(url);
+      setSelectedFile(null);
+      onImageGenerated(url);
+    };
+
     return (
       <div className="space-y-7 pb-10">
         <AnimatePresence mode="wait">
-          {view === "menu" ? (
+          {view === "menu" && (
             <motion.div
               key="menu"
               initial={{ opacity: 0, x: -10 }}
@@ -213,13 +260,10 @@ const CoverImageEditor = forwardRef(
                 </button>
 
                 {/* Upload card */}
-                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
+                <button
+                  onClick={() => setView("upload")}
+                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <ImagePlus className="h-[18px] w-[18px] text-[#475569]" />
                   </div>
@@ -229,12 +273,151 @@ const CoverImageEditor = forwardRef(
                   <p className="mt-1 text-xs text-[#94a3b8]">
                     JPG, PNG 최대 10MB
                   </p>
-                </label>
+                </button>
               </div>
 
               {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
             </motion.div>
-          ) : (
+          )}
+
+          {view === "upload" && (
+            <motion.div
+              key="upload"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Header with back arrow */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setView("menu")}
+                  className="mb-2 flex items-center gap-2 text-[#475569] transition-colors hover:text-[#1e1e1e]"
+                >
+                  <ChevronLeft className="h-[18px] w-[20px]" />
+                  <span className="text-base font-bold">직접 업로드</span>
+                </button>
+                <p className="text-xs text-[#64748b]">
+                  디바이스에서 직접 업로드하거나, 포토드라이브에서 선택할 수
+                  있습니다.
+                </p>
+              </div>
+
+              {/* Two option cards */}
+              <div className="flex gap-4">
+                {/* Device upload card */}
+                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+                    <Upload className="h-[18px] w-[18px] text-[#475569]" />
+                  </div>
+                  <span className="text-sm font-medium text-[#334155]">
+                    디바이스 업로드
+                  </span>
+                  <p className="mt-1 text-xs text-[#94a3b8]">
+                    JPG, PNG 최대 10MB
+                  </p>
+                </label>
+
+                {/* Photo drive card */}
+                <button
+                  onClick={() => {
+                    setView("photodrive");
+                    fetchPhotoMedia();
+                  }}
+                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                >
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
+                    <FolderOpen className="h-[18px] w-[18px] text-[#475569]" />
+                  </div>
+                  <span className="text-sm font-medium text-[#334155]">
+                    포토드라이브
+                  </span>
+                  <p className="mt-1 text-xs text-[#94a3b8]">
+                    레코드 사진에서 선택
+                  </p>
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {view === "photodrive" && (
+            <motion.div
+              key="photodrive"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {/* Header with back arrow */}
+              <div className="mb-4">
+                <button
+                  onClick={() => setView("upload")}
+                  className="mb-2 flex items-center gap-2 text-[#475569] transition-colors hover:text-[#1e1e1e]"
+                >
+                  <ChevronLeft className="h-[18px] w-[20px]" />
+                  <span className="text-base font-bold">포토드라이브</span>
+                </button>
+                <p className="text-xs text-[#64748b]">
+                  레코드의 사진 중 표지로 사용할 이미지를 선택하세요.
+                </p>
+              </div>
+
+              {isLoadingPhotos ? (
+                <div className="flex items-center justify-center py-12">
+                  <RefreshCw className="h-5 w-5 animate-spin text-[#94a3b8]" />
+                </div>
+              ) : photoMedia.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <ImagePlus className="mb-2 h-8 w-8 text-[#cbd5e1]" />
+                  <p className="text-sm text-[#94a3b8]">
+                    사용 가능한 사진이 없습니다.
+                  </p>
+                </div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                >
+                  <div className="grid grid-cols-3 gap-3">
+                    {photoMedia.map((media, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSelectPhoto(i)}
+                        className={`aspect-square overflow-hidden rounded-md transition-all ${
+                          selectedPhotoIndex === i
+                            ? "ring-2 ring-[#3E5A81] ring-offset-2"
+                            : "hover:opacity-80"
+                        }`}
+                      >
+                        <img
+                          src={media.original_url || media.thumbnail_url}
+                          alt={`사진 ${i + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Apply button */}
+                  <button
+                    onClick={handleApplyPhoto}
+                    disabled={selectedPhotoIndex < 0}
+                    className="mt-4 flex w-full items-center justify-center rounded-lg bg-[#3E5A81] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
+                  >
+                    적용하기
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+
+          {view === "generate" && (
             <motion.div
               key="generate"
               initial={{ opacity: 0, x: 10 }}
@@ -336,7 +519,9 @@ const CoverImageEditor = forwardRef(
               {/* Generate button */}
               <button
                 onClick={handleGenerate}
-                disabled={isGenerating || !prompt.trim() || generatedVideos.length >= 3}
+                disabled={
+                  isGenerating || !prompt.trim() || generatedVideos.length >= 3
+                }
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#67ADD1] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
               >
                 {isGenerating ? (

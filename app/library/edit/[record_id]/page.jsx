@@ -17,6 +17,7 @@ import {
   Sparkles,
   Undo2,
   HelpCircle,
+  Eye,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -126,6 +127,7 @@ const Index = ({ params }) => {
 
   // Tutorial
   const [showTutorial, setShowTutorial] = useState(false);
+  const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   // AI story generation state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -656,8 +658,8 @@ const Index = ({ params }) => {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f8f7f6]">
       {/* Header */}
-      <header className="flex items-center border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9] px-4 py-3">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9] px-3 py-2 lg:px-4 lg:py-3">
+        <div className="flex min-w-0 items-center gap-2 lg:gap-3">
           <div className="group relative">
             <button
               data-tutorial="exit"
@@ -670,8 +672,8 @@ const Index = ({ params }) => {
               나가기
             </span>
           </div>
-          <div>
-            <h1 className="text-sm leading-tight font-semibold text-gray-900">
+          <div className="min-w-0">
+            <h1 className="truncate text-sm leading-tight font-semibold text-gray-900">
               {albumTitle || "앨범 편집"}
             </h1>
             {artistName && (
@@ -681,7 +683,7 @@ const Index = ({ params }) => {
             )}
           </div>
 
-          <div className="ml-1 flex items-center gap-1.5">
+          <div className="ml-1 flex items-center gap-1 lg:gap-1.5">
             <div className="group relative">
               <button
                 onClick={openRecordEditDialog}
@@ -743,8 +745,24 @@ const Index = ({ params }) => {
             </div>
           </div>
 
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            onClick={() => setShowMobilePreview(!showMobilePreview)}
+            className="flex h-8 items-center gap-1.5 rounded-md bg-[#67add1]/10 px-2.5 text-xs font-medium text-[#67add1] transition-colors hover:bg-[#67add1]/20 lg:hidden"
+          >
+            {showMobilePreview ? (
+              <>
+                <Pencil className="h-3 w-3" /> 편집
+              </>
+            ) : (
+              <>
+                <Eye className="h-3 w-3" /> 미리보기
+              </>
+            )}
+          </button>
           {lastSavedAt && (
-            <p className="text-[10px] text-gray-300">
+            <p className="hidden text-[10px] text-gray-300 sm:block">
               마지막 저장{" "}
               {lastSavedAt.toLocaleTimeString("ko-KR", {
                 hour: "2-digit",
@@ -755,9 +773,11 @@ const Index = ({ params }) => {
         </div>
       </header>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Left: Editor Sidebar */}
-        <div className="scrollbar-accent w-[420px] shrink-0 overflow-y-auto border-r border-[#e2e8f0] bg-[#f0eee9]">
+        <div
+          className={`scrollbar-accent overflow-y-auto border-[#e2e8f0] bg-[#f0eee9] lg:w-[420px] lg:shrink-0 lg:border-r ${showMobilePreview ? "hidden lg:block" : "flex-1 lg:flex-none"}`}
+        >
           <div>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -789,7 +809,7 @@ const Index = ({ params }) => {
                     preserving prompt/generateVideos/isGenerating state.
                     Radix adds hidden attribute automatically when tab is inactive. */}
                 <TabsContent
-                  className="px-8 data-[state=inactive]:hidden"
+                  className="px-4 data-[state=inactive]:hidden sm:px-6 lg:px-8"
                   value="front"
                   forceMount
                 >
@@ -809,7 +829,7 @@ const Index = ({ params }) => {
                 </TabsContent>
 
                 {/* Back tab - Redesigned */}
-                <TabsContent className="px-5" value="back">
+                <TabsContent className="px-4 sm:px-5" value="back">
                   <div className="space-y-5 pb-10">
                     {/* Story Section - Collapsible */}
                     <div
@@ -1030,7 +1050,10 @@ const Index = ({ params }) => {
         </div>
 
         {/* Right: Preview Panel */}
-        <div className="flex-1 bg-[#dedbd3]" data-tutorial="preview">
+        <div
+          className={`bg-[#dedbd3] lg:flex-1 ${showMobilePreview ? "flex-1" : "hidden lg:block"}`}
+          data-tutorial="preview"
+        >
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}

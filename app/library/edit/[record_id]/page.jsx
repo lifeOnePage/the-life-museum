@@ -182,7 +182,7 @@ const Index = ({ params }) => {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
           headers: {
-            "X-Dev-Key": "tlm2026",
+            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
           },
         });
 
@@ -254,7 +254,7 @@ const Index = ({ params }) => {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
-        "X-Dev-Key": "tlm2026",
+        Authentication: `Bearer ${localStorage.getItem("app_token")}`,
       },
       body: JSON.stringify({
         color: theme.text,
@@ -281,7 +281,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "X-Dev-Key": "tlm2026",
+          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           result: bio,
@@ -316,7 +316,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          "X-Dev-Key": "tlm2026",
+          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({ events }),
       },
@@ -432,15 +432,19 @@ const Index = ({ params }) => {
 
     try {
       const token = localStorage.getItem("app_token");
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-      const response = await fetch("/api/gpt-story", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      const response = await fetch(
+        `${apiUrl}/api/v1/record/${record_id}/lifestory/create`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authentication: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ prompt: fullText, albumTitle, artistName }),
         },
-        body: JSON.stringify({ prompt: fullText, albumTitle, artistName }),
-      });
+      );
 
       const data = await response.json();
       if (!response.ok) {
@@ -579,7 +583,7 @@ const Index = ({ params }) => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          "X-Dev-Key": "tlm2026",
+          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           title: editTitle,
@@ -633,7 +637,7 @@ const Index = ({ params }) => {
       const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
         method: "DELETE",
         headers: {
-          "X-Dev-Key": "tlm2026",
+          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
         },
       });
       const data = await response.json();
@@ -697,7 +701,7 @@ const Index = ({ params }) => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full z-40 mt-1 w-48 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5"
+                    className="absolute top-full right-0 z-40 mt-1 w-48 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5"
                   >
                     <button
                       onClick={() => {
@@ -868,7 +872,7 @@ const Index = ({ params }) => {
 
         {/* Editor: bottom sheet on mobile, sidebar on desktop */}
         <div
-          className={`absolute inset-x-0 bottom-0 z-20 h-[85vh] rounded-t-2xl bg-[#f0eee9] shadow-[0_-2px_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out lg:static lg:order-1 lg:z-auto lg:h-auto lg:w-[420px] lg:shrink-0 lg:translate-y-0 lg:rounded-none lg:border-r lg:border-[#e2e8f0] lg:shadow-none lg:transition-none ${sheetOpen ? "translate-y-0" : "translate-y-[calc(100%-56px)]"}`}
+          className={`absolute inset-x-0 bottom-0 z-20 h-[85vh] rounded-t-2xl bg-[#f0eee9] shadow-[0_-2px_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:order-1 lg:h-auto lg:w-[420px] lg:shrink-0 lg:translate-y-0 lg:rounded-none lg:border-r lg:border-[#e2e8f0] lg:shadow-none lg:transition-none ${sheetOpen ? "translate-y-0" : "translate-y-[calc(100%-56px)]"}`}
         >
           <motion.div
             initial={{ opacity: 0, y: 10 }}

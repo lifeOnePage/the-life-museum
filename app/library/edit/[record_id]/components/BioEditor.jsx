@@ -34,7 +34,7 @@ const BioEditor = forwardRef(
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
-                "X-Dev-Key": "tlm2026",
+                Authentication: `Bearer ${localStorage.getItem("app_token")}`,
               },
               body: JSON.stringify({
                 qaList: [

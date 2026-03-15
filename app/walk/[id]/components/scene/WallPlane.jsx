@@ -1,7 +1,14 @@
 import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { getProxiedUrl, FOCUS_FADE_SPEED } from "../lib/constants";
+import {
+  getProxiedUrl,
+  FOCUS_FADE_SPEED,
+  FOCUS_DISMISS_DISTANCE,
+  OPACITY_APPEAR_DIST,
+  OPACITY_PEAK_DIST,
+  OPACITY_HOLD_DIST,
+} from "../lib/constants";
 
 const BOX_DEPTH = 10;
 const FRAME_COLOR = "#1a1a2e";
@@ -52,6 +59,7 @@ export default function WallPlane({
   onTextureLoaded,
   displayOffsetZ,
   displayScale,
+  stateRef,
 }) {
   const meshRef = useRef();
   const frontMatRef = useRef();
@@ -226,23 +234,8 @@ export default function WallPlane({
       fade.prevFocusMode === "manual-fly" ||
       fade.prevFocusMode === "manual-display";
 
-    if (isManual && !wasManual) {
-      // Entering manual: snap to 0 and fade in
-      fade.opacity = 0;
-      fade.target = 0.8;
-      // Immediately apply so there is no one-frame flash
-      if (meshRef.current) {
-        const mats = meshRef.current.material;
-        if (Array.isArray(mats)) {
-          mats.forEach((mat) => {
-            mat.transparent = true;
-            mat.opacity = 0;
-            mat.needsUpdate = true;
-          });
-        }
-      }
-    } else if (!isManual && wasManual) {
-      // Leaving manual: fade back to fully opaque
+    if (!isManual && wasManual) {
+      // Leaving manual: fade back to fully opaque (animated in useFrame)
       fade.target = 1;
     }
     fade.prevFocusMode = focusMode;
@@ -275,24 +268,68 @@ export default function WallPlane({
     meshRef.current.rotation.set(...state.currentRot);
     meshRef.current.scale.set(...state.currentScale);
 
-    // Manual focus fade animation (all faces)
+    // Manual focus fade animation (all faces) — distance-based
     const fade = manualFade.current;
-    if (Math.abs(fade.opacity - fade.target) > 0.001) {
+    const isManual =
+      focusMode === "manual-fly" || focusMode === "manual-display";
+
+    if (isManual && stateRef?.current) {
+      const s = stateRef.current;
+      // 플레인의 실제 애니메이션 위치 기준으로 dist 계산
+      // → 벽에서 target으로 lerp 비행 중 실제 위치가 OPACITY_APPEAR_DIST 진입 시 materializes
+      const dist = Math.abs(s.cameraZ - state.currentPos[2]);
+      let opacity = 0;
+      if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
+        if (dist >= OPACITY_PEAK_DIST) {
+          // fade-in 구간
+          opacity =
+            (OPACITY_APPEAR_DIST - dist) /
+            (OPACITY_APPEAR_DIST - OPACITY_PEAK_DIST);
+        } else if (dist >= OPACITY_HOLD_DIST) {
+          // hold 구간
+          opacity = 1.0;
+        } else {
+          // fade-out 구간
+          opacity =
+            (dist - FOCUS_DISMISS_DISTANCE) /
+            (OPACITY_HOLD_DIST - FOCUS_DISMISS_DISTANCE);
+        }
+      }
+      fade.opacity = opacity * 0.9;
+
+      if (meshRef.current) {
+        const mats = meshRef.current.material;
+        if (Array.isArray(mats)) {
+          const needsTransparent = fade.opacity < 0.999;
+          mats.forEach((mat) => {
+            if (mat.transparent !== needsTransparent) {
+              mat.transparent = needsTransparent;
+              mat.needsUpdate = true;
+            }
+            mat.opacity = fade.opacity;
+          });
+        }
+      }
+    } else if (!isManual && fade.opacity < 0.999) {
+      // Restore to fully opaque after leaving manual mode
+      fade.target = 1;
       const dir = fade.target > fade.opacity ? 1 : -1;
       fade.opacity += dir * FOCUS_FADE_SPEED * delta;
       if (dir > 0) fade.opacity = Math.min(fade.target, fade.opacity);
       else fade.opacity = Math.max(fade.target, fade.opacity);
 
-      const mats = meshRef.current.material;
-      if (Array.isArray(mats)) {
-        const needsTransparent = fade.opacity < 0.999;
-        mats.forEach((mat) => {
-          if (mat.transparent !== needsTransparent) {
-            mat.transparent = needsTransparent;
-            mat.needsUpdate = true;
-          }
-          mat.opacity = fade.opacity;
-        });
+      if (meshRef.current) {
+        const mats = meshRef.current.material;
+        if (Array.isArray(mats)) {
+          const needsTransparent = fade.opacity < 0.999;
+          mats.forEach((mat) => {
+            if (mat.transparent !== needsTransparent) {
+              mat.transparent = needsTransparent;
+              mat.needsUpdate = true;
+            }
+            mat.opacity = fade.opacity;
+          });
+        }
       }
     }
 

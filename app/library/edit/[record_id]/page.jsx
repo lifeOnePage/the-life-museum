@@ -17,7 +17,7 @@ import {
   Sparkles,
   Undo2,
   HelpCircle,
-  Eye,
+  MoreVertical,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -127,7 +127,8 @@ const Index = ({ params }) => {
 
   // Tutorial
   const [showTutorial, setShowTutorial] = useState(false);
-  const [showMobilePreview, setShowMobilePreview] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
   // AI story generation state
   const [isGenerating, setIsGenerating] = useState(false);
@@ -657,23 +658,18 @@ const Index = ({ params }) => {
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f8f7f6]">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9] px-3 py-2 lg:px-4 lg:py-3">
-        <div className="flex min-w-0 items-center gap-2 lg:gap-3">
-          <div className="group relative">
-            <button
-              data-tutorial="exit"
-              onClick={() => setShowExitDialog(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </button>
-            <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-              나가기
-            </span>
-          </div>
-          <div className="min-w-0">
-            <h1 className="truncate text-sm leading-tight font-semibold text-gray-900">
+      {/* Header - Mobile */}
+      <header className="border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9]">
+        <div className="relative flex items-center justify-between px-3 py-2 lg:hidden">
+          <button
+            data-tutorial="exit"
+            onClick={() => setShowExitDialog(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+          <div className="absolute left-1/2 -translate-x-1/2 text-center">
+            <h1 className="text-sm font-semibold text-gray-900">
               {albumTitle || "앨범 편집"}
             </h1>
             {artistName && (
@@ -682,134 +678,238 @@ const Index = ({ params }) => {
               </p>
             )}
           </div>
+          <div className="relative">
+            <button
+              onClick={() => setShowHeaderMenu(!showHeaderMenu)}
+              className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500"
+            >
+              <MoreVertical className="h-5 w-5" />
+            </button>
+            <AnimatePresence>
+              {showHeaderMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-30"
+                    onClick={() => setShowHeaderMenu(false)}
+                  />
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full z-40 mt-1 w-48 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5"
+                  >
+                    <button
+                      onClick={() => {
+                        openRecordEditDialog();
+                        setShowHeaderMenu(false);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 active:bg-gray-50"
+                    >
+                      <Pencil className="h-4 w-4 text-gray-400" />
+                      앨범 정보 수정
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleSaveAll();
+                        setShowHeaderMenu(false);
+                      }}
+                      disabled={isSaving || !isDirty}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#67add1] active:bg-gray-50 disabled:opacity-40"
+                    >
+                      {isSaving ? (
+                        <RefreshCw className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                      저장하기
+                    </button>
+                    <button
+                      onClick={() => {
+                        handleReset();
+                        setShowHeaderMenu(false);
+                      }}
+                      disabled={!isDirty}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 active:bg-gray-50 disabled:opacity-40"
+                    >
+                      <Undo2 className="h-4 w-4 text-gray-400" />
+                      변경사항 초기화
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowTutorial(true);
+                        setShowHeaderMenu(false);
+                      }}
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 active:bg-gray-50"
+                    >
+                      <HelpCircle className="h-4 w-4 text-gray-400" />
+                      튜토리얼
+                    </button>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
 
-          <div className="ml-1 flex items-center gap-1 lg:gap-1.5">
+        {/* Header - Desktop */}
+        <div className="hidden items-center justify-between px-4 py-3 lg:flex">
+          <div className="flex items-center gap-3">
             <div className="group relative">
               <button
-                onClick={openRecordEditDialog}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
+                data-tutorial="exit"
+                onClick={() => setShowExitDialog(true)}
+                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
               >
-                <Pencil className="h-3.5 w-3.5" />
+                <ArrowLeft className="h-5 w-5" />
               </button>
               <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                앨범 정보 수정
+                나가기
               </span>
             </div>
-            <div className="group relative">
-              <button
-                disabled={!isDirty}
-                onClick={handleReset}
-                className={`flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors ${
-                  isDirty
-                    ? "hover:bg-gray-100 hover:text-red-500"
-                    : "cursor-default text-gray-300"
-                }`}
-              >
-                <Undo2 className="h-3.5 w-3.5" />
-              </button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                변경사항 초기화
-              </span>
+            <div>
+              <h1 className="text-sm leading-tight font-semibold text-gray-900">
+                {albumTitle || "앨범 편집"}
+              </h1>
+              {artistName && (
+                <p className="text-[11px] leading-tight text-gray-400">
+                  {artistName}
+                </p>
+              )}
             </div>
-            <div className="group relative">
-              <button
-                data-tutorial="save"
-                onClick={handleSaveAll}
-                disabled={isSaving || !isDirty}
-                className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
-                  isDirty
-                    ? "text-[#67add1] hover:bg-[#67add1]/10"
-                    : "cursor-default text-gray-300"
-                }`}
-              >
-                {isSaving ? (
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Save className="h-3.5 w-3.5" />
-                )}
-              </button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                저장하기
-              </span>
-            </div>
-            <div className="group relative">
-              <button
-                onClick={() => setShowTutorial(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-              </button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
-                튜토리얼
-              </span>
+            <div className="ml-1 flex items-center gap-1.5">
+              <div className="group relative">
+                <button
+                  onClick={openRecordEditDialog}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                </button>
+                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  앨범 정보 수정
+                </span>
+              </div>
+              <div className="group relative">
+                <button
+                  disabled={!isDirty}
+                  onClick={handleReset}
+                  className={`flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors ${
+                    isDirty
+                      ? "hover:bg-gray-100 hover:text-red-500"
+                      : "cursor-default text-gray-300"
+                  }`}
+                >
+                  <Undo2 className="h-3.5 w-3.5" />
+                </button>
+                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  변경사항 초기화
+                </span>
+              </div>
+              <div className="group relative">
+                <button
+                  data-tutorial="save"
+                  onClick={handleSaveAll}
+                  disabled={isSaving || !isDirty}
+                  className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+                    isDirty
+                      ? "text-[#67add1] hover:bg-[#67add1]/10"
+                      : "cursor-default text-gray-300"
+                  }`}
+                >
+                  {isSaving ? (
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Save className="h-3.5 w-3.5" />
+                  )}
+                </button>
+                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  저장하기
+                </span>
+              </div>
+              <div className="group relative">
+                <button
+                  onClick={() => setShowTutorial(true)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
+                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                  튜토리얼
+                </span>
+              </div>
             </div>
           </div>
-
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            onClick={() => setShowMobilePreview(!showMobilePreview)}
-            className="flex h-8 items-center gap-1.5 rounded-md bg-[#67add1]/10 px-2.5 text-xs font-medium text-[#67add1] transition-colors hover:bg-[#67add1]/20 lg:hidden"
-          >
-            {showMobilePreview ? (
-              <>
-                <Pencil className="h-3 w-3" /> 편집
-              </>
-            ) : (
-              <>
-                <Eye className="h-3 w-3" /> 미리보기
-              </>
+          <div className="flex shrink-0 items-center gap-2">
+            {lastSavedAt && (
+              <p className="text-[10px] text-gray-300">
+                마지막 저장{" "}
+                {lastSavedAt.toLocaleTimeString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </p>
             )}
-          </button>
-          {lastSavedAt && (
-            <p className="hidden text-[10px] text-gray-300 sm:block">
-              마지막 저장{" "}
-              {lastSavedAt.toLocaleTimeString("ko-KR", {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-          )}
+          </div>
         </div>
       </header>
 
-      <div className="flex flex-1 flex-col overflow-hidden lg:flex-row">
-        {/* Left: Editor Sidebar */}
-        <div
-          className={`scrollbar-accent overflow-y-auto border-[#e2e8f0] bg-[#f0eee9] lg:w-[420px] lg:shrink-0 lg:border-r ${showMobilePreview ? "hidden lg:block" : "flex-1 lg:flex-none"}`}
-        >
-          <div>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <Tabs
-                value={activeTab}
-                onValueChange={setActiveTab}
-                className="w-full"
-              >
-                {/* Tab triggers - underline style */}
-                <TabsList className="mb-6 flex h-auto w-full rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
-                  <TabsTrigger
-                    value="front"
-                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
-                  >
-                    앞면
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="back"
-                    className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
-                  >
-                    뒷면
-                  </TabsTrigger>
-                </TabsList>
+      <div className="relative flex flex-1 overflow-hidden">
+        {/* Preview Panel - full on mobile, right side on desktop */}
+        <div className="flex-1 bg-[#dedbd3] lg:order-2" data-tutorial="preview">
+          <AlbumPreview3D
+            frontCover={frontCover}
+            bio={bio}
+            timeline={timeline}
+            selectedTheme={selectedTheme}
+            albumTitle={albumTitle}
+            flipped={activeTab === "back"}
+          />
+        </div>
 
-                {/* Front tab - CoverImageEditor (preserved) */}
-                {/* forceMount: keeps component mounted when switching to back tab,
-                    preserving prompt/generateVideos/isGenerating state.
-                    Radix adds hidden attribute automatically when tab is inactive. */}
+        {/* Editor: bottom sheet on mobile, sidebar on desktop */}
+        <div
+          className={`absolute inset-x-0 bottom-0 z-20 h-[85vh] rounded-t-2xl bg-[#f0eee9] shadow-[0_-2px_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out lg:static lg:order-1 lg:z-auto lg:h-auto lg:w-[420px] lg:shrink-0 lg:translate-y-0 lg:rounded-none lg:border-r lg:border-[#e2e8f0] lg:shadow-none lg:transition-none ${sheetOpen ? "translate-y-0" : "translate-y-[calc(100%-56px)]"}`}
+        >
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex h-full flex-col"
+          >
+            <Tabs
+              value={activeTab}
+              onValueChange={(v) => {
+                setActiveTab(v);
+                if (!sheetOpen) setSheetOpen(true);
+              }}
+              className="flex h-full w-full flex-col"
+            >
+              {/* Mobile drag handle */}
+              <div
+                className="flex cursor-grab flex-col items-center pt-3 pb-1 active:cursor-grabbing lg:hidden"
+                onClick={() => setSheetOpen(!sheetOpen)}
+              >
+                <div className="h-1 w-10 rounded-full bg-gray-300" />
+              </div>
+
+              <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
+                <TabsTrigger
+                  value="front"
+                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
+                >
+                  앞면
+                </TabsTrigger>
+                <TabsTrigger
+                  value="back"
+                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
+                >
+                  뒷면
+                </TabsTrigger>
+              </TabsList>
+
+              {/* Scrollable editor content */}
+              <div className="scrollbar-accent min-h-0 flex-1 overflow-y-auto">
                 <TabsContent
-                  className="px-4 data-[state=inactive]:hidden sm:px-6 lg:px-8"
+                  className="px-4 pt-6 data-[state=inactive]:hidden sm:px-6 lg:px-8"
                   value="front"
                   forceMount
                 >
@@ -829,7 +929,7 @@ const Index = ({ params }) => {
                 </TabsContent>
 
                 {/* Back tab - Redesigned */}
-                <TabsContent className="px-4 sm:px-5" value="back">
+                <TabsContent className="px-4 pt-5 sm:px-5" value="back">
                   <div className="space-y-5 pb-10">
                     {/* Story Section - Collapsible */}
                     <div
@@ -1044,24 +1144,9 @@ const Index = ({ params }) => {
                     </div>
                   </div>
                 </TabsContent>
-              </Tabs>
-            </motion.div>
-          </div>
-        </div>
-
-        {/* Right: Preview Panel */}
-        <div
-          className={`bg-[#dedbd3] lg:flex-1 ${showMobilePreview ? "flex-1" : "hidden lg:block"}`}
-          data-tutorial="preview"
-        >
-          <AlbumPreview3D
-            frontCover={frontCover}
-            bio={bio}
-            timeline={timeline}
-            selectedTheme={selectedTheme}
-            albumTitle={albumTitle}
-            flipped={activeTab === "back"}
-          />
+              </div>
+            </Tabs>
+          </motion.div>
         </div>
       </div>
 

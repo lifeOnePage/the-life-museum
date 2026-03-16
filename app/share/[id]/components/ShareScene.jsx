@@ -130,16 +130,16 @@ function ReflectiveFloor() {
       <MeshReflectorMaterial
         ref={matRef}
         resolution={1024}
-        mirror={0.6}
+        mirror={1}
         mixBlur={3}
         mixStrength={2}
         blur={[400, 100]}
-        // color="#666"
-        color="90d5ff"
+        color="#333"
+        // color="90d5ff"
         metalness={0.6}
         roughness={0.2}
-        normalMap={normalMap}
-        normalScale={[0.3, 0.3]}
+        // normalMap={normalMap}
+        // normalScale={[0.3, 0.3]}
       />
     </mesh>
   );

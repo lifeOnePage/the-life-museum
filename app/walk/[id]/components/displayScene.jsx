@@ -157,7 +157,7 @@ export default function DisplayScene({ recordId }) {
           position: [0, 0, 300],
           fov: 80,
           near: 0.1,
-          far: 15000,
+          far: 7200,
         }}
         gl={{
           antialias: true,

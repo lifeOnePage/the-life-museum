@@ -20,14 +20,16 @@ const ZOOM_STEP = 0.25;
 const ZOOM_DEFAULT = 6;
 
 function CameraZoom({ zoom }) {
-  const { camera } = useThree();
-  const targetZ = useRef(zoom);
-  targetZ.current = zoom;
+  const { camera, size } = useThree();
 
   useEffect(() => {
-    camera.position.z = zoom;
+    const aspect = size.width / size.height;
+    // Ensure the album (width 1.8) fits horizontally with margin
+    const fovRad = (30 * Math.PI) / 180;
+    const minZ = (ALBUM_CONFIG.size * 1.15) / (2 * Math.tan(fovRad / 2) * aspect);
+    camera.position.z = Math.max(zoom, minZ);
     camera.updateProjectionMatrix();
-  }, [zoom, camera]);
+  }, [zoom, camera, size]);
 
   return null;
 }
@@ -154,36 +156,39 @@ export default function AlbumPreview3D({
           <ZoomIn className="h-4 w-4" />
         </button>
       </div>
-      <div
-        className="min-h-0 w-full flex-1 cursor-grab active:cursor-grabbing"
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={() => {
-          dragStartX.current = null;
-        }}
-      >
-        <Canvas
-          camera={{ position: [0, 0, 6], fov: 30 }}
-          gl={{ antialias: true }}
+      <div className="relative min-h-0 w-full flex-1">
+        <div
+          className="absolute inset-0 cursor-grab active:cursor-grabbing"
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={() => {
+            dragStartX.current = null;
+          }}
         >
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[2, 3, 4]} intensity={0.8} />
-          <directionalLight position={[-2, 1, 2]} intensity={3} />
-          <CameraZoom zoom={zoom} />
-          <AlbumCover3D
-            index={0}
-            position={[0, 0, 0]}
-            size={ALBUM_CONFIG.size}
-            thickness={ALBUM_CONFIG.thickness}
-            tiltAngle={ALBUM_CONFIG.tiltAngle}
-            frontImage={frontCover}
-            backImage={backCoverDataUrl}
-            edgeColor={theme.bg}
-            isSelected={true}
-            isFlipped={isFlipped}
-            onClick={() => setIsFlipped((f) => !f)}
-          />
-        </Canvas>
+          <Canvas
+            camera={{ position: [0, 0, 6], fov: 30 }}
+            gl={{ antialias: true }}
+            resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
+          >
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[2, 3, 4]} intensity={0.8} />
+            <directionalLight position={[-2, 1, 2]} intensity={3} />
+            <CameraZoom zoom={zoom} />
+            <AlbumCover3D
+              index={0}
+              position={[0, 0, 0]}
+              size={ALBUM_CONFIG.size}
+              thickness={ALBUM_CONFIG.thickness}
+              tiltAngle={ALBUM_CONFIG.tiltAngle}
+              frontImage={frontCover}
+              backImage={backCoverDataUrl}
+              edgeColor={theme.bg}
+              isSelected={true}
+              isFlipped={isFlipped}
+              onClick={() => setIsFlipped((f) => !f)}
+            />
+          </Canvas>
+        </div>
       </div>
     </div>
   );

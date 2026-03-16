@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
 
-const ShareScene = dynamic(
-  () => import("./components/ShareScene"),
-  { ssr: false },
-);
+const ShareScene = dynamic(() => import("./components/ShareScene"), {
+  ssr: false,
+});
 
 export default function SharePage({ params }) {
   const { id } = use(params);
@@ -98,32 +97,32 @@ export default function SharePage({ params }) {
   }
 
   return (
-    <div className="relative flex h-screen w-screen flex-col overflow-hidden bg-black">
-      {/* Header */}
+    <div className="relative h-screen w-screen overflow-hidden bg-black">
+      {/* Header — absolute top-left */}
       <div
-        className={`relative z-10 shrink-0 px-6 pt-10 pb-2 text-center transition-all duration-1000 ease-out ${
+        className={`pointer-events-none absolute top-0 left-0 z-10 px-6 pt-10 transition-all duration-1000 ease-out ${
           ready ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"
         }`}
       >
         {albumTitle && (
-          <h1 className="text-lg font-light tracking-[0.2em] text-white/85">
+          <h1 className="text-[20px] font-light tracking-[0.2em] text-white/85">
             {albumTitle}
           </h1>
         )}
         {subtitle && (
-          <p className="mt-2 text-[11px] font-light tracking-[0.25em] text-white/35">
+          <p className="mt-2 text-[12px] font-light tracking-[0.25em] text-white/35">
             {subtitle}
           </p>
         )}
       </div>
 
-      {/* 3D Album */}
+      {/* 3D Album — full screen */}
       <div
-        className={`relative z-10 min-h-0 flex-1 transition-all delay-200 duration-1000 ease-out ${
+        className={`absolute inset-0 transition-all delay-200 duration-1000 ease-out ${
           ready ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"
         }`}
       >
-        <ShareScene
+        <AlbumPreview3D
           frontCover={frontCover}
           bio={bio}
           timeline={timeline}
@@ -132,15 +131,15 @@ export default function SharePage({ params }) {
         />
       </div>
 
-      {/* Bottom CTA */}
+      {/* Bottom CTA — floating over canvas */}
       <div
-        className={`relative z-10 shrink-0 pt-2 pb-10 text-center transition-all delay-500 duration-1000 ease-out ${
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 pb-10 text-center transition-all delay-500 duration-1000 ease-out ${
           ready ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
         }`}
       >
         <button
           onClick={() => router.push(`/walk/${id}`)}
-          className="group inline-flex items-center gap-3 px-1 py-2 transition-all duration-300"
+          className="group pointer-events-auto inline-flex items-center gap-3 px-1 py-2 transition-all duration-300"
         >
           <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 transition-all duration-300 group-hover:border-white/30 group-hover:bg-white/10">
             <svg

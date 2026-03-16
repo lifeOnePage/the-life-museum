@@ -59,7 +59,7 @@ const CoverImageEditor = forwardRef(
                 method: "PUT",
                 headers: {
                   "Content-Type": "application/json",
-                  "X-Dev-Key": "tlm2026",
+                  Authentication: `Bearer ${localStorage.getItem("app_token")}`,
                 },
                 body: JSON.stringify({ url: selectedVideoUrl }),
               },
@@ -81,7 +81,7 @@ const CoverImageEditor = forwardRef(
               {
                 method: "POST",
                 headers: {
-                  "X-Dev-Key": "tlm2026",
+                  Authentication: `Bearer ${localStorage.getItem("app_token")}`,
                 },
                 body: formData,
               },
@@ -140,7 +140,7 @@ const CoverImageEditor = forwardRef(
           {
             method: "POST",
             headers: {
-              "X-Dev-Key": "tlm2026",
+              Authentication: `Bearer ${localStorage.getItem("app_token")}`,
             },
             body: formData,
           },
@@ -192,7 +192,7 @@ const CoverImageEditor = forwardRef(
       try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
         const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
-          headers: { "X-Dev-Key": "tlm2026" },
+          headers: { Authentication: `Bearer ${localStorage.getItem("app_token")}` },
         });
         const data = await response.json();
         const images = (data?.data?.mediaList ?? [])

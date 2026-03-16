@@ -18,7 +18,7 @@
     "@prisma/extension-accelerate": "^2.0.2",
     "@radix-ui/react-slot": "^1.2.4",
     "@radix-ui/react-tabs": "^1.1.13",
-    "@react-three/drei": "^10.7.6",
+    "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.4.0",
     "@react-three/postprocessing": "^3.0.4",
     "@rtcoder/dominant-color": "^0.1.4",

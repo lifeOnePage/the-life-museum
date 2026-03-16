@@ -1,24 +1,34 @@
 "use client";
 
 import { useState } from "react";
-import { UserRound } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 import ProfileModal from "./ProfileModal";
 
 export default function Header() {
   const [showProfile, setShowProfile] = useState(false);
+  const { signout } = useAuth();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    if (window.confirm("로그아웃 하시겠습니까?")) {
+      signout();
+      router.push("/");
+    }
+  };
 
   return (
     <>
-      <div className="border-black-200 pointer-events-auto z-1000 flex w-full flex-row items-center justify-between border-b border-solid bg-transparent px-16 py-4 font-sans text-xl">
-        The Life Gallery
-        <button
-          onClick={() => setShowProfile(true)}
-          className="hover:bg-black-100 flex h-12 w-12 items-center justify-center rounded-full text-black/50 transition hover:text-white"
-          title="프로필"
-          aria-label="프로필 편집"
-        >
-          <UserRound size={24} strokeWidth={2} />
-        </button>
+      <div className="pointer-events-auto z-1000 box-border h-18 w-full bg-transparent p-3 text-white">
+        <div className="flex h-full w-full items-center border-b border-white px-3 py-1 text-white">
+          <div className="w-full flex-1">The Life Gallery</div>
+          <div className="flex w-full flex-1">
+            <div className="flex flex-1 cursor-pointer justify-end gap-5">
+              <p onClick={() => setShowProfile(true)}>Profile</p>
+              <p onClick={handleLogout}>Logout</p>
+            </div>
+          </div>
+        </div>
       </div>
       {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </>

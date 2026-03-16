@@ -15,6 +15,7 @@ export default function FocusClone({
   cameraY,
   stateRef,
   displayScale,
+  cloneZ,
 }) {
   const meshRef = useRef();
 
@@ -24,8 +25,9 @@ export default function FocusClone({
   useFrame(() => {
     if (!meshRef.current) return;
     const s = stateRef.current;
-    // Use fixed clone position (set at spawn time, does NOT move with camera)
-    meshRef.current.position.set(0, cameraY, s.focusCloneZ);
+    // Use the prop-captured spawn position so this instance never reads a
+    // stateRef value that was mutated for the NEXT clone cycle.
+    meshRef.current.position.set(0, cameraY, cloneZ);
 
     // Distance-based opacity (4-zone bell curve):
     // dist ≥ 200              → 0        (보이지 않음)
@@ -33,7 +35,7 @@ export default function FocusClone({
     // 130 > dist ≥ 80         → 1.0      hold     (50단위)
     // 80  > dist > 56         → 1 → 0    fade-out (24단위)
     // dist ≤ 56               → 0        (dismiss)
-    const dist = Math.abs(s.cameraZ - s.focusCloneZ);
+    const dist = Math.abs(s.cameraZ - cloneZ);
     let opacity = 0;
     if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
       if (dist >= OPACITY_PEAK_DIST) {
@@ -63,7 +65,7 @@ export default function FocusClone({
         map={texture}
         side={THREE.DoubleSide}
         transparent
-        opacity={0.1}
+        opacity={0}
       />
     </mesh>
   );

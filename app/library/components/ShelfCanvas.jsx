@@ -14,23 +14,6 @@ import { OrbitControls, useHelper } from "@react-three/drei";
 
 const CREAM = "#f5ede0";
 const DARK_WALL = "#1a1510";
-// 씬 레이아웃 상수 (ShelfScene.jsx와 동기화)
-const SHELF_ROWS = 2;
-const SHELF_SPACING = 1.1;
-const SHELF_THICKNESS = 0.08;
-const SHELF_DEPTH = 0.4;
-const SHELF_WALL_OFFSET = 0.02;
-
-// 각 선반 row별 LED 조명 y 좌표 (선반 상판 바로 위)
-const LED_Y = Array.from({ length: SHELF_ROWS }, (_, row) => {
-  const shelfY = SHELF_SPACING * (SHELF_ROWS - 1 - row) - 0.03;
-  return shelfY + SHELF_THICKNESS + 0.12;
-});
-// LED x 포지션: 8개 균등 분산 (-2.3 ~ 2.3)
-const LED_X = Array.from({ length: 8 }, (_, i) => -2.3 + i * (4.6 / 7));
-// LED z 포지션: 선반 뒤쪽 상단 (벽 앞)
-const LED_Z = -(SHELF_DEPTH / 2 + SHELF_WALL_OFFSET) + 0.12;
-
 // Canvas 내부에서만 호출 가능한 훅(useHelper)을 사용하는 서브컴포넌트
 // castShadow=true인 경우에만 고품질 shadowMap 설정 적용
 function DirLightWithHelper({

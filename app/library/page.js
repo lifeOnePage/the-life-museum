@@ -172,9 +172,7 @@ export default function MyShelfPage() {
 
   // 필터 적용
   const filteredAlbums =
-    filterType === "all"
-      ? albums
-      : albums.filter((a) => a.role === filterType);
+    filterType === "all" ? albums : albums.filter((a) => a.role === filterType);
 
   // Canvas에는 최대 15개만 전달 (3행×5열)
   const visibleAlbums = filteredAlbums.slice(0, 15);
@@ -209,11 +207,11 @@ export default function MyShelfPage() {
             alignItems: "flex-start",
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#111" }}>
+          <span style={{ fontSize: 14, fontWeight: 600, color: "#5a4f4a" }}>
             {hoverLabel.album.title}
           </span>
           {hoverLabel.album.subtitle && (
-            <span style={{ fontSize: 12, color: "#222", marginTop: 1 }}>
+            <span style={{ fontSize: 12, color: "#5a4f4a", marginTop: 1 }}>
               {hoverLabel.album.subtitle}
             </span>
           )}

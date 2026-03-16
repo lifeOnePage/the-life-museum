@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { parseGIF, decompressFrames } from "gifuct-js";
+import { getMediaType } from "../utils/mediaType";
 
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
@@ -18,21 +19,8 @@ const TILT_CONFIG = {
   smoothing: 0.08, // 보간 속도 (낮을수록 부드러움)
 };
 
-function getMediaType(url) {
-  if (!url) return null;
-  const lower = url.toLowerCase().split("?")[0];
-  if (lower.endsWith(".gif")) return "gif";
-  if (
-    lower.endsWith(".mp4") ||
-    lower.endsWith(".webm") ||
-    lower.endsWith(".mov")
-  )
-    return "video";
-  return "image";
-}
-
 // GIF 애니메이션 텍스처 훅
-function useGifTexture(imageUrl) {
+function useGifTexture(imageUrl, isPlayable) {
   const canvasRef = useRef(null);
   const ctxRef = useRef(null);
   const framesRef = useRef([]);
@@ -91,9 +79,9 @@ function useGifTexture(imageUrl) {
     };
   }, [imageUrl]);
 
-  // useFrame으로 프레임 갱신
+  // useFrame으로 프레임 갱신 (isPlayable일 때만)
   useFrame((_, delta) => {
-    if (!ready) return;
+    if (!ready || !isPlayable) return;
     const frames = framesRef.current;
     if (frames.length <= 1) return;
 
@@ -163,11 +151,12 @@ function useStaticTexture(imageUrl) {
 }
 
 // 비디오 텍스처 훅
-function useVideoTexture(videoUrl) {
+function useVideoTexture(videoUrl, isPlayable) {
   const videoRef = useRef(null);
   const textureRef = useRef(null);
   const [ready, setReady] = useState(false);
 
+  // 비디오 요소 초기화 (URL이 바뀔 때)
   useEffect(() => {
     if (!videoUrl) return;
 
@@ -181,24 +170,14 @@ function useVideoTexture(videoUrl) {
     const onCanPlay = () => {
       textureRef.current = new THREE.VideoTexture(video);
       textureRef.current.colorSpace = THREE.SRGBColorSpace;
-      video.play().catch(() => {});
+      // 즉시 play는 하지 않음 — isPlayable effect에서 제어
       setReady(true);
     };
     video.addEventListener("canplay", onCanPlay);
     videoRef.current = video;
     video.load();
 
-    const onVisChange = () => {
-      if (document.hidden) {
-        video.pause();
-      } else {
-        video.play().catch(() => {});
-      }
-    };
-    document.addEventListener("visibilitychange", onVisChange);
-
     return () => {
-      document.removeEventListener("visibilitychange", onVisChange);
       video.removeEventListener("canplay", onCanPlay);
       video.pause();
       video.src = "";
@@ -208,6 +187,34 @@ function useVideoTexture(videoUrl) {
       setReady(false);
     };
   }, [videoUrl]);
+
+  // isPlayable 변화에 따른 play/pause 제어
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || !ready) return;
+
+    if (isPlayable && !document.hidden) {
+      video.play().catch(() => {});
+    } else {
+      video.pause();
+    }
+  }, [isPlayable, ready]);
+
+  // Page Visibility API: 탭 전환 시 play/pause
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const onVisChange = () => {
+      if (document.hidden) {
+        video.pause();
+      } else if (isPlayable) {
+        video.play().catch(() => {});
+      }
+    };
+    document.addEventListener("visibilitychange", onVisChange);
+    return () => document.removeEventListener("visibilitychange", onVisChange);
+  }, [isPlayable]);
 
   useFrame(() => {
     if (ready && textureRef.current) {
@@ -219,11 +226,11 @@ function useVideoTexture(videoUrl) {
 }
 
 // 이미지 URL에 따라 GIF/video/정적 텍스처를 자동 선택하는 훅
-function useAlbumTexture(imageUrl) {
+function useAlbumTexture(imageUrl, isPlayable) {
   const type = getMediaType(imageUrl);
   // 훅 조건부 호출 금지 → null 전달로 비활성화
-  const gifTexture = useGifTexture(type === "gif" ? imageUrl : null);
-  const videoTexture = useVideoTexture(type === "video" ? imageUrl : null);
+  const gifTexture = useGifTexture(type === "gif" ? imageUrl : null, isPlayable);
+  const videoTexture = useVideoTexture(type === "video" ? imageUrl : null, isPlayable);
   const staticTexture = useStaticTexture(type === "image" ? imageUrl : null);
   if (type === "gif") return gifTexture;
   if (type === "video") return videoTexture;
@@ -258,13 +265,6 @@ function createPlaceholderTexture(index, isFront = true) {
   ctx.fillStyle = gradient;
   ctx.fillRect(0, 0, 512, 512);
 
-  // 앨범 번호 표시
-  // ctx.fillStyle = "rgba(255, 255, 255, 0.1)";
-  // ctx.font = "bold 200px sans-serif";
-  // ctx.textAlign = "center";
-  // ctx.textBaseline = "middle";
-  // ctx.fillText(String(index + 1), 256, 256);
-
   // 전면/후면 표시
   ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
   ctx.font = "24px sans-serif";
@@ -286,6 +286,7 @@ export default function AlbumCover({
   edgeColor = null,
   isSelected = false,
   isFlipped = false,
+  isPlayable = true,
   onClick,
   onHoverChange,
   onGroupRef,
@@ -370,8 +371,8 @@ export default function AlbumCover({
   }, [isSelected]);
 
   // 텍스처
-  const frontTexture = useAlbumTexture(frontImage);
-  const backTexture = useAlbumTexture(backImage);
+  const frontTexture = useAlbumTexture(frontImage, isPlayable);
+  const backTexture = useAlbumTexture(backImage, false);
 
   // 플레이스홀더 텍스처 (이미지가 없을 때)
   const placeholderFront = useMemo(

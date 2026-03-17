@@ -6,19 +6,16 @@ import { useMemo } from "react";
 const CREAM = "#ffffff";
 const DARK_WALL = "#644F48";
 
-export default function Niche({ position = [0, 0, 0] }) {
+export default function Niche({ position = [0, 0, 0], rows = 2 }) {
   const nicheWidth = 5; // 내부 너비 (선반 5 + 여백)
   const wallThickness = 10; // 측벽 두께
   // 이 컴포넌트는 position=[0, 1.5, ...] 에 배치됨
-  // 선반 row 0~2의 world y: 2.17 / 1.07 / -0.03
-  // local y: world_y - 1.5
   const bottomY = -2.0; // world y=-0.5 → local y=-2.0
-  const straightTopY = 1.7; // world y=3.2 → local y=1.7
-  const wallHeight = straightTopY - bottomY; // 3.7
-  const wallCenterY = (bottomY + straightTopY) / 2; // -0.15
-  const nicheDepth = 0.6; // 틈새 깊이 (앞으로 돌출)
-  const archRadius = nicheWidth / 2; // 2.8
-  const archTubeRadius = 0.22; // 아치 프레임 두께
+  // rows에 따라 상단 높이 동적 계산: rows=1: 0.6, rows=2: 2.0, rows=3: 3.4
+  const straightTopY = rows * 1.4 - 0.8;
+  const wallHeight = straightTopY - bottomY;
+  const wallCenterY = (bottomY + straightTopY) / 2;
+  const nicheDepth = 0.6; // 틈새 깊이
 
   // 어두운 외벽 노이즈 텍스처
   const wallTexture = useMemo(() => {
@@ -50,7 +47,7 @@ export default function Niche({ position = [0, 0, 0] }) {
 
   return (
     <group position={position}>
-      {/* 외부 어두운 배경 벽 */}
+      {/* 외부 배경 벽 */}
       <mesh receiveShadow raycast={() => null} position={[0, 0, 0]}>
         <boxGeometry args={[100, 100, 0.1]} />
         <meshStandardMaterial color={CREAM} roughness={1.5} metalness={0.0} />
@@ -108,7 +105,6 @@ export default function Niche({ position = [0, 0, 0] }) {
       </mesh>
 
       {/* 아치 상단 — 반원 (TorusGeometry, arc=π) */}
-      {/* 기본 TorusGeometry는 XY 평면에 놓임 → 정면에서 보면 반원 아치로 보임 */}
       {/* <mesh
         raycast={() => null}
         position={[0, straightTopY, nicheDepth / 2]}

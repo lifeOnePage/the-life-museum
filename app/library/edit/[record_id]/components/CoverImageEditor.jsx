@@ -49,7 +49,8 @@ const CoverImageEditor = forwardRef(
         setError("");
 
         try {
-          const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
+          const apiUrl =
+            "https://the-life-museum-backend-production.up.railway.app";
 
           // AI-generated video: use PUT /cover/url
           if (selectedVideoUrl) {
@@ -128,7 +129,8 @@ const CoverImageEditor = forwardRef(
       setError("");
 
       try {
-        const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
+        const apiUrl =
+          "https://the-life-museum-backend-production.up.railway.app";
         const formData = new FormData();
         formData.append("prompt", prompt);
         formData.append("image_strength", String(imageStrength));
@@ -191,16 +193,17 @@ const CoverImageEditor = forwardRef(
       setIsLoadingPhotos(true);
       setSelectedPhotoIndex(-1);
       try {
-        const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
+        const apiUrl =
+          "https://the-life-museum-backend-production.up.railway.app";
         const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
           headers: {
             Authentication: `Bearer ${localStorage.getItem("app_token")}`,
           },
         });
         const data = await response.json();
-        const images = (data?.data?.mediaList ?? [])
-          .filter((m) => m.type === "image")
-          .slice(0, 9);
+        const images = (data?.data?.mediaList ?? []).filter(
+          (m) => m.type === "image",
+        );
         setPhotoMedia(images);
       } catch (err) {
         console.error(err);
@@ -218,7 +221,8 @@ const CoverImageEditor = forwardRef(
       if (selectedPhotoIndex < 0 || !photoMedia[selectedPhotoIndex]) return;
       const media = photoMedia[selectedPhotoIndex];
       const rawUrl = media.original_url || media.thumbnail_url;
-      const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
+      const apiUrl =
+        "https://the-life-museum-backend-production.up.railway.app";
       const url = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
       setSelectedVideoUrl(url);
       setSelectedFile(null);
@@ -386,35 +390,40 @@ const CoverImageEditor = forwardRef(
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col"
                 >
-                  <div className="grid grid-cols-3 gap-3">
-                    {photoMedia.map((media, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSelectPhoto(i)}
-                        className={`aspect-square overflow-hidden rounded-md transition-all ${
-                          selectedPhotoIndex === i
-                            ? "ring-2 ring-[#3E5A81] ring-offset-2"
-                            : "hover:opacity-80"
-                        }`}
-                      >
-                        <img
-                          src={media.original_url || media.thumbnail_url}
-                          alt={`사진 ${i + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </button>
-                    ))}
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    <div className="grid grid-cols-3 gap-3">
+                      {photoMedia.map((media, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleSelectPhoto(i)}
+                          className={`aspect-square overflow-hidden rounded-md transition-all ${
+                            selectedPhotoIndex === i
+                              ? "ring-2 ring-[#3E5A81] ring-offset-2"
+                              : "hover:opacity-80"
+                          }`}
+                        >
+                          <img
+                            src={media.original_url || media.thumbnail_url}
+                            alt={`사진 ${i + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Apply button */}
-                  <button
-                    onClick={handleApplyPhoto}
-                    disabled={selectedPhotoIndex < 0}
-                    className="mt-4 flex w-full items-center justify-center rounded-lg bg-[#3E5A81] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
-                  >
-                    적용하기
-                  </button>
+                  {/* Apply button - fixed at bottom */}
+                  <div className="sticky bottom-0 pt-4">
+                    <button
+                      onClick={handleApplyPhoto}
+                      disabled={selectedPhotoIndex < 0}
+                      className="flex w-full items-center justify-center rounded-lg bg-[#3E5A81] py-2.5 text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
+                    >
+                      적용하기
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </motion.div>

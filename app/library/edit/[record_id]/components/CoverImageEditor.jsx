@@ -199,8 +199,7 @@ const CoverImageEditor = forwardRef(
         });
         const data = await response.json();
         const images = (data?.data?.mediaList ?? [])
-          .filter((m) => m.type === "image")
-          .slice(0, 9);
+          .filter((m) => m.type === "image");
         setPhotoMedia(images);
       } catch (err) {
         console.error(err);
@@ -386,35 +385,40 @@ const CoverImageEditor = forwardRef(
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
+                  className="flex flex-col"
                 >
-                  <div className="grid grid-cols-3 gap-3">
-                    {photoMedia.map((media, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleSelectPhoto(i)}
-                        className={`aspect-square overflow-hidden rounded-md transition-all ${
-                          selectedPhotoIndex === i
-                            ? "ring-2 ring-[#3E5A81] ring-offset-2"
-                            : "hover:opacity-80"
-                        }`}
-                      >
-                        <img
-                          src={media.original_url || media.thumbnail_url}
-                          alt={`사진 ${i + 1}`}
-                          className="h-full w-full object-cover"
-                        />
-                      </button>
-                    ))}
+                  <div className="max-h-[60vh] overflow-y-auto">
+                    <div className="grid grid-cols-3 gap-3">
+                      {photoMedia.map((media, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleSelectPhoto(i)}
+                          className={`aspect-square overflow-hidden rounded-md transition-all ${
+                            selectedPhotoIndex === i
+                              ? "ring-2 ring-[#3E5A81] ring-offset-2"
+                              : "hover:opacity-80"
+                          }`}
+                        >
+                          <img
+                            src={media.original_url || media.thumbnail_url}
+                            alt={`사진 ${i + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Apply button */}
-                  <button
-                    onClick={handleApplyPhoto}
-                    disabled={selectedPhotoIndex < 0}
-                    className="mt-4 flex w-full items-center justify-center rounded-lg bg-[#3E5A81] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
-                  >
-                    적용하기
-                  </button>
+                  {/* Apply button - fixed at bottom */}
+                  <div className="sticky bottom-0 bg-white pt-4">
+                    <button
+                      onClick={handleApplyPhoto}
+                      disabled={selectedPhotoIndex < 0}
+                      className="flex w-full items-center justify-center rounded-lg bg-[#3E5A81] py-2.5 text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
+                    >
+                      적용하기
+                    </button>
+                  </div>
                 </motion.div>
               )}
             </motion.div>

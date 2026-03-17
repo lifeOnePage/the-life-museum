@@ -9,6 +9,7 @@ export default function MirrorReflection({
   baseHeight,
   stateRef,
   displayScale,
+  cloneZ,
 }) {
   const meshRef = useRef();
 
@@ -18,10 +19,9 @@ export default function MirrorReflection({
   useFrame(() => {
     if (!meshRef.current) return;
     const s = stateRef.current;
-    // Use fixed clone position (set at spawn time, does NOT move with camera)
-    // Position so the top edge of the flipped plane aligns with the floor
+    // Use the prop-captured spawn position (same reason as FocusClone).
     const opacity = s.fadeProgress * 0.05;
-    meshRef.current.position.set(0, FLOOR_Y + 0.1 - h, s.focusCloneZ);
+    meshRef.current.position.set(0, FLOOR_Y + 0.1 - h, cloneZ);
     meshRef.current.material.opacity = opacity;
     meshRef.current.material.emissiveIntensity = opacity * 0.5;
   });

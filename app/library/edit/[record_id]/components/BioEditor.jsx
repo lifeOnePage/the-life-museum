@@ -27,7 +27,7 @@ const BioEditor = forwardRef(
         setError("");
 
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+          const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
           const response = await fetch(
             `${apiUrl}/api/v1/record/${record_id}/lifestory`,
             {

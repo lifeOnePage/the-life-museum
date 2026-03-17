@@ -29,7 +29,7 @@ export const FOCUS_DISMISS_DISTANCE = 56;
 export const FOCUS_FADE_SPEED = 0.2; // 0→1 in ~0.67s
 export const OPACITY_APPEAR_DIST = 200; // 이 거리부터 클론이 보이기 시작
 export const OPACITY_PEAK_DIST = 130; // 이 거리에서 fade-in 완료 (opacity = 1.0)
-export const OPACITY_HOLD_DIST = 80; // 이 거리에서 hold 종료, fade-out 시작
+export const OPACITY_HOLD_DIST = 60; // 이 거리에서 hold 종료, fade-out 시작
 
 // Camera speed modulation during auto-focus
 // 오토포커싱 사이클 시작 시 speed = cameraSpeed (x),
@@ -49,7 +49,7 @@ export const FLOOR_COLOR = "#000000";
 // Fog
 export const FOG_COLOR = "#000000";
 export const FOG_NEAR = 500;
-export const FOG_FAR = 10000;
+export const FOG_FAR = 7000;
 
 // Glow
 export const GLOW_COLOR = "#ffffff";

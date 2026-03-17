@@ -1,11 +1,12 @@
 "use client";
 
 import * as THREE from "three";
-import { useMemo, useState, useRef, useCallback } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { useThree } from "@react-three/fiber";
 import Niche from "./Niche";
 import Shelf from "./Shelf";
 import AlbumCover from "./AlbumCover";
+import { getMediaType } from "../utils/mediaType";
 // import BlurLayer from "./BlurLayer";
 
 // 레이아웃 상수
@@ -13,7 +14,7 @@ const SHELF_CONFIG = {
   width: 5, // 선반 너비
   depth: 0.4, // 선반 깊이
   thickness: 0.08, // 선반 두께
-  spacing: 1.4, // 선반 간 수직 간격 (3행이 화각 안에 들어오도록)
+  spacing: 1.4, // 선반 간 수직 간격
   wallOffset: 0.02, // 벽과의 거리
 };
 
@@ -23,12 +24,6 @@ const ALBUM_CONFIG = {
   gap: 0.15, // 앨범 간 간격
   tiltAngle: -0.15, // 벽에 기대는 각도 (라디안)
 };
-
-const ROWS = 2; // 앨범이 올라가는 행 수
-const COLS = 5; // 5열
-
-// 앨범 없는 장식용 최상단 선반 y 좌표 (동일 간격 유지)
-const DECORATIVE_SHELF_Y = SHELF_CONFIG.spacing * ROWS - 0.03; // 2.77
 
 export default function ShelfScene({
   albums,
@@ -40,6 +35,34 @@ export default function ShelfScene({
   onHoverLabelPos,
 }) {
   const { camera, gl } = useThree();
+
+  // 반응형 COLS
+  const [windowWidth, setWindowWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1280,
+  );
+  useEffect(() => {
+    const handler = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
+  const COLS = useMemo(() => {
+    if (windowWidth >= 1280) return 5;
+    if (windowWidth >= 1024) return 4;
+    if (windowWidth >= 768) return 3;
+    return 2;
+  }, [windowWidth]);
+
+  // ROWS는 앨범 수와 무관하게 고정 — 필터 변경 시 선반 레이아웃 유지
+  const ROWS = 2;
+
+  // 씬 y-offset: 헤더/필터 UI와 겹침 방지
+  // ROWS=1: +0.2, ROWS=2: -0.2, ROWS=3: -0.6
+  const sceneOffset = -0.2 - (ROWS - 2) * 0.4;
+
+  // 장식용 최상단 선반 y (ROWS 연동)
+  const DECORATIVE_SHELF_Y = SHELF_CONFIG.spacing * ROWS - 0.03;
+
   // 앨범 위치 계산
   const albumPositions = useMemo(() => {
     const positions = [];
@@ -50,12 +73,10 @@ export default function ShelfScene({
       for (let col = 0; col < COLS; col++) {
         const index = row * COLS + col;
         const x = startX + col * (ALBUM_CONFIG.size + ALBUM_CONFIG.gap);
-        // 각 선반 위에 앨범 배치 (선반 두께 + 앨범 바닥)
         const y =
           SHELF_CONFIG.spacing * (ROWS - 1 - row) +
           SHELF_CONFIG.thickness / 2 +
           ALBUM_CONFIG.size / 2;
-        // 벽 앞쪽에 배치 (벽에 기대어 있음)
         const z = SHELF_CONFIG.depth / 2 - ALBUM_CONFIG.thickness;
 
         positions.push({
@@ -67,25 +88,49 @@ export default function ShelfScene({
       }
     }
     return positions;
-  }, []);
+  }, [COLS, ROWS]);
 
-  // 선반 위치 계산 (2단)
+  // 선반 위치 계산 (ROWS단)
   const shelfPositions = useMemo(() => {
     return Array.from({ length: ROWS }, (_, row) => ({
       y: SHELF_CONFIG.spacing * (ROWS - 1 - row) - 0.03,
       z: -SHELF_CONFIG.wallOffset,
     }));
-  }, []);
+  }, [ROWS]);
 
-  // 호버된 앨범 인덱스 (BlurLayer 등 내부용)
+  // 호버된 앨범 인덱스
   const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  // 랜덤 재생 대상 인덱스 (hover/select 해제 시 갱신)
+  const randomActiveIndexRef = useRef(null);
+
+  useEffect(() => {
+    const isInteracting = hoveredIndex !== null || selectedAlbum !== null;
+
+    if (!isInteracting) {
+      const mediaIndices = albumPositions
+        .slice(0, albums.length)
+        .filter(({ index }) => {
+          const t = getMediaType(albums[index]?.frontImage);
+          return t === "video" || t === "gif";
+        })
+        .map(({ index }) => index);
+
+      if (mediaIndices.length > 0) {
+        randomActiveIndexRef.current =
+          mediaIndices[Math.floor(Math.random() * mediaIndices.length)];
+      } else {
+        randomActiveIndexRef.current = null;
+      }
+    }
+  }, [hoveredIndex, selectedAlbum, albums, albumPositions]);
 
   // 앨범 top-left 모서리를 화면 좌표(px)로 투영
   const projectAlbumTopLeft = useCallback(
     (position) => {
       const vec = new THREE.Vector3(
         position[0] - ALBUM_CONFIG.size / 2,
-        position[1] + ALBUM_CONFIG.size / 2 + 0.3,
+        position[1] - ALBUM_CONFIG.size / 2 - 0.15,
         position[2],
       );
       vec.project(camera);
@@ -97,27 +142,23 @@ export default function ShelfScene({
     [camera, gl],
   );
 
-  // 선택된 앨범의 Three.js Group ref (BlurLayer가 FBO 캡처 시 임시 숨김에 사용)
+  // 선택된 앨범의 Three.js Group ref
   const selectedGroupRef = useRef(null);
   const handleGroupRef = useCallback((ref) => {
     selectedGroupRef.current = ref;
   }, []);
 
-  return (
-    <group onPointerMissed={() => onCloseAlbum?.()}>
-      {/* 바닥 */}
-      {/* <mesh
-        rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, -0.5, 0]}
-        receiveShadow
-      >
-        <planeGeometry args={[20, 20]} />
-        <meshStandardMaterial color="#efefef" roughness={0.8} />
-      </mesh> */}
+  const isInteracting = hoveredIndex !== null || selectedAlbum !== null;
 
+  return (
+    <group
+      position={[0, sceneOffset, 0]}
+      onPointerMissed={() => onCloseAlbum?.()}
+    >
       {/* 아치형 틈새 구조 (뒷벽 대체) */}
       <Niche
         position={[0, 1.5, -SHELF_CONFIG.depth / 2 - SHELF_CONFIG.wallOffset]}
+        rows={ROWS}
       />
 
       {/* 앨범 있는 선반들 */}
@@ -154,6 +195,11 @@ export default function ShelfScene({
           const album = albums[index] || {};
           const isSelectedAlbum = selectedAlbum?.index === index;
 
+          // isPlayable 계산: 인터랙션 중이면 호버/선택 앨범만, 아니면 랜덤 하나
+          const isPlayable = isInteracting
+            ? index === hoveredIndex || isSelectedAlbum
+            : index === randomActiveIndexRef.current;
+
           return (
             <AlbumCover
               key={`album-${index}`}
@@ -167,6 +213,7 @@ export default function ShelfScene({
               edgeColor={album.edgeColor}
               isSelected={isSelectedAlbum}
               isFlipped={isSelectedAlbum && isFlipped}
+              isPlayable={isPlayable}
               onClick={() => {
                 if (isSelectedAlbum) {
                   onFlipAlbum?.();

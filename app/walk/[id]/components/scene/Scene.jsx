@@ -24,10 +24,15 @@ import {
   BASE_HEIGHT,
 } from "../lib/constants";
 
+// Imperative floor/light position helpers (called from useFrame to avoid React re-renders)
+
 export default function Scene({ planes, isPlaying, cameraSpeed }) {
   const { camera } = useThree();
   const controlsRef = useRef();
   const dirLightRef = useRef();
+  const floorRef = useRef();
+  const pLight1Ref = useRef();
+  const pLight2Ref = useRef();
 
   // Texture cache: { [planeId]: { texture, aspectRatio } }
   const textureMap = useRef(new Map());
@@ -37,9 +42,6 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     mode: "idle",
     targetId: null,
   });
-
-  // Force re-render periodically so wrapped positions stay fresh
-  const [renderTick, setRenderTick] = useState(0);
 
   // Camera & focus state (all in one ref to avoid re-renders)
   const state = useRef({
@@ -58,8 +60,6 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     recentAutoIds: new Set(),
     // Track if playing was just started
     initialized: false,
-    // For periodic re-render trigger
-    lastChunk: 0,
     // Asymmetric lerp speed to smooth out velocity jumps on focus transitions
     smoothSpeed: cameraSpeed,
   });
@@ -159,7 +159,6 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       manualDisplayOffset: DISPLAY_OFFSET_Z,
       recentAutoIds: new Set(),
       initialized: true,
-      lastChunk: Math.floor(CAMERA_START_Z / 500),
       smoothSpeed: cameraSpeed,
     };
     camera.position.set(0, 0, CAMERA_START_Z);
@@ -222,12 +221,10 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       }
       camera.position.z = s.cameraZ;
 
-      // Keep wrapped positions fresh during manual movement
-      const currentChunkManual = Math.floor(s.cameraZ / 500);
-      if (currentChunkManual !== s.lastChunk) {
-        s.lastChunk = currentChunkManual;
-        setRenderTick((t) => t + 1);
-      }
+      // Update floor and lights imperatively every frame (no React re-render needed)
+      if (floorRef.current) floorRef.current.position.z = s.cameraZ - 4000;
+      if (pLight1Ref.current) pLight1Ref.current.position.z = s.cameraZ;
+      if (pLight2Ref.current) pLight2Ref.current.position.z = s.cameraZ;
       return;
     }
 
@@ -254,14 +251,12 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       dirLightRef.current.target.updateMatrixWorld();
     }
 
-    // 2. Periodic re-render to keep wrapped plane positions fresh
-    const currentChunk = Math.floor(s.cameraZ / 500);
-    if (currentChunk !== s.lastChunk) {
-      s.lastChunk = currentChunk;
-      setRenderTick((t) => t + 1);
-    }
+    // Update floor and lights imperatively every frame (no React re-render needed)
+    if (floorRef.current) floorRef.current.position.z = s.cameraZ - 4000;
+    if (pLight1Ref.current) pLight1Ref.current.position.z = s.cameraZ;
+    if (pLight2Ref.current) pLight2Ref.current.position.z = s.cameraZ;
 
-    // 3. Focus state machine
+    // 2. Focus state machine
     if (s.focusMode === "idle") {
       // Pick new auto target
       const target = pickAutoTarget(s);
@@ -306,6 +301,9 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
 
   // Get current focus info for rendering (use focusRender React state)
   const camZ = state.current.cameraZ;
+  // focusCloneZ: snapshot at render time so that the OUTGOING FocusClone/MirrorReflection
+  // keep their original spawn position instead of reading the newly mutated stateRef value.
+  const focusCloneZ = state.current.focusCloneZ;
 
   const focusPlane =
     focusRender.targetId !== null
@@ -333,13 +331,15 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       {/* Lighting */}
       <ambientLight intensity={0.8} />
       <directionalLight ref={dirLightRef} intensity={2} />
-      <pointLight position={[-300, 80, camZ]} intensity={0.1} distance={2000} />
-      <pointLight position={[300, 80, camZ]} intensity={0.1} distance={2000} />
+      {/* Point lights: initial Z doesn't matter — useFrame updates position every frame */}
+      <pointLight ref={pLight1Ref} position={[-300, 80, 0]} intensity={0.1} distance={2000} />
+      <pointLight ref={pLight2Ref} position={[300, 80, 0]} intensity={0.1} distance={2000} />
 
-      {/* Floor - follows camera for infinite appearance */}
+      {/* Floor - follows camera via useFrame (initial Z is a placeholder) */}
       <mesh
+        ref={floorRef}
         rotation={[-Math.PI / 2, 0, 0]}
-        position={[0, FLOOR_Y, camZ - 4000]}
+        position={[0, FLOOR_Y, CAMERA_START_Z - 4000]}
         receiveShadow
       >
         <planeGeometry args={[400, 10000]} />
@@ -350,46 +350,30 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
         />
       </mesh>
 
-      {/* Wall Planes - wrapped positions for infinite corridor */}
+      {/* Wall Planes - Z-wrapping is handled imperatively inside each WallPlane.useFrame */}
       {planes.map((p) => {
-        const wrappedZ = wrapZ(p.position[2], camZ);
-        const dist = Math.abs(camZ - wrappedZ);
-        // Skip planes far beyond fog range
-        if (dist > FOG_FAR + 500) return null;
-
-        let focusMode = "none";
-        if (focusRender.targetId === p.id) {
-          if (focusRender.mode === "manual") {
-            focusMode = "manual-display";
-          } else if (focusRender.mode === "auto") {
-            focusMode = "auto";
-          }
-        }
+        // manual mode: plane stays in place (FocusClone handles display, same as auto)
+        const focusMode =
+          focusRender.targetId === p.id && focusRender.mode === "auto"
+            ? "auto"
+            : "none";
 
         return (
           <Suspense key={p.id} fallback={null}>
             <WallPlane
               id={p.id}
               imageUrl={p.imageUrl}
-              position={[p.position[0], p.position[1], wrappedZ]}
+              position={p.position}
               rotation={p.rotation}
               baseHeight={p.baseHeight}
               sign={p.sign}
               focusMode={focusMode}
-              cameraPosition={[
-                camera.position.x,
-                camera.position.y,
-                camera.position.z,
-              ]}
               onClick={handlePlaneClick}
               onTextureLoaded={handleTextureLoaded}
-              displayOffsetZ={
-                focusMode === "manual-display"
-                  ? state.current.manualDisplayOffset
-                  : DISPLAY_OFFSET_Z
-              }
+              displayOffsetZ={DISPLAY_OFFSET_Z}
               displayScale={DISPLAY_SCALE}
               stateRef={state}
+              corridorSpan={corridorSpan}
             />
           </Suspense>
         );
@@ -405,6 +389,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
             cameraY={camera.position.y}
             stateRef={state}
             displayScale={DISPLAY_SCALE}
+            cloneZ={focusCloneZ}
           />
           <MirrorReflection
             texture={focusTexInfo.texture}
@@ -412,6 +397,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
             baseHeight={focusPlane.baseHeight}
             stateRef={state}
             displayScale={DISPLAY_SCALE}
+            cloneZ={focusCloneZ}
           />
           <GlowBorder
             position={focusPlaneWrappedPos}
@@ -424,15 +410,27 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
         </>
       )}
 
-      {/* Manual Focus: Mirror only (plane itself flies, no clone needed) */}
+      {/* Manual Focus: FocusClone + Mirror (same mechanism as auto, triggered by click) */}
       {focusRender.mode === "manual" && focusTexInfo && focusPlane && (
-        <MirrorReflection
-          texture={focusTexInfo.texture}
-          aspectRatio={focusTexInfo.aspectRatio}
-          baseHeight={focusPlane.baseHeight}
-          stateRef={state}
-          displayScale={DISPLAY_SCALE}
-        />
+        <>
+          <FocusClone
+            texture={focusTexInfo.texture}
+            aspectRatio={focusTexInfo.aspectRatio}
+            baseHeight={focusPlane.baseHeight}
+            cameraY={camera.position.y}
+            stateRef={state}
+            displayScale={DISPLAY_SCALE}
+            cloneZ={focusCloneZ}
+          />
+          <MirrorReflection
+            texture={focusTexInfo.texture}
+            aspectRatio={focusTexInfo.aspectRatio}
+            baseHeight={focusPlane.baseHeight}
+            stateRef={state}
+            displayScale={DISPLAY_SCALE}
+            cloneZ={focusCloneZ}
+          />
+        </>
       )}
 
       <OrbitControls

@@ -1,14 +1,15 @@
-import { useRef, useMemo, useEffect } from "react";
+import { useRef, useMemo, useEffect, memo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import {
-  getProxiedUrl,
-  FOCUS_FADE_SPEED,
-  FOCUS_DISMISS_DISTANCE,
-  OPACITY_APPEAR_DIST,
-  OPACITY_PEAK_DIST,
-  OPACITY_HOLD_DIST,
-} from "../lib/constants";
+import { getProxiedUrl, FOG_FAR } from "../lib/constants";
+
+// Compute the nearest wrapped Z position for a plane given the current camera Z
+function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
+  const behindBuffer = 200;
+  let delta = cameraZ + behindBuffer - originalZ;
+  delta = ((delta % corridorSpan) + corridorSpan) % corridorSpan;
+  return cameraZ + behindBuffer - delta;
+}
 
 const BOX_DEPTH = 10;
 const FRAME_COLOR = "#1a1a2e";
@@ -46,20 +47,20 @@ function flickerBrightness(t) {
   return 0.7 + 0.3 * Math.min(1, settle);
 }
 
-export default function WallPlane({
+function WallPlane({
   id,
   imageUrl,
   position,
   rotation,
   baseHeight,
   sign,
-  focusMode, // 'none' | 'auto' | 'manual-fly' | 'manual-display'
-  cameraPosition,
+  focusMode, // 'none' | 'auto'
   onClick,
   onTextureLoaded,
   displayOffsetZ,
   displayScale,
   stateRef,
+  corridorSpan,
 }) {
   const meshRef = useRef();
   const frontMatRef = useRef();
@@ -98,12 +99,6 @@ export default function WallPlane({
   });
 
   // Manual focus fade state
-  const manualFade = useRef({
-    opacity: 1,
-    target: 1,
-    prevFocusMode: "none",
-  });
-
   // Original rotation: face toward corridor center
   const originalRotation = useMemo(() => {
     const dummy = new THREE.Object3D();
@@ -200,59 +195,32 @@ export default function WallPlane({
     const state = animState.current;
     const aspect = aspectRef.current;
 
-    if (focusMode === "manual-fly" && cameraPosition) {
-      state.targetPos = [
-        cameraPosition[0],
-        cameraPosition[1],
-        cameraPosition[2] - displayOffsetZ,
-      ];
-      state.targetRot = [0, 0, 0];
-      const displayH = baseHeight * displayScale;
-      const displayW = displayH * aspect;
-      state.targetScale = [displayW, displayH, 1];
-    } else if (focusMode === "manual-display" && cameraPosition) {
-      state.targetPos = [
-        cameraPosition[0],
-        cameraPosition[1],
-        cameraPosition[2] - displayOffsetZ,
-      ];
-      state.targetRot = [0, 0, 0];
-      const displayH = baseHeight * displayScale;
-      const displayW = displayH * aspect;
-      state.targetScale = [displayW, displayH, 1];
-    } else {
-      state.targetPos = [...position];
-      state.targetRot = [...originalRotation];
-      state.targetScale = [...wallScaleRef.current];
-    }
-
-    // Fade in/out for manual focus (same behaviour as FocusClone for auto)
-    const fade = manualFade.current;
-    const isManual =
-      focusMode === "manual-fly" || focusMode === "manual-display";
-    const wasManual =
-      fade.prevFocusMode === "manual-fly" ||
-      fade.prevFocusMode === "manual-display";
-
-    if (!isManual && wasManual) {
-      // Leaving manual: fade back to fully opaque (animated in useFrame)
-      fade.target = 1;
-    }
-    fade.prevFocusMode = focusMode;
-  }, [
-    focusMode,
-    cameraPosition,
-    position,
-    originalRotation,
-    baseHeight,
-    displayOffsetZ,
-    displayScale,
-  ]);
+    // Wall mode (focusMode is always 'none' or 'auto' in current Scene)
+    // X/Y targets come from original position; Z is overridden every frame in useFrame
+    state.targetPos[0] = position[0];
+    state.targetPos[1] = position[1];
+    state.targetRot = [...originalRotation];
+    state.targetScale = [...wallScaleRef.current];
+  }, [focusMode, position, originalRotation]);
 
   useFrame((_, delta) => {
     if (!meshRef.current) return;
 
+    // Compute wrapped Z every frame — no React re-render needed
+    const cameraZ = stateRef.current.cameraZ;
+    const wrappedZ = computeWrappedZ(position[2], cameraZ, corridorSpan);
+    const distToCamera = Math.abs(cameraZ - wrappedZ);
+
+    // Imperative visibility culling: hide planes beyond fog range (no GPU draw call)
+    meshRef.current.visible = distToCamera <= FOG_FAR + 500;
+    if (!meshRef.current.visible) return;
+
     const state = animState.current;
+
+    // Keep Z in sync with wrapped position (override lerp — no slide during wrap)
+    state.currentPos[2] = wrappedZ;
+    state.targetPos[2] = wrappedZ;
+
     const lerpFactor = 1 - Math.pow(0.01, delta);
 
     for (let i = 0; i < 3; i++) {
@@ -267,71 +235,6 @@ export default function WallPlane({
     meshRef.current.position.set(...state.currentPos);
     meshRef.current.rotation.set(...state.currentRot);
     meshRef.current.scale.set(...state.currentScale);
-
-    // Manual focus fade animation (all faces) — distance-based
-    const fade = manualFade.current;
-    const isManual =
-      focusMode === "manual-fly" || focusMode === "manual-display";
-
-    if (isManual && stateRef?.current) {
-      const s = stateRef.current;
-      // 플레인의 실제 애니메이션 위치 기준으로 dist 계산
-      // → 벽에서 target으로 lerp 비행 중 실제 위치가 OPACITY_APPEAR_DIST 진입 시 materializes
-      const dist = Math.abs(s.cameraZ - state.currentPos[2]);
-      let opacity = 0;
-      if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
-        if (dist >= OPACITY_PEAK_DIST) {
-          // fade-in 구간
-          opacity =
-            (OPACITY_APPEAR_DIST - dist) /
-            (OPACITY_APPEAR_DIST - OPACITY_PEAK_DIST);
-        } else if (dist >= OPACITY_HOLD_DIST) {
-          // hold 구간
-          opacity = 1.0;
-        } else {
-          // fade-out 구간
-          opacity =
-            (dist - FOCUS_DISMISS_DISTANCE) /
-            (OPACITY_HOLD_DIST - FOCUS_DISMISS_DISTANCE);
-        }
-      }
-      fade.opacity = opacity * 0.9;
-
-      if (meshRef.current) {
-        const mats = meshRef.current.material;
-        if (Array.isArray(mats)) {
-          const needsTransparent = fade.opacity < 0.999;
-          mats.forEach((mat) => {
-            if (mat.transparent !== needsTransparent) {
-              mat.transparent = needsTransparent;
-              mat.needsUpdate = true;
-            }
-            mat.opacity = fade.opacity;
-          });
-        }
-      }
-    } else if (!isManual && fade.opacity < 0.999) {
-      // Restore to fully opaque after leaving manual mode
-      fade.target = 1;
-      const dir = fade.target > fade.opacity ? 1 : -1;
-      fade.opacity += dir * FOCUS_FADE_SPEED * delta;
-      if (dir > 0) fade.opacity = Math.min(fade.target, fade.opacity);
-      else fade.opacity = Math.max(fade.target, fade.opacity);
-
-      if (meshRef.current) {
-        const mats = meshRef.current.material;
-        if (Array.isArray(mats)) {
-          const needsTransparent = fade.opacity < 0.999;
-          mats.forEach((mat) => {
-            if (mat.transparent !== needsTransparent) {
-              mat.transparent = needsTransparent;
-              mat.needsUpdate = true;
-            }
-            mat.opacity = fade.opacity;
-          });
-        }
-      }
-    }
 
     // TV flicker animation on front material
     const mat = frontMatRef.current;
@@ -378,8 +281,11 @@ export default function WallPlane({
         color={SCREEN_OFF_COLOR}
         emissive={SCREEN_OFF_COLOR}
         emissiveIntensity={0.5}
+        generateMipmaps={true}
       />
       <meshStandardMaterial attach="material-5" color={BACK_COLOR} />
     </mesh>
   );
 }
+
+export default memo(WallPlane);

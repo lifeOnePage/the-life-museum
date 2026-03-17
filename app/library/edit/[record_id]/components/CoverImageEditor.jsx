@@ -49,7 +49,8 @@ const CoverImageEditor = forwardRef(
         setError("");
 
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+          const apiUrl =
+            "https://the-life-museum-backend-production.up.railway.app";
 
           // AI-generated video: use PUT /cover/url
           if (selectedVideoUrl) {
@@ -128,7 +129,8 @@ const CoverImageEditor = forwardRef(
       setError("");
 
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const apiUrl =
+          "https://the-life-museum-backend-production.up.railway.app";
         const formData = new FormData();
         formData.append("prompt", prompt);
         formData.append("image_strength", String(imageStrength));
@@ -191,15 +193,17 @@ const CoverImageEditor = forwardRef(
       setIsLoadingPhotos(true);
       setSelectedPhotoIndex(-1);
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const apiUrl =
+          "https://the-life-museum-backend-production.up.railway.app";
         const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
           headers: {
             Authentication: `Bearer ${localStorage.getItem("app_token")}`,
           },
         });
         const data = await response.json();
-        const images = (data?.data?.mediaList ?? [])
-          .filter((m) => m.type === "image");
+        const images = (data?.data?.mediaList ?? []).filter(
+          (m) => m.type === "image",
+        );
         setPhotoMedia(images);
       } catch (err) {
         console.error(err);
@@ -217,7 +221,8 @@ const CoverImageEditor = forwardRef(
       if (selectedPhotoIndex < 0 || !photoMedia[selectedPhotoIndex]) return;
       const media = photoMedia[selectedPhotoIndex];
       const rawUrl = media.original_url || media.thumbnail_url;
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const apiUrl =
+        "https://the-life-museum-backend-production.up.railway.app";
       const url = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
       setSelectedVideoUrl(url);
       setSelectedFile(null);
@@ -410,7 +415,7 @@ const CoverImageEditor = forwardRef(
                   </div>
 
                   {/* Apply button - fixed at bottom */}
-                  <div className="sticky bottom-0 bg-white pt-4">
+                  <div className="sticky bottom-0 pt-4">
                     <button
                       onClick={handleApplyPhoto}
                       disabled={selectedPhotoIndex < 0}

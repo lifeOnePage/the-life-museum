@@ -105,6 +105,7 @@ const CoverImageEditor = forwardRef(
     const handleSelectImage = (index) => {
       setSelectedImageIndex(index);
     };
+    console.log("..");
 
     const handleResetVideos = () => {
       setGeneratedVideos([]);
@@ -192,7 +193,9 @@ const CoverImageEditor = forwardRef(
       try {
         const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
         const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
-          headers: { Authentication: `Bearer ${localStorage.getItem("app_token")}` },
+          headers: {
+            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          },
         });
         const data = await response.json();
         const images = (data?.data?.mediaList ?? [])

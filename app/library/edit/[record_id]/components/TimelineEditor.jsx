@@ -16,7 +16,7 @@ const TimelineEditor = forwardRef(
         setError("");
 
         try {
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+          const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
 
           const events = timeline.map((item) => {
             const [title, ...descParts] = item.event.split(" - ");

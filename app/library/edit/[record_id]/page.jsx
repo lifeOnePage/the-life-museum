@@ -179,8 +179,7 @@ const Index = ({ params }) => {
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+        const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
           headers: {
             Authentication: `Bearer ${localStorage.getItem("app_token")}`,
           },
@@ -249,8 +248,7 @@ const Index = ({ params }) => {
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+    const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -274,9 +272,8 @@ const Index = ({ params }) => {
   // Bio save logic (from BioEditor)
   const saveBio = async () => {
     if (!bio.trim()) return;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const response = await fetch(
-      `${apiUrl}/api/v1/record/${record_id}/lifestory`,
+      `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory`,
       {
         method: "PUT",
         headers: {
@@ -300,7 +297,6 @@ const Index = ({ params }) => {
   // Timeline save logic (from TimelineEditor)
   const saveTimeline = async () => {
     if (timeline.length === 0) return;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const events = timeline.map((item) => {
       const [title, ...descParts] = item.event.split(" - ");
       const description = descParts.join(" - ");
@@ -311,7 +307,7 @@ const Index = ({ params }) => {
       };
     });
     const response = await fetch(
-      `${apiUrl}/api/v1/record/${record_id}/timeline`,
+      `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/timeline`,
       {
         method: "PUT",
         headers: {
@@ -432,10 +428,9 @@ const Index = ({ params }) => {
 
     try {
       const token = localStorage.getItem("app_token");
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
       const response = await fetch(
-        `${apiUrl}/api/v1/record/${record_id}/lifestory/create`,
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
           method: "POST",
           headers: {
@@ -578,8 +573,7 @@ const Index = ({ params }) => {
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+      const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -633,8 +627,7 @@ const Index = ({ params }) => {
     setIsDeleting(true);
     setRecordError("");
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
+      const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
         method: "DELETE",
         headers: {
           Authentication: `Bearer ${localStorage.getItem("app_token")}`,

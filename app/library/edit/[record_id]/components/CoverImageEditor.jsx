@@ -76,7 +76,7 @@ const CoverImageEditor = forwardRef(
             const response = await fetch(
               `${apiUrl}/api/v1/record/${record_id}/cover/url`,
               {
-                method: "POST",
+                method: "PUT",
                 headers: {
                   "Content-Type": "application/json",
                   Authorization: `Bearer ${localStorage.getItem("app_token")}`,
@@ -263,7 +263,7 @@ const CoverImageEditor = forwardRef(
       const apiUrl =
         "https://the-life-museum-backend-production.up.railway.app";
       const proxyUrl = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
-      setSelectedVideoUrl(proxyUrl);
+      setSelectedVideoUrl(rawUrl);
       setSelectedFile(null);
 
       onImageGenerated(photoBlobUrls[index] || proxyUrl);

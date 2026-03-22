@@ -4,6 +4,7 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
+import AlbumPreview3D from "@/app/library/edit/[record_id]/components/AlbumPreview3D";
 
 const ShareScene = dynamic(() => import("./components/ShareScene"), {
   ssr: false,
@@ -32,7 +33,8 @@ export default function SharePage({ params }) {
         setLoading(true);
         setError(null);
 
-        const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
+        const apiUrl =
+          "https://the-life-museum-backend-production.up.railway.app";
         const response = await fetch(`${apiUrl}/api/v1/record/${id}`);
 
         if (!response.ok) {

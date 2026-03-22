@@ -12,6 +12,24 @@ import {
   FolderOpen,
 } from "lucide-react";
 
+function LazyImage({ src, alt, className }) {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <div className="relative h-full w-full">
+      {!loaded && (
+        <div className="absolute inset-0 animate-pulse rounded-md bg-[#d5d5d7]" />
+      )}
+      <img
+        src={src}
+        alt={alt}
+        loading="lazy"
+        onLoad={() => setLoaded(true)}
+        className={`${className} transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
+      />
+    </div>
+  );
+}
+
 const CoverImageEditor = forwardRef(
   (
     {
@@ -41,6 +59,7 @@ const CoverImageEditor = forwardRef(
     const [photoMedia, setPhotoMedia] = useState([]);
     const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
+    const [photoBlobUrls, setPhotoBlobUrls] = useState([]);
 
     useImperativeHandle(ref, () => ({
       save: async () => {
@@ -209,6 +228,25 @@ const CoverImageEditor = forwardRef(
           (m) => m.type === "image",
         );
         setPhotoMedia(images);
+
+        // Preload proxy images as blob URLs in background
+        setPhotoBlobUrls(new Array(images.length).fill(null));
+        images.forEach(async (media, i) => {
+          try {
+            const rawUrl = media.original_url || media.thumbnail_url;
+            const proxyUrl = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+            const res = await fetch(proxyUrl);
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            setPhotoBlobUrls((prev) => {
+              const next = [...prev];
+              next[i] = blobUrl;
+              return next;
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        });
       } catch (err) {
         console.error(err);
         setPhotoMedia([]);
@@ -219,18 +257,16 @@ const CoverImageEditor = forwardRef(
 
     const handleSelectPhoto = (index) => {
       setSelectedPhotoIndex(index);
-    };
-
-    const handleApplyPhoto = () => {
-      if (selectedPhotoIndex < 0 || !photoMedia[selectedPhotoIndex]) return;
-      const media = photoMedia[selectedPhotoIndex];
+      const media = photoMedia[index];
+      if (!media) return;
       const rawUrl = media.original_url || media.thumbnail_url;
       const apiUrl =
         "https://the-life-museum-backend-production.up.railway.app";
-      const url = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
-      setSelectedVideoUrl(url);
+      const proxyUrl = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+      setSelectedVideoUrl(proxyUrl);
       setSelectedFile(null);
-      onImageGenerated(url);
+
+      onImageGenerated(photoBlobUrls[index] || proxyUrl);
     };
 
     return (
@@ -365,8 +401,8 @@ const CoverImageEditor = forwardRef(
               exit={{ opacity: 0, x: 10 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Header with back arrow */}
-              <div className="mb-4">
+              {/* Header with back arrow - sticky */}
+              <div className="sticky top-0 z-10 mb-4 bg-[#f0eee9] pb-2">
                 <button
                   onClick={() => setView("upload")}
                   className="mb-2 flex items-center gap-2 text-[#475569] transition-colors hover:text-[#1e1e1e]"
@@ -380,8 +416,13 @@ const CoverImageEditor = forwardRef(
               </div>
 
               {isLoadingPhotos ? (
-                <div className="flex items-center justify-center py-12">
-                  <RefreshCw className="h-5 w-5 animate-spin text-[#94a3b8]" />
+                <div className="grid grid-cols-3 gap-3">
+                  {Array.from({ length: 9 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="aspect-square animate-pulse rounded-md bg-[#d5d5d7]"
+                    />
+                  ))}
                 </div>
               ) : photoMedia.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
@@ -406,23 +447,13 @@ const CoverImageEditor = forwardRef(
                             : "hover:opacity-80"
                         }`}
                       >
-                        <img
+                        <LazyImage
                           src={media.original_url || media.thumbnail_url}
                           alt={`사진 ${i + 1}`}
                           className="h-full w-full object-cover"
                         />
                       </button>
                     ))}
-                  </div>
-
-                  <div className="sticky bottom-4 pt-4">
-                    <button
-                      onClick={handleApplyPhoto}
-                      disabled={selectedPhotoIndex < 0}
-                      className="flex w-full items-center justify-center rounded-lg bg-[#3E5A81] py-2.5 text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
-                    >
-                      적용하기
-                    </button>
                   </div>
                 </motion.div>
               )}

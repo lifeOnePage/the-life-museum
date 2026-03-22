@@ -182,7 +182,7 @@ const Index = ({ params }) => {
           `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
           {
             headers: {
-              Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
             },
           },
         );
@@ -256,7 +256,7 @@ const Index = ({ params }) => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           color: theme.text,
@@ -283,7 +283,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           result: bio,
@@ -317,7 +317,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({ events }),
       },
@@ -430,6 +430,7 @@ const Index = ({ params }) => {
     if (!fullText) return;
     setIsGenerating(true);
     setBioError("");
+    console.log("fullText", fullText);
 
     try {
       const token = localStorage.getItem("app_token");
@@ -440,9 +441,9 @@ const Index = ({ params }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authentication: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: fullText, albumTitle, albumSubtitle }),
+          body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
 
@@ -584,7 +585,7 @@ const Index = ({ params }) => {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
           },
           body: JSON.stringify({
             title: editTitle,
@@ -640,7 +641,7 @@ const Index = ({ params }) => {
         {
           method: "DELETE",
           headers: {
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
           },
         },
       );

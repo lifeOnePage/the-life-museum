@@ -101,14 +101,12 @@ export default function SharePage({ params }) {
     <div className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Header — above frame */}
       <div
-        className={`pointer-events-none absolute top-1/4 left-1/2 z-10 -translate-x-1/2 -translate-y-[calc(50%+160px)] text-center transition-all duration-1000 ease-out ${
-          ready
-            ? "translate-y-[calc(-50%-160px)] opacity-100"
-            : "translate-y-[calc(-50%-170px)] opacity-0"
+        className={`pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-[35vh] text-center transition-all duration-1000 ease-out ${
+          ready ? "opacity-100" : "opacity-0"
         }`}
       >
         {albumTitle && (
-          <h1 className="text-[20px] font-light tracking-[0.2em] text-black/85">
+          <h1 className="text-[20px] font-medium tracking-[0.2em] text-black/85">
             {albumTitle}
           </h1>
         )}

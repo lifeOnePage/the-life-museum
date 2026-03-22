@@ -127,7 +127,6 @@ const Index = ({ params }) => {
 
   // Tutorial
   const [showTutorial, setShowTutorial] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
   // AI story generation state
@@ -850,9 +849,9 @@ const Index = ({ params }) => {
         </div>
       </header>
 
-      <div className="relative flex flex-1 overflow-hidden">
-        {/* Preview Panel - full on mobile, right side on desktop */}
-        <div className="flex-1 bg-[#dedbd3] lg:order-2" data-tutorial="preview">
+      <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
+        {/* Preview Panel - top half on mobile, right side on desktop */}
+        <div className="h-[50vh] shrink-0 bg-[#dedbd3] lg:order-2 lg:h-auto lg:flex-1" data-tutorial="preview">
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}
@@ -863,9 +862,9 @@ const Index = ({ params }) => {
           />
         </div>
 
-        {/* Editor: bottom sheet on mobile, sidebar on desktop */}
+        {/* Editor: bottom half on mobile, sidebar on desktop */}
         <div
-          className={`absolute inset-x-0 bottom-0 z-20 h-[85vh] rounded-t-2xl bg-[#f0eee9] shadow-[0_-2px_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:order-1 lg:h-auto lg:w-[420px] lg:shrink-0 lg:translate-y-0 lg:rounded-none lg:border-r lg:border-[#e2e8f0] lg:shadow-none lg:transition-none ${sheetOpen ? "translate-y-0" : "translate-y-[calc(100%-56px)]"}`}
+          className="flex-1 bg-[#f0eee9] lg:order-1 lg:h-auto lg:w-[420px] lg:shrink-0 lg:flex-none lg:border-r lg:border-[#e2e8f0]"
         >
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -874,20 +873,9 @@ const Index = ({ params }) => {
           >
             <Tabs
               value={activeTab}
-              onValueChange={(v) => {
-                setActiveTab(v);
-                if (!sheetOpen) setSheetOpen(true);
-              }}
+              onValueChange={setActiveTab}
               className="flex h-full w-full flex-col"
             >
-              {/* Mobile drag handle */}
-              <div
-                className="flex cursor-grab flex-col items-center pt-3 pb-1 active:cursor-grabbing lg:hidden"
-                onClick={() => setSheetOpen(!sheetOpen)}
-              >
-                <div className="h-1 w-10 rounded-full bg-gray-300" />
-              </div>
-
               <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
                 <TabsTrigger
                   value="front"

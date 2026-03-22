@@ -178,11 +178,14 @@ const Index = ({ params }) => {
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-          headers: {
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+        const response = await fetch(
+          `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+          {
+            headers: {
+              Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            },
           },
-        });
+        );
 
         const result = await response.json();
 
@@ -247,19 +250,22 @@ const Index = ({ params }) => {
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
-    const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+    const response = await fetch(
+      `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+        },
+        body: JSON.stringify({
+          color: theme.text,
+          bgColor: theme.bg,
+          keyColor: theme.accent,
+          theme: selectedTheme,
+        }),
       },
-      body: JSON.stringify({
-        color: theme.text,
-        bgColor: theme.bg,
-        keyColor: theme.accent,
-        theme: selectedTheme,
-      }),
-    });
+    );
 
     const data = await response.json();
     if (!response.ok) {
@@ -427,7 +433,7 @@ const Index = ({ params }) => {
 
     try {
       const token = localStorage.getItem("app_token");
-
+      console.log(token);
       const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
@@ -436,7 +442,7 @@ const Index = ({ params }) => {
             "Content-Type": "application/json",
             Authentication: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: fullText, albumTitle, artistName }),
+          body: JSON.stringify({ prompt: fullText, albumTitle, albumSubtitle }),
         },
       );
 
@@ -572,20 +578,23 @@ const Index = ({ params }) => {
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
     try {
-      const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+      const response = await fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          },
+          body: JSON.stringify({
+            title: editTitle,
+            subTitle: editSubtitle,
+            googlePhotoUrl: finalGoogleUrl,
+            icloudUrl: finalIcloudUrl,
+            myboxUrl: finalMyboxUrl,
+          }),
         },
-        body: JSON.stringify({
-          title: editTitle,
-          subTitle: editSubtitle,
-          googlePhotoUrl: finalGoogleUrl,
-          icloudUrl: finalIcloudUrl,
-          myboxUrl: finalMyboxUrl,
-        }),
-      });
+      );
 
       const data = await response.json();
       if (!response.ok) {
@@ -626,12 +635,15 @@ const Index = ({ params }) => {
     setIsDeleting(true);
     setRecordError("");
     try {
-      const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-        method: "DELETE",
-        headers: {
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+      const response = await fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          },
         },
-      });
+      );
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "삭제에 실패했습니다");
@@ -851,7 +863,10 @@ const Index = ({ params }) => {
 
       <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Preview Panel - top half on mobile, right side on desktop */}
-        <div className="h-[50vh] shrink-0 bg-[#dedbd3] lg:order-2 lg:h-auto lg:flex-1" data-tutorial="preview">
+        <div
+          className="h-[50vh] shrink-0 bg-[#dedbd3] lg:order-2 lg:h-auto lg:flex-1"
+          data-tutorial="preview"
+        >
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}
@@ -863,9 +878,7 @@ const Index = ({ params }) => {
         </div>
 
         {/* Editor: bottom half on mobile, sidebar on desktop */}
-        <div
-          className="flex-1 bg-[#f0eee9] lg:order-1 lg:h-auto lg:w-[420px] lg:shrink-0 lg:flex-none lg:border-r lg:border-[#e2e8f0]"
-        >
+        <div className="min-h-0 flex-1 overflow-hidden bg-[#f0eee9] lg:order-1 lg:h-auto lg:w-[420px] lg:flex-none lg:shrink-0 lg:border-r lg:border-[#e2e8f0]">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1152,6 +1165,14 @@ const Index = ({ params }) => {
               onClick={(e) => e.stopPropagation()}
               className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
             >
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowExitDialog(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
               <p className="text-center text-lg font-semibold text-gray-900">
                 {isDirty
                   ? "변경사항이 있습니다. 저장하시겠습니까?"

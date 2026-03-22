@@ -57,7 +57,7 @@ const CoverImageEditor = forwardRef(
             const response = await fetch(
               `${apiUrl}/api/v1/record/${record_id}/cover/url`,
               {
-                method: "PUT",
+                method: "POST",
                 headers: {
                   "Content-Type": "application/json",
                   Authentication: `Bearer ${localStorage.getItem("app_token")}`,
@@ -189,7 +189,11 @@ const CoverImageEditor = forwardRef(
       }
     };
 
-    const fetchPhotoMedia = async () => {
+    const fetchPhotoMedia = async (forceRefresh = false) => {
+      if (!forceRefresh && photoMedia.length > 0) {
+        setSelectedPhotoIndex(-1);
+        return;
+      }
       setIsLoadingPhotos(true);
       setSelectedPhotoIndex(-1);
       try {
@@ -390,32 +394,28 @@ const CoverImageEditor = forwardRef(
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="flex flex-col"
                 >
-                  <div className="max-h-[60vh] overflow-y-auto">
-                    <div className="grid grid-cols-3 gap-3">
-                      {photoMedia.map((media, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleSelectPhoto(i)}
-                          className={`aspect-square overflow-hidden rounded-md transition-all ${
-                            selectedPhotoIndex === i
-                              ? "ring-2 ring-[#3E5A81] ring-offset-2"
-                              : "hover:opacity-80"
-                          }`}
-                        >
-                          <img
-                            src={media.original_url || media.thumbnail_url}
-                            alt={`사진 ${i + 1}`}
-                            className="h-full w-full object-cover"
-                          />
-                        </button>
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-3 gap-3">
+                    {photoMedia.map((media, i) => (
+                      <button
+                        key={i}
+                        onClick={() => handleSelectPhoto(i)}
+                        className={`aspect-square overflow-hidden rounded-md transition-all ${
+                          selectedPhotoIndex === i
+                            ? "ring-2 ring-[#3E5A81] ring-offset-2"
+                            : "hover:opacity-80"
+                        }`}
+                      >
+                        <img
+                          src={media.original_url || media.thumbnail_url}
+                          alt={`사진 ${i + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                      </button>
+                    ))}
                   </div>
 
-                  {/* Apply button - fixed at bottom */}
-                  <div className="sticky bottom-0 pt-4">
+                  <div className="sticky bottom-4 pt-4">
                     <button
                       onClick={handleApplyPhoto}
                       disabled={selectedPhotoIndex < 0}

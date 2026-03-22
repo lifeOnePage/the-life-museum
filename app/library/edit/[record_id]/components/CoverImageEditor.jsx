@@ -219,11 +219,8 @@ const CoverImageEditor = forwardRef(
 
     const handleSelectPhoto = (index) => {
       setSelectedPhotoIndex(index);
-    };
-
-    const handleApplyPhoto = () => {
-      if (selectedPhotoIndex < 0 || !photoMedia[selectedPhotoIndex]) return;
-      const media = photoMedia[selectedPhotoIndex];
+      const media = photoMedia[index];
+      if (!media) return;
       const rawUrl = media.original_url || media.thumbnail_url;
       const apiUrl =
         "https://the-life-museum-backend-production.up.railway.app";
@@ -415,15 +412,6 @@ const CoverImageEditor = forwardRef(
                     ))}
                   </div>
 
-                  <div className="sticky bottom-4 pt-4">
-                    <button
-                      onClick={handleApplyPhoto}
-                      disabled={selectedPhotoIndex < 0}
-                      className="flex w-full items-center justify-center rounded-lg bg-[#3E5A81] py-2.5 text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
-                    >
-                      적용하기
-                    </button>
-                  </div>
                 </motion.div>
               )}
             </motion.div>

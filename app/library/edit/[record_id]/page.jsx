@@ -771,7 +771,7 @@ const Index = ({ params }) => {
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                 나가기
               </span>
             </div>
@@ -793,7 +793,7 @@ const Index = ({ params }) => {
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   앨범 정보 수정
                 </span>
               </div>
@@ -809,7 +809,7 @@ const Index = ({ params }) => {
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   변경사항 초기화
                 </span>
               </div>
@@ -830,7 +830,7 @@ const Index = ({ params }) => {
                     <Save className="h-3.5 w-3.5" />
                   )}
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   저장하기
                 </span>
               </div>
@@ -841,7 +841,7 @@ const Index = ({ params }) => {
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   튜토리얼
                 </span>
               </div>
@@ -1163,16 +1163,14 @@ const Index = ({ params }) => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+              className="relative mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
             >
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowExitDialog(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                onClick={() => setShowExitDialog(false)}
+                className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
               <p className="text-center text-lg font-semibold text-gray-900">
                 {isDirty
                   ? "변경사항이 있습니다. 저장하시겠습니까?"
@@ -1290,16 +1288,19 @@ const Index = ({ params }) => {
                   </div>
                   <input
                     type="text"
-                    value={editUrlValue}
+                    value={selectedUrlType === "google" ? editUrlValue : ""}
                     onChange={(e) => setEditUrlValue(e.target.value)}
+                    disabled={selectedUrlType !== "google"}
                     placeholder={
                       selectedUrlType === "google"
                         ? "https://photos.google.com/..."
-                        : selectedUrlType === "icloud"
-                          ? "https://icloud.com/..."
-                          : "https://mybox.naver.com/..."
+                        : "서비스 준비중입니다"
                     }
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
+                    className={`w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-gray-500 ${
+                      selectedUrlType !== "google"
+                        ? "cursor-not-allowed bg-gray-100 text-gray-400"
+                        : "bg-white text-gray-900"
+                    }`}
                   />
                 </div>
               </div>

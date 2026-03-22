@@ -27,14 +27,15 @@ const BioEditor = forwardRef(
         setError("");
 
         try {
-          const apiUrl = "https://the-life-museum-backend-production.up.railway.app";
+          const apiUrl =
+            "https://the-life-museum-backend-production.up.railway.app";
           const response = await fetch(
             `${apiUrl}/api/v1/record/${record_id}/lifestory`,
             {
               method: "PUT",
               headers: {
                 "Content-Type": "application/json",
-                Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+                Authorization: `Bearer ${localStorage.getItem("app_token")}`,
               },
               body: JSON.stringify({
                 qaList: [

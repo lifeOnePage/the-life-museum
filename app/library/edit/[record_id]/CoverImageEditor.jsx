@@ -60,7 +60,7 @@ const CoverImageEditor = forwardRef(
                 method: "PUT",
                 headers: {
                   "Content-Type": "application/json",
-                  Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+                  Authorization: `Bearer ${localStorage.getItem("app_token")}`,
                 },
                 body: JSON.stringify({ url: selectedVideoUrl }),
               },
@@ -82,7 +82,7 @@ const CoverImageEditor = forwardRef(
               {
                 method: "POST",
                 headers: {
-                  Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+                  Authorization: `Bearer ${localStorage.getItem("app_token")}`,
                 },
                 body: formData,
               },
@@ -143,7 +143,7 @@ const CoverImageEditor = forwardRef(
           {
             method: "POST",
             headers: {
-              Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
             },
             body: formData,
           },
@@ -197,7 +197,7 @@ const CoverImageEditor = forwardRef(
           "https://the-life-museum-backend-production.up.railway.app";
         const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
           headers: {
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
           },
         });
         const data = await response.json();

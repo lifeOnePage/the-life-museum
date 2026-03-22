@@ -103,16 +103,9 @@ const Index = ({ params }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [frontCover, setFrontCover] = useState(null);
   const [albumTitle, setAlbumTitle] = useState("");
-  const [artistName, setArtistName] = useState("");
-  const [bio, setBio] = useState(
-    "어린 시절, 골목길을 누비며 뛰어놀던 기억이 아직도 생생합니다. 여름이면 할머니 댁 마당에서 수박을 먹고, 겨울이면 온 동네가 하얗게 물든 눈밭 위를 걸었죠. 그 시절의 따뜻한 햇살과 웃음소리가 지금의 저를 만들어 주었습니다.",
-  );
-  const [timeline, setTimeline] = useState([
-    { year: "1995", event: "서울에서 태어남" },
-    { year: "2001", event: "초등학교 입학 - 첫 번째 친구를 만남" },
-    { year: "2014", event: "대학교 입학 - 사진 동아리 가입" },
-    { year: "2020", event: "첫 직장 - 새로운 시작" },
-  ]);
+  const [albumSubtitle, setAlbumSubtitle] = useState("");
+  const [bio, setBio] = useState("");
+  const [timeline, setTimeline] = useState([{ year: "", event: "" }]);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -169,9 +162,12 @@ const Index = ({ params }) => {
   const initialState = useRef({
     frontCover: null,
     albumTitle: "",
-    artistName: "",
-    bio: "",
-    timeline: [],
+    albumSubtitle: "",
+    bio: "어린 시절, 골목길을 누비며 뛰어놀던 기억이 아직도 생생합니다. 여름이면 할머니 댁 마당에서 수박을 먹고, 겨울이면 온 동네가 하얗게 물든 눈밭 위를 걸었죠. 그 시절의 따뜻한 햇살과 웃음소리가 지금의 저를 만들어 주었습니다.",
+    timeline: [
+      { year: "1995", event: "서울에서 태어남" },
+      { year: "2001", event: "초등학교 입학 - 첫 번째 친구를 만남" },
+    ],
     selectedTheme: DEFAULT_THEME,
   });
 
@@ -182,7 +178,7 @@ const Index = ({ params }) => {
           `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
           {
             headers: {
-              Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
             },
           },
         );
@@ -209,7 +205,7 @@ const Index = ({ params }) => {
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
-          setArtistName(subtitle);
+          setAlbumSubtitle(subtitle);
           setBio(bioContent);
           // Initialize timeline IDs for drag reorder
           timelineIdsRef.current = timelineData.map(
@@ -224,7 +220,7 @@ const Index = ({ params }) => {
           initialState.current = {
             frontCover: coverUrl,
             albumTitle: title,
-            artistName: subtitle,
+            albumSubtitle: subtitle,
             bio: bioContent,
             timeline: timelineData,
             selectedTheme: savedTheme,
@@ -256,7 +252,7 @@ const Index = ({ params }) => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           color: theme.text,
@@ -283,7 +279,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           result: bio,
@@ -317,7 +313,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({ events }),
       },
@@ -333,7 +329,7 @@ const Index = ({ params }) => {
     const isCoverDirty =
       frontCover !== initialState.current.frontCover ||
       albumTitle !== initialState.current.albumTitle ||
-      artistName !== initialState.current.artistName;
+      albumSubtitle !== initialState.current.albumSubtitle;
     const isBioDirty = bio !== initialState.current.bio;
     const isTimelineDirty =
       JSON.stringify(timeline) !==
@@ -387,7 +383,7 @@ const Index = ({ params }) => {
         if (r.value.editor === "cover") {
           initialState.current.frontCover = frontCover;
           initialState.current.albumTitle = albumTitle;
-          initialState.current.artistName = artistName;
+          initialState.current.albumSubtitle = albumSubtitle;
         } else if (r.value.editor === "bio") {
           initialState.current.bio = bio;
         } else if (r.value.editor === "timeline") {
@@ -409,7 +405,7 @@ const Index = ({ params }) => {
   const isDirty =
     frontCover !== initialState.current.frontCover ||
     albumTitle !== initialState.current.albumTitle ||
-    artistName !== initialState.current.artistName ||
+    albumSubtitle !== initialState.current.albumSubtitle ||
     bio !== initialState.current.bio ||
     JSON.stringify(timeline) !==
       JSON.stringify(initialState.current.timeline) ||
@@ -440,7 +436,7 @@ const Index = ({ params }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authentication: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ prompt: fullText, albumTitle, albumSubtitle }),
         },
@@ -450,7 +446,7 @@ const Index = ({ params }) => {
       if (!response.ok) {
         throw new Error(data.error || "생성에 실패했습니다");
       }
-      setBio(data.story);
+      setBio(data.data?.result || "");
     } catch (err) {
       setBioError(err.message);
     } finally {
@@ -493,7 +489,7 @@ const Index = ({ params }) => {
   // Combine chips + bio for API calls
   const getFullBioText = () => {
     const chips = [...usedChips].join(" ");
-    const text = bio.trim();
+    const text = (bio || "").trim();
     if (chips && text) return `${chips} ${text}`;
     return chips || text;
   };
@@ -549,7 +545,7 @@ const Index = ({ params }) => {
   // Record edit dialog
   const openRecordEditDialog = () => {
     setEditTitle(albumTitle);
-    setEditSubtitle(artistName);
+    setEditSubtitle(albumSubtitle);
     setEditGooglePhotoUrl(googlePhotoUrl);
     setEditIcloudUrl(icloudUrl);
     setEditMyboxUrl(myboxUrl);
@@ -584,7 +580,7 @@ const Index = ({ params }) => {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
           },
           body: JSON.stringify({
             title: editTitle,
@@ -602,12 +598,12 @@ const Index = ({ params }) => {
       }
 
       setAlbumTitle(editTitle);
-      setArtistName(editSubtitle);
+      setAlbumSubtitle(editSubtitle);
       setGooglePhotoUrl(finalGoogleUrl);
       setIcloudUrl(finalIcloudUrl);
       setMyboxUrl(finalMyboxUrl);
       initialState.current.albumTitle = editTitle;
-      initialState.current.artistName = editSubtitle;
+      initialState.current.albumSubtitle = editSubtitle;
       setShowRecordEditDialog(false);
     } catch (err) {
       setRecordError(err.message);
@@ -620,7 +616,7 @@ const Index = ({ params }) => {
     const s = initialState.current;
     setFrontCover(s.frontCover);
     setAlbumTitle(s.albumTitle);
-    setArtistName(s.artistName);
+    setAlbumSubtitle(s.albumSubtitle);
     setBio(s.bio);
     timelineIdsRef.current = s.timeline.map(() => `tl-${nextIdRef.current++}`);
     setTimeline([...s.timeline]);
@@ -640,7 +636,7 @@ const Index = ({ params }) => {
         {
           method: "DELETE",
           headers: {
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
           },
         },
       );
@@ -680,9 +676,9 @@ const Index = ({ params }) => {
             <h1 className="text-sm font-semibold text-gray-900">
               {albumTitle || "앨범 편집"}
             </h1>
-            {artistName && (
+            {albumSubtitle && (
               <p className="text-[11px] leading-tight text-gray-400">
-                {artistName}
+                {albumSubtitle}
               </p>
             )}
           </div>
@@ -771,7 +767,7 @@ const Index = ({ params }) => {
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                 나가기
               </span>
             </div>
@@ -779,9 +775,9 @@ const Index = ({ params }) => {
               <h1 className="text-sm leading-tight font-semibold text-gray-900">
                 {albumTitle || "앨범 편집"}
               </h1>
-              {artistName && (
+              {albumSubtitle && (
                 <p className="text-[11px] leading-tight text-gray-400">
-                  {artistName}
+                  {albumSubtitle}
                 </p>
               )}
             </div>
@@ -793,7 +789,7 @@ const Index = ({ params }) => {
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   앨범 정보 수정
                 </span>
               </div>
@@ -809,7 +805,7 @@ const Index = ({ params }) => {
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   변경사항 초기화
                 </span>
               </div>
@@ -830,7 +826,7 @@ const Index = ({ params }) => {
                     <Save className="h-3.5 w-3.5" />
                   )}
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   저장하기
                 </span>
               </div>
@@ -841,7 +837,7 @@ const Index = ({ params }) => {
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   튜토리얼
                 </span>
               </div>
@@ -917,11 +913,11 @@ const Index = ({ params }) => {
                       record_id={record_id}
                       onImageGenerated={setFrontCover}
                       onTitleChange={setAlbumTitle}
-                      onArtistChange={setArtistName}
+                      onArtistChange={setAlbumSubtitle}
                       frontCover={frontCover}
                       initialFrontCover={initialState.current.frontCover}
                       initialAlbumTitle={initialState.current.albumTitle}
-                      initialArtistName={initialState.current.artistName}
+                      initialArtistName={initialState.current.albumSubtitle}
                     />
                   </div>
                 </TabsContent>
@@ -1163,16 +1159,14 @@ const Index = ({ params }) => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+              className="relative mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
             >
-              <div className="flex justify-end">
-                <button
-                  onClick={() => setShowExitDialog(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+              <button
+                onClick={() => setShowExitDialog(false)}
+                className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
               <p className="text-center text-lg font-semibold text-gray-900">
                 {isDirty
                   ? "변경사항이 있습니다. 저장하시겠습니까?"
@@ -1290,16 +1284,19 @@ const Index = ({ params }) => {
                   </div>
                   <input
                     type="text"
-                    value={editUrlValue}
+                    value={selectedUrlType === "google" ? editUrlValue : ""}
                     onChange={(e) => setEditUrlValue(e.target.value)}
+                    disabled={selectedUrlType !== "google"}
                     placeholder={
                       selectedUrlType === "google"
                         ? "https://photos.google.com/..."
-                        : selectedUrlType === "icloud"
-                          ? "https://icloud.com/..."
-                          : "https://mybox.naver.com/..."
+                        : "서비스 준비중입니다"
                     }
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
+                    className={`w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-gray-500 ${
+                      selectedUrlType !== "google"
+                        ? "cursor-not-allowed bg-gray-100 text-gray-400"
+                        : "bg-white text-gray-900"
+                    }`}
                   />
                 </div>
               </div>

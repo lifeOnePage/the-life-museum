@@ -127,7 +127,6 @@ const Index = ({ params }) => {
 
   // Tutorial
   const [showTutorial, setShowTutorial] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
   // AI story generation state
@@ -179,11 +178,14 @@ const Index = ({ params }) => {
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-          headers: {
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+        const response = await fetch(
+          `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+          {
+            headers: {
+              Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            },
           },
-        });
+        );
 
         const result = await response.json();
 
@@ -248,19 +250,22 @@ const Index = ({ params }) => {
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
-    const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+    const response = await fetch(
+      `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+        },
+        body: JSON.stringify({
+          color: theme.text,
+          bgColor: theme.bg,
+          keyColor: theme.accent,
+          theme: selectedTheme,
+        }),
       },
-      body: JSON.stringify({
-        color: theme.text,
-        bgColor: theme.bg,
-        keyColor: theme.accent,
-        theme: selectedTheme,
-      }),
-    });
+    );
 
     const data = await response.json();
     if (!response.ok) {
@@ -428,7 +433,7 @@ const Index = ({ params }) => {
 
     try {
       const token = localStorage.getItem("app_token");
-
+      console.log(token);
       const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
@@ -437,7 +442,7 @@ const Index = ({ params }) => {
             "Content-Type": "application/json",
             Authentication: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: fullText, albumTitle, artistName }),
+          body: JSON.stringify({ prompt: fullText, albumTitle, albumSubtitle }),
         },
       );
 
@@ -573,20 +578,23 @@ const Index = ({ params }) => {
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
     try {
-      const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+      const response = await fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          },
+          body: JSON.stringify({
+            title: editTitle,
+            subTitle: editSubtitle,
+            googlePhotoUrl: finalGoogleUrl,
+            icloudUrl: finalIcloudUrl,
+            myboxUrl: finalMyboxUrl,
+          }),
         },
-        body: JSON.stringify({
-          title: editTitle,
-          subTitle: editSubtitle,
-          googlePhotoUrl: finalGoogleUrl,
-          icloudUrl: finalIcloudUrl,
-          myboxUrl: finalMyboxUrl,
-        }),
-      });
+      );
 
       const data = await response.json();
       if (!response.ok) {
@@ -627,12 +635,15 @@ const Index = ({ params }) => {
     setIsDeleting(true);
     setRecordError("");
     try {
-      const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-        method: "DELETE",
-        headers: {
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+      const response = await fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          },
         },
-      });
+      );
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "삭제에 실패했습니다");
@@ -850,9 +861,12 @@ const Index = ({ params }) => {
         </div>
       </header>
 
-      <div className="relative flex flex-1 overflow-hidden">
-        {/* Preview Panel - full on mobile, right side on desktop */}
-        <div className="flex-1 bg-[#dedbd3] lg:order-2" data-tutorial="preview">
+      <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
+        {/* Preview Panel - top half on mobile, right side on desktop */}
+        <div
+          className="h-[50vh] shrink-0 bg-[#dedbd3] lg:order-2 lg:h-auto lg:flex-1"
+          data-tutorial="preview"
+        >
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}
@@ -863,10 +877,8 @@ const Index = ({ params }) => {
           />
         </div>
 
-        {/* Editor: bottom sheet on mobile, sidebar on desktop */}
-        <div
-          className={`absolute inset-x-0 bottom-0 z-20 h-[85vh] rounded-t-2xl bg-[#f0eee9] shadow-[0_-2px_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:order-1 lg:h-auto lg:w-[420px] lg:shrink-0 lg:translate-y-0 lg:rounded-none lg:border-r lg:border-[#e2e8f0] lg:shadow-none lg:transition-none ${sheetOpen ? "translate-y-0" : "translate-y-[calc(100%-56px)]"}`}
-        >
+        {/* Editor: bottom half on mobile, sidebar on desktop */}
+        <div className="min-h-0 flex-1 overflow-hidden bg-[#f0eee9] lg:order-1 lg:h-auto lg:w-[420px] lg:flex-none lg:shrink-0 lg:border-r lg:border-[#e2e8f0]">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -874,20 +886,9 @@ const Index = ({ params }) => {
           >
             <Tabs
               value={activeTab}
-              onValueChange={(v) => {
-                setActiveTab(v);
-                if (!sheetOpen) setSheetOpen(true);
-              }}
+              onValueChange={setActiveTab}
               className="flex h-full w-full flex-col"
             >
-              {/* Mobile drag handle */}
-              <div
-                className="flex cursor-grab flex-col items-center pt-3 pb-1 active:cursor-grabbing lg:hidden"
-                onClick={() => setSheetOpen(!sheetOpen)}
-              >
-                <div className="h-1 w-10 rounded-full bg-gray-300" />
-              </div>
-
               <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
                 <TabsTrigger
                   value="front"
@@ -1164,6 +1165,14 @@ const Index = ({ params }) => {
               onClick={(e) => e.stopPropagation()}
               className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
             >
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowExitDialog(false)}
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
               <p className="text-center text-lg font-semibold text-gray-900">
                 {isDirty
                   ? "변경사항이 있습니다. 저장하시겠습니까?"

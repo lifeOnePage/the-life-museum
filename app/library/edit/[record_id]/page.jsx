@@ -182,7 +182,7 @@ const Index = ({ params }) => {
           `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
           {
             headers: {
-              Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
             },
           },
         );
@@ -256,7 +256,7 @@ const Index = ({ params }) => {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           color: theme.text,
@@ -283,7 +283,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           result: bio,
@@ -317,7 +317,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({ events }),
       },
@@ -440,9 +440,9 @@ const Index = ({ params }) => {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authentication: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: fullText, albumTitle, albumSubtitle }),
+          body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
 
@@ -450,7 +450,7 @@ const Index = ({ params }) => {
       if (!response.ok) {
         throw new Error(data.error || "생성에 실패했습니다");
       }
-      setBio(data.story);
+      setBio(data.data?.result || "");
     } catch (err) {
       setBioError(err.message);
     } finally {
@@ -493,7 +493,7 @@ const Index = ({ params }) => {
   // Combine chips + bio for API calls
   const getFullBioText = () => {
     const chips = [...usedChips].join(" ");
-    const text = bio.trim();
+    const text = (bio || "").trim();
     if (chips && text) return `${chips} ${text}`;
     return chips || text;
   };
@@ -584,7 +584,7 @@ const Index = ({ params }) => {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
           },
           body: JSON.stringify({
             title: editTitle,
@@ -640,7 +640,7 @@ const Index = ({ params }) => {
         {
           method: "DELETE",
           headers: {
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
           },
         },
       );

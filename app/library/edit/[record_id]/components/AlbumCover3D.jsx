@@ -158,7 +158,9 @@ function createPlaceholderTexture(index, isFront = true) {
   // 전면/후면 표시
   ctx.fillStyle = "rgba(0, 0, 0, 0.3)";
   ctx.font = "24px sans-serif";
-  ctx.fillText(isFront ? "FRONT" : "BACK", 256, 450);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(isFront ? "앨범의 앞면입니다." : "앨범의 뒷면입니다.", 256, 256);
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;

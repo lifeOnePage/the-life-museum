@@ -71,8 +71,9 @@ const CoverImageEditor = forwardRef(
           const apiUrl =
             "https://the-life-museum-backend-production.up.railway.app";
 
-          // AI-generated video: use PUT /cover/url
+          // AI-generated video or photo drive: use PUT /cover/url
           if (selectedVideoUrl) {
+            console.log("cover/url save:", selectedVideoUrl);
             const response = await fetch(
               `${apiUrl}/api/v1/record/${record_id}/cover/url`,
               {
@@ -85,8 +86,9 @@ const CoverImageEditor = forwardRef(
               },
             );
             const data = await response.json();
+            console.log("cover/url response:", response.status, data);
             if (!response.ok) {
-              throw new Error(data.error || "저장에 실패했습니다");
+              throw new Error(data.error || data.detail || "저장에 실패했습니다");
             }
             return data;
           }
@@ -255,7 +257,7 @@ const CoverImageEditor = forwardRef(
       }
     };
 
-    const handleSelectPhoto = (index) => {
+    const handleSelectPhoto = async (index) => {
       setSelectedPhotoIndex(index);
       const media = photoMedia[index];
       if (!media) return;
@@ -263,10 +265,28 @@ const CoverImageEditor = forwardRef(
       const apiUrl =
         "https://the-life-museum-backend-production.up.railway.app";
       const proxyUrl = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
-      setSelectedVideoUrl(rawUrl);
-      setSelectedFile(null);
 
-      onImageGenerated(photoBlobUrls[index] || proxyUrl);
+      // Show preview immediately
+      const previewUrl = photoBlobUrls[index] || proxyUrl;
+      onImageGenerated(previewUrl);
+
+      // Convert to File for upload via /cover/temp (same as device upload)
+      try {
+        let blob;
+        if (photoBlobUrls[index]) {
+          blob = await fetch(photoBlobUrls[index]).then((r) => r.blob());
+        } else {
+          blob = await fetch(proxyUrl).then((r) => r.blob());
+        }
+        const ext = blob.type === "image/png" ? "png" : "jpg";
+        const file = new File([blob], `photo-drive.${ext}`, { type: blob.type });
+        setSelectedFile(file);
+        setSelectedVideoUrl(null);
+      } catch (e) {
+        console.error("Photo drive file conversion failed:", e);
+        setSelectedVideoUrl(rawUrl);
+        setSelectedFile(null);
+      }
     };
 
     return (

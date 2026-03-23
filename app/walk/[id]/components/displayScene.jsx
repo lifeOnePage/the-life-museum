@@ -164,7 +164,7 @@ export default function DisplayScene({ recordId }) {
           alpha: false,
           powerPreference: "high-performance",
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.2,
+          toneMappingExposure: 0.85,
         }}
         style={{ width: "100%", height: "100%" }}
       >
@@ -176,7 +176,7 @@ export default function DisplayScene({ recordId }) {
           />
         </Suspense>
         <EffectComposer>
-          <Bloom intensity={0.5} luminanceThreshold={0.8} radius={0.8} />
+          <Bloom intensity={0.3} luminanceThreshold={0.8} radius={0.8} />
         </EffectComposer>
       </Canvas>
     </div>

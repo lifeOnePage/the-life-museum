@@ -8,6 +8,7 @@ import InfoBlock from "./components/InfoBlock";
 import CreateAlbumModal from "./components/CreateAlbumModal";
 import Header from "../components/Header";
 import generateBackCoverDataUrl from "./utils/generateBackCover";
+import { cachedAlbums, setCachedAlbums } from "./utils/albumListCache";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -16,8 +17,8 @@ export default function MyShelfPage() {
   const { token } = useAuth();
   const router = useRouter();
 
-  // API에서 받아온 전체 앨범 목록
-  const [albums, setAlbums] = useState([]);
+  // API에서 받아온 전체 앨범 목록 (재방문 시 캐시에서 즉시 복원)
+  const [albums, setAlbums] = useState(() => cachedAlbums);
 
   // 선택된 앨범 상태 (DOM과 3D 캔버스 간 상호작용)
   const [selectedAlbum, setSelectedAlbum] = useState(null);
@@ -46,8 +47,7 @@ export default function MyShelfPage() {
       .then((res) => res.json())
       .then((json) => {
         if (json.ok && Array.isArray(json.data)) {
-          setAlbums(
-            json.data.map((item) => {
+          const newAlbums = json.data.map((item) => {
               const bio = item.lifestory?.content || "";
               const timeline = (item.timeline?.events || []).map((e) => ({
                 year: e.timestamp,
@@ -74,8 +74,9 @@ export default function MyShelfPage() {
                 edgeColor: bgColor,
                 role: item.role || "owner",
               };
-            }),
-          );
+            });
+          setCachedAlbums(newAlbums);
+          setAlbums(newAlbums);
         }
       })
       .catch((err) => console.error("Failed to fetch library:", err));
@@ -193,25 +194,41 @@ export default function MyShelfPage() {
         onHoverLabelPos={setHoverLabel}
       />
 
-      {/* 호버 툴팁: 앨범 top-left 화면 좌표에 DOM으로 배치 */}
+      {/* 호버 라벨: 앨범 하단 중앙 화면 좌표 기준, 중앙 정렬 + 페이드인 */}
       {hoverLabel && !selectedAlbum && (
         <div
+          key={hoverLabel.album.id}
           style={{
             position: "fixed",
             left: hoverLabel.x,
             top: hoverLabel.y,
             pointerEvents: "none",
-            whiteSpace: "nowrap",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
+            textAlign: "center",
+            animation: "albumLabelIn 0.18s ease-out forwards",
           }}
         >
-          <span style={{ fontSize: 14, fontWeight: 600, color: "#5a4f4a" }}>
+          <span
+            style={{
+              display: "block",
+              fontSize: "clamp(11px, 1.2vw, 14px)",
+              fontWeight: 600,
+              color: "#e8d5b7",
+              letterSpacing: "0.02em",
+              lineHeight: 1.4,
+            }}
+          >
             {hoverLabel.album.title}
           </span>
           {hoverLabel.album.subtitle && (
-            <span style={{ fontSize: 12, color: "#5a4f4a", marginTop: 1 }}>
+            <span
+              style={{
+                display: "block",
+                fontSize: "clamp(10px, 1vw, 12px)",
+                color: "#9b8b7a",
+                marginTop: 2,
+                letterSpacing: "0.01em",
+              }}
+            >
               {hoverLabel.album.subtitle}
             </span>
           )}

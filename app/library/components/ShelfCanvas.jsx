@@ -1,8 +1,8 @@
 "use client";
 
 import * as THREE from "three";
-import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 import {
   EffectComposer,
   Bloom,
@@ -11,6 +11,17 @@ import {
 } from "@react-three/postprocessing";
 import ShelfScene from "./ShelfScene";
 import { OrbitControls, useHelper } from "@react-three/drei";
+
+// Canvas 내부 서브컴포넌트: 드래그 yOffset을 카메라 Y에 부드럽게 반영
+function CameraYController({ yOffsetRef }) {
+  const { camera } = useThree();
+  useFrame(() => {
+    const target = 1.5 + yOffsetRef.current;
+    camera.position.y += (target - camera.position.y) * 0.12;
+    camera.lookAt(0, camera.position.y, 0);
+  });
+  return null;
+}
 
 const CREAM = "#f5ede0";
 const DARK_WALL = "#1a1510";
@@ -59,6 +70,62 @@ export default function ShelfCanvas({
   const controlsRef = useRef(null);
   const cameraRef = useRef(null);
 
+  // 모바일 세로 드래그 스크롤
+  const [windowWidth, setWindowWidth] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth : 1280,
+  );
+  useEffect(() => {
+    const handler = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, []);
+
+  // COLS/ROWS: 스크롤 범위 계산용 (ShelfScene과 동일 로직)
+  const COLS = useMemo(() => {
+    if (windowWidth >= 1280) return 5;
+    if (windowWidth >= 1024) return 4;
+    if (windowWidth >= 768) return 3;
+    return 2;
+  }, [windowWidth]);
+
+  const ROWS = useMemo(() => {
+    if (windowWidth >= 768) return 2;
+    return Math.min(5, Math.max(2, Math.ceil(albums.length / COLS)));
+  }, [windowWidth, albums.length, COLS]);
+
+  // 드래그 상태 (ref — setState 없이 처리)
+  const dragRef = useRef({ dragging: false, startY: 0, startOffset: 0 });
+  const cameraYOffsetRef = useRef(0);
+
+  const handlePointerDown = (e) => {
+    dragRef.current = {
+      dragging: true,
+      startY: e.clientY,
+      startOffset: cameraYOffsetRef.current,
+    };
+  };
+
+  const handlePointerMove = (e) => {
+    if (!dragRef.current.dragging) return;
+    const delta = e.clientY - dragRef.current.startY;
+    // delta > 0 (드래그 아래) → 카메라 위로 → 위쪽 앨범 노출 (자연스러운 스크롤)
+    const newOffset = dragRef.current.startOffset + delta * 0.003;
+    // ROWS=2 데스크탑도 ±0.7 허용, 더 많은 행일수록 범위 확장
+    const scrollRange = (ROWS - 1) * 0.7;
+    cameraYOffsetRef.current = Math.max(-scrollRange, Math.min(scrollRange, newOffset));
+  };
+
+  const handlePointerUp = () => {
+    dragRef.current.dragging = false;
+  };
+
+  // 마우스 휠 스크롤 — 드래그 방향과 동일 (위로 스크롤 → 카메라 아래, 아래로 스크롤 → 카메라 위)
+  const handleWheel = (e) => {
+    const scrollRange = (ROWS - 1) * 0.7;
+    const newOffset = cameraYOffsetRef.current + e.deltaY * 0.001;
+    cameraYOffsetRef.current = Math.max(-scrollRange, Math.min(scrollRange, newOffset));
+  };
+
   // 카메라 제어 메서드를 부모에 노출
   useEffect(() => {
     if (cameraControlRef) {
@@ -102,6 +169,14 @@ export default function ShelfCanvas({
   }, [selectedAlbum, onCloseAlbum]);
 
   return (
+    <div
+      style={{ width: "100%", height: "100%", touchAction: "none" }}
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerLeave={handlePointerUp}
+      onWheel={handleWheel}
+    >
     <Canvas
       shadows={false}
       camera={{
@@ -169,6 +244,9 @@ export default function ShelfCanvas({
         />
       </Suspense>
 
+      {/* 모바일 세로 드래그 스크롤: 카메라 Y 오프셋 부드럽게 반영 */}
+      <CameraYController yOffsetRef={cameraYOffsetRef} />
+
       {/* Post-processing: N8AO + Bloom + Vignette */}
       <EffectComposer>
         <N8AO
@@ -189,5 +267,6 @@ export default function ShelfCanvas({
       </EffectComposer>
       {/* <OrbitControls /> */}
     </Canvas>
+    </div>
   );
 }

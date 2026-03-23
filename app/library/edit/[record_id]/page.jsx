@@ -426,6 +426,7 @@ const Index = ({ params }) => {
     if (!fullText) return;
     setIsGenerating(true);
     setBioError("");
+    console.log("fullText", fullText);
 
     try {
       const token = localStorage.getItem("app_token");
@@ -438,7 +439,7 @@ const Index = ({ params }) => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: fullText, albumTitle, albumSubtitle }),
+          body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
 

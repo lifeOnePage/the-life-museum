@@ -12,9 +12,9 @@ function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
 }
 
 const BOX_DEPTH = 10;
-const FRAME_COLOR = "#1a1a2e";
-const BACK_COLOR = "#0a0a15";
-const SCREEN_OFF_COLOR = "#050510";
+const FRAME_COLOR = "#0c0c0c";
+const BACK_COLOR = "#0a0a0a";
+const SCREEN_OFF_COLOR = "#050505";
 
 // ─── 미디어 패딩 ──────────────────────────────────────────────────────────────
 // 박스 face 기준 상하좌우 여백 크기 (3D scene 단위)

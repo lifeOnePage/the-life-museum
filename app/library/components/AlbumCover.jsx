@@ -2,9 +2,10 @@
 
 import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { parseGIF, decompressFrames } from "gifuct-js";
 import { getMediaType } from "../utils/mediaType";
+import { staticTextureCache, gifFrameCache } from "../utils/textureCache";
 
 // 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
 const CAMERA_FRONT_POSITION = {
@@ -37,39 +38,49 @@ function useGifTexture(imageUrl, isPlayable) {
 
     let cancelled = false;
 
-    (async () => {
-      try {
-        const resp = await fetch(imageUrl);
-        const buff = await resp.arrayBuffer();
-        const parsed = parseGIF(buff);
-        const frames = decompressFrames(parsed, true);
-        if (cancelled || frames.length === 0) return;
+    function setupFromFrames(frames, width, height) {
+      if (cancelled) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
 
-        const { width, height } = parsed.lsd;
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
+      canvasRef.current = canvas;
+      ctxRef.current = ctx;
+      framesRef.current = frames;
+      frameIndexRef.current = 0;
+      elapsedRef.current = 0;
 
-        canvasRef.current = canvas;
-        ctxRef.current = ctx;
-        framesRef.current = frames;
-        frameIndexRef.current = 0;
-        elapsedRef.current = 0;
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      textureRef.current = texture;
 
-        const texture = new THREE.CanvasTexture(canvas);
-        texture.colorSpace = THREE.SRGBColorSpace;
-        textureRef.current = texture;
+      drawFrame(ctx, frames[0], width, height);
+      texture.needsUpdate = true;
+      setReady(true);
+    }
 
-        // 첫 프레임 그리기
-        drawFrame(ctx, frames[0], width, height);
-        texture.needsUpdate = true;
+    const cached = gifFrameCache.get(imageUrl);
+    if (cached) {
+      // 프레임 데이터 캐시 히트: 네트워크 fetch 스킵, canvas/texture만 재생성
+      setupFromFrames(cached.frames, cached.width, cached.height);
+    } else {
+      (async () => {
+        try {
+          const resp = await fetch(imageUrl);
+          const buff = await resp.arrayBuffer();
+          const parsed = parseGIF(buff);
+          const frames = decompressFrames(parsed, true);
+          if (cancelled || frames.length === 0) return;
 
-        setReady(true);
-      } catch {
-        setReady(false);
-      }
-    })();
+          const { width, height } = parsed.lsd;
+          gifFrameCache.set(imageUrl, { frames, width, height });
+          setupFromFrames(frames, width, height);
+        } catch {
+          if (!cancelled) setReady(false);
+        }
+      })();
+    }
 
     return () => {
       cancelled = true;
@@ -119,13 +130,22 @@ function drawFrame(ctx, frame, canvasW, canvasH) {
   ctx.putImageData(imageData, dims.left, dims.top);
 }
 
-// 정적 이미지 텍스처 훅
+// 정적 이미지 텍스처 훅 (모듈-레벨 캐시 사용 — 라우트 전환 후에도 재로드 없음)
 function useStaticTexture(imageUrl) {
-  const [texture, setTexture] = useState(null);
+  const [texture, setTexture] = useState(() =>
+    imageUrl ? (staticTextureCache.get(imageUrl) ?? null) : null,
+  );
 
   useEffect(() => {
     if (!imageUrl) {
       setTexture(null);
+      return;
+    }
+
+    // 캐시 히트: 즉시 반환, 네트워크 요청 없음
+    const cached = staticTextureCache.get(imageUrl);
+    if (cached) {
+      setTexture(cached);
       return;
     }
 
@@ -136,15 +156,13 @@ function useStaticTexture(imageUrl) {
       (loadedTexture) => {
         loadedTexture.colorSpace = THREE.SRGBColorSpace;
         loadedTexture.needsUpdate = true;
+        staticTextureCache.set(imageUrl, loadedTexture);
         setTexture(loadedTexture);
       },
       undefined,
       () => setTexture(null),
     );
-
-    return () => {
-      texture?.dispose();
-    };
+    // cleanup에서 dispose 하지 않음 — 캐시가 수명 관리
   }, [imageUrl]);
 
   return texture;
@@ -287,6 +305,7 @@ export default function AlbumCover({
   isSelected = false,
   isFlipped = false,
   isPlayable = true,
+  sceneOffset = 0,
   onClick,
   onHoverChange,
   onGroupRef,
@@ -294,6 +313,7 @@ export default function AlbumCover({
   const meshRef = useRef();
   const groupRef = useRef();
   const outerGroupRef = useRef();
+  const { camera } = useThree();
 
   // original 위치 저장 (position prop을 기반으로)
   const originalPosition = useMemo(
@@ -389,13 +409,23 @@ export default function AlbumCover({
     const state = animationState.current;
 
     if (isSelected) {
-      // 카메라 앞 중앙으로 이동
-      state.targetX = CAMERA_FRONT_POSITION.x;
-      state.targetY = CAMERA_FRONT_POSITION.y;
-      state.targetZ = CAMERA_FRONT_POSITION.z;
-      state.targetRotX = 0; // 기울기 제거 (정면으로)
+      // 화면 크기에 맞게 앨범이 항상 화면 중앙에 오도록 동적 계산
+      // Y: 현재 카메라 Y (스크롤 오프셋 반영)
+      // Z: FOV + aspect + 앨범 크기로 화면 점유율 65%가 되는 거리 계산
+      const fovYRad = (camera.fov * Math.PI) / 180;
+      const aspect = camera.aspect || 1;
+      const fovXRad = 2 * Math.atan(Math.tan(fovYRad / 2) * aspect);
+      // 세로/가로 중 더 좁은 방향 기준으로 거리 계산 (클리핑 방지)
+      const constrainedFov = Math.min(fovYRad, fovXRad);
+      const DISPLAY_FRACTION = 0.65;
+      const dist = size / 2 / (Math.tan(constrainedFov / 2) * DISPLAY_FRACTION);
 
-      // 플립 상태에 따라 Y축 회전
+      state.targetX = CAMERA_FRONT_POSITION.x;
+      // 로컬 좌표 보정: outerGroupRef는 sceneOffset만큼 이동된 부모 group의 자식
+      // 월드 y = targetY + sceneOffset = camera.position.y 이 되도록 보정
+      state.targetY = camera.position.y - sceneOffset;
+      state.targetZ = camera.position.z - dist;
+      state.targetRotX = 0;
       state.targetRotY = isFlipped ? Math.PI : 0;
     } else {
       // original 위치로 복귀
@@ -405,12 +435,12 @@ export default function AlbumCover({
       state.targetRotX = tiltAngle; // 기울기 복원
       state.targetRotY = 0;
     }
-  }, [isSelected, isFlipped, originalPosition, tiltAngle]);
+  }, [isSelected, isFlipped, originalPosition, tiltAngle, sceneOffset]);
 
-  // 호버 시 살짝 앞으로
+  // 호버 시 위로 리프트
   useEffect(() => {
     if (!isSelected && hovered) {
-      animationState.current.targetY = originalPosition.y + 0.15;
+      animationState.current.targetY = originalPosition.y + 0.35;
     } else if (!isSelected) {
       animationState.current.targetY = originalPosition.y;
     }

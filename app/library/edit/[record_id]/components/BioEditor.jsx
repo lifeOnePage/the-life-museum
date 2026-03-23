@@ -78,7 +78,7 @@ const BioEditor = forwardRef(
       try {
         const token = localStorage.getItem("app_token");
         const messages = [{ sender: "user", text: keywords }];
-
+        console.log("token", token);
         const response = await fetch("/api/gpt-story", {
           method: "POST",
           headers: {

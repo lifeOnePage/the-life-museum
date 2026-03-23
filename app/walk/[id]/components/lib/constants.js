@@ -25,11 +25,11 @@ export const DISPLAY_OFFSET_Z = 500;
 export const DISPLAY_OFFSET_PAUSED = 120; // closer distance for manual click while paused (hold zone 80~130 내 착지)
 export const DISPLAY_SCALE = 0.8;
 export const FOCUS_SEARCH_RANGE = 800;
-export const FOCUS_DISMISS_DISTANCE = 56;
+export const FOCUS_DISMISS_DISTANCE = 10;
 export const FOCUS_FADE_SPEED = 0.2; // 0→1 in ~0.67s
 export const OPACITY_APPEAR_DIST = 200; // 이 거리부터 클론이 보이기 시작
 export const OPACITY_PEAK_DIST = 130; // 이 거리에서 fade-in 완료 (opacity = 1.0)
-export const OPACITY_HOLD_DIST = 60; // 이 거리에서 hold 종료, fade-out 시작
+export const OPACITY_HOLD_DIST = 30; // 이 거리에서 hold 종료, fade-out 시작
 
 // Camera speed modulation during auto-focus
 // 오토포커싱 사이클 시작 시 speed = cameraSpeed (x),
@@ -48,8 +48,8 @@ export const FLOOR_COLOR = "#000000";
 
 // Fog
 export const FOG_COLOR = "#000000";
-export const FOG_NEAR = 500;
-export const FOG_FAR = 7000;
+export const FOG_NEAR = 300;
+export const FOG_FAR = 2000;
 
 // Glow
 export const GLOW_COLOR = "#ffffff";

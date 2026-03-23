@@ -19,11 +19,14 @@ const SHELF_CONFIG = {
 };
 
 const ALBUM_CONFIG = {
-  size: 0.8, // 앨범 정사각형 크기 (N x N)
+  size: 0.8, // 앨범 정사각형 크기 (데스크탑 기본)
   thickness: 0.02, // 앨범 두께 (m - 얇은 판)
-  gap: 0.15, // 앨범 간 간격
+  gap: 0.15, // 앨범 간 간격 (데스크탑 기본)
   tiltAngle: -0.15, // 벽에 기대는 각도 (라디안)
 };
+
+// 호버 시 앨범이 올라가는 양 (AlbumCover.jsx의 targetY + 0.35 와 일치해야 함)
+const HOVER_LIFT = 0.35;
 
 export default function ShelfScene({
   albums,
@@ -53,8 +56,22 @@ export default function ShelfScene({
     return 2;
   }, [windowWidth]);
 
-  // ROWS는 앨범 수와 무관하게 고정 — 필터 변경 시 선반 레이아웃 유지
-  const ROWS = 2;
+  // 모바일 반응형 앨범 크기/간격 (portrait에서 클리핑 방지)
+  const albumSize = useMemo(
+    () => (windowWidth < 768 ? 0.65 : ALBUM_CONFIG.size),
+    [windowWidth],
+  );
+  const albumGap = useMemo(
+    () => (windowWidth < 768 ? 0.08 : ALBUM_CONFIG.gap),
+    [windowWidth],
+  );
+
+  // ROWS: 데스크탑은 2 고정, 모바일은 앨범 수에 따라 동적 확장 (최대 5)
+  const ROWS = useMemo(() => {
+    // if (windowWidth >= 768) return 2;
+    console.log("albums.length", albums.length);
+    return Math.min(5, Math.max(2, Math.ceil(albums.length / COLS)));
+  }, [windowWidth, albums.length, COLS]);
 
   // 씬 y-offset: 헤더/필터 UI와 겹침 방지
   // ROWS=1: +0.2, ROWS=2: -0.2, ROWS=3: -0.6
@@ -66,17 +83,17 @@ export default function ShelfScene({
   // 앨범 위치 계산
   const albumPositions = useMemo(() => {
     const positions = [];
-    const totalWidth = COLS * ALBUM_CONFIG.size + (COLS - 1) * ALBUM_CONFIG.gap;
-    const startX = -totalWidth / 2 + ALBUM_CONFIG.size / 2;
+    const totalWidth = COLS * albumSize + (COLS - 1) * albumGap;
+    const startX = -totalWidth / 2 + albumSize / 2;
 
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const index = row * COLS + col;
-        const x = startX + col * (ALBUM_CONFIG.size + ALBUM_CONFIG.gap);
+        const x = startX + col * (albumSize + albumGap);
         const y =
           SHELF_CONFIG.spacing * (ROWS - 1 - row) +
           SHELF_CONFIG.thickness / 2 +
-          ALBUM_CONFIG.size / 2;
+          albumSize / 2;
         const z = SHELF_CONFIG.depth / 2 - ALBUM_CONFIG.thickness;
 
         positions.push({
@@ -88,7 +105,7 @@ export default function ShelfScene({
       }
     }
     return positions;
-  }, [COLS, ROWS]);
+  }, [COLS, ROWS, albumSize, albumGap]);
 
   // 선반 위치 계산 (ROWS단)
   const shelfPositions = useMemo(() => {
@@ -125,12 +142,13 @@ export default function ShelfScene({
     }
   }, [hoveredIndex, selectedAlbum, albums, albumPositions]);
 
-  // 앨범 top-left 모서리를 화면 좌표(px)로 투영
-  const projectAlbumTopLeft = useCallback(
+  // 호버된 앨범의 하단 중앙을 화면 좌표(px)로 투영
+  // 라벨은 이 점 기준으로 translateX(-50%) 하면 앨범 바로 아래 중앙에 정렬됨
+  const projectAlbumBottomCenter = useCallback(
     (position) => {
       const vec = new THREE.Vector3(
-        position[0] - ALBUM_CONFIG.size / 2,
-        position[1] - ALBUM_CONFIG.size / 2 - 0.15,
+        position[0], // 앨범 수평 중앙
+        position[1] + sceneOffset + HOVER_LIFT - albumSize / 2 - 0.05, // 로컬→월드 변환: sceneOffset 포함
         position[2],
       );
       vec.project(camera);
@@ -139,7 +157,7 @@ export default function ShelfScene({
       const y = ((-vec.y + 1) / 2) * rect.height + rect.top;
       return { x, y };
     },
-    [camera, gl],
+    [camera, gl, albumSize, sceneOffset],
   );
 
   // 선택된 앨범의 Three.js Group ref
@@ -205,7 +223,7 @@ export default function ShelfScene({
               key={`album-${index}`}
               index={index}
               position={position}
-              size={ALBUM_CONFIG.size}
+              size={albumSize}
               thickness={ALBUM_CONFIG.thickness}
               tiltAngle={ALBUM_CONFIG.tiltAngle}
               frontImage={album.frontImage}
@@ -214,6 +232,7 @@ export default function ShelfScene({
               isSelected={isSelectedAlbum}
               isFlipped={isSelectedAlbum && isFlipped}
               isPlayable={isPlayable}
+              sceneOffset={sceneOffset}
               onClick={() => {
                 if (isSelectedAlbum) {
                   onFlipAlbum?.();
@@ -225,7 +244,7 @@ export default function ShelfScene({
               onHoverChange={(hovered) => {
                 setHoveredIndex(hovered ? index : null);
                 if (hovered) {
-                  const screenPos = projectAlbumTopLeft(position);
+                  const screenPos = projectAlbumBottomCenter(position);
                   onHoverLabelPos?.({ album, ...screenPos });
                 } else {
                   onHoverLabelPos?.(null);

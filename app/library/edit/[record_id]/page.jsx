@@ -860,7 +860,7 @@ const Index = ({ params }) => {
       <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Preview Panel - top half on mobile, right side on desktop */}
         <div
-          className="h-[50vh] shrink-0 bg-[#dedbd3] lg:order-2 lg:h-auto lg:flex-1"
+          className="h-[50vh] shrink-0 bg-[#C0C0C0] lg:order-2 lg:h-auto lg:flex-1"
           data-tutorial="preview"
         >
           <AlbumPreview3D
@@ -934,9 +934,14 @@ const Index = ({ params }) => {
                         onClick={() => setStoryOpen(!storyOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
-                        <span className="text-sm font-semibold text-gray-900">
-                          스토리
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">
+                            스토리
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            앨범에 대한 이야기를 적어주세요
+                          </span>
+                        </div>
                         {storyOpen ? (
                           <ChevronDown className="h-4 w-4 text-gray-400" />
                         ) : (
@@ -1058,7 +1063,7 @@ const Index = ({ params }) => {
                             타임라인
                           </span>
                           <span className="text-[11px] text-gray-400">
-                            {timeline.length}개
+                            앨범의 주요 순간들을 기록하세요
                           </span>
                         </div>
                         {timelineOpen ? (

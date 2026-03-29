@@ -1,4 +1,11 @@
-import { Suspense, useRef, useMemo, useCallback, useState, useEffect } from "react";
+import {
+  Suspense,
+  useRef,
+  useMemo,
+  useCallback,
+  useState,
+  useEffect,
+} from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -9,19 +16,21 @@ import GlowBorder from "./GlowBorder";
 import {
   CAMERA_START_Z,
   DISPLAY_OFFSET_Z,
-  DISPLAY_OFFSET_PAUSED,
   DISPLAY_SCALE,
   FOCUS_SEARCH_RANGE,
   FOCUS_DISMISS_DISTANCE,
   FOCUS_FADE_SPEED,
   FOCUS_MIN_SPEED_RATIO,
   AUTO_RESPAWN_OFFSET,
+  OPACITY_PEAK_DIST,
   FLOOR_Y,
   FLOOR_COLOR,
   FOG_COLOR,
   FOG_NEAR,
   FOG_FAR,
   BASE_HEIGHT,
+  CORRIDOR_HALF,
+  OPACITY_APPEAR_DIST,
 } from "../lib/constants";
 
 // Imperative floor/light position helpers (called from useFrame to avoid React re-renders)
@@ -105,8 +114,8 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       const wrappedPZ = wrapZ(plane.position[2], s.cameraZ);
       if (wrappedPZ >= s.cameraZ) return;
 
-      // Use a closer display distance when paused for better inspection
-      const offset = isPlaying ? DISPLAY_OFFSET_Z : DISPLAY_OFFSET_PAUSED;
+      // Land at OPACITY_PEAK_DIST so the plane arrives fully visible (opacity=1.0)
+      const offset = OPACITY_APPEAR_DIST;
 
       // Switch to manual mode
       s.focusMode = "manual";
@@ -121,7 +130,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       ];
       setFocusRender({ mode: "manual", targetId: planeId });
     },
-    [isPlaying, planes, corridorSpan],
+    [planes, corridorSpan],
   );
 
   // Pick a random plane ahead of camera for auto focus (uses wrapped positions)
@@ -223,8 +232,18 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
 
       // Update floor and lights imperatively every frame (no React re-render needed)
       if (floorRef.current) floorRef.current.position.z = s.cameraZ - 4000;
-      if (pLight1Ref.current) pLight1Ref.current.position.z = s.cameraZ;
-      if (pLight2Ref.current) pLight2Ref.current.position.z = s.cameraZ;
+      if (pLight1Ref.current)
+        pLight1Ref.current.position.set(
+          -CORRIDOR_HALF - 50,
+          50,
+          s.cameraZ - 400,
+        );
+      if (pLight2Ref.current)
+        pLight2Ref.current.position.set(
+          CORRIDOR_HALF + 50,
+          50,
+          s.cameraZ - 400,
+        );
       return;
     }
 
@@ -234,13 +253,20 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
       const focusRange = DISPLAY_OFFSET_Z - FOCUS_DISMISS_DISTANCE;
       // t=0 at cycle start (far from clone), t=1 at dismiss threshold (close to clone)
-      const t = 1 - Math.max(0, Math.min(1, (distToClone - FOCUS_DISMISS_DISTANCE) / focusRange));
-      targetEffectiveSpeed = cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
+      const t =
+        1 -
+        Math.max(
+          0,
+          Math.min(1, (distToClone - FOCUS_DISMISS_DISTANCE) / focusRange),
+        );
+      targetEffectiveSpeed =
+        cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
     }
     // 비대칭 스무딩: 감속은 빠르게(k=6), 가속은 천천히(k=2)
     // → 브레이킹 느낌 유지 + 전환 후 급가속 제거
     const k = targetEffectiveSpeed < s.smoothSpeed ? 6 : 2;
-    s.smoothSpeed += (targetEffectiveSpeed - s.smoothSpeed) * (1 - Math.pow(0.01, delta * k));
+    s.smoothSpeed +=
+      (targetEffectiveSpeed - s.smoothSpeed) * (1 - Math.pow(0.01, delta * k));
     s.cameraZ -= s.smoothSpeed * delta;
     camera.position.z = s.cameraZ;
 
@@ -253,8 +279,10 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
 
     // Update floor and lights imperatively every frame (no React re-render needed)
     if (floorRef.current) floorRef.current.position.z = s.cameraZ - 4000;
-    if (pLight1Ref.current) pLight1Ref.current.position.z = s.cameraZ;
-    if (pLight2Ref.current) pLight2Ref.current.position.z = s.cameraZ;
+    if (pLight1Ref.current)
+      pLight1Ref.current.position.set(-CORRIDOR_HALF, 50, s.cameraZ - 400);
+    if (pLight2Ref.current)
+      pLight2Ref.current.position.set(CORRIDOR_HALF, 50, s.cameraZ - 400);
 
     // 2. Focus state machine
     if (s.focusMode === "idle") {
@@ -329,11 +357,25 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       <fog attach="fog" args={[FOG_COLOR, FOG_NEAR, FOG_FAR]} />
 
       {/* Lighting */}
-      <ambientLight intensity={0.4} />
-      <directionalLight ref={dirLightRef} intensity={1.0} />
-      {/* Point lights: initial Z doesn't matter — useFrame updates position every frame */}
-      <pointLight ref={pLight1Ref} position={[-300, 80, 0]} intensity={0.1} distance={2000} />
-      <pointLight ref={pLight2Ref} position={[300, 80, 0]} intensity={0.1} distance={2000} />
+      <ambientLight intensity={0.7} />
+      <directionalLight ref={dirLightRef} intensity={0.4} />
+      {/* Point lights: follow camera ahead+sides — decay=1 (linear) for visible Phong specular */}
+      <pointLight
+        ref={pLight1Ref}
+        position={[-200, 100, -400]}
+        intensity={100}
+        distance={1500}
+        decay={0.5}
+        color="#ffdfcb"
+      />
+      <pointLight
+        ref={pLight2Ref}
+        position={[200, 100, -400]}
+        intensity={100}
+        distance={1500}
+        decay={0.5}
+        color="#ffdfcb"
+      />
 
       {/* Floor - follows camera via useFrame (initial Z is a placeholder) */}
       <mesh
@@ -352,10 +394,10 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
 
       {/* Wall Planes - Z-wrapping is handled imperatively inside each WallPlane.useFrame */}
       {planes.map((p) => {
-        // manual mode: plane stays in place (FocusClone handles display, same as auto)
+        // "auto" → wall stays, FocusClone shows; "manual" → plane flies to camera
         const focusMode =
-          focusRender.targetId === p.id && focusRender.mode === "auto"
-            ? "auto"
+          focusRender.targetId === p.id
+            ? focusRender.mode // "auto" or "manual"
             : "none";
 
         return (
@@ -370,7 +412,6 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
               focusMode={focusMode}
               onClick={handlePlaneClick}
               onTextureLoaded={handleTextureLoaded}
-              displayOffsetZ={DISPLAY_OFFSET_Z}
               displayScale={DISPLAY_SCALE}
               stateRef={state}
               corridorSpan={corridorSpan}
@@ -410,27 +451,17 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
         </>
       )}
 
-      {/* Manual Focus: FocusClone + Mirror (same mechanism as auto, triggered by click) */}
+      {/* Manual Focus: WallPlane itself flies to camera (no FocusClone needed) */}
+      {/* Mirror reflection for manual focus */}
       {focusRender.mode === "manual" && focusTexInfo && focusPlane && (
-        <>
-          <FocusClone
-            texture={focusTexInfo.texture}
-            aspectRatio={focusTexInfo.aspectRatio}
-            baseHeight={focusPlane.baseHeight}
-            cameraY={camera.position.y}
-            stateRef={state}
-            displayScale={DISPLAY_SCALE}
-            cloneZ={focusCloneZ}
-          />
-          <MirrorReflection
-            texture={focusTexInfo.texture}
-            aspectRatio={focusTexInfo.aspectRatio}
-            baseHeight={focusPlane.baseHeight}
-            stateRef={state}
-            displayScale={DISPLAY_SCALE}
-            cloneZ={focusCloneZ}
-          />
-        </>
+        <MirrorReflection
+          texture={focusTexInfo.texture}
+          aspectRatio={focusTexInfo.aspectRatio}
+          baseHeight={focusPlane.baseHeight}
+          stateRef={state}
+          displayScale={DISPLAY_SCALE}
+          cloneZ={focusCloneZ}
+        />
       )}
 
       <OrbitControls

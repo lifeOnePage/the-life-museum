@@ -1,17 +1,18 @@
 "use client";
 
-import { use, useState, useEffect } from "react";
+import { use, useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
+import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
+
 const AlbumPreview3D = dynamic(
   () => import("@/app/library/edit/[record_id]/components/AlbumPreview3D"),
   { ssr: false },
 );
 
-const ShareScene = dynamic(() => import("./components/ShareScene"), {
-  ssr: false,
-});
+const API_BASE =
+  "https://the-life-museum-backend-production.up.railway.app";
 
 export default function SharePage({ params }) {
   const { id } = use(params);
@@ -22,11 +23,16 @@ export default function SharePage({ params }) {
   const [ready, setReady] = useState(false);
 
   const [frontCover, setFrontCover] = useState(null);
-  const [bio, setBio] = useState("");
-  const [timeline, setTimeline] = useState([]);
   const [albumTitle, setAlbumTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
+  const [bio, setBio] = useState("");
+  const [timeline, setTimeline] = useState([]);
   const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
+  const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
+  const [titlePosition, setTitlePosition] = useState("bottom-center");
+  const [titleFont, setTitleFont] = useState("Pretendard Variable");
+  const [titleColor, setTitleColor] = useState("#ffffff");
+  const [images, setImages] = useState([]);
 
   useEffect(() => {
     if (!id) return;
@@ -36,9 +42,7 @@ export default function SharePage({ params }) {
         setLoading(true);
         setError(null);
 
-        const apiUrl =
-          "https://the-life-museum-backend-production.up.railway.app";
-        const response = await fetch(`${apiUrl}/api/v1/record/${id}`);
+        const response = await fetch(`${API_BASE}/api/v1/record/${id}`);
 
         if (!response.ok) {
           throw new Error(`앨범을 불러올 수 없습니다 (${response.status})`);
@@ -53,19 +57,26 @@ export default function SharePage({ params }) {
         const data = result.data;
 
         setFrontCover(data.coverImage?.url || null);
-        setBio(data.lifestory?.content || "");
         setAlbumTitle(data.title || "");
         setSubtitle(data.subtitle || "");
+        setBio(data.lifestory?.content || "");
         setSelectedTheme(data.theme || DEFAULT_THEME);
+        setTitleOverlayEnabled(data.titleOverlayEnabled ?? false);
+        setTitlePosition(data.titlePosition || "bottom-center");
+        setTitleFont(data.titleFont || "Pretendard Variable");
+        setTitleColor(data.titleColor || "#ffffff");
 
         if (data.timeline?.events) {
           setTimeline(
             data.timeline.events.map((e) => ({
               year: e.timestamp || "",
-              event: e.title || "",
+              event: `${e.title || ""}${e.description ? ` - ${e.description}` : ""}`,
             })),
           );
         }
+
+        const imgs = (data.mediaList ?? []).filter((m) => m.type === "image");
+        setImages(imgs);
       } catch (err) {
         console.error("Failed to fetch record:", err);
         setError(err.message);
@@ -77,6 +88,32 @@ export default function SharePage({ params }) {
 
     fetchRecord();
   }, [id]);
+
+  // Build cylindrical column strips
+  const GRID_COLS = 14;
+  const ARC_SPREAD = 180;
+  const RADIUS = 600;
+  const ROWS_PER_COL = 8;
+  const angleStep = ARC_SPREAD / (GRID_COLS - 1);
+  // Width so adjacent columns tile seamlessly on the cylinder
+  const cellWidth = Math.ceil(
+    2 * RADIUS * Math.tan(((angleStep / 2) * Math.PI) / 180),
+  );
+
+  const gridColumns = useMemo(() => {
+    if (images.length === 0) return [];
+    const urls = images.map((img) =>
+      getProxiedUrl(img.original_url || img.thumbnail_url),
+    );
+    return Array.from({ length: GRID_COLS }, (_, colIdx) => {
+      const colImages = [];
+      for (let r = 0; r < ROWS_PER_COL; r++) {
+        colImages.push(urls[(colIdx * ROWS_PER_COL + r) % urls.length]);
+      }
+      const angle = (colIdx / (GRID_COLS - 1) - 0.5) * ARC_SPREAD;
+      return { colIdx, angle, images: colImages };
+    });
+  }, [images]);
 
   // Loading
   if (loading) {
@@ -103,67 +140,114 @@ export default function SharePage({ params }) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Header — absolute top-left */}
-      <div
-        className={`pointer-events-none absolute top-0 left-0 z-10 px-6 pt-10 transition-all duration-1000 ease-out ${
-          ready ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"
-        }`}
-      >
-        {albumTitle && (
-          <h1 className="text-[20px] font-light tracking-[0.2em] text-white/85">
-            {albumTitle}
-          </h1>
-        )}
-        {subtitle && (
-          <p className="mt-2 text-[12px] font-light tracking-[0.25em] text-white/35">
-            {subtitle}
-          </p>
-        )}
-      </div>
+      {/* Background: Concave cylindrical photo grid */}
+      {images.length > 0 && (
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {/* Dark gradient overlays (vignette) */}
+          <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
+          <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />
+          <div className="absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,transparent_30%,black_80%)]" />
 
-      {/* 3D Album — full screen */}
-      <div
-        className={`absolute inset-0 transition-all delay-200 duration-1000 ease-out ${
-          ready ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"
-        }`}
-      >
-        <AlbumPreview3D
-          frontCover={frontCover}
-          bio={bio}
-          timeline={timeline}
-          selectedTheme={selectedTheme}
-          albumTitle={albumTitle}
-        />
-      </div>
-
-      {/* Bottom CTA — floating over canvas */}
-      <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 pb-10 text-center transition-all delay-500 duration-1000 ease-out ${
-          ready ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
-        }`}
-      >
-        <button
-          onClick={() => router.push(`/walk/${id}`)}
-          className="group pointer-events-auto inline-flex items-center gap-3 px-1 py-2 transition-all duration-300"
-        >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 transition-all duration-300 group-hover:border-white/30 group-hover:bg-white/10">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              className="h-3.5 w-3.5 text-white/50 transition-all duration-300 group-hover:text-white/80"
+          <div
+            className="absolute inset-0 flex items-center justify-center opacity-55"
+            style={{ perspective: "1200px", perspectiveOrigin: "50% 50%" }}
+          >
+            <div
+              className="relative"
+              style={{
+                transformStyle: "preserve-3d",
+                transform: "rotateX(8deg)",
+                width: "100vw",
+                height: "100vh",
+              }}
             >
-              <path
-                fillRule="evenodd"
-                d="M3 10a.75.75 0 0 1 .75-.75h10.638L11.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 1 1-1.04-1.08l3.158-2.96H3.75A.75.75 0 0 1 3 10Z"
-                clipRule="evenodd"
-              />
-            </svg>
-          </span>
-          <span className="text-[13px] font-light tracking-[0.15em] text-white/50 transition-colors duration-300 group-hover:text-white/80">
+              {gridColumns.map(({ colIdx, angle, images: colImages }) => (
+                <div
+                  key={colIdx}
+                  className="absolute left-1/2 top-1/2"
+                  style={{
+                    width: cellWidth,
+                    transformStyle: "preserve-3d",
+                    transform: `rotateY(${angle}deg) translateZ(-${RADIUS}px) translateX(-50%) translateY(-50%)`,
+                  }}
+                >
+                  <div className="flex flex-col gap-1">
+                    {colImages.map((url, i) => (
+                      <img
+                        key={i}
+                        src={url}
+                        alt=""
+                        className="w-full rounded-sm object-cover"
+                        style={{ aspectRatio: "1" }}
+                        loading="lazy"
+                        draggable={false}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Center Content */}
+      <div className="relative z-10 flex h-full flex-col items-center justify-center px-6">
+        {/* Title / Subtitle */}
+        <div
+          className={`text-center transition-all duration-1000 ease-out ${
+            ready ? "opacity-100" : "translate-y-2 opacity-0"
+          }`}
+        >
+          {albumTitle && (
+            <h1 className="text-lg font-medium tracking-[0.2em] text-white sm:text-xl">
+              {albumTitle}
+            </h1>
+          )}
+          {subtitle && (
+            <p className="mt-2 text-xs font-light tracking-[0.25em] text-white/50 sm:text-sm">
+              {subtitle}
+            </p>
+          )}
+        </div>
+
+        {/* 3D Album Preview */}
+        <div
+          className={`h-[50vh] w-[80vw] max-w-[400px] transition-all delay-200 duration-1000 ease-out ${
+            ready
+              ? "scale-100 opacity-100"
+              : "scale-[0.95] opacity-0"
+          }`}
+        >
+          <AlbumPreview3D
+            frontCover={frontCover}
+            bio={bio}
+            timeline={timeline}
+            selectedTheme={selectedTheme}
+            albumTitle={albumTitle}
+            titleOverlayEnabled={titleOverlayEnabled}
+            titlePosition={titlePosition}
+            titleFont={titleFont}
+            titleColor={titleColor}
+            hideControls
+          />
+        </div>
+
+        {/* CTA Button */}
+        <div
+          className={`transition-all delay-500 duration-1000 ease-out ${
+            ready
+              ? "translate-y-0 opacity-100"
+              : "translate-y-4 opacity-0"
+          }`}
+        >
+          <button
+            onClick={() => router.push(`/walk/${id}`)}
+            className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
+          >
             갤러리 보러가기
-          </span>
-        </button>
+          </button>
+        </div>
       </div>
     </div>
   );

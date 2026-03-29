@@ -2,16 +2,16 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
+import * as THREE from "three";
 import AlbumCover3D from "@/app/library/edit/[record_id]/components/AlbumCover3D";
-import { UNIFIED_THEMES } from "@/app/library/edit/[record_id]/themeConfig";
 import { extractColors } from "extract-colors";
 import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
-
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 
-const ALBUM_SIZE = 1.8;
-const ALBUM_THICKNESS = 0.03;
+const ALBUM_SIZE = 1.4;
+const ALBUM_THICKNESS = 0.02;
 
+// ── FlippableAlbum ──────────────────────────────────────────
 function FlippableAlbum({ isFlipped, ...props }) {
   const groupRef = useRef();
   const targetRotY = useRef(0);
@@ -27,124 +27,159 @@ function FlippableAlbum({ isFlipped, ...props }) {
   });
 
   return (
-    <group ref={groupRef} position={[0, 0.15, -0.1]}>
+    <group ref={groupRef}>
       <AlbumCover3D {...props} isSelected={false} isFlipped={false} />
     </group>
   );
 }
 
-import * as THREE from "three";
-
-function AlbumGlow({ color }) {
-  const texture = useMemo(() => {
+// ── Wall ────────────────────────────────────────────────────
+function Wall() {
+  const wallTexture = useMemo(() => {
     const size = 512;
     const canvas = document.createElement("canvas");
     canvas.width = size;
     canvas.height = size;
-
     const ctx = canvas.getContext("2d");
 
-    const gradient = ctx.createRadialGradient(
-      size / 2,
-      size / 2,
-      10,
-      size / 2,
-      size / 2,
-      size / 2,
-    );
-
-    gradient.addColorStop(0, color);
-    gradient.addColorStop(0.3, color);
-    gradient.addColorStop(1, "transparent");
-
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = "#c8c4bc";
     ctx.fillRect(0, 0, size, size);
 
-    return new THREE.CanvasTexture(canvas);
-  }, [color]);
-
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.18, 1]}>
-      <planeGeometry args={[3, 3]} />
-      <meshBasicMaterial
-        map={texture}
-        transparent
-        blending={THREE.AdditiveBlending}
-      />
-    </mesh>
-  );
-}
-
-import { MeshReflectorMaterial } from "@react-three/drei";
-
-function ReflectiveFloor() {
-  const matRef = useRef();
-
-  // Generate a procedural water normal map
-  const normalMap = useMemo(() => {
-    const size = 256;
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    const ctx = canvas.getContext("2d");
-    const imageData = ctx.createImageData(size, size);
+    // Subtle noise
+    const imageData = ctx.getImageData(0, 0, size, size);
     const data = imageData.data;
-
-    for (let y = 0; y < size; y++) {
-      for (let x = 0; x < size; x++) {
-        const i = (y * size + x) * 4;
-        const nx =
-          Math.sin(x * 0.15) * Math.cos(y * 0.1) * 0.5 +
-          Math.sin(x * 0.05 + y * 0.08) * 0.3;
-        const ny =
-          Math.cos(x * 0.1) * Math.sin(y * 0.15) * 0.5 +
-          Math.cos(x * 0.08 + y * 0.05) * 0.3;
-        data[i] = ((nx * 0.1 + 0.5) * 255) | 0;
-        data[i + 1] = ((ny * 0.5 + 0.5) * 255) | 0;
-        data[i + 2] = 200;
-        data[i + 3] = 255;
-      }
+    for (let i = 0; i < data.length; i += 4) {
+      const noise = (Math.random() - 0.5) * 6;
+      data[i] = Math.min(255, Math.max(0, data[i] + noise));
+      data[i + 1] = Math.min(255, Math.max(0, data[i + 1] + noise));
+      data[i + 2] = Math.min(255, Math.max(0, data[i + 2] + noise));
     }
-
     ctx.putImageData(imageData, 0, 0);
+
     const tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2, 2);
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(4, 4);
     return tex;
   }, []);
 
-  // Animate normal map offset for ripple effect
-  useFrame((_, delta) => {
-    if (normalMap) {
-      normalMap.offset.x += delta * 0.02;
-      normalMap.offset.y += delta * 0.015;
-    }
-  });
+  return (
+    <mesh position={[0, 0, -0.15]}>
+      <planeGeometry args={[20, 15]} />
+      <meshStandardMaterial map={wallTexture} roughness={0.95} />
+    </mesh>
+  );
+}
+
+// ── Potted Flower ───────────────────────────────────────────
+function PottedPlant({ position = [0, 0, 0] }) {
+  return (
+    <group position={position}>
+      {/* Pot */}
+      <mesh position={[0, 0.1, 0]}>
+        <cylinderGeometry args={[0.12, 0.09, 0.2, 16]} />
+        <meshStandardMaterial color="#c4956a" roughness={0.85} />
+      </mesh>
+      {/* Pot rim */}
+      <mesh position={[0, 0.2, 0]}>
+        <cylinderGeometry args={[0.13, 0.12, 0.03, 16]} />
+        <meshStandardMaterial color="#b88860" roughness={0.8} />
+      </mesh>
+      {/* Soil */}
+      <mesh position={[0, 0.2, 0.05]}>
+        <circleGeometry args={[0.11, 16]} />
+        <meshStandardMaterial color="#3d2b1f" />
+      </mesh>
+      {/* Main stem */}
+      <mesh position={[0, 0.4, 0]}>
+        <cylinderGeometry args={[0.012, 0.015, 0.4, 8]} />
+        <meshStandardMaterial color="#5a7a4a" roughness={0.8} />
+      </mesh>
+      {/* Leaves on stem */}
+      <Leaf position={[0.04, 0.32, 0.01]} rotation={[0.2, 0, 0.6]} />
+      <Leaf position={[-0.04, 0.42, -0.01]} rotation={[-0.1, Math.PI, -0.5]} />
+      {/* Flower */}
+      {/* <Flower position={[0, 0.62, 0]} /> */}
+    </group>
+  );
+}
+
+function Flower({ position }) {
+  const petalColor = "#e8a0b4";
+  const centerColor = "#f5d76e";
+  const petalCount = 6;
 
   return (
-    // <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.75, 1.8]}>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.75, 0]}>
-      {/* <planeGeometry args={[5, 5]} /> */}
-      <planeGeometry args={[8, 8]} />
+    <group position={position}>
+      {/* Petals arranged in circle */}
+      {Array.from({ length: petalCount }).map((_, i) => {
+        const angle = (i / petalCount) * Math.PI * 2;
+        return (
+          <mesh
+            key={i}
+            position={[Math.cos(angle) * 0.04, Math.sin(angle) * 0.04, 0]}
+            rotation={[0, 0, angle]}
+          >
+            <sphereGeometry args={[0.04, 12, 8]} />
+            <meshStandardMaterial color={petalColor} roughness={0.6} />
+          </mesh>
+        );
+      })}
+      {/* Center */}
+      <mesh>
+        <sphereGeometry args={[0.03, 12, 12]} />
+        <meshStandardMaterial color={centerColor} roughness={0.5} />
+      </mesh>
+    </group>
+  );
+}
 
-      <MeshReflectorMaterial
-        ref={matRef}
-        resolution={1024}
-        mirror={1}
-        mixBlur={3}
-        mixStrength={2}
-        blur={[400, 100]}
-        color="#333"
-        // color="90d5ff"
-        metalness={0.6}
-        roughness={0.2}
-        // normalMap={normalMap}
-        // normalScale={[0.3, 0.3]}
+function Leaf({ position, rotation }) {
+  return (
+    <mesh position={position} rotation={rotation}>
+      <planeGeometry args={[0.1, 0.05]} />
+      <meshStandardMaterial
+        color="#6b9b4f"
+        roughness={0.7}
+        side={THREE.DoubleSide}
       />
     </mesh>
   );
 }
 
+// ── Shelf ───────────────────────────────────────────────────
+function Shelf({ y = -2.1, width = 3.0 }) {
+  const shelfColor = "#96784a";
+  const bracketColor = "#7a6340";
+
+  return (
+    <group position={[0, y, 0]}>
+      {/* Shelf plank */}
+      <mesh position={[0, 0, 0.1]} castShadow receiveShadow>
+        <boxGeometry args={[width, 0.04, 0.25]} />
+        <meshStandardMaterial
+          color={shelfColor}
+          roughness={0.7}
+          metalness={0.2}
+        />
+      </mesh>
+
+      {/* Left bracket */}
+      <mesh position={[-width / 2 + 0.2, -0.08, 0.02]}>
+        <boxGeometry args={[0.04, 0.16, 0.04]} />
+        <meshStandardMaterial color={bracketColor} roughness={0.6} />
+      </mesh>
+
+      {/* Right bracket */}
+      <mesh position={[width / 2 - 0.2, -0.08, 0.02]}>
+        <boxGeometry args={[0.04, 0.16, 0.04]} />
+        <meshStandardMaterial color={bracketColor} roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
+// ── Main ShareScene ─────────────────────────────────────────
 export default function ShareScene({
   frontCover,
   bio,
@@ -204,7 +239,6 @@ export default function ShareScene({
   }, [frontCoverImg]);
 
   const themeKey = selectedTheme || "elegant";
-  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.elegant;
 
   const backCoverDataUrl = useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -236,10 +270,10 @@ export default function ShareScene({
 
   return (
     <div className="relative h-full w-full">
-      {/* Flip button — absolute top center */}
+      {/* Flip button */}
       <button
         onClick={() => setIsFlipped((f) => !f)}
-        className="absolute top-4 left-1/2 z-10 -translate-x-1/2 text-[11px] font-light tracking-[0.2em] text-white/40 transition-colors hover:text-white/70"
+        className="absolute top-4 left-1/2 z-10 -translate-x-1/2 text-[11px] font-light tracking-[0.2em] text-black/40 transition-colors hover:text-black/70"
       >
         {isFlipped ? "앞면" : "뒷면"} 보기
       </button>
@@ -251,35 +285,54 @@ export default function ShareScene({
           dragStartX.current = null;
         }}
       >
-        <Canvas camera={{ position: [0, -0.1, 5.5], fov: 30 }} shadows>
-          <color attach="background" args={["#050505"]} />
+        <Canvas camera={{ position: [0, -0.15, 5.5], fov: 32 }} shadows>
+          <color attach="background" args={["#0a0a0a"]} />
 
-          <ambientLight intensity={0.2} />
-
-          <directionalLight position={[0, 3, 4]} intensity={1.5} />
-
+          {/* Museum lighting */}
+          <ambientLight intensity={0.15} />
+          <spotLight
+            position={[0, 3.5, 2]}
+            target-position={[0, 0, 0]}
+            color="#FFE0B2"
+            intensity={80}
+            angle={0.45}
+            penumbra={0.6}
+            decay={2}
+            distance={12}
+            castShadow
+            shadow-mapSize-width={1024}
+            shadow-mapSize-height={1024}
+          />
           <pointLight
-            position={[0, 0.5, 1]}
-            intensity={2}
-            color={extractedColors?.[2] || "#ff0000"}
+            position={[0, 2.5, 1.5]}
+            color="#FFD59E"
+            intensity={3}
+            distance={8}
+            decay={2}
           />
+          <directionalLight position={[2, 2, 3]} intensity={0.3} />
 
-          <FlippableAlbum
-            isFlipped={isFlipped}
-            size={ALBUM_SIZE}
-            thickness={ALBUM_THICKNESS}
-            frontImage={frontCover}
-            backImage={backCoverDataUrl}
-          />
+          <Wall />
 
-          <AlbumGlow color={extractedColors?.[2] || "#ff0000"} />
+          {/* Album leaning on shelf — tilted back ~12° */}
+          {/* <group position={[-0.4, -0.14, 0]} rotation={[-0.21, 0, 0]}>
+            <FlippableAlbum
+              isFlipped={isFlipped}
+              size={ALBUM_SIZE}
+              thickness={ALBUM_THICKNESS}
+              frontImage={frontCover}
+              backImage={backCoverDataUrl}
+            />
+          </group> */}
 
-          <ReflectiveFloor />
+          {/* <PottedPlant position={[0.75, -0.85, 0.1]} /> */}
+
+          {/* <Shelf y={-0.85} /> */}
 
           <EffectComposer>
             <Bloom
-              intensity={0.8}
-              luminanceThreshold={0.25}
+              intensity={0.3}
+              luminanceThreshold={0.3}
               luminanceSmoothing={0.9}
             />
           </EffectComposer>

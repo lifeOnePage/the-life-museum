@@ -1,0 +1,155 @@
+// Load fonts for canvas rendering via FontFace API
+let fontsReady = false;
+const fontMap = {};
+
+if (typeof document !== "undefined") {
+  const fonts = [
+    {
+      family: "Pretendard Variable",
+      url: "/PretendardVariable.ttf",
+      format: "truetype",
+      weight: "400",
+    },
+    {
+      family: "MonoplexKR",
+      url: "/fonts/MonoplexKR-Light.woff2",
+      format: "woff2",
+      weight: "300",
+    },
+    {
+      family: "Yde street",
+      url: "/YdestreetL.otf",
+      format: "opentype",
+      weight: "300",
+    },
+    {
+      family: "Bookk Gothic",
+      url: "/fonts/BookkGothic_Light.woff2",
+      format: "woff2",
+      weight: "300",
+    },
+  ];
+
+  Promise.all(
+    fonts.map((f) => {
+      const face = new FontFace(
+        f.family,
+        `url(${f.url}) format("${f.format}")`,
+        { weight: f.weight },
+      );
+      return face
+        .load()
+        .then((loaded) => {
+          document.fonts.add(loaded);
+          fontMap[f.family] = true;
+        })
+        .catch(() => {});
+    }),
+  ).then(() => {
+    fontsReady = true;
+  });
+}
+
+function resolveFont(family) {
+  if (fontMap[family]) return `"${family}"`;
+  return "sans-serif";
+}
+
+// Position map: 9-direction grid
+// Returns { textAlign, x, titleY, subtitleY } for a given position key
+function getTextLayout(position, size) {
+  const margin = 60;
+  const positions = {
+    "top-left": { textAlign: "left", x: margin, anchorY: margin + 50 },
+    "top-center": { textAlign: "center", x: size / 2, anchorY: margin + 50 },
+    "top-right": {
+      textAlign: "right",
+      x: size - margin,
+      anchorY: margin + 50,
+    },
+    "middle-left": { textAlign: "left", x: margin, anchorY: size / 2 - 20 },
+    "middle-center": {
+      textAlign: "center",
+      x: size / 2,
+      anchorY: size / 2 - 20,
+    },
+    "middle-right": {
+      textAlign: "right",
+      x: size - margin,
+      anchorY: size / 2 - 20,
+    },
+    "bottom-left": {
+      textAlign: "left",
+      x: margin,
+      anchorY: size - margin - 70,
+    },
+    "bottom-center": {
+      textAlign: "center",
+      x: size / 2,
+      anchorY: size - margin - 70,
+    },
+    "bottom-right": {
+      textAlign: "right",
+      x: size - margin,
+      anchorY: size - margin - 70,
+    },
+  };
+
+  return positions[position] || positions["bottom-center"];
+}
+
+/**
+ * Generate a composited front cover data URL with title/subtitle overlay.
+ * @param {HTMLImageElement|null} frontCoverImg - loaded image element
+ * @param {Object} config
+ * @param {string} config.title
+ * @param {string} config.subtitle
+ * @param {string} config.position - one of 9 positions e.g. "bottom-center"
+ * @param {string} config.font - font family name
+ * @param {string} config.color - text color hex
+ * @returns {string|null} data URL or null if no text to render
+ */
+export function generateFrontCoverDataUrl(frontCoverImg, config) {
+  const { title, subtitle, position, font, color } = config;
+
+  // No image to composite onto
+  if (!frontCoverImg) return null;
+
+  const size = 1024;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  // Draw cover image with cover-fit
+  const imgRatio = frontCoverImg.width / frontCoverImg.height;
+  const boxRatio = 1; // square
+  let sx, sy, sw, sh;
+  if (imgRatio > boxRatio) {
+    sh = frontCoverImg.height;
+    sw = sh * boxRatio;
+    sx = (frontCoverImg.width - sw) / 2;
+    sy = 0;
+  } else {
+    sw = frontCoverImg.width;
+    sh = sw / boxRatio;
+    sx = 0;
+    sy = (frontCoverImg.height - sh) / 2;
+  }
+  ctx.drawImage(frontCoverImg, sx, sy, sw, sh, 0, 0, size, size);
+
+  // Text overlay
+  const layout = getTextLayout(position || "bottom-center", size);
+  const fontFamily = resolveFont(font || "Pretendard Variable");
+
+  ctx.textAlign = layout.textAlign;
+  ctx.fillStyle = color || "#ffffff";
+
+  // Title only (subtitle is not rendered on front cover)
+  if (title) {
+    ctx.font = `bold 52px ${fontFamily}`;
+    ctx.fillText(title, layout.x, layout.anchorY);
+  }
+
+  return canvas.toDataURL("image/png");
+}

@@ -99,7 +99,7 @@ function PottedPlant({ position = [0, 0, 0] }) {
       <Leaf position={[0.04, 0.32, 0.01]} rotation={[0.2, 0, 0.6]} />
       <Leaf position={[-0.04, 0.42, -0.01]} rotation={[-0.1, Math.PI, -0.5]} />
       {/* Flower */}
-      <Flower position={[0, 0.62, 0]} />
+      {/* <Flower position={[0, 0.62, 0]} /> */}
     </group>
   );
 }
@@ -315,7 +315,7 @@ export default function ShareScene({
           <Wall />
 
           {/* Album leaning on shelf — tilted back ~12° */}
-          <group position={[-0.4, -0.14, 0]} rotation={[-0.21, 0, 0]}>
+          {/* <group position={[-0.4, -0.14, 0]} rotation={[-0.21, 0, 0]}>
             <FlippableAlbum
               isFlipped={isFlipped}
               size={ALBUM_SIZE}
@@ -323,11 +323,11 @@ export default function ShareScene({
               frontImage={frontCover}
               backImage={backCoverDataUrl}
             />
-          </group>
+          </group> */}
 
-          <PottedPlant position={[0.75, -0.85, 0.1]} />
+          {/* <PottedPlant position={[0.75, -0.85, 0.1]} /> */}
 
-          <Shelf y={-0.85} />
+          {/* <Shelf y={-0.85} /> */}
 
           <EffectComposer>
             <Bloom

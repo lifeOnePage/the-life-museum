@@ -41,6 +41,7 @@ const CoverImageEditor = forwardRef(
       initialAlbumTitle,
       initialArtistName,
       record_id,
+      preloadedPhotoMedia,
     },
     ref,
   ) => {
@@ -56,10 +57,11 @@ const CoverImageEditor = forwardRef(
     const [selectedVideoUrl, setSelectedVideoUrl] = useState(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
     const [imageStrength, setImageStrength] = useState(0.5); // 0.0~1.0
-    const [photoMedia, setPhotoMedia] = useState([]);
-    const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
     const [photoBlobUrls, setPhotoBlobUrls] = useState([]);
+
+    // Use preloaded photo media from parent
+    const photoMedia = preloadedPhotoMedia || [];
 
     useImperativeHandle(ref, () => ({
       save: async () => {
@@ -210,51 +212,27 @@ const CoverImageEditor = forwardRef(
       }
     };
 
-    const fetchPhotoMedia = async (forceRefresh = false) => {
-      if (!forceRefresh && photoMedia.length > 0) {
-        setSelectedPhotoIndex(-1);
-        return;
-      }
-      setIsLoadingPhotos(true);
-      setSelectedPhotoIndex(-1);
-      try {
-        const apiUrl =
-          "https://the-life-museum-backend-production.up.railway.app";
-        const response = await fetch(`${apiUrl}/api/v1/record/${record_id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-          },
-        });
-        const data = await response.json();
-        const images = (data?.data?.mediaList ?? []).filter(
-          (m) => m.type === "image",
-        );
-        setPhotoMedia(images);
-
-        // Preload proxy images as blob URLs in background
-        setPhotoBlobUrls(new Array(images.length).fill(null));
-        images.forEach(async (media, i) => {
-          try {
-            const rawUrl = media.original_url || media.thumbnail_url;
-            const proxyUrl = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
-            const res = await fetch(proxyUrl);
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setPhotoBlobUrls((prev) => {
-              const next = [...prev];
-              next[i] = blobUrl;
-              return next;
-            });
-          } catch (e) {
-            console.error(e);
-          }
-        });
-      } catch (err) {
-        console.error(err);
-        setPhotoMedia([]);
-      } finally {
-        setIsLoadingPhotos(false);
-      }
+    const preloadBlobUrls = () => {
+      if (photoBlobUrls.length > 0 || photoMedia.length === 0) return;
+      const apiUrl =
+        "https://the-life-museum-backend-production.up.railway.app";
+      setPhotoBlobUrls(new Array(photoMedia.length).fill(null));
+      photoMedia.forEach(async (media, i) => {
+        try {
+          const rawUrl = media.original_url || media.thumbnail_url;
+          const proxyUrl = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+          const res = await fetch(proxyUrl);
+          const blob = await res.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          setPhotoBlobUrls((prev) => {
+            const next = [...prev];
+            next[i] = blobUrl;
+            return next;
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      });
     };
 
     const handleSelectPhoto = async (index) => {
@@ -395,7 +373,8 @@ const CoverImageEditor = forwardRef(
                 <button
                   onClick={() => {
                     setView("photodrive");
-                    fetchPhotoMedia();
+                    setSelectedPhotoIndex(-1);
+                    preloadBlobUrls();
                   }}
                   className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
@@ -435,16 +414,7 @@ const CoverImageEditor = forwardRef(
                 </p>
               </div>
 
-              {isLoadingPhotos ? (
-                <div className="grid grid-cols-3 gap-3">
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="aspect-square animate-pulse rounded-md bg-[#d5d5d7]"
-                    />
-                  ))}
-                </div>
-              ) : photoMedia.length === 0 ? (
+              {photoMedia.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <ImagePlus className="mb-2 h-8 w-8 text-[#cbd5e1]" />
                   <p className="text-sm text-[#94a3b8]">

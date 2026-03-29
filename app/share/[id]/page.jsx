@@ -4,10 +4,6 @@ import { use, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
-const AlbumPreview3D = dynamic(
-  () => import("@/app/library/edit/[record_id]/components/AlbumPreview3D"),
-  { ssr: false },
-);
 
 const ShareScene = dynamic(() => import("./components/ShareScene"), {
   ssr: false,
@@ -103,19 +99,19 @@ export default function SharePage({ params }) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Header — absolute top-left */}
+      {/* Header — above frame */}
       <div
-        className={`pointer-events-none absolute top-0 left-0 z-10 px-6 pt-10 transition-all duration-1000 ease-out ${
-          ready ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"
+        className={`pointer-events-none absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-[35vh] text-center transition-all duration-1000 ease-out ${
+          ready ? "opacity-100" : "opacity-0"
         }`}
       >
         {albumTitle && (
-          <h1 className="text-[20px] font-light tracking-[0.2em] text-white/85">
+          <h1 className="text-[20px] font-medium tracking-[0.2em] text-black/85">
             {albumTitle}
           </h1>
         )}
         {subtitle && (
-          <p className="mt-2 text-[12px] font-light tracking-[0.25em] text-white/35">
+          <p className="mt-2 text-[12px] font-light tracking-[0.25em] text-black/35">
             {subtitle}
           </p>
         )}
@@ -127,7 +123,7 @@ export default function SharePage({ params }) {
           ready ? "scale-100 opacity-100" : "scale-[0.97] opacity-0"
         }`}
       >
-        <AlbumPreview3D
+        <ShareScene
           frontCover={frontCover}
           bio={bio}
           timeline={timeline}
@@ -136,22 +132,22 @@ export default function SharePage({ params }) {
         />
       </div>
 
-      {/* Bottom CTA — floating over canvas */}
+      {/* CTA — right side of frame */}
       <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 pb-10 text-center transition-all delay-500 duration-1000 ease-out ${
-          ready ? "translate-y-0 opacity-100" : "translate-y-6 opacity-0"
+        className={`pointer-events-none absolute top-1/2 left-1/2 z-10 ml-[220px] -translate-y-1/2 transition-all delay-500 duration-1000 ease-out ${
+          ready ? "translate-x-0 opacity-100" : "translate-x-6 opacity-0"
         }`}
       >
         <button
           onClick={() => router.push(`/walk/${id}`)}
-          className="group pointer-events-auto inline-flex items-center gap-3 px-1 py-2 transition-all duration-300"
+          className="group pointer-events-auto flex flex-col items-center gap-3 px-2 py-4 transition-all duration-300"
         >
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-white/15 bg-white/5 transition-all duration-300 group-hover:border-white/30 group-hover:bg-white/10">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/20 bg-white/5 transition-all duration-300 group-hover:border-white/40 group-hover:bg-white/10">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               viewBox="0 0 20 20"
               fill="currentColor"
-              className="h-3.5 w-3.5 text-white/50 transition-all duration-300 group-hover:text-white/80"
+              className="animate-bounce-x h-5 w-5 text-white/60 transition-colors duration-300 group-hover:text-white/90"
             >
               <path
                 fillRule="evenodd"
@@ -160,8 +156,11 @@ export default function SharePage({ params }) {
               />
             </svg>
           </span>
-          <span className="text-[13px] font-light tracking-[0.15em] text-white/50 transition-colors duration-300 group-hover:text-white/80">
-            갤러리 보러가기
+          <span className="text-[13px] font-light tracking-[0.15em] text-white/60 transition-colors duration-300 group-hover:text-white/90">
+            갤러리
+          </span>
+          <span className="text-[13px] font-light tracking-[0.15em] text-white/60 transition-colors duration-300 group-hover:text-white/90">
+            보러가기
           </span>
         </button>
       </div>

@@ -101,6 +101,7 @@ const Index = ({ params }) => {
   const { record_id } = use(params);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [photoMedia, setPhotoMedia] = useState([]);
   const [frontCover, setFrontCover] = useState(null);
   const [albumTitle, setAlbumTitle] = useState("");
   const [albumSubtitle, setAlbumSubtitle] = useState("");
@@ -216,6 +217,12 @@ const Index = ({ params }) => {
           setGooglePhotoUrl(data.googlePhotoUrl || "");
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
+
+          // Prefetch photo media for CoverImageEditor photodrive
+          const images = (data.mediaList ?? []).filter(
+            (m) => m.type === "image",
+          );
+          setPhotoMedia(images);
 
           initialState.current = {
             frontCover: coverUrl,
@@ -919,6 +926,7 @@ const Index = ({ params }) => {
                       initialFrontCover={initialState.current.frontCover}
                       initialAlbumTitle={initialState.current.albumTitle}
                       initialArtistName={initialState.current.albumSubtitle}
+                      preloadedPhotoMedia={photoMedia}
                     />
                   </div>
                 </TabsContent>

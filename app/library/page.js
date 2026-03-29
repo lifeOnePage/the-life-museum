@@ -9,6 +9,7 @@ import CreateAlbumModal from "./components/CreateAlbumModal";
 import Header from "../components/Header";
 import generateBackCoverDataUrl from "./utils/generateBackCover";
 import { cachedAlbums, setCachedAlbums } from "./utils/albumListCache";
+import { authedFetch } from "@/app/utils/authedFetch";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -41,9 +42,7 @@ export default function MyShelfPage() {
   // API fetch
   useEffect(() => {
     if (!token) return;
-    fetch(`${BASE_URL}/library`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    authedFetch(`${BASE_URL}/library`)
       .then((res) => res.json())
       .then((json) => {
         if (json.ok && Array.isArray(json.data)) {
@@ -93,9 +92,7 @@ export default function MyShelfPage() {
     if (!albumData?.id) return;
 
     // record detail fetch → back cover 생성
-    fetch(`${BASE_URL}/record/${albumData.id}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    })
+    authedFetch(`${BASE_URL}/record/${albumData.id}`)
       .then((res) => res.json())
       .then((json) => {
         if (!json.ok || !json.data) return;
@@ -302,7 +299,6 @@ export default function MyShelfPage() {
       {showCreateModal && (
         <CreateAlbumModal
           baseUrl={BASE_URL}
-          token={token}
           onClose={() => setShowCreateModal(false)}
           onCreated={handleAlbumCreated}
         />

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Trash2, GripVertical, RefreshCw, RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { authedFetch } from "@/app/utils/authedFetch";
 
 const TimelineEditor = forwardRef(
   ({ record_id, timeline, onTimelineChange, initialTimeline }, ref) => {
@@ -31,14 +32,11 @@ const TimelineEditor = forwardRef(
             };
           });
 
-          const response = await fetch(
+          const response = await authedFetch(
             `${apiUrl}/api/v1/record/${record_id}/timeline`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ events }),
             },
           );

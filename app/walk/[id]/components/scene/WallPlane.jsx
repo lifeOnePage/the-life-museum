@@ -12,7 +12,7 @@ function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
 }
 
 const BOX_DEPTH = 10;
-const FRAME_COLOR = "#0c0c0c";
+const FRAME_COLOR = "#1a1a1a";
 const BACK_COLOR = "#0a0a0a";
 const SCREEN_OFF_COLOR = "#050505";
 
@@ -271,10 +271,10 @@ function WallPlane({
       }}
     >
       <boxGeometry args={[1, 1, BOX_DEPTH]} />
-      <meshStandardMaterial attach="material-0" color={FRAME_COLOR} />
-      <meshStandardMaterial attach="material-1" color={FRAME_COLOR} />
-      <meshStandardMaterial attach="material-2" color={FRAME_COLOR} />
-      <meshStandardMaterial attach="material-3" color={FRAME_COLOR} />
+      <meshPhongMaterial attach="material-0" color={FRAME_COLOR} />
+      <meshPhongMaterial attach="material-1" color={FRAME_COLOR} />
+      <meshPhongMaterial attach="material-2" color={FRAME_COLOR} />
+      <meshPhongMaterial attach="material-3" color={FRAME_COLOR} />
       <meshStandardMaterial
         ref={frontMatRef}
         attach="material-4"

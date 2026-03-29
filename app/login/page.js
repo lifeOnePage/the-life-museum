@@ -42,6 +42,7 @@ export default function LoginPage() {
   // Stored after OTP verify, used for complete-signup
   const [authToken, setAuthToken] = useState(null);
   const [authUser, setAuthUser] = useState(null);
+  const [authRefreshToken, setAuthRefreshToken] = useState(null);
 
   const canGoBack = stage !== "contact";
 
@@ -89,9 +90,10 @@ export default function LoginPage() {
       if (result.isNewUser) {
         setAuthToken(result.accessToken);
         setAuthUser(result.user);
+        setAuthRefreshToken(result.refreshToken);
         setStage("signup");
       } else {
-        await signinWithToken(result.accessToken, result.user);
+        await signinWithToken(result.accessToken, result.user, result.refreshToken);
         router.push("/library");
       }
     } catch (e) {
@@ -108,7 +110,7 @@ export default function LoginPage() {
     try {
       setLoading(true);
       const updatedUser = await completeSignup(authToken, name.trim());
-      await signinWithToken(authToken, updatedUser);
+      await signinWithToken(authToken, updatedUser, authRefreshToken);
       router.push("/library");
     } catch (e) {
       setError(e.message || "회원가입에 실패했어요.");

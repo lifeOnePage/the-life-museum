@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { authedFetch } from "@/app/utils/authedFetch";
 
-export default function CreateAlbumModal({ onClose, onCreated, baseUrl, token }) {
+export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
   const [activeTab, setActiveTab] = useState("new"); // 'new' | 'share'
 
   // 새 앨범 만들기 상태
@@ -21,12 +22,9 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, token })
 
     setSubmitting(true);
     try {
-      const res = await fetch(`${baseUrl}/record`, {
+      const res = await authedFetch(`${baseUrl}/record`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim(),
           subTitle: subtitle.trim(),
@@ -52,12 +50,9 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, token })
 
     setSharing(true);
     try {
-      const res = await fetch(`${baseUrl}/record/share`, {
+      const res = await authedFetch(`${baseUrl}/record/share`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: shareUrl.trim() }),
       });
       const json = await res.json();

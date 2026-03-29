@@ -247,8 +247,14 @@ function useVideoTexture(videoUrl, isPlayable) {
 function useAlbumTexture(imageUrl, isPlayable) {
   const type = getMediaType(imageUrl);
   // 훅 조건부 호출 금지 → null 전달로 비활성화
-  const gifTexture = useGifTexture(type === "gif" ? imageUrl : null, isPlayable);
-  const videoTexture = useVideoTexture(type === "video" ? imageUrl : null, isPlayable);
+  const gifTexture = useGifTexture(
+    type === "gif" ? imageUrl : null,
+    isPlayable,
+  );
+  const videoTexture = useVideoTexture(
+    type === "video" ? imageUrl : null,
+    isPlayable,
+  );
   const staticTexture = useStaticTexture(type === "image" ? imageUrl : null);
   if (type === "gif") return gifTexture;
   if (type === "video") return videoTexture;
@@ -440,9 +446,9 @@ export default function AlbumCover({
   // 호버 시 위로 리프트
   useEffect(() => {
     if (!isSelected && hovered) {
-      animationState.current.targetY = originalPosition.y + 0.35;
+      animationState.current.targetZ = originalPosition.z + 0.5;
     } else if (!isSelected) {
-      animationState.current.targetY = originalPosition.y;
+      animationState.current.targetZ = originalPosition.z;
     }
   }, [hovered, isSelected, originalPosition.y]);
 

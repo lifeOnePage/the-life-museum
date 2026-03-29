@@ -3,6 +3,7 @@ import { Sparkles, RefreshCw, RotateCcw } from "lucide-react";
 import { Button } from "./ui/button";
 import { Textarea } from "./ui/textarea";
 import { Input } from "./ui/input";
+import { authedFetch } from "@/app/utils/authedFetch";
 
 const STYLE_OPTIONS = [
   { value: "진중한", label: "진중한" },
@@ -29,14 +30,11 @@ const BioEditor = forwardRef(
         try {
           const apiUrl =
             "https://the-life-museum-backend-production.up.railway.app";
-          const response = await fetch(
+          const response = await authedFetch(
             `${apiUrl}/api/v1/record/${record_id}/lifestory`,
             {
               method: "PUT",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-              },
+              headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 qaList: [
                   {
@@ -76,15 +74,10 @@ const BioEditor = forwardRef(
       setError("");
 
       try {
-        const token = localStorage.getItem("app_token");
         const messages = [{ sender: "user", text: keywords }];
-        console.log("token", token);
-        const response = await fetch("/api/gpt-story", {
+        const response = await authedFetch("/api/gpt-story", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             messages,
             style,

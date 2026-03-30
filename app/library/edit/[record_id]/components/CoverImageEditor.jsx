@@ -60,7 +60,7 @@ const CoverImageEditor = forwardRef(
     const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
     const [imageStrength, setImageStrength] = useState(0.5);
     const [photoMedia, setPhotoMedia] = useState([]);
-    const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
+    const [isLoadingPhotos] = useState(false);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
     const [photoBlobUrls, setPhotoBlobUrls] = useState([]);
 
@@ -68,10 +68,6 @@ const CoverImageEditor = forwardRef(
     const [genCount, setGenCount] = useState(0);
     const remainingGens = 3 - genCount;
 
-    // Reference image from photodrive
-    const [refPhotoMode, setRefPhotoMode] = useState(false);
-    const [refPhotos, setRefPhotos] = useState([]);
-    const [isLoadingRefPhotos, setIsLoadingRefPhotos] = useState(false);
 
     // Fetch coverGenCount on mount
     useEffect(() => {
@@ -206,19 +202,13 @@ const CoverImageEditor = forwardRef(
 
     const handleImageRef = (e) => {
       const file = e.target.files?.[0];
-      if (file) {
-        setImageRefFile(file);
-        setImageRefPreview(URL.createObjectURL(file));
-        setRefPhotoMode(false);
+      if (file && imageRefFiles.length < 3) {
+        setImageRefFiles((prev) => [...prev, file]);
+        setImageRefPreviews((prev) => [...prev, URL.createObjectURL(file)]);
       }
       e.target.value = "";
     };
 
-    const removeImageRef = () => {
-      setImageRefFile(null);
-      setImageRefPreview(null);
-      setImageStrength(0.5);
-      setRefPhotoMode(false);
     const removeImageRef = (index) => {
       setImageRefFiles((prev) => prev.filter((_, i) => i !== index));
       setImageRefPreviews((prev) => {
@@ -288,47 +278,13 @@ const CoverImageEditor = forwardRef(
       }
     };
 
-    const fetchPhotoMedia = async (forceRefresh = false) => {
-      if (!forceRefresh && photoMedia.length > 0) {
-        setSelectedPhotoIndex(-1);
-        return;
+    // Initialize photoMedia from parent-preloaded data
+    useEffect(() => {
+      if (preloadedPhotoMedia && preloadedPhotoMedia.length > 0) {
+        setPhotoMedia(preloadedPhotoMedia);
       }
-      setIsLoadingPhotos(true);
-      setSelectedPhotoIndex(-1);
-      try {
-        const response = await authedFetch(
-          `${API_URL}/api/v1/record/${record_id}`,
-        );
-        const data = await response.json();
-        const images = (data?.data?.mediaList ?? []).filter(
-          (m) => m.type === "image",
-        );
-        setPhotoMedia(images);
+    }, [preloadedPhotoMedia]);
 
-        // Preload proxy images as blob URLs in background
-        setPhotoBlobUrls(new Array(images.length).fill(null));
-        images.forEach(async (media, i) => {
-          try {
-            const rawUrl = media.original_url || media.thumbnail_url;
-            const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
-            const res = await fetch(proxyUrl);
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setPhotoBlobUrls((prev) => {
-              const next = [...prev];
-              next[i] = blobUrl;
-              return next;
-            });
-          } catch (e) {
-            console.error(e);
-          }
-        });
-      } catch (err) {
-        console.error(err);
-        setPhotoMedia([]);
-      } finally {
-        setIsLoadingPhotos(false);
-      }
     const preloadBlobUrls = () => {
       if (photoBlobUrls.length > 0 || photoMedia.length === 0) return;
       const apiUrl =
@@ -376,56 +332,12 @@ const CoverImageEditor = forwardRef(
         const ext = blob.type === "image/png" ? "png" : "jpg";
         const file = new File([blob], `photo-drive.${ext}`, { type: blob.type });
         setSelectedFile(file);
-        setSelectedVideoUrl(null);
+        setSelectedImageUrl(null);
       } catch (e) {
         console.error("Photo drive file conversion failed:", e);
-        setSelectedVideoUrl(rawUrl);
+        setSelectedImageUrl(rawUrl);
         setSelectedFile(null);
       }
-    };
-
-    // Fetch photos for reference image selection in generate view (cached)
-    const fetchRefPhotos = async () => {
-      if (refPhotos.length > 0) return; // already loaded
-      setIsLoadingRefPhotos(true);
-      try {
-        const response = await authedFetch(
-          `${API_URL}/api/v1/record/${record_id}`,
-        );
-        const data = await response.json();
-        const images = (data?.data?.mediaList ?? []).filter(
-          (m) => m.type === "image",
-        );
-
-        // Convert each image to blob/File via proxy
-        const results = await Promise.all(
-          images.map(async (media) => {
-            const rawUrl = media.original_url || media.thumbnail_url;
-            const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
-            try {
-              const resp = await fetch(proxyUrl);
-              const blob = await resp.blob();
-              const file = new File([blob], "ref.jpg", { type: blob.type });
-              return { blobUrl: URL.createObjectURL(blob), file, rawUrl };
-            } catch {
-              return null;
-            }
-          }),
-        );
-
-        setRefPhotos(results.filter(Boolean));
-      } catch (err) {
-        console.error(err);
-        setRefPhotos([]);
-      } finally {
-        setIsLoadingRefPhotos(false);
-      }
-    };
-
-    const handleSelectRefPhoto = (photo) => {
-      setImageRefFile(photo.file);
-      setImageRefPreview(photo.blobUrl);
-      setRefPhotoMode(false);
     };
 
     return (
@@ -753,6 +665,27 @@ const CoverImageEditor = forwardRef(
                 </span>
               </label>
 
+              {/* Selected reference image thumbnails */}
+              {imageRefPreviews.length > 0 && (
+                <div className="mb-3 space-y-3">
+                  <div className="flex gap-2">
+                    {imageRefPreviews.map((preview, i) => (
+                      <div key={i} className="relative">
+                        <img
+                          src={preview}
+                          alt={`참고 ${i + 1}`}
+                          className="h-16 w-16 rounded-lg object-cover"
+                        />
+                        <button
+                          onClick={() => removeImageRef(i)}
+                          className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-white transition-colors hover:bg-gray-900"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
                   {/* Image strength slider */}
                   <div>
                     <div className="mb-1.5 flex items-center justify-between">
@@ -767,7 +700,20 @@ const CoverImageEditor = forwardRef(
                             : "보통"}
                       </span>
                     </div>
-                  ))}
+                    <input
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.05"
+                      value={imageStrength}
+                      onChange={(e) => setImageStrength(Number(e.target.value))}
+                      className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#cfcfd1] accent-[#67ADD1]"
+                    />
+                    <div className="mt-1 flex justify-between text-[10px] text-[#94a3b8]">
+                      <span>창의적</span>
+                      <span>충실하게</span>
+                    </div>
+                  </div>
                 </div>
               )}
 
@@ -796,76 +742,6 @@ const CoverImageEditor = forwardRef(
                   >
                     <FolderOpen className="mb-1 h-4 w-4 text-[#6b7280]" />
                     <span className="text-[11px] text-[#6b7280]">
-                      포토드라이브
-                    </span>
-                  </button>
-                </div>
-              ) : refPhotoMode ? (
-                <div>
-                  <button
-                    onClick={() => setRefPhotoMode(false)}
-                    className="mb-3 flex items-center gap-1.5 text-[#475569] transition-colors hover:text-[#1e1e1e]"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="text-xs font-medium">돌아가기</span>
-                  </button>
-                  {isLoadingRefPhotos ? (
-                    <div className="grid grid-cols-3 gap-2">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="aspect-square animate-pulse rounded-md bg-[#d5d5d7]"
-                        />
-                      ))}
-                    </div>
-                  ) : refPhotos.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <ImagePlus className="mb-2 h-6 w-6 text-[#cbd5e1]" />
-                      <p className="text-xs text-[#94a3b8]">
-                        사용 가능한 사진이 없습니다.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid max-h-[30vh] grid-cols-3 gap-2 overflow-y-auto">
-                      {refPhotos.map((photo, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleSelectRefPhoto(photo)}
-                          className="aspect-square overflow-hidden rounded-md transition-all hover:opacity-80"
-                        >
-                          <img
-                            src={photo.blobUrl}
-                            alt={`사진 ${i + 1}`}
-                            className="h-full w-full object-cover"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex gap-3">
-                  <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-3 py-5 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageRef}
-                    />
-                    <Upload className="mb-2 h-4 w-4 text-[#475569]" />
-                    <span className="text-xs font-medium text-[#334155]">
-                      직접 업로드
-                    </span>
-                  </label>
-                  <button
-                    onClick={() => {
-                      setRefPhotoMode(true);
-                      fetchRefPhotos();
-                    }}
-                    className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-3 py-5 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)]"
-                  >
-                    <FolderOpen className="mb-2 h-4 w-4 text-[#475569]" />
-                    <span className="text-xs font-medium text-[#334155]">
                       포토드라이브
                     </span>
                   </button>

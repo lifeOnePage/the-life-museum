@@ -360,7 +360,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       <ambientLight intensity={0.7} />
       <directionalLight ref={dirLightRef} intensity={0.4} />
       {/* Point lights: follow camera ahead+sides — decay=1 (linear) for visible Phong specular */}
-      <pointLight
+      {/* <pointLight
         ref={pLight1Ref}
         position={[-200, 100, -400]}
         intensity={100}
@@ -375,7 +375,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
         distance={1500}
         decay={0.5}
         color="#ffdfcb"
-      />
+      /> */}
 
       {/* Floor - follows camera via useFrame (initial Z is a placeholder) */}
       <mesh

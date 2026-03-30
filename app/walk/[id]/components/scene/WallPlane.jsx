@@ -260,7 +260,10 @@ function WallPlane({
 
       // Share current animated position & scale so MirrorReflection can track the flying plane
       stateRef.current.manualCurrentZ = state.currentPos[2];
-      stateRef.current.manualCurrentScale = [state.currentScale[0], state.currentScale[1]];
+      stateRef.current.manualCurrentScale = [
+        state.currentScale[0],
+        state.currentScale[1],
+      ];
 
       // Distance-based opacity (same 4-zone curve as FocusClone)
       const focusZ = stateRef.current.focusCloneZ;
@@ -412,29 +415,29 @@ function WallPlane({
       }}
     >
       <boxGeometry args={[1, 1, BOX_DEPTH]} />
-      <meshPhongMaterial
+      <meshStandardMaterial
         attach="material-0"
         color={FRAME_COLOR}
-        shininess={20}
-        specular="#3a2a1a"
+        // shininess={20}
+        // specular="#3a2a1a"
       />
-      <meshPhongMaterial
+      <meshStandardMaterial
         attach="material-1"
         color={FRAME_COLOR}
-        shininess={20}
-        specular="#3a2a1a"
+        // shininess={20}
+        // specular="#3a2a1a"
       />
-      <meshPhongMaterial
+      <meshStandardMaterial
         attach="material-2"
         color={FRAME_COLOR}
-        shininess={20}
-        specular="#3a2a1a"
+        // shininess={20}
+        // specular="#3a2a1a"
       />
-      <meshPhongMaterial
+      <meshStandardMaterial
         attach="material-3"
         color={FRAME_COLOR}
-        shininess={20}
-        specular="#3a2a1a"
+        // shininess={20}
+        // specular="#3a2a1a"
       />
       <meshStandardMaterial
         ref={frontMatRef}

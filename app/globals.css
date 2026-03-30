@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+@keyframes albumLabelIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
 @font-face {
   font-family: "Pretendard Variable";
   src: url("/PretendardVariable.ttf") format("truetype");
@@ -121,7 +132,13 @@
   font-display: swap;
 }
 
+@keyframes bounce-x {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(5px); }
+}
+
 @theme {
+  --animate-bounce-x: bounce-x 1.5s ease-in-out infinite;
   /* Colors */
   --color-black-100: #121212;
   --color-black-200: #202020;

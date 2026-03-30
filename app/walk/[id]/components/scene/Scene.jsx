@@ -329,8 +329,8 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       <fog attach="fog" args={[FOG_COLOR, FOG_NEAR, FOG_FAR]} />
 
       {/* Lighting */}
-      <ambientLight intensity={0.8} />
-      <directionalLight ref={dirLightRef} intensity={2} />
+      <ambientLight intensity={0.4} />
+      <directionalLight ref={dirLightRef} intensity={1.0} />
       {/* Point lights: initial Z doesn't matter — useFrame updates position every frame */}
       <pointLight ref={pLight1Ref} position={[-300, 80, 0]} intensity={0.1} distance={2000} />
       <pointLight ref={pLight2Ref} position={[300, 80, 0]} intensity={0.1} distance={2000} />

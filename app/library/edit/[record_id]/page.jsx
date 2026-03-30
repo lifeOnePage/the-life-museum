@@ -40,6 +40,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import CoverImageEditor from "./components/CoverImageEditor";
+import TitleOverlayEditor from "./components/TitleOverlayEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
@@ -101,18 +102,12 @@ const Index = ({ params }) => {
   const { record_id } = use(params);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
+  const [photoMedia, setPhotoMedia] = useState([]);
   const [frontCover, setFrontCover] = useState(null);
   const [albumTitle, setAlbumTitle] = useState("");
-  const [artistName, setArtistName] = useState("");
-  const [bio, setBio] = useState(
-    "어린 시절, 골목길을 누비며 뛰어놀던 기억이 아직도 생생합니다. 여름이면 할머니 댁 마당에서 수박을 먹고, 겨울이면 온 동네가 하얗게 물든 눈밭 위를 걸었죠. 그 시절의 따뜻한 햇살과 웃음소리가 지금의 저를 만들어 주었습니다.",
-  );
-  const [timeline, setTimeline] = useState([
-    { year: "1995", event: "서울에서 태어남" },
-    { year: "2001", event: "초등학교 입학 - 첫 번째 친구를 만남" },
-    { year: "2014", event: "대학교 입학 - 사진 동아리 가입" },
-    { year: "2020", event: "첫 직장 - 새로운 시작" },
-  ]);
+  const [albumSubtitle, setAlbumSubtitle] = useState("");
+  const [bio, setBio] = useState("");
+  const [timeline, setTimeline] = useState([{ year: "", event: "" }]);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const [showExitDialog, setShowExitDialog] = useState(false);
@@ -121,13 +116,22 @@ const Index = ({ params }) => {
   const [activeTab, setActiveTab] = useState("front");
   const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
 
+  // Title overlay state
+  const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
+  const [titlePosition, setTitlePosition] = useState("bottom-center");
+  const [titleFont, setTitleFont] = useState("Pretendard Variable");
+  const [titleColor, setTitleColor] = useState("#ffffff");
+
   // Collapsible sections
+  const [titleOpen, setTitleOpen] = useState(true);
+  const [coverOpen, setCoverOpen] = useState(true);
   const [storyOpen, setStoryOpen] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(true);
+  const [storyHelpOpen, setStoryHelpOpen] = useState(true);
+  const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
 
   // Tutorial
   const [showTutorial, setShowTutorial] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
   // AI story generation state
@@ -139,8 +143,6 @@ const Index = ({ params }) => {
 
   // Record edit dialog
   const [showRecordEditDialog, setShowRecordEditDialog] = useState(false);
-  const [editTitle, setEditTitle] = useState("");
-  const [editSubtitle, setEditSubtitle] = useState("");
   const [editGooglePhotoUrl, setEditGooglePhotoUrl] = useState("");
   const [editIcloudUrl, setEditIcloudUrl] = useState("");
   const [editMyboxUrl, setEditMyboxUrl] = useState("");
@@ -170,20 +172,30 @@ const Index = ({ params }) => {
   const initialState = useRef({
     frontCover: null,
     albumTitle: "",
-    artistName: "",
-    bio: "",
-    timeline: [],
+    albumSubtitle: "",
+    bio: "어린 시절, 골목길을 누비며 뛰어놀던 기억이 아직도 생생합니다. 여름이면 할머니 댁 마당에서 수박을 먹고, 겨울이면 온 동네가 하얗게 물든 눈밭 위를 걸었죠. 그 시절의 따뜻한 햇살과 웃음소리가 지금의 저를 만들어 주었습니다.",
+    timeline: [
+      { year: "1995", event: "서울에서 태어남" },
+      { year: "2001", event: "초등학교 입학 - 첫 번째 친구를 만남" },
+    ],
     selectedTheme: DEFAULT_THEME,
+    titleOverlayEnabled: false,
+    titlePosition: "bottom-center",
+    titleFont: "Pretendard Variable",
+    titleColor: "#ffffff",
   });
 
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-          headers: {
-            Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+        const response = await fetch(
+          `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+            },
           },
-        });
+        );
 
         const result = await response.json();
 
@@ -204,10 +216,14 @@ const Index = ({ params }) => {
           }
 
           const savedTheme = data.theme || DEFAULT_THEME;
+          const savedTitleOverlayEnabled = data.titleOverlayEnabled ?? false;
+          const savedTitlePosition = data.titlePosition || "bottom-center";
+          const savedTitleFont = data.titleFont || "Pretendard Variable";
+          const savedTitleColor = data.titleColor || "#ffffff";
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
-          setArtistName(subtitle);
+          setAlbumSubtitle(subtitle);
           setBio(bioContent);
           // Initialize timeline IDs for drag reorder
           timelineIdsRef.current = timelineData.map(
@@ -215,17 +231,31 @@ const Index = ({ params }) => {
           );
           setTimeline(timelineData);
           setSelectedTheme(savedTheme);
+          setTitleOverlayEnabled(savedTitleOverlayEnabled);
+          setTitlePosition(savedTitlePosition);
+          setTitleFont(savedTitleFont);
+          setTitleColor(savedTitleColor);
           setGooglePhotoUrl(data.googlePhotoUrl || "");
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
 
+          // Prefetch photo media for CoverImageEditor photodrive
+          const images = (data.mediaList ?? []).filter(
+            (m) => m.type === "image",
+          );
+          setPhotoMedia(images);
+
           initialState.current = {
             frontCover: coverUrl,
             albumTitle: title,
-            artistName: subtitle,
+            albumSubtitle: subtitle,
             bio: bioContent,
             timeline: timelineData,
             selectedTheme: savedTheme,
+            titleOverlayEnabled: savedTitleOverlayEnabled,
+            titlePosition: savedTitlePosition,
+            titleFont: savedTitleFont,
+            titleColor: savedTitleColor,
           };
         }
       } catch (error) {
@@ -248,19 +278,28 @@ const Index = ({ params }) => {
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
-    const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+    const response = await fetch(
+      `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+        },
+        body: JSON.stringify({
+          color: theme.text,
+          bgColor: theme.bg,
+          keyColor: theme.accent,
+          theme: selectedTheme,
+          title: albumTitle,
+          subTitle: albumSubtitle,
+          titleOverlayEnabled,
+          titlePosition,
+          titleFont,
+          titleColor,
+        }),
       },
-      body: JSON.stringify({
-        color: theme.text,
-        bgColor: theme.bg,
-        keyColor: theme.accent,
-        theme: selectedTheme,
-      }),
-    });
+    );
 
     const data = await response.json();
     if (!response.ok) {
@@ -278,7 +317,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           result: bio,
@@ -312,7 +351,7 @@ const Index = ({ params }) => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({ events }),
       },
@@ -325,15 +364,19 @@ const Index = ({ params }) => {
   };
 
   const handleSaveAll = async () => {
-    const isCoverDirty =
-      frontCover !== initialState.current.frontCover ||
-      albumTitle !== initialState.current.albumTitle ||
-      artistName !== initialState.current.artistName;
+    const isCoverDirty = frontCover !== initialState.current.frontCover;
     const isBioDirty = bio !== initialState.current.bio;
     const isTimelineDirty =
       JSON.stringify(timeline) !==
       JSON.stringify(initialState.current.timeline);
-    const isThemeDirty = selectedTheme !== initialState.current.selectedTheme;
+    const isThemeDirty =
+      selectedTheme !== initialState.current.selectedTheme ||
+      albumTitle !== initialState.current.albumTitle ||
+      albumSubtitle !== initialState.current.albumSubtitle ||
+      titleOverlayEnabled !== initialState.current.titleOverlayEnabled ||
+      titlePosition !== initialState.current.titlePosition ||
+      titleFont !== initialState.current.titleFont ||
+      titleColor !== initialState.current.titleColor;
 
     if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isThemeDirty)
       return;
@@ -381,14 +424,18 @@ const Index = ({ params }) => {
       if (r.status === "fulfilled" && r.value.success) {
         if (r.value.editor === "cover") {
           initialState.current.frontCover = frontCover;
-          initialState.current.albumTitle = albumTitle;
-          initialState.current.artistName = artistName;
         } else if (r.value.editor === "bio") {
           initialState.current.bio = bio;
         } else if (r.value.editor === "timeline") {
           initialState.current.timeline = [...timeline];
         } else if (r.value.editor === "theme") {
           initialState.current.selectedTheme = selectedTheme;
+          initialState.current.albumTitle = albumTitle;
+          initialState.current.albumSubtitle = albumSubtitle;
+          initialState.current.titleOverlayEnabled = titleOverlayEnabled;
+          initialState.current.titlePosition = titlePosition;
+          initialState.current.titleFont = titleFont;
+          initialState.current.titleColor = titleColor;
         }
       }
     }
@@ -404,11 +451,15 @@ const Index = ({ params }) => {
   const isDirty =
     frontCover !== initialState.current.frontCover ||
     albumTitle !== initialState.current.albumTitle ||
-    artistName !== initialState.current.artistName ||
+    albumSubtitle !== initialState.current.albumSubtitle ||
     bio !== initialState.current.bio ||
     JSON.stringify(timeline) !==
       JSON.stringify(initialState.current.timeline) ||
-    selectedTheme !== initialState.current.selectedTheme;
+    selectedTheme !== initialState.current.selectedTheme ||
+    titleOverlayEnabled !== initialState.current.titleOverlayEnabled ||
+    titlePosition !== initialState.current.titlePosition ||
+    titleFont !== initialState.current.titleFont ||
+    titleColor !== initialState.current.titleColor;
 
   const handleExit = () => {
     router.push("/library");
@@ -425,19 +476,20 @@ const Index = ({ params }) => {
     if (!fullText) return;
     setIsGenerating(true);
     setBioError("");
+    console.log("fullText", fullText);
 
     try {
       const token = localStorage.getItem("app_token");
-
+      console.log(token);
       const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authentication: `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ prompt: fullText, albumTitle, artistName }),
+          body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
 
@@ -445,7 +497,7 @@ const Index = ({ params }) => {
       if (!response.ok) {
         throw new Error(data.error || "생성에 실패했습니다");
       }
-      setBio(data.story);
+      setBio(data.data?.result || "");
     } catch (err) {
       setBioError(err.message);
     } finally {
@@ -488,7 +540,7 @@ const Index = ({ params }) => {
   // Combine chips + bio for API calls
   const getFullBioText = () => {
     const chips = [...usedChips].join(" ");
-    const text = bio.trim();
+    const text = (bio || "").trim();
     if (chips && text) return `${chips} ${text}`;
     return chips || text;
   };
@@ -543,8 +595,6 @@ const Index = ({ params }) => {
 
   // Record edit dialog
   const openRecordEditDialog = () => {
-    setEditTitle(albumTitle);
-    setEditSubtitle(artistName);
     setEditGooglePhotoUrl(googlePhotoUrl);
     setEditIcloudUrl(icloudUrl);
     setEditMyboxUrl(myboxUrl);
@@ -573,33 +623,30 @@ const Index = ({ params }) => {
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
     try {
-      const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+      const response = await fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+          },
+          body: JSON.stringify({
+            googlePhotoUrl: finalGoogleUrl,
+            icloudUrl: finalIcloudUrl,
+            myboxUrl: finalMyboxUrl,
+          }),
         },
-        body: JSON.stringify({
-          title: editTitle,
-          subTitle: editSubtitle,
-          googlePhotoUrl: finalGoogleUrl,
-          icloudUrl: finalIcloudUrl,
-          myboxUrl: finalMyboxUrl,
-        }),
-      });
+      );
 
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "저장에 실패했습니다");
       }
 
-      setAlbumTitle(editTitle);
-      setArtistName(editSubtitle);
       setGooglePhotoUrl(finalGoogleUrl);
       setIcloudUrl(finalIcloudUrl);
       setMyboxUrl(finalMyboxUrl);
-      initialState.current.albumTitle = editTitle;
-      initialState.current.artistName = editSubtitle;
       setShowRecordEditDialog(false);
     } catch (err) {
       setRecordError(err.message);
@@ -612,11 +659,15 @@ const Index = ({ params }) => {
     const s = initialState.current;
     setFrontCover(s.frontCover);
     setAlbumTitle(s.albumTitle);
-    setArtistName(s.artistName);
+    setAlbumSubtitle(s.albumSubtitle);
     setBio(s.bio);
     timelineIdsRef.current = s.timeline.map(() => `tl-${nextIdRef.current++}`);
     setTimeline([...s.timeline]);
     setSelectedTheme(s.selectedTheme);
+    setTitleOverlayEnabled(s.titleOverlayEnabled);
+    setTitlePosition(s.titlePosition);
+    setTitleFont(s.titleFont);
+    setTitleColor(s.titleColor);
     setUsedChips(new Set());
   };
 
@@ -627,12 +678,15 @@ const Index = ({ params }) => {
     setIsDeleting(true);
     setRecordError("");
     try {
-      const response = await fetch(`https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`, {
-        method: "DELETE",
-        headers: {
-          Authentication: `Bearer ${localStorage.getItem("app_token")}`,
+      const response = await fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+          },
         },
-      });
+      );
       const data = await response.json();
       if (!response.ok) {
         throw new Error(data.error || "삭제에 실패했습니다");
@@ -669,9 +723,9 @@ const Index = ({ params }) => {
             <h1 className="text-sm font-semibold text-gray-900">
               {albumTitle || "앨범 편집"}
             </h1>
-            {artistName && (
+            {albumSubtitle && (
               <p className="text-[11px] leading-tight text-gray-400">
-                {artistName}
+                {albumSubtitle}
               </p>
             )}
           </div>
@@ -760,7 +814,7 @@ const Index = ({ params }) => {
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                 나가기
               </span>
             </div>
@@ -768,9 +822,9 @@ const Index = ({ params }) => {
               <h1 className="text-sm leading-tight font-semibold text-gray-900">
                 {albumTitle || "앨범 편집"}
               </h1>
-              {artistName && (
+              {albumSubtitle && (
                 <p className="text-[11px] leading-tight text-gray-400">
-                  {artistName}
+                  {albumSubtitle}
                 </p>
               )}
             </div>
@@ -782,7 +836,7 @@ const Index = ({ params }) => {
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   앨범 정보 수정
                 </span>
               </div>
@@ -798,7 +852,7 @@ const Index = ({ params }) => {
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   변경사항 초기화
                 </span>
               </div>
@@ -819,7 +873,7 @@ const Index = ({ params }) => {
                     <Save className="h-3.5 w-3.5" />
                   )}
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   저장하기
                 </span>
               </div>
@@ -830,7 +884,7 @@ const Index = ({ params }) => {
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
                   튜토리얼
                 </span>
               </div>
@@ -850,23 +904,28 @@ const Index = ({ params }) => {
         </div>
       </header>
 
-      <div className="relative flex flex-1 overflow-hidden">
-        {/* Preview Panel - full on mobile, right side on desktop */}
-        <div className="flex-1 bg-[#dedbd3] lg:order-2" data-tutorial="preview">
+      <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
+        {/* Preview Panel - top half on mobile, right side on desktop */}
+        <div
+          className="h-[50vh] shrink-0 bg-[#C0C0C0] lg:order-2 lg:h-auto lg:flex-1"
+          data-tutorial="preview"
+        >
           <AlbumPreview3D
             frontCover={frontCover}
             bio={bio}
             timeline={timeline}
             selectedTheme={selectedTheme}
             albumTitle={albumTitle}
+            titleOverlayEnabled={titleOverlayEnabled}
+            titlePosition={titlePosition}
+            titleFont={titleFont}
+            titleColor={titleColor}
             flipped={activeTab === "back"}
           />
         </div>
 
-        {/* Editor: bottom sheet on mobile, sidebar on desktop */}
-        <div
-          className={`absolute inset-x-0 bottom-0 z-20 h-[85vh] rounded-t-2xl bg-[#f0eee9] shadow-[0_-2px_20px_rgba(0,0,0,0.08)] transition-transform duration-300 ease-out lg:static lg:z-auto lg:order-1 lg:h-auto lg:w-[420px] lg:shrink-0 lg:translate-y-0 lg:rounded-none lg:border-r lg:border-[#e2e8f0] lg:shadow-none lg:transition-none ${sheetOpen ? "translate-y-0" : "translate-y-[calc(100%-56px)]"}`}
-        >
+        {/* Editor: bottom half on mobile, sidebar on desktop */}
+        <div className="min-h-0 flex-1 overflow-hidden bg-[#f0eee9] lg:order-1 lg:h-auto lg:w-[420px] lg:flex-none lg:shrink-0 lg:border-r lg:border-[#e2e8f0]">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -874,20 +933,9 @@ const Index = ({ params }) => {
           >
             <Tabs
               value={activeTab}
-              onValueChange={(v) => {
-                setActiveTab(v);
-                if (!sheetOpen) setSheetOpen(true);
-              }}
+              onValueChange={setActiveTab}
               className="flex h-full w-full flex-col"
             >
-              {/* Mobile drag handle */}
-              <div
-                className="flex cursor-grab flex-col items-center pt-3 pb-1 active:cursor-grabbing lg:hidden"
-                onClick={() => setSheetOpen(!sheetOpen)}
-              >
-                <div className="h-1 w-10 rounded-full bg-gray-300" />
-              </div>
-
               <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
                 <TabsTrigger
                   value="front"
@@ -906,22 +954,148 @@ const Index = ({ params }) => {
               {/* Scrollable editor content */}
               <div className="scrollbar-accent min-h-0 flex-1 overflow-y-auto">
                 <TabsContent
-                  className="px-4 pt-6 data-[state=inactive]:hidden sm:px-6 lg:px-8"
+                  className="px-4 pt-5 data-[state=inactive]:hidden sm:px-5"
                   value="front"
                   forceMount
                 >
-                  <div data-tutorial="cover-editor">
-                    <CoverImageEditor
-                      ref={coverRef}
-                      record_id={record_id}
-                      onImageGenerated={setFrontCover}
-                      onTitleChange={setAlbumTitle}
-                      onArtistChange={setArtistName}
-                      frontCover={frontCover}
-                      initialFrontCover={initialState.current.frontCover}
-                      initialAlbumTitle={initialState.current.albumTitle}
-                      initialArtistName={initialState.current.artistName}
-                    />
+                  <div className="space-y-5 pb-10">
+                    {/* Title / Subtitle inputs (always visible) */}
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
+                          제목
+                        </label>
+                        <input
+                          type="text"
+                          value={albumTitle}
+                          onChange={(e) => setAlbumTitle(e.target.value)}
+                          placeholder="앨범 제목을 입력하세요"
+                          className="w-full rounded-[5px] border border-gray-200 bg-[#CFCFD1] px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-[#67add1] focus:outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
+                          부제목
+                        </label>
+                        <input
+                          type="text"
+                          value={albumSubtitle}
+                          onChange={(e) => setAlbumSubtitle(e.target.value)}
+                          placeholder="부제목을 입력하세요"
+                          className="w-full rounded-[5px] border border-gray-200 bg-[#CFCFD1] px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-[#67add1] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Title Overlay Section - Collapsible with toggle */}
+                    <div className="rounded-lg border border-gray-300">
+                      <div className="flex items-center justify-between px-4 py-3">
+                        <button
+                          onClick={() => titleOverlayEnabled && setTitleOpen(!titleOpen)}
+                          className="flex items-center gap-2"
+                        >
+                          <span className="text-sm font-semibold text-gray-900">
+                            표지에 제목 표시하기
+                          </span>
+                          {titleOverlayEnabled &&
+                            (titleOpen ? (
+                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-gray-400" />
+                            ))}
+                        </button>
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={titleOverlayEnabled}
+                          onClick={() => {
+                            const next = !titleOverlayEnabled;
+                            setTitleOverlayEnabled(next);
+                            if (next) setTitleOpen(true);
+                          }}
+                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
+                            titleOverlayEnabled ? "bg-[#67add1]" : "bg-gray-300"
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                              titleOverlayEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      <AnimatePresence initial={false}>
+                        {titleOverlayEnabled && titleOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-gray-100 px-4 pt-3 pb-4">
+                              <TitleOverlayEditor
+                                position={titlePosition}
+                                font={titleFont}
+                                color={titleColor}
+                                onPositionChange={setTitlePosition}
+                                onFontChange={setTitleFont}
+                                onColorChange={setTitleColor}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Cover Design Section - Collapsible */}
+                    <div
+                      data-tutorial="cover-editor"
+                      className="rounded-lg border border-gray-300"
+                    >
+                      <button
+                        onClick={() => setCoverOpen(!coverOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900">
+                            표지 디자인
+                          </span>
+                          <span className="text-[11px] text-gray-400">
+                            AI 생성 또는 직접 업로드
+                          </span>
+                        </div>
+                        {coverOpen ? (
+                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                        )}
+                      </button>
+
+                      <AnimatePresence initial={false}>
+                        {coverOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-gray-100 px-4 pt-3 pb-4">
+                              <CoverImageEditor
+                                ref={coverRef}
+                                record_id={record_id}
+                                onImageGenerated={setFrontCover}
+                                frontCover={frontCover}
+                                initialFrontCover={initialState.current.frontCover}
+                                preloadedPhotoMedia={photoMedia}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
                   </div>
                 </TabsContent>
 
@@ -937,9 +1111,20 @@ const Index = ({ params }) => {
                         onClick={() => setStoryOpen(!storyOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
-                        <span className="text-sm font-semibold text-gray-900">
-                          스토리
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-sm font-semibold text-gray-900">
+                            스토리
+                          </span>
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setStoryHelpOpen(!storyHelpOpen);
+                            }}
+                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${storyHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </span>
+                        </div>
                         {storyOpen ? (
                           <ChevronDown className="h-4 w-4 text-gray-400" />
                         ) : (
@@ -958,6 +1143,12 @@ const Index = ({ params }) => {
                           >
                             <div className="space-y-3 border-t border-gray-100 px-4 pt-3 pb-4">
                               {/* Input area with chips inside */}
+                              {storyHelpOpen && (
+                                <div className="text-[11px] leading-relaxed text-[#67add1]">
+                                  <p>이 앨범에 담긴 이야기를 적어보세요.</p>
+                                  <p className="mt-1">기억에 남는 순간, 감정, 또는 의미 있는 경험을 자유롭게 적어도 좋아요.</p>
+                                </div>
+                              )}
                               <div className="min-h-50 w-full rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-3">
                                 {usedChips.size > 0 && (
                                   <div className="mb-2 flex flex-wrap gap-1.5">
@@ -990,6 +1181,16 @@ const Index = ({ params }) => {
                                 />
                               </div>
                               {/* Keyword chips */}
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-xs font-medium text-[#64748b]">
+                                  키워드 선택
+                                </p>
+                                {storyHelpOpen && (
+                                  <span className="text-[11px] text-[#67add1]">
+                                    키워드를 선택하면 글을 더 쉽게 시작할 수 있어요
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex flex-wrap gap-1.5">
                                 {KEYWORD_CHIPS.map((chip) => {
                                   const isUsed = usedChips.has(chip);
@@ -1056,12 +1257,18 @@ const Index = ({ params }) => {
                         onClick={() => setTimelineOpen(!timelineOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5">
                           <span className="text-sm font-semibold text-gray-900">
                             타임라인
                           </span>
-                          <span className="text-[11px] text-gray-400">
-                            {timeline.length}개
+                          <span
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTimelineHelpOpen(!timelineHelpOpen);
+                            }}
+                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${timelineHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
                           </span>
                         </div>
                         {timelineOpen ? (
@@ -1081,6 +1288,11 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="space-y-2 border-t border-gray-100 px-4 pt-3 pb-4">
+                              {timelineHelpOpen && (
+                                <p className="text-[11px] leading-relaxed text-[#67add1]">
+                                  기억에 남는 순간들을 시간 순서대로 기록해보세요. 연도와 간단한 내용을 입력하면 됩니다.
+                                </p>
+                              )}
                               <DndContext
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
@@ -1162,8 +1374,14 @@ const Index = ({ params }) => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+              className="relative mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
             >
+              <button
+                onClick={() => setShowExitDialog(false)}
+                className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-5 w-5" />
+              </button>
               <p className="text-center text-lg font-semibold text-gray-900">
                 {isDirty
                   ? "변경사항이 있습니다. 저장하시겠습니까?"
@@ -1225,28 +1443,6 @@ const Index = ({ params }) => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">
-                    제목
-                  </label>
-                  <input
-                    type="text"
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500"
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-gray-500">
-                    부제목
-                  </label>
-                  <input
-                    type="text"
-                    value={editSubtitle}
-                    onChange={(e) => setEditSubtitle(e.target.value)}
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none focus:border-gray-500"
-                  />
-                </div>
-                <div>
                   <label className="mb-2 block text-xs font-medium text-gray-500">
                     사진 저장소
                   </label>
@@ -1281,16 +1477,19 @@ const Index = ({ params }) => {
                   </div>
                   <input
                     type="text"
-                    value={editUrlValue}
+                    value={selectedUrlType === "google" ? editUrlValue : ""}
                     onChange={(e) => setEditUrlValue(e.target.value)}
+                    disabled={selectedUrlType !== "google"}
                     placeholder={
                       selectedUrlType === "google"
                         ? "https://photos.google.com/..."
-                        : selectedUrlType === "icloud"
-                          ? "https://icloud.com/..."
-                          : "https://mybox.naver.com/..."
+                        : "서비스 준비중입니다"
                     }
-                    className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-gray-500"
+                    className={`w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-gray-500 ${
+                      selectedUrlType !== "google"
+                        ? "cursor-not-allowed bg-gray-100 text-gray-400"
+                        : "bg-white text-gray-900"
+                    }`}
                   />
                 </div>
               </div>

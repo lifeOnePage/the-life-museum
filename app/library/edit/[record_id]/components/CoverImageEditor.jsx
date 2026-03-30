@@ -544,12 +544,10 @@ const CoverImageEditor = forwardRef(
               </div>
 
               {/* Remaining generations indicator */}
-              <div className="mb-4 flex items-center justify-between rounded-lg bg-[#f1f5f9] px-3 py-2">
-                <span className="text-xs text-[#64748b]">
-                  남은 생성 횟수
-                </span>
+              <div className="mb-4 flex items-center justify-between rounded-lg border-[1.5px] border-[#67ADD1] px-3 py-2">
+                <span className="text-xs text-[#67ADD1]">남은 생성 횟수</span>
                 <span
-                  className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#475569]"}`}
+                  className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#67ADD1]"}`}
                 >
                   {remainingGens}/3
                 </span>
@@ -699,11 +697,7 @@ const CoverImageEditor = forwardRef(
               {/* Generate button */}
               <button
                 onClick={handleGenerate}
-                disabled={
-                  isGenerating ||
-                  !prompt.trim() ||
-                  remainingGens <= 0
-                }
+                disabled={isGenerating || !prompt.trim() || remainingGens <= 0}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#67ADD1] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
               >
                 {isGenerating ? (
@@ -714,7 +708,8 @@ const CoverImageEditor = forwardRef(
                 ) : generatedImages.length > 0 ? (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    추가 생성하기 ({generatedImages.length}/3)
+                    추가 생성하기
+                    {/* ({generatedImages.length}/3) */}
                   </>
                 ) : (
                   <>

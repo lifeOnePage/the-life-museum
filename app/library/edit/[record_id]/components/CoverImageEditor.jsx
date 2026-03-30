@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, forwardRef, useImperativeHandle } from "react";
+import { useState, useEffect, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -10,8 +10,12 @@ import {
   X,
   Upload,
   FolderOpen,
+  Film,
   Check,
 } from "lucide-react";
+import { authedFetch } from "@/app/utils/authedFetch";
+
+const API_URL = "https://the-life-museum-backend-production.up.railway.app";
 
 function LazyImage({ src, alt, className }) {
   const [loaded, setLoaded] = useState(false);
@@ -50,39 +54,58 @@ const CoverImageEditor = forwardRef(
     const [isGenerating, setIsGenerating] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
-    const [generatedVideos, setGeneratedVideos] = useState([]);
+    const [generatedImages, setGeneratedImages] = useState([]);
     const [selectedFile, setSelectedFile] = useState(null);
-    const [selectedVideoUrl, setSelectedVideoUrl] = useState(null);
+    const [selectedImageUrl, setSelectedImageUrl] = useState(null);
     const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
-    const [imageStrength, setImageStrength] = useState(0.5); // 0.0~1.0
+    const [imageStrength, setImageStrength] = useState(0.5);
+    const [photoMedia, setPhotoMedia] = useState([]);
+    const [isLoadingPhotos, setIsLoadingPhotos] = useState(false);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
     const [photoBlobUrls, setPhotoBlobUrls] = useState([]);
 
-    // Use preloaded photo media from parent
-    const photoMedia = preloadedPhotoMedia || [];
+    // Generation count tracking
+    const [genCount, setGenCount] = useState(0);
+    const remainingGens = 3 - genCount;
+
+    // Reference image from photodrive
+    const [refPhotoMode, setRefPhotoMode] = useState(false);
+    const [refPhotos, setRefPhotos] = useState([]);
+    const [isLoadingRefPhotos, setIsLoadingRefPhotos] = useState(false);
+
+    // Fetch coverGenCount on mount
+    useEffect(() => {
+      const fetchGenCount = async () => {
+        try {
+          const response = await authedFetch(
+            `${API_URL}/api/v1/record/${record_id}`,
+          );
+          const data = await response.json();
+          if (data?.data?.coverGenCount != null) {
+            setGenCount(data.data.coverGenCount);
+          }
+        } catch (err) {
+          console.error("Failed to fetch gen count:", err);
+        }
+      };
+      fetchGenCount();
+    }, [record_id]);
 
     useImperativeHandle(ref, () => ({
       save: async () => {
-        if (!selectedFile && !selectedVideoUrl && !frontCover) return;
+        if (!selectedFile && !selectedImageUrl && !frontCover) return;
         setIsSaving(true);
         setError("");
 
         try {
-          const apiUrl =
-            "https://the-life-museum-backend-production.up.railway.app";
-
-          // AI-generated video or photo drive: use PUT /cover/url
-          if (selectedVideoUrl) {
-            console.log("cover/url save:", selectedVideoUrl);
-            const response = await fetch(
-              `${apiUrl}/api/v1/record/${record_id}/cover/url`,
+          // AI-generated image or photodrive selection: use PUT /cover/url
+          if (selectedImageUrl) {
+            const response = await authedFetch(
+              `${API_URL}/api/v1/record/${record_id}/cover/url`,
               {
-                method: "PUT",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-                },
-                body: JSON.stringify({ url: selectedVideoUrl }),
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ url: selectedImageUrl }),
               },
             );
             const data = await response.json();
@@ -98,13 +121,10 @@ const CoverImageEditor = forwardRef(
             const formData = new FormData();
             formData.append("file", selectedFile);
 
-            const response = await fetch(
-              `${apiUrl}/api/v1/record/${record_id}/cover/temp`,
+            const response = await authedFetch(
+              `${API_URL}/api/v1/record/${record_id}/cover/temp`,
               {
                 method: "POST",
-                headers: {
-                  Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-                },
                 body: formData,
               },
             );
@@ -127,31 +147,28 @@ const CoverImageEditor = forwardRef(
     const handleSelectImage = (index) => {
       setSelectedImageIndex(index);
     };
-    console.log("..");
 
-    const handleResetVideos = () => {
-      setGeneratedVideos([]);
+    const handleResetImages = () => {
+      setGeneratedImages([]);
       setSelectedImageIndex(-1);
     };
 
     const handleApply = () => {
-      if (selectedImageIndex < 0 || !generatedVideos[selectedImageIndex])
+      if (selectedImageIndex < 0 || !generatedImages[selectedImageIndex])
         return;
-      const videoUrl = generatedVideos[selectedImageIndex];
-      setSelectedVideoUrl(videoUrl);
+      const imageUrl = generatedImages[selectedImageIndex];
+      setSelectedImageUrl(imageUrl);
       setSelectedFile(null);
-      onImageGenerated(videoUrl);
+      onImageGenerated(imageUrl);
     };
 
     const handleGenerate = async () => {
-      if (!prompt.trim()) return;
+      if (!prompt.trim() || remainingGens <= 0) return;
       setIsGenerating(true);
       setSelectedImageIndex(-1);
       setError("");
 
       try {
-        const apiUrl =
-          "https://the-life-museum-backend-production.up.railway.app";
         const formData = new FormData();
         formData.append("prompt", prompt);
         formData.append("image_strength", String(imageStrength));
@@ -159,13 +176,10 @@ const CoverImageEditor = forwardRef(
           formData.append("reference_image", file);
         }
 
-        const response = await fetch(
-          `${apiUrl}/api/v1/record/${record_id}/cover/generate`,
+        const response = await authedFetch(
+          `${API_URL}/api/v1/record/${record_id}/cover/generate`,
           {
             method: "POST",
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-            },
             body: formData,
           },
         );
@@ -175,9 +189,13 @@ const CoverImageEditor = forwardRef(
           throw new Error(data.detail || data.error || "생성에 실패했습니다");
         }
 
-        // 기존 결과에 누적 (최대 3개) — Replicate 동시 한도로 1개씩 생성
-        const newVideos = data.data?.videos ?? [];
-        setGeneratedVideos((prev) => [...prev, ...newVideos].slice(0, 3));
+        const newImages = data.data?.images ?? [];
+        setGeneratedImages((prev) => [...prev, ...newImages].slice(0, 3));
+
+        // Update generation count from response
+        if (data.data?.remainingGenerations != null) {
+          setGenCount(3 - data.data.remainingGenerations);
+        }
       } catch (err) {
         setError(err.message);
         console.error(err);
@@ -188,13 +206,19 @@ const CoverImageEditor = forwardRef(
 
     const handleImageRef = (e) => {
       const file = e.target.files?.[0];
-      if (file && imageRefFiles.length < 3) {
-        setImageRefFiles((prev) => [...prev, file]);
-        setImageRefPreviews((prev) => [...prev, URL.createObjectURL(file)]);
+      if (file) {
+        setImageRefFile(file);
+        setImageRefPreview(URL.createObjectURL(file));
+        setRefPhotoMode(false);
       }
       e.target.value = "";
     };
 
+    const removeImageRef = () => {
+      setImageRefFile(null);
+      setImageRefPreview(null);
+      setImageStrength(0.5);
+      setRefPhotoMode(false);
     const removeImageRef = (index) => {
       setImageRefFiles((prev) => prev.filter((_, i) => i !== index));
       setImageRefPreviews((prev) => {
@@ -258,12 +282,53 @@ const CoverImageEditor = forwardRef(
       const file = e.target.files?.[0];
       if (file) {
         setSelectedFile(file);
-        setSelectedVideoUrl(null);
+        setSelectedImageUrl(null);
         const url = URL.createObjectURL(file);
         onImageGenerated(url);
       }
     };
 
+    const fetchPhotoMedia = async (forceRefresh = false) => {
+      if (!forceRefresh && photoMedia.length > 0) {
+        setSelectedPhotoIndex(-1);
+        return;
+      }
+      setIsLoadingPhotos(true);
+      setSelectedPhotoIndex(-1);
+      try {
+        const response = await authedFetch(
+          `${API_URL}/api/v1/record/${record_id}`,
+        );
+        const data = await response.json();
+        const images = (data?.data?.mediaList ?? []).filter(
+          (m) => m.type === "image",
+        );
+        setPhotoMedia(images);
+
+        // Preload proxy images as blob URLs in background
+        setPhotoBlobUrls(new Array(images.length).fill(null));
+        images.forEach(async (media, i) => {
+          try {
+            const rawUrl = media.original_url || media.thumbnail_url;
+            const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+            const res = await fetch(proxyUrl);
+            const blob = await res.blob();
+            const blobUrl = URL.createObjectURL(blob);
+            setPhotoBlobUrls((prev) => {
+              const next = [...prev];
+              next[i] = blobUrl;
+              return next;
+            });
+          } catch (e) {
+            console.error(e);
+          }
+        });
+      } catch (err) {
+        console.error(err);
+        setPhotoMedia([]);
+      } finally {
+        setIsLoadingPhotos(false);
+      }
     const preloadBlobUrls = () => {
       if (photoBlobUrls.length > 0 || photoMedia.length === 0) return;
       const apiUrl =
@@ -292,9 +357,9 @@ const CoverImageEditor = forwardRef(
       const media = photoMedia[index];
       if (!media) return;
       const rawUrl = media.original_url || media.thumbnail_url;
-      const apiUrl =
-        "https://the-life-museum-backend-production.up.railway.app";
-      const proxyUrl = `${apiUrl}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+      const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+      setSelectedImageUrl(proxyUrl);
+      setSelectedFile(null);
 
       // Show preview immediately
       const previewUrl = photoBlobUrls[index] || proxyUrl;
@@ -317,6 +382,50 @@ const CoverImageEditor = forwardRef(
         setSelectedVideoUrl(rawUrl);
         setSelectedFile(null);
       }
+    };
+
+    // Fetch photos for reference image selection in generate view (cached)
+    const fetchRefPhotos = async () => {
+      if (refPhotos.length > 0) return; // already loaded
+      setIsLoadingRefPhotos(true);
+      try {
+        const response = await authedFetch(
+          `${API_URL}/api/v1/record/${record_id}`,
+        );
+        const data = await response.json();
+        const images = (data?.data?.mediaList ?? []).filter(
+          (m) => m.type === "image",
+        );
+
+        // Convert each image to blob/File via proxy
+        const results = await Promise.all(
+          images.map(async (media) => {
+            const rawUrl = media.original_url || media.thumbnail_url;
+            const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+            try {
+              const resp = await fetch(proxyUrl);
+              const blob = await resp.blob();
+              const file = new File([blob], "ref.jpg", { type: blob.type });
+              return { blobUrl: URL.createObjectURL(blob), file, rawUrl };
+            } catch {
+              return null;
+            }
+          }),
+        );
+
+        setRefPhotos(results.filter(Boolean));
+      } catch (err) {
+        console.error(err);
+        setRefPhotos([]);
+      } finally {
+        setIsLoadingRefPhotos(false);
+      }
+    };
+
+    const handleSelectRefPhoto = (photo) => {
+      setImageRefFile(photo.file);
+      setImageRefPreview(photo.blobUrl);
+      setRefPhotoMode(false);
     };
 
     return (
@@ -606,6 +715,24 @@ const CoverImageEditor = forwardRef(
                 </p>
               </div>
 
+              {/* Remaining generations indicator */}
+              <div className="mb-4 flex items-center justify-between rounded-lg border-[1.5px] border-[#67ADD1] px-3 py-2">
+                <span className="text-xs text-[#67ADD1]">남은 생성 횟수</span>
+                <span
+                  className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#67ADD1]"}`}
+                >
+                  {remainingGens}/3
+                </span>
+              </div>
+
+              {remainingGens <= 0 && (
+                <div className="mb-4 rounded-lg bg-red-50 px-3 py-2">
+                  <p className="text-xs text-red-500">
+                    생성 횟수를 모두 사용했습니다.
+                  </p>
+                </div>
+              )}
+
               {/* Text prompt */}
               <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
                 텍스트 프롬프트
@@ -626,22 +753,19 @@ const CoverImageEditor = forwardRef(
                 </span>
               </label>
 
-              {/* Preview of selected refs */}
-              {imageRefPreviews.length > 0 && (
-                <div className="mb-3 flex gap-2">
-                  {imageRefPreviews.map((preview, i) => (
-                    <div key={i} className="relative">
-                      <img
-                        src={preview}
-                        alt={`참고 이미지 ${i + 1}`}
-                        className="h-20 w-20 rounded-lg object-cover"
-                      />
-                      <button
-                        onClick={() => removeImageRef(i)}
-                        className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-white transition-colors hover:bg-gray-900"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                  {/* Image strength slider */}
+                  <div>
+                    <div className="mb-1.5 flex items-center justify-between">
+                      <label className="text-xs font-medium text-[#64748b]">
+                        참고 이미지 반영 강도
+                      </label>
+                      <span className="text-xs text-[#64748b]">
+                        {imageStrength < 0.35
+                          ? "낮음"
+                          : imageStrength > 0.65
+                            ? "높음"
+                            : "보통"}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -676,56 +800,94 @@ const CoverImageEditor = forwardRef(
                     </span>
                   </button>
                 </div>
-              )}
-
-              {/* Image strength slider — only visible when reference images exist */}
-              {imageRefFiles.length > 0 && (
-                <div className="mt-3">
-                  <div className="mb-1.5 flex items-center justify-between">
-                    <label className="text-xs font-medium text-[#64748b]">
-                      참고 이미지 반영 강도
-                    </label>
-                    <span className="text-xs text-[#64748b]">
-                      {imageStrength < 0.35
-                        ? "낮음"
-                        : imageStrength > 0.65
-                          ? "높음"
-                          : "보통"}
+              ) : refPhotoMode ? (
+                <div>
+                  <button
+                    onClick={() => setRefPhotoMode(false)}
+                    className="mb-3 flex items-center gap-1.5 text-[#475569] transition-colors hover:text-[#1e1e1e]"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    <span className="text-xs font-medium">돌아가기</span>
+                  </button>
+                  {isLoadingRefPhotos ? (
+                    <div className="grid grid-cols-3 gap-2">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="aspect-square animate-pulse rounded-md bg-[#d5d5d7]"
+                        />
+                      ))}
+                    </div>
+                  ) : refPhotos.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-8 text-center">
+                      <ImagePlus className="mb-2 h-6 w-6 text-[#cbd5e1]" />
+                      <p className="text-xs text-[#94a3b8]">
+                        사용 가능한 사진이 없습니다.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid max-h-[30vh] grid-cols-3 gap-2 overflow-y-auto">
+                      {refPhotos.map((photo, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleSelectRefPhoto(photo)}
+                          className="aspect-square overflow-hidden rounded-md transition-all hover:opacity-80"
+                        >
+                          <img
+                            src={photo.blobUrl}
+                            alt={`사진 ${i + 1}`}
+                            className="h-full w-full object-cover"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="flex gap-3">
+                  <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-3 py-5 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)]">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleImageRef}
+                    />
+                    <Upload className="mb-2 h-4 w-4 text-[#475569]" />
+                    <span className="text-xs font-medium text-[#334155]">
+                      직접 업로드
                     </span>
-                  </div>
-                  <input
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.05"
-                    value={imageStrength}
-                    onChange={(e) => setImageStrength(Number(e.target.value))}
-                    className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#cfcfd1] accent-[#67ADD1]"
-                  />
-                  <div className="mt-1 flex justify-between text-[10px] text-[#94a3b8]">
-                    <span>창의적</span>
-                    <span>충실하게</span>
-                  </div>
+                  </label>
+                  <button
+                    onClick={() => {
+                      setRefPhotoMode(true);
+                      fetchRefPhotos();
+                    }}
+                    className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-3 py-5 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)]"
+                  >
+                    <FolderOpen className="mb-2 h-4 w-4 text-[#475569]" />
+                    <span className="text-xs font-medium text-[#334155]">
+                      포토드라이브
+                    </span>
+                  </button>
                 </div>
               )}
 
               {/* Generate button */}
               <button
                 onClick={handleGenerate}
-                disabled={
-                  isGenerating || !prompt.trim() || generatedVideos.length >= 3
-                }
+                disabled={isGenerating || !prompt.trim() || remainingGens <= 0}
                 className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#67ADD1] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
               >
                 {isGenerating ? (
                   <>
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    생성 중... (최대 5분 소요)
+                    생성 중...
                   </>
-                ) : generatedVideos.length > 0 ? (
+                ) : generatedImages.length > 0 ? (
                   <>
                     <Sparkles className="h-4 w-4" />
-                    추가 생성하기 ({generatedVideos.length}/3)
+                    추가 생성하기
+                    {/* ({generatedImages.length}/3) */}
                   </>
                 ) : (
                   <>
@@ -734,14 +896,14 @@ const CoverImageEditor = forwardRef(
                   </>
                 )}
               </button>
-              {generatedVideos.length >= 3 && (
+              {generatedImages.length >= 3 && (
                 <p className="mt-2 text-center text-xs text-[#94a3b8]">
                   최대 3개까지 생성할 수 있습니다.
                 </p>
               )}
 
               {/* Results section - only shows after generation */}
-              {generatedVideos.length > 0 && (
+              {generatedImages.length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -752,14 +914,14 @@ const CoverImageEditor = forwardRef(
                       생성 결과
                     </p>
                     <button
-                      onClick={handleResetVideos}
+                      onClick={handleResetImages}
                       className="text-xs text-[#94a3b8] transition-colors hover:text-[#475569]"
                     >
                       초기화
                     </button>
                   </div>
                   <div className="grid grid-cols-3 gap-3">
-                    {generatedVideos.map((videoUrl, i) => (
+                    {generatedImages.map((imageUrl, i) => (
                       <button
                         key={i}
                         onClick={() => handleSelectImage(i)}
@@ -769,12 +931,9 @@ const CoverImageEditor = forwardRef(
                             : "hover:opacity-80"
                         }`}
                       >
-                        <video
-                          src={videoUrl}
-                          autoPlay
-                          loop
-                          muted
-                          playsInline
+                        <img
+                          src={imageUrl}
+                          alt={`생성 결과 ${i + 1}`}
                           className="h-full w-full object-cover"
                         />
                       </button>
@@ -789,6 +948,25 @@ const CoverImageEditor = forwardRef(
                   >
                     적용하기
                   </button>
+
+                  {/* Animation skeleton (coming soon) */}
+                  {selectedImageIndex >= 0 && (
+                    <div className="mt-3 rounded-lg border border-dashed border-[#cbd5e1] p-4 opacity-60">
+                      <div className="flex items-center gap-2">
+                        <Film className="h-4 w-4 text-[#94a3b8]" />
+                        <span className="text-sm font-medium text-[#64748b]">
+                          애니메이션 만들기
+                        </span>
+                        <span className="rounded-full bg-[#e2e8f0] px-2 py-0.5 text-[10px] text-[#64748b]">
+                          추후 제공 예정
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs text-[#94a3b8]">
+                        선택한 이미지를 기반으로 짧은 애니메이션 영상을
+                        생성합니다.
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
               )}
 

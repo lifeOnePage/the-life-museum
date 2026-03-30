@@ -13,23 +13,36 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const t = localStorage.getItem("app_token");
     const u = localStorage.getItem("app_user");
-    console.log("setted auth from localStorage", { t, u });
     if (t) setToken(t);
     if (u) setUser(JSON.parse(u));
     setLoading(false);
   }, []);
 
-  const signinWithToken = async (t, u) => {
+  // Listen for forced logout from authedFetch
+  useEffect(() => {
+    const handleLogout = () => {
+      setToken(null);
+      setUser(null);
+    };
+    window.addEventListener("auth:logout", handleLogout);
+    return () => window.removeEventListener("auth:logout", handleLogout);
+  }, []);
+
+  const signinWithToken = async (t, u, refreshToken) => {
     setToken(t);
     setUser(u || null);
     localStorage.setItem("app_token", t);
     localStorage.setItem("app_user", JSON.stringify(u || null));
+    if (refreshToken) {
+      localStorage.setItem("app_refresh_token", refreshToken);
+    }
   };
 
   const signout = () => {
     setToken(null);
     setUser(null);
     localStorage.removeItem("app_token");
+    localStorage.removeItem("app_refresh_token");
     localStorage.removeItem("app_user");
   };
 

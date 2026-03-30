@@ -45,6 +45,7 @@ import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
+import { authedFetch } from "@/app/utils/authedFetch";
 
 // Sortable timeline item component
 function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
@@ -188,13 +189,8 @@ const Index = ({ params }) => {
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await fetch(
+        const response = await authedFetch(
           `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-            },
-          },
         );
 
         const result = await response.json();
@@ -278,14 +274,11 @@ const Index = ({ params }) => {
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
-    const response = await fetch(
+    const response = await authedFetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
       {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           color: theme.text,
           bgColor: theme.bg,
@@ -311,14 +304,11 @@ const Index = ({ params }) => {
   // Bio save logic (from BioEditor)
   const saveBio = async () => {
     if (!bio.trim()) return;
-    const response = await fetch(
+    const response = await authedFetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory`,
       {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           result: bio,
           qaList: [],
@@ -345,14 +335,11 @@ const Index = ({ params }) => {
         description: description || "",
       };
     });
-    const response = await fetch(
+    const response = await authedFetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/timeline`,
       {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ events }),
       },
     );
@@ -479,16 +466,11 @@ const Index = ({ params }) => {
     console.log("fullText", fullText);
 
     try {
-      const token = localStorage.getItem("app_token");
-      console.log(token);
-      const response = await fetch(
+      const response = await authedFetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
@@ -623,14 +605,11 @@ const Index = ({ params }) => {
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
     try {
-      const response = await fetch(
+      const response = await authedFetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             googlePhotoUrl: finalGoogleUrl,
             icloudUrl: finalIcloudUrl,
@@ -678,14 +657,9 @@ const Index = ({ params }) => {
     setIsDeleting(true);
     setRecordError("");
     try {
-      const response = await fetch(
+      const response = await authedFetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-          },
-        },
+        { method: "DELETE" },
       );
       const data = await response.json();
       if (!response.ok) {

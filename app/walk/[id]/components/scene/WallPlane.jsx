@@ -1,7 +1,14 @@
 import { useRef, useMemo, useEffect, memo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { getProxiedUrl, FOG_FAR } from "../lib/constants";
+import {
+  getProxiedUrl,
+  FOG_FAR,
+  FOCUS_DISMISS_DISTANCE,
+  OPACITY_APPEAR_DIST,
+  OPACITY_PEAK_DIST,
+  OPACITY_HOLD_DIST,
+} from "../lib/constants";
 
 // Compute the nearest wrapped Z position for a plane given the current camera Z
 function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
@@ -11,8 +18,8 @@ function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
   return cameraZ + behindBuffer - delta;
 }
 
-const BOX_DEPTH = 10;
-const FRAME_COLOR = "#0c0c0c";
+const BOX_DEPTH = 6;
+const FRAME_COLOR = "#000000";
 const BACK_COLOR = "#0a0a0a";
 const SCREEN_OFF_COLOR = "#050505";
 
@@ -54,10 +61,9 @@ function WallPlane({
   rotation,
   baseHeight,
   sign,
-  focusMode, // 'none' | 'auto'
+  focusMode, // 'none' | 'auto' | 'manual'
   onClick,
   onTextureLoaded,
-  displayOffsetZ,
   displayScale,
   stateRef,
   corridorSpan,
@@ -98,7 +104,10 @@ function WallPlane({
     done: false,
   });
 
-  // Manual focus fade state
+  // Manual focus fly state
+  const manualActiveRef = useRef(false);
+  const returningRef = useRef(false);
+
   // Original rotation: face toward corridor center
   const originalRotation = useMemo(() => {
     const dummy = new THREE.Object3D();
@@ -185,6 +194,7 @@ function WallPlane({
       if (mat && mat.map) {
         mat.map.dispose();
         mat.map = null;
+        mat.emissiveMap = null;
         mat.needsUpdate = true;
       }
     };
@@ -193,29 +203,162 @@ function WallPlane({
   // Update targets based on focusMode
   useEffect(() => {
     const state = animState.current;
-    const aspect = aspectRef.current;
 
-    // Wall mode (focusMode is always 'none' or 'auto' in current Scene)
-    // X/Y targets come from original position; Z is overridden every frame in useFrame
-    state.targetPos[0] = position[0];
-    state.targetPos[1] = position[1];
-    state.targetRot = [...originalRotation];
-    state.targetScale = [...wallScaleRef.current];
+    if (focusMode === "manual") {
+      // Flying to camera front — position targets updated in useFrame
+      manualActiveRef.current = true;
+      returningRef.current = false;
+      // Face camera: no rotation means +Z face (front) points toward camera
+      state.targetRot = [0, 0, 0];
+      state.targetScale = [...wallScaleRef.current];
+    } else if (manualActiveRef.current) {
+      // Was manual, now dismissed — fly back to wall
+      manualActiveRef.current = false;
+      returningRef.current = true;
+      state.targetPos[0] = position[0];
+      state.targetPos[1] = position[1];
+      state.targetRot = [...originalRotation];
+      state.targetScale = [...wallScaleRef.current];
+    } else {
+      // Normal wall mode (covers "none" and "auto")
+      state.targetPos[0] = position[0];
+      state.targetPos[1] = position[1];
+      state.targetRot = [...originalRotation];
+      state.targetScale = [...wallScaleRef.current];
+    }
   }, [focusMode, position, originalRotation]);
 
   useFrame((_, delta) => {
     if (!meshRef.current) return;
 
-    // Compute wrapped Z every frame — no React re-render needed
     const cameraZ = stateRef.current.cameraZ;
+    const state = animState.current;
+    const mat = frontMatRef.current;
+
+    // ── Manual focus: fly to camera front ──────────────────────────────────
+    if (focusMode === "manual") {
+      meshRef.current.visible = true;
+
+      state.targetPos[0] = 0;
+      state.targetPos[1] = 0;
+      state.targetPos[2] = stateRef.current.focusCloneZ;
+
+      // Faster lerp for snappy fly animation (~0.5s)
+      const lerpFactor = 1 - Math.pow(0.0001, delta);
+      for (let i = 0; i < 3; i++) {
+        state.currentPos[i] +=
+          (state.targetPos[i] - state.currentPos[i]) * lerpFactor;
+        state.currentRot[i] +=
+          (state.targetRot[i] - state.currentRot[i]) * lerpFactor;
+        state.currentScale[i] +=
+          (state.targetScale[i] - state.currentScale[i]) * lerpFactor;
+      }
+
+      meshRef.current.position.set(...state.currentPos);
+      meshRef.current.rotation.set(...state.currentRot);
+      meshRef.current.scale.set(...state.currentScale);
+
+      // Share current animated position & scale so MirrorReflection can track the flying plane
+      stateRef.current.manualCurrentZ = state.currentPos[2];
+      stateRef.current.manualCurrentScale = [state.currentScale[0], state.currentScale[1]];
+
+      // Distance-based opacity (same 4-zone curve as FocusClone)
+      const focusZ = stateRef.current.focusCloneZ;
+      const dist = Math.abs(cameraZ - focusZ);
+      let opacity = 0;
+      if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
+        if (dist >= OPACITY_PEAK_DIST) {
+          opacity =
+            (OPACITY_APPEAR_DIST - dist) /
+            (OPACITY_APPEAR_DIST - OPACITY_PEAK_DIST);
+        } else if (dist >= OPACITY_HOLD_DIST) {
+          opacity = 1.0;
+        } else {
+          opacity =
+            (dist - FOCUS_DISMISS_DISTANCE) /
+            (OPACITY_HOLD_DIST - FOCUS_DISMISS_DISTANCE);
+        }
+      }
+
+      const materials = meshRef.current.material;
+      if (Array.isArray(materials)) {
+        for (const m of materials) {
+          m.transparent = true;
+          m.opacity = opacity;
+        }
+      }
+
+      // Brighten front material — use texture as emissiveMap for natural look
+      if (mat) {
+        if (mat.map && !mat.emissiveMap) {
+          mat.emissiveMap = mat.map;
+          mat.needsUpdate = true;
+        }
+        mat.emissive.set("#ffffff");
+        mat.emissiveIntensity = 0.5;
+        mat.color.setScalar(1);
+      }
+      return;
+    }
+
+    // ── Returning from manual: fly back to wall ────────────────────────────
+    if (returningRef.current) {
+      meshRef.current.visible = true;
+
+      // Target: wrapped wall position (updates each frame)
+      const wrappedZ = computeWrappedZ(position[2], cameraZ, corridorSpan);
+      state.targetPos[2] = wrappedZ;
+
+      const lerpFactor = 1 - Math.pow(0.0001, delta);
+      for (let i = 0; i < 3; i++) {
+        state.currentPos[i] +=
+          (state.targetPos[i] - state.currentPos[i]) * lerpFactor;
+        state.currentRot[i] +=
+          (state.targetRot[i] - state.currentRot[i]) * lerpFactor;
+        state.currentScale[i] +=
+          (state.targetScale[i] - state.currentScale[i]) * lerpFactor;
+      }
+
+      // Check if close enough to wall target → resume normal behavior
+      const dx = Math.abs(state.currentPos[0] - state.targetPos[0]);
+      const dy = Math.abs(state.currentPos[1] - state.targetPos[1]);
+      const dz = Math.abs(state.currentPos[2] - state.targetPos[2]);
+      if (dx + dy + dz < 10) {
+        returningRef.current = false;
+      }
+
+      meshRef.current.position.set(...state.currentPos);
+      meshRef.current.rotation.set(...state.currentRot);
+      meshRef.current.scale.set(...state.currentScale);
+
+      // Reset transparency from manual focus
+      const materials = meshRef.current.material;
+      if (Array.isArray(materials)) {
+        for (const m of materials) {
+          if (m.transparent) {
+            m.transparent = false;
+            m.opacity = 1;
+          }
+        }
+      }
+
+      // Dim emissive back to normal (only trigger material update once)
+      if (mat && mat.emissiveMap) {
+        mat.emissiveMap = null;
+        mat.emissive.setScalar(0);
+        mat.emissiveIntensity = 0;
+        mat.needsUpdate = true;
+      }
+      return;
+    }
+
+    // ── Normal wall behavior ───────────────────────────────────────────────
     const wrappedZ = computeWrappedZ(position[2], cameraZ, corridorSpan);
     const distToCamera = Math.abs(cameraZ - wrappedZ);
 
-    // Imperative visibility culling: hide planes beyond fog range (no GPU draw call)
+    // Imperative visibility culling: hide planes beyond fog range
     meshRef.current.visible = distToCamera <= FOG_FAR + 500;
     if (!meshRef.current.visible) return;
-
-    const state = animState.current;
 
     // Keep Z in sync with wrapped position (override lerp — no slide during wrap)
     state.currentPos[2] = wrappedZ;
@@ -237,7 +380,6 @@ function WallPlane({
     meshRef.current.scale.set(...state.currentScale);
 
     // TV flicker animation on front material
-    const mat = frontMatRef.current;
     if (!mat) return;
 
     const flicker = flickerState.current;
@@ -246,7 +388,6 @@ function WallPlane({
       const t = Math.min(1, flicker.elapsed / FLICKER_DURATION);
       const brightness = flickerBrightness(t);
 
-      // color multiplies with texture: 0=black, 1=full texture
       mat.color.setScalar(brightness);
       mat.emissive.setScalar(brightness * 0.15);
 
@@ -271,10 +412,30 @@ function WallPlane({
       }}
     >
       <boxGeometry args={[1, 1, BOX_DEPTH]} />
-      <meshStandardMaterial attach="material-0" color={FRAME_COLOR} />
-      <meshStandardMaterial attach="material-1" color={FRAME_COLOR} />
-      <meshStandardMaterial attach="material-2" color={FRAME_COLOR} />
-      <meshStandardMaterial attach="material-3" color={FRAME_COLOR} />
+      <meshPhongMaterial
+        attach="material-0"
+        color={FRAME_COLOR}
+        shininess={20}
+        specular="#3a2a1a"
+      />
+      <meshPhongMaterial
+        attach="material-1"
+        color={FRAME_COLOR}
+        shininess={20}
+        specular="#3a2a1a"
+      />
+      <meshPhongMaterial
+        attach="material-2"
+        color={FRAME_COLOR}
+        shininess={20}
+        specular="#3a2a1a"
+      />
+      <meshPhongMaterial
+        attach="material-3"
+        color={FRAME_COLOR}
+        shininess={20}
+        specular="#3a2a1a"
+      />
       <meshStandardMaterial
         ref={frontMatRef}
         attach="material-4"

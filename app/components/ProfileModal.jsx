@@ -2,6 +2,7 @@
 
 import { Fragment, useState } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { authedFetch } from "@/app/utils/authedFetch";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -18,7 +19,7 @@ const FIELDS = [
 ];
 
 export default function ProfileModal({ onClose }) {
-  const { user, token, setUser } = useAuth();
+  const { user, setUser } = useAuth();
   const [tab, setTab] = useState("profile");
   const [mode, setMode] = useState("view");
   const [draft, setDraft] = useState({
@@ -44,12 +45,9 @@ export default function ProfileModal({ onClose }) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`${BASE_URL}/users/me`, {
+      const res = await authedFetch(`${BASE_URL}/users/me`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: draft.name || null,
           phone: draft.phone || null,

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useMemo, useState, useEffect, useCallback } from "react";
 import * as THREE from "three";
@@ -14,9 +15,27 @@ function PlaybackControls({
   onTogglePlay,
   cameraSpeed,
   onCameraSpeedChange,
+  onExit,
 }) {
   return (
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
+      <button
+        onClick={onExit}
+        className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm text-white transition-colors hover:bg-white/30"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="white"
+          className="h-4 w-4"
+        >
+          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
+        </svg>
+        나가기
+      </button>
+
+      <div className="h-6 w-px bg-white/20" />
+
       <button
         onClick={onTogglePlay}
         className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
@@ -56,6 +75,7 @@ function PlaybackControls({
 }
 
 export default function DisplayScene({ recordId }) {
+  const router = useRouter();
   const [mediaList, setMediaList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -150,6 +170,7 @@ export default function DisplayScene({ recordId }) {
         onTogglePlay={handleTogglePlay}
         cameraSpeed={cameraSpeed}
         onCameraSpeedChange={setCameraSpeed}
+        onExit={() => router.back()}
       />
 
       <Canvas

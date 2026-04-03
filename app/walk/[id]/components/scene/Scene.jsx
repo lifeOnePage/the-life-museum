@@ -270,13 +270,6 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     s.cameraZ -= s.smoothSpeed * delta;
     camera.position.z = s.cameraZ;
 
-    // Keep directional light following camera (forward direction)
-    if (dirLightRef.current) {
-      dirLightRef.current.position.set(0, 2, 0);
-      dirLightRef.current.target.position.set(0, 0, 1);
-      dirLightRef.current.target.updateMatrixWorld();
-    }
-
     // Update floor and lights imperatively every frame (no React re-render needed)
     if (floorRef.current) floorRef.current.position.z = s.cameraZ - 4000;
     if (pLight1Ref.current)
@@ -382,14 +375,9 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
         ref={floorRef}
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, FLOOR_Y, CAMERA_START_Z - 4000]}
-        receiveShadow
       >
         <planeGeometry args={[400, 10000]} />
-        <meshStandardMaterial
-          color={FLOOR_COLOR}
-          roughness={0.3}
-          metalness={0.6}
-        />
+        <meshBasicMaterial color={FLOOR_COLOR} />
       </mesh>
 
       {/* Wall Planes - Z-wrapping is handled imperatively inside each WallPlane.useFrame */}

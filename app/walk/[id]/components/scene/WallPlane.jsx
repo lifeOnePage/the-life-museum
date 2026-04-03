@@ -18,9 +18,7 @@ function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
   return cameraZ + behindBuffer - delta;
 }
 
-const BOX_DEPTH = 6;
 const FRAME_COLOR = "#000000";
-const BACK_COLOR = "#0a0a0a";
 const SCREEN_OFF_COLOR = "#050505";
 
 // ─── 미디어 패딩 ──────────────────────────────────────────────────────────────
@@ -194,7 +192,6 @@ function WallPlane({
       if (mat && mat.map) {
         mat.map.dispose();
         mat.map = null;
-        mat.emissiveMap = null;
         mat.needsUpdate = true;
       }
     };
@@ -283,22 +280,9 @@ function WallPlane({
         }
       }
 
-      const materials = meshRef.current.material;
-      if (Array.isArray(materials)) {
-        for (const m of materials) {
-          m.transparent = true;
-          m.opacity = opacity;
-        }
-      }
-
-      // Brighten front material — use texture as emissiveMap for natural look
       if (mat) {
-        if (mat.map && !mat.emissiveMap) {
-          mat.emissiveMap = mat.map;
-          mat.needsUpdate = true;
-        }
-        mat.emissive.set("#ffffff");
-        mat.emissiveIntensity = 0.5;
+        mat.transparent = true;
+        mat.opacity = opacity;
         mat.color.setScalar(1);
       }
       return;
@@ -335,22 +319,9 @@ function WallPlane({
       meshRef.current.scale.set(...state.currentScale);
 
       // Reset transparency from manual focus
-      const materials = meshRef.current.material;
-      if (Array.isArray(materials)) {
-        for (const m of materials) {
-          if (m.transparent) {
-            m.transparent = false;
-            m.opacity = 1;
-          }
-        }
-      }
-
-      // Dim emissive back to normal (only trigger material update once)
-      if (mat && mat.emissiveMap) {
-        mat.emissiveMap = null;
-        mat.emissive.setScalar(0);
-        mat.emissiveIntensity = 0;
-        mat.needsUpdate = true;
+      if (mat && mat.transparent) {
+        mat.transparent = false;
+        mat.opacity = 1;
       }
       return;
     }
@@ -392,62 +363,29 @@ function WallPlane({
       const brightness = flickerBrightness(t);
 
       mat.color.setScalar(brightness);
-      mat.emissive.setScalar(brightness * 0.15);
 
       if (t >= 1) {
         flicker.done = true;
         flicker.active = false;
         mat.color.setScalar(1);
-        mat.emissive.setScalar(0);
-        mat.emissiveIntensity = 0;
       }
     }
   });
 
-  // Box faces: 0=+X, 1=-X, 2=+Y, 3=-Y, 4=+Z(front/corridor-facing), 5=-Z(back/wall-facing)
   return (
     <mesh
       ref={meshRef}
-      castShadow
       onClick={(e) => {
         e.stopPropagation();
         onClick?.(id);
       }}
     >
-      <boxGeometry args={[1, 1, BOX_DEPTH]} />
-      <meshStandardMaterial
-        attach="material-0"
-        color={FRAME_COLOR}
-        // shininess={20}
-        // specular="#3a2a1a"
-      />
-      <meshStandardMaterial
-        attach="material-1"
-        color={FRAME_COLOR}
-        // shininess={20}
-        // specular="#3a2a1a"
-      />
-      <meshStandardMaterial
-        attach="material-2"
-        color={FRAME_COLOR}
-        // shininess={20}
-        // specular="#3a2a1a"
-      />
-      <meshStandardMaterial
-        attach="material-3"
-        color={FRAME_COLOR}
-        // shininess={20}
-        // specular="#3a2a1a"
-      />
-      <meshStandardMaterial
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial
         ref={frontMatRef}
-        attach="material-4"
         color={SCREEN_OFF_COLOR}
-        emissive={SCREEN_OFF_COLOR}
-        emissiveIntensity={0.5}
         generateMipmaps={true}
       />
-      <meshStandardMaterial attach="material-5" color={BACK_COLOR} />
     </mesh>
   );
 }

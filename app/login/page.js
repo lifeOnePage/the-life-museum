@@ -28,7 +28,7 @@ export default function LoginPage() {
   // "contact" | "otp" | "signup"
   const [stage, setStage] = useState("contact");
   // "phone" | "email"
-  const [contactTab, setContactTab] = useState("phone");
+  const [contactTab, setContactTab] = useState("email");
 
   const [phone, setPhone] = useState("");
   const [countryCode, setCountryCode] = useState("+82");
@@ -177,8 +177,8 @@ export default function LoginPage() {
           <AnimatePresence mode="wait" initial={false}>
             {stage === "contact" && (
               <SlideScreen key="stage-contact">
-                {/* Tab toggle */}
-                <div
+                {/* Tab toggle — 전화번호 비활성화, 이메일만 사용 */}
+                {/* <div
                   style={{
                     display: "flex",
                     gap: 8,
@@ -214,9 +214,10 @@ export default function LoginPage() {
                       {tab === "phone" ? "전화번호" : "이메일"}
                     </button>
                   ))}
-                </div>
+                </div> */}
 
-                {contactTab === "phone" && (
+                {/* 전화번호 입력 — 비활성화 */}
+                {/* {contactTab === "phone" && (
                   <>
                     <Header>전화번호를 입력해주세요</Header>
                     <div style={{ marginBottom: 20 }}>
@@ -264,7 +265,7 @@ export default function LoginPage() {
                       </div>
                     </div>
                   </>
-                )}
+                )} */}
 
                 {contactTab === "email" && (
                   <>

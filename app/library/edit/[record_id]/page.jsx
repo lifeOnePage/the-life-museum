@@ -44,6 +44,7 @@ import TitleOverlayEditor from "./components/TitleOverlayEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
+import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 import { authedFetch } from "@/app/utils/authedFetch";
 
@@ -103,7 +104,7 @@ const Index = ({ params }) => {
   const { record_id } = use(params);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [photoMedia, setPhotoMedia] = useState([]);
+  const photoDrive = usePhotoDrive(record_id);
   const [frontCover, setFrontCover] = useState(null);
   const [albumTitle, setAlbumTitle] = useState("");
   const [albumSubtitle, setAlbumSubtitle] = useState("");
@@ -235,11 +236,11 @@ const Index = ({ params }) => {
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
 
-          // Prefetch photo media for CoverImageEditor photodrive
+          // Initialize photo drive data for CoverImageEditor
           const images = (data.mediaList ?? []).filter(
             (m) => m.type === "image",
           );
-          setPhotoMedia(images);
+          photoDrive.init(images);
 
           initialState.current = {
             frontCover: coverUrl,
@@ -1063,7 +1064,11 @@ const Index = ({ params }) => {
                                 onImageGenerated={setFrontCover}
                                 frontCover={frontCover}
                                 initialFrontCover={initialState.current.frontCover}
-                                preloadedPhotoMedia={photoMedia}
+                                photoMedia={photoDrive.photoMedia}
+                                photoBlobUrls={photoDrive.photoBlobUrls}
+                                onRefreshPhotos={photoDrive.refresh}
+                                isRefreshing={photoDrive.isRefreshing}
+                                preloadBlobs={photoDrive.preloadBlobs}
                               />
                             </div>
                           </motion.div>

@@ -21,6 +21,10 @@ function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
 const FRAME_COLOR = "#000000";
 const SCREEN_OFF_COLOR = "#050505";
 
+// ─── 텍스처 최대 크기 (최대 변 길이, px) ───────────────────────────────────
+// 모바일 GPU 메모리 보호: 4K(~48MB/tex) → 512px(~1MB/tex)
+const MAX_TEXTURE_SIZE = 512;
+
 // ─── 미디어 패딩 ──────────────────────────────────────────────────────────────
 // 박스 face 기준 상하좌우 여백 크기 (3D scene 단위)
 // 이 값을 변경하면 미디어와 박스 테두리 사이의 여백이 조정됩니다.
@@ -65,6 +69,8 @@ function WallPlane({
   displayScale,
   stateRef,
   corridorSpan,
+  activeLoadsRef,
+  maxConcurrentLoads,
 }) {
   const meshRef = useRef();
   const frontMatRef = useRef();
@@ -122,12 +128,18 @@ function WallPlane({
   // Load texture imperatively — triggered by useFrame proximity check (lazy loading)
   const startLoad = useCallback(() => {
     if (!imageUrl || loadStateRef.current !== "idle") return;
+
+    // Concurrency gate: skip if too many loads active (will retry next frame)
+    if (activeLoadsRef && activeLoadsRef.current >= maxConcurrentLoads) return;
+
     loadStateRef.current = "loading";
+    if (activeLoadsRef) activeLoadsRef.current++;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
 
     img.onload = () => {
+      if (activeLoadsRef) activeLoadsRef.current--;
       if (disposedRef.current) return;
       try {
         const mediaAspect = img.width / img.height;
@@ -143,9 +155,19 @@ function WallPlane({
         animState.current.currentScale = [boxW, boxH, 1];
         animState.current.targetScale = [boxW, boxH, 1];
 
-        const paddingPx = Math.round(img.height * (MEDIA_PADDING / mediaH));
-        const cW = img.width + 2 * paddingPx;
-        const cH = img.height + 2 * paddingPx;
+        // Downscale to MAX_TEXTURE_SIZE to limit GPU memory
+        let drawW = img.width;
+        let drawH = img.height;
+        const maxDim = Math.max(drawW, drawH);
+        if (maxDim > MAX_TEXTURE_SIZE) {
+          const scale = MAX_TEXTURE_SIZE / maxDim;
+          drawW = Math.round(drawW * scale);
+          drawH = Math.round(drawH * scale);
+        }
+
+        const paddingPx = Math.round(drawH * (MEDIA_PADDING / mediaH));
+        const cW = drawW + 2 * paddingPx;
+        const cH = drawH + 2 * paddingPx;
 
         const canvas = document.createElement("canvas");
         canvas.width = cW;
@@ -154,7 +176,7 @@ function WallPlane({
 
         ctx.fillStyle = FRAME_COLOR;
         ctx.fillRect(0, 0, cW, cH);
-        ctx.drawImage(img, paddingPx, paddingPx, img.width, img.height);
+        ctx.drawImage(img, paddingPx, paddingPx, drawW, drawH);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
@@ -177,12 +199,13 @@ function WallPlane({
     };
 
     img.onerror = (err) => {
+      if (activeLoadsRef) activeLoadsRef.current--;
       console.error("Image load failed:", imageUrl.substring(0, 80), err);
       loadStateRef.current = "idle";
     };
 
     img.src = getProxiedUrl(imageUrl);
-  }, [imageUrl, baseHeight, id, onTextureLoaded]);
+  }, [imageUrl, baseHeight, id, onTextureLoaded, activeLoadsRef, maxConcurrentLoads]);
 
   // Cleanup on unmount or imageUrl change
   useEffect(() => {
@@ -334,15 +357,12 @@ function WallPlane({
     const distToCamera = Math.abs(cameraZ - wrappedZ);
 
     // Lazy load: start loading when camera approaches
-    // Use min(absolute, proportional) so threshold scales with corridor size
-    const loadDist = Math.min(FOG_FAR + 800, corridorSpan * 0.5);
-    if (loadStateRef.current === "idle" && distToCamera <= loadDist) {
+    if (loadStateRef.current === "idle" && distToCamera <= FOG_FAR + 800) {
       startLoad();
     }
 
-    // Far-distance dispose: release texture to reclaim GPU memory
-    const disposeDist = Math.min(FOG_FAR + 1500, corridorSpan * 0.8);
-    if (loadStateRef.current === "loaded" && distToCamera > disposeDist) {
+    // Far-distance dispose: release texture to reclaim GPU memory (large corridors only)
+    if (loadStateRef.current === "loaded" && distToCamera > FOG_FAR + 1500) {
       if (mat) {
         if (mat.map) {
           mat.map.dispose();

@@ -33,7 +33,9 @@ import {
   OPACITY_APPEAR_DIST,
 } from "../lib/constants";
 
-// Imperative floor/light position helpers (called from useFrame to avoid React re-renders)
+// ─── 동시 텍스처 로딩 제한 ───────────────────────────────────────────────
+// 50개 동시 HTTP 요청 → 4개로 제한하여 네트워크/CPU 부하 분산
+const MAX_CONCURRENT_LOADS = 4;
 
 export default function Scene({ planes, isPlaying, cameraSpeed }) {
   const { camera } = useThree();
@@ -45,6 +47,9 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
 
   // Texture cache: { [planeId]: { texture, aspectRatio } }
   const textureMap = useRef(new Map());
+
+  // Shared counter for concurrent texture loads (passed to all WallPlanes)
+  const activeLoadsRef = useRef(0);
 
   // React state for focus mode - drives conditional rendering (mount/unmount)
   const [focusRender, setFocusRender] = useState({
@@ -403,6 +408,8 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
               displayScale={DISPLAY_SCALE}
               stateRef={state}
               corridorSpan={corridorSpan}
+              activeLoadsRef={activeLoadsRef}
+              maxConcurrentLoads={MAX_CONCURRENT_LOADS}
             />
           </Suspense>
         );

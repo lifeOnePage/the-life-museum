@@ -47,33 +47,33 @@ export default function MyShelfPage() {
       .then((json) => {
         if (json.ok && Array.isArray(json.data)) {
           const newAlbums = json.data.map((item) => {
-              const bio = item.lifestory?.content || "";
-              const timeline = (item.timeline?.events || []).map((e) => ({
-                year: e.timestamp,
-                event: e.title,
-              }));
-              const bgColor = item.bgColor || "#ffffff";
-              const textColor = item.color || "#1c1917";
-              const keyColor = item.keyColor || "#d97706";
+            const bio = item.lifestory?.content || "";
+            const timeline = (item.timeline?.events || []).map((e) => ({
+              year: e.timestamp,
+              event: e.title,
+            }));
+            const bgColor = item.bgColor || "#ffffff";
+            const textColor = item.color || "#1c1917";
+            const keyColor = item.keyColor || "#d97706";
 
-              const backImage = generateBackCoverDataUrl(
-                bio,
-                timeline,
-                bgColor,
-                textColor,
-                keyColor,
-              );
+            const backImage = generateBackCoverDataUrl(
+              bio,
+              timeline,
+              bgColor,
+              textColor,
+              keyColor,
+            );
 
-              return {
-                id: item.id,
-                title: item.title,
-                subtitle: item.subtitle,
-                frontImage: item.coverImage?.url ?? "#ffffff",
-                backImage,
-                edgeColor: bgColor,
-                role: item.role || "owner",
-              };
-            });
+            return {
+              id: item.id,
+              title: item.title,
+              subtitle: item.subtitle,
+              frontImage: item.coverImage?.url ?? "#ffffff",
+              backImage,
+              edgeColor: bgColor,
+              role: item.role || "owner",
+            };
+          });
           setCachedAlbums(newAlbums);
           setAlbums(newAlbums);
         }
@@ -192,7 +192,7 @@ export default function MyShelfPage() {
       />
 
       {/* 호버 라벨: 앨범 하단 중앙 화면 좌표 기준, 중앙 정렬 + 페이드인 */}
-      {hoverLabel && !selectedAlbum && (
+      {/* {hoverLabel && !selectedAlbum && (
         <div
           key={hoverLabel.album.id}
           style={{
@@ -230,7 +230,7 @@ export default function MyShelfPage() {
             </span>
           )}
         </div>
-      )}
+      )} */}
 
       {/* DOM 오버레이 UI */}
       <div className="pointer-events-none absolute inset-0">
@@ -253,7 +253,7 @@ export default function MyShelfPage() {
         </div>
 
         {/* 선택된 앨범: 왼쪽에 제목/설명 */}
-        {selectedAlbum && (
+        {/* {selectedAlbum && (
           <div className="pointer-events-auto absolute top-1/2 left-[calc(max(30vw,100px))] max-w-56 -translate-x-full -translate-y-1/2 rounded-xl p-4">
             <h2 className="mb-1 text-lg font-semibold text-black">
               {selectedAlbum.data?.title || `Album ${selectedAlbum.index + 1}`}
@@ -264,7 +264,7 @@ export default function MyShelfPage() {
               </p>
             )}
           </div>
-        )}
+        )} */}
 
         {/* 선택된 앨범: 아래에 버튼 (role에 따라 분기) */}
         {selectedAlbum && (

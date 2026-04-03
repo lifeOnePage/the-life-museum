@@ -68,7 +68,6 @@ const CoverImageEditor = forwardRef(
     const [genCount, setGenCount] = useState(0);
     const remainingGens = 3 - genCount;
 
-
     // Fetch coverGenCount on mount
     useEffect(() => {
       const fetchGenCount = async () => {
@@ -107,7 +106,9 @@ const CoverImageEditor = forwardRef(
             const data = await response.json();
             console.log("cover/url response:", response.status, data);
             if (!response.ok) {
-              throw new Error(data.error || data.detail || "저장에 실패했습니다");
+              throw new Error(
+                data.error || data.detail || "저장에 실패했습니다",
+              );
             }
             return data;
           }
@@ -330,7 +331,9 @@ const CoverImageEditor = forwardRef(
           blob = await fetch(proxyUrl).then((r) => r.blob());
         }
         const ext = blob.type === "image/png" ? "png" : "jpg";
-        const file = new File([blob], `photo-drive.${ext}`, { type: blob.type });
+        const file = new File([blob], `photo-drive.${ext}`, {
+          type: blob.type,
+        });
         setSelectedFile(file);
         setSelectedImageUrl(null);
       } catch (e) {
@@ -629,11 +632,11 @@ const CoverImageEditor = forwardRef(
 
               {/* Remaining generations indicator */}
               <div className="mb-4 flex items-center justify-between rounded-lg border-[1.5px] border-[#67ADD1] px-3 py-2">
-                <span className="text-xs text-[#67ADD1]">남은 생성 횟수</span>
+                <span className="text-xs text-[#67ADD1]">사용한 생성 횟수</span>
                 <span
                   className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#67ADD1]"}`}
                 >
-                  {remainingGens}/3
+                  3-{remainingGens}/3
                 </span>
               </div>
 
@@ -728,9 +731,7 @@ const CoverImageEditor = forwardRef(
                       onChange={handleImageRef}
                     />
                     <Upload className="mb-1 h-4 w-4 text-[#6b7280]" />
-                    <span className="text-[11px] text-[#6b7280]">
-                      디바이스
-                    </span>
+                    <span className="text-[11px] text-[#6b7280]">디바이스</span>
                   </label>
                   <button
                     onClick={() => {

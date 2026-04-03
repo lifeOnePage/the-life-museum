@@ -32,6 +32,9 @@ function checkOverlap(box1, box2, margin = 5) {
   );
 }
 
+// 총 플레인 수 상한 — 모바일 GPU/CPU 보호
+const MAX_TOTAL_PLANES = 80;
+
 export function generatePlanes(rng, mediaList) {
   const allPlanes = [];
   if (!mediaList || mediaList.length === 0) return allPlanes;
@@ -47,9 +50,14 @@ export function generatePlanes(rng, mediaList) {
     Math.ceil(MIN_CORRIDOR_LENGTH / Math.max(corridorPerPass, 1)),
   );
 
-  const expandedMedia = [];
+  let expandedMedia = [];
   for (let r = 0; r < repeats; r++) {
     expandedMedia.push(...mediaList);
+  }
+
+  // Cap total planes to protect mobile devices
+  if (expandedMedia.length > MAX_TOTAL_PLANES) {
+    expandedMedia = expandedMedia.slice(0, MAX_TOTAL_PLANES);
   }
 
   const leftMedia = expandedMedia.filter((_, idx) => idx % 2 === 0);

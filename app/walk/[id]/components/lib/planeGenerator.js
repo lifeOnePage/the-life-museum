@@ -36,8 +36,9 @@ export function generatePlanes(rng, mediaList) {
   const allPlanes = [];
   if (!mediaList || mediaList.length === 0) return allPlanes;
 
-  // Repeat media so corridor length exceeds FOG_FAR for seamless infinite loop
-  const MIN_CORRIDOR_LENGTH = FOG_FAR + 2000;
+  // Repeat media so corridor length covers FOG_FAR for seamless infinite loop
+  // (wrapping makes the corridor infinite — corridorSpan ≥ FOG_FAR prevents visible pattern repeats)
+  const MIN_CORRIDOR_LENGTH = FOG_FAR;
   const avgGapPerItem = 50;
   const itemsPerSide = Math.ceil(mediaList.length / 2);
   const corridorPerPass = itemsPerSide * avgGapPerItem;

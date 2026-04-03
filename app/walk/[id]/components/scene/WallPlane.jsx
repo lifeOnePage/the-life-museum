@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect, memo } from "react";
+import { useRef, useMemo, useEffect, useCallback, memo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import {
@@ -102,6 +102,10 @@ function WallPlane({
     done: false,
   });
 
+  // Lazy loading state: 'idle' | 'loading' | 'loaded'
+  const loadStateRef = useRef("idle");
+  const disposedRef = useRef(false);
+
   // Manual focus fly state
   const manualActiveRef = useRef(false);
   const returningRef = useRef(false);
@@ -115,23 +119,21 @@ function WallPlane({
     return [dummy.rotation.x, dummy.rotation.y, dummy.rotation.z];
   }, [rotation, sign]);
 
-  // Load texture — entirely imperative, no setState
-  useEffect(() => {
-    if (!imageUrl) return;
-    let disposed = false;
+  // Load texture imperatively — triggered by useFrame proximity check (lazy loading)
+  const startLoad = useCallback(() => {
+    if (!imageUrl || loadStateRef.current !== "idle") return;
+    loadStateRef.current = "loading";
 
     const img = new Image();
     img.crossOrigin = "anonymous";
 
     img.onload = () => {
-      if (disposed) return;
+      if (disposedRef.current) return;
       try {
-        // ── 원본 미디어 크기 (3D scene 단위) ──────────────────────────────────
         const mediaAspect = img.width / img.height;
         const mediaH = baseHeight;
         const mediaW = mediaH * mediaAspect;
 
-        // ── 패딩 포함 박스 크기 ───────────────────────────────────────────────
         const boxH = mediaH + 2 * MEDIA_PADDING;
         const boxW = mediaW + 2 * MEDIA_PADDING;
         const boxAspect = boxW / boxH;
@@ -141,8 +143,6 @@ function WallPlane({
         animState.current.currentScale = [boxW, boxH, 1];
         animState.current.targetScale = [boxW, boxH, 1];
 
-        // ── 패딩을 포함한 캔버스 합성 텍스처 생성 ────────────────────────────
-        // 패딩 크기를 픽셀로 환산: (MEDIA_PADDING / mediaH) 비율을 img.height에 적용
         const paddingPx = Math.round(img.height * (MEDIA_PADDING / mediaH));
         const cW = img.width + 2 * paddingPx;
         const cH = img.height + 2 * paddingPx;
@@ -152,50 +152,53 @@ function WallPlane({
         canvas.height = cH;
         const ctx = canvas.getContext("2d");
 
-        // 배경(여백) 색상 채우기
         ctx.fillStyle = FRAME_COLOR;
         ctx.fillRect(0, 0, cW, cH);
-
-        // 미디어를 정중앙에 그리기
         ctx.drawImage(img, paddingPx, paddingPx, img.width, img.height);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.needsUpdate = true;
 
-        // Apply texture to front material imperatively
         const mat = frontMatRef.current;
         if (mat) {
           mat.map = tex;
           mat.needsUpdate = true;
         }
 
-        // Start flicker animation
         flickerState.current = { active: true, elapsed: 0, done: false };
+        loadStateRef.current = "loaded";
 
-        // boxAspect를 전달해야 FocusClone이 동일한 비율로 렌더링됨
         onTextureLoaded?.(id, tex, boxAspect);
       } catch (err) {
         console.error("Texture creation error:", err);
+        loadStateRef.current = "idle";
       }
     };
 
     img.onerror = (err) => {
       console.error("Image load failed:", imageUrl.substring(0, 80), err);
+      loadStateRef.current = "idle";
     };
 
     img.src = getProxiedUrl(imageUrl);
+  }, [imageUrl, baseHeight, id, onTextureLoaded]);
 
+  // Cleanup on unmount or imageUrl change
+  useEffect(() => {
+    disposedRef.current = false;
+    loadStateRef.current = "idle";
     return () => {
-      disposed = true;
+      disposedRef.current = true;
       const mat = frontMatRef.current;
       if (mat && mat.map) {
         mat.map.dispose();
         mat.map = null;
         mat.needsUpdate = true;
       }
+      loadStateRef.current = "idle";
     };
-  }, [imageUrl, baseHeight]);
+  }, [imageUrl]);
 
   // Update targets based on focusMode
   useEffect(() => {
@@ -329,6 +332,28 @@ function WallPlane({
     // ── Normal wall behavior ───────────────────────────────────────────────
     const wrappedZ = computeWrappedZ(position[2], cameraZ, corridorSpan);
     const distToCamera = Math.abs(cameraZ - wrappedZ);
+
+    // Lazy load: start loading when camera approaches
+    // Use min(absolute, proportional) so threshold scales with corridor size
+    const loadDist = Math.min(FOG_FAR + 800, corridorSpan * 0.5);
+    if (loadStateRef.current === "idle" && distToCamera <= loadDist) {
+      startLoad();
+    }
+
+    // Far-distance dispose: release texture to reclaim GPU memory
+    const disposeDist = Math.min(FOG_FAR + 1500, corridorSpan * 0.8);
+    if (loadStateRef.current === "loaded" && distToCamera > disposeDist) {
+      if (mat) {
+        if (mat.map) {
+          mat.map.dispose();
+          mat.map = null;
+        }
+        mat.color.set(SCREEN_OFF_COLOR);
+        mat.needsUpdate = true;
+      }
+      loadStateRef.current = "idle";
+      flickerState.current = { active: false, elapsed: 0, done: false };
+    }
 
     // Imperative visibility culling: hide planes beyond fog range
     meshRef.current.visible = distToCamera <= FOG_FAR + 500;

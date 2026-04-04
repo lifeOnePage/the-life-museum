@@ -340,17 +340,17 @@ export default function CoverImageGenerator({
           </label>
           <div className="mb-4 flex gap-2">
             {[
-              { key: "minimal", label: "미니멀", desc: "모던 & 절제된" },
-              { key: "abstract", label: "추상", desc: "준비중" },
-              { key: "animation", label: "애니메이션", desc: "준비중" },
+              { key: "minimal", label: "잉크 드로잉", desc: "흑백 손그림 느낌", sample: "/images/styleSample/minimal.png" },
+              { key: "abstract", label: "팝 아트", desc: "화려한 컬러 패턴", sample: "/images/styleSample/abstract.png" },
+              { key: "animation", label: "수채 일러스트", desc: "따뜻한 애니 감성", sample: "/images/styleSample/animation.png" },
             ].map((opt) => {
-              const disabled = opt.key === "abstract";
+              const disabled = false;
               return (
                 <button
                   key={opt.key}
                   onClick={() => !disabled && setSelectedStyle(opt.key)}
                   disabled={disabled}
-                  className={`flex flex-1 flex-col items-center rounded-lg border px-2 py-3 text-center transition-all ${
+                  className={`flex flex-1 flex-col items-center rounded-lg border px-2 py-2 text-center transition-all overflow-hidden ${
                     selectedStyle === opt.key
                       ? "border-[#67add1] bg-[#67add1]/10"
                       : disabled
@@ -358,6 +358,11 @@ export default function CoverImageGenerator({
                         : "border-gray-200 hover:border-[#67add1]"
                   }`}
                 >
+                  <img
+                    src={opt.sample}
+                    alt={opt.label}
+                    className="mb-1.5 h-16 w-16 rounded object-cover"
+                  />
                   <span
                     className={`text-xs font-medium ${
                       selectedStyle === opt.key

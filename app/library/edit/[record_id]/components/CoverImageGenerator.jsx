@@ -38,6 +38,7 @@ export default function CoverImageGenerator({
   record_id,
   onApply,
   onBack,
+  initialFrontCover,
   photoMedia,
   photoBlobUrls,
   onRefreshPhotos,
@@ -78,17 +79,13 @@ export default function CoverImageGenerator({
 
   const handleSelectImage = (index) => {
     setSelectedImageIndex(index);
+    const imageUrl = generatedImages[index];
+    if (imageUrl) onApply(imageUrl);
   };
 
-  const handleResetImages = () => {
-    setGeneratedImages([]);
+  const handleRevertCover = () => {
+    if (initialFrontCover) onApply(initialFrontCover);
     setSelectedImageIndex(-1);
-  };
-
-  const handleApply = () => {
-    if (selectedImageIndex < 0 || !generatedImages[selectedImageIndex]) return;
-    const imageUrl = generatedImages[selectedImageIndex];
-    onApply(imageUrl);
   };
 
   const handleGenerate = async () => {
@@ -418,15 +415,7 @@ export default function CoverImageGenerator({
               animate={{ opacity: 1, y: 0 }}
               className="mt-6"
             >
-              <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs font-medium text-[#64748b]">생성 결과</p>
-                <button
-                  onClick={handleResetImages}
-                  className="text-xs text-[#94a3b8] transition-colors hover:text-[#475569]"
-                >
-                  초기화
-                </button>
-              </div>
+              <p className="mb-2 text-xs font-medium text-[#64748b]">생성 결과</p>
               <div className="grid grid-cols-3 gap-3">
                 {generatedImages.map((imageUrl, i) => (
                   <button
@@ -447,14 +436,15 @@ export default function CoverImageGenerator({
                 ))}
               </div>
 
-              {/* Apply button */}
-              <button
-                onClick={handleApply}
-                disabled={selectedImageIndex < 0}
-                className="mt-4 flex w-full items-center justify-center rounded-lg bg-[#3E5A81] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
-              >
-                적용하기
-              </button>
+              {/* Revert button */}
+              {initialFrontCover && selectedImageIndex >= 0 && (
+                <button
+                  onClick={handleRevertCover}
+                  className="mt-4 flex w-full items-center justify-center rounded-lg border border-[#cbd5e1] bg-white py-[10px] text-sm font-medium text-[#475569] transition-colors hover:bg-gray-50"
+                >
+                  기존 커버로 되돌리기
+                </button>
+              )}
 
               {/* Animation skeleton (coming soon) */}
               {selectedImageIndex >= 0 && (

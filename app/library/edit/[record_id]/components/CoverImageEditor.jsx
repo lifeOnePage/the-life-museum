@@ -356,6 +356,7 @@ const CoverImageEditor = forwardRef(
                 record_id={record_id}
                 onApply={handleGeneratorApply}
                 onBack={() => setView("menu")}
+                initialFrontCover={initialFrontCover}
                 photoMedia={photoMedia}
                 photoBlobUrls={photoBlobUrls}
                 onRefreshPhotos={onRefreshPhotos}

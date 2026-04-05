@@ -108,7 +108,7 @@ const TimelineEditor = forwardRef(
                 <Input
                   value={item.event}
                   onChange={(e) => updateItem(index, "event", e.target.value)}
-                  placeholder="사건을 입력하세요..."
+                  placeholder="내용을 입력하세요..."
                   className="flex-1 border border-gray-300 bg-white text-sm text-gray-900 placeholder:text-gray-400"
                 />
                 <Button

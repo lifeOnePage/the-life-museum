@@ -1,30 +1,28 @@
 export const UNIFIED_THEMES = {
-  elegant: {
-    key: "elegant",
-    name: "Elegant",
-    description: "클래식한 레이아웃, 따뜻한 톤",
-    bg: "#FDFAF6",
-    accent: "#f64b16",
-    text: "#44403c",
+  kitchy: {
+    key: "kitchy",
+    name: "Kitchy",
+    description: "스티커와 종이 질감의 레트로 감성",
+    bg: "#e8e0d0",
+    accent: "#d6336c",
+    text: "#2c2c2c",
   },
-  natural: {
-    key: "natural",
-    name: "Natural",
-    description: "자연스러운 사진 중심 레이아웃",
-    bg: "#211811",
-    accent: "#eeeeee",
-    text: "#c7c7c7",
-    dots: ["#c8c4b8", "#556b2f", "#3a4a23"],
+  illustration: {
+    key: "illustration",
+    name: "Illustration",
+    description: "풍경 일러스트 위 감성적인 타임라인",
+    bg: "#87CEEB",
+    accent: "#ffffff",
+    text: "#ffffff",
   },
-  circle: {
-    key: "circle",
-    name: "Circle",
-    description: "사진 배경 위 원형 오버레이",
+  minimalist: {
+    key: "minimalist",
+    name: "Minimalist",
+    description: "깔끔한 화이트 미니멀 레이아웃",
     bg: "#ffffff",
-    circle: "#ffffff",
-    accent: "#c0392b",
-    text: "#333333",
+    accent: "#222222",
+    text: "#555555",
   },
 };
 
-export const DEFAULT_THEME = "elegant";
+export const DEFAULT_THEME = "minimalist";

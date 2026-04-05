@@ -62,7 +62,6 @@ export default function MirrorReflection({
     meshRef.current.scale.set(actualW, actualH, 1);
     meshRef.current.position.set(0, FLOOR_Y + 0.1 - actualH, actualZ);
     meshRef.current.material.opacity = opacity;
-    meshRef.current.material.emissiveIntensity = opacity * 0.5;
   });
 
   if (!texture) return null;
@@ -70,16 +69,11 @@ export default function MirrorReflection({
   return (
     <mesh ref={meshRef} scale={[w, h, 1]} rotation={[Math.PI, 0, 0]}>
       <planeGeometry args={[1, 1]} />
-      <meshStandardMaterial
+      <meshBasicMaterial
         map={texture}
         side={THREE.DoubleSide}
         transparent
-        opacity={100.0}
-        emissive="#ffffff"
-        emissiveMap={texture}
-        emissiveIntensity={0}
-        roughness={10.0}
-        metalness={0.1}
+        opacity={0}
       />
     </mesh>
   );

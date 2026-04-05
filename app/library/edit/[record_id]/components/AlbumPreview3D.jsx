@@ -47,11 +47,14 @@ export default function AlbumPreview3D({
   timeline,
   selectedTheme,
   albumTitle,
+  albumSubTitle,
   titleOverlayEnabled,
   titlePosition,
   titleFont,
   titleColor,
   flipped,
+  rotationY,
+  externalZoom,
   hideControls,
   onExpand,
   onFlipChange,
@@ -69,6 +72,8 @@ export default function AlbumPreview3D({
   const [zoom, setZoom] = useState(() => getZoomConfig().default);
   const [frontCoverImg, setFrontCoverImg] = useState(null);
   const [extractedColors, setExtractedColors] = useState(null);
+  const [themeBgImg, setThemeBgImg] = useState(null);
+  const [themeStickerImg, setThemeStickerImg] = useState(null);
 
   // Update zoom config on resize (mobile <-> desktop)
   useEffect(() => {
@@ -156,8 +161,37 @@ export default function AlbumPreview3D({
     dragStartX.current = null;
   };
 
-  const themeKey = selectedTheme || "elegant";
-  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.elegant;
+  // Load theme background image and sticker when themeKey changes
+  useEffect(() => {
+    const key = selectedTheme || "minimalist";
+    const bgMap = {
+      kitchy: "/images/albumtheme/kitchy.png",
+      illustration: "/images/albumtheme/illustration.png",
+    };
+    const bgSrc = bgMap[key];
+    if (!bgSrc) {
+      setThemeBgImg(null);
+      setThemeStickerImg(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => setThemeBgImg(img);
+    img.onerror = () => setThemeBgImg(null);
+    img.src = bgSrc;
+
+    // Load sticker overlay for kitchy theme
+    if (key === "kitchy") {
+      const sticker = new Image();
+      sticker.onload = () => setThemeStickerImg(sticker);
+      sticker.onerror = () => setThemeStickerImg(null);
+      sticker.src = "/images/albumtheme/kitchy 2.png";
+    } else {
+      setThemeStickerImg(null);
+    }
+  }, [selectedTheme]);
+
+  const themeKey = selectedTheme || "minimalist";
+  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 
   const frontCoverDataUrl = useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -186,9 +220,12 @@ export default function AlbumPreview3D({
       timeline || [],
       frontCoverImg,
       albumTitle || "",
+      albumSubTitle || "",
       extractedColors,
+      themeBgImg,
+      themeStickerImg,
     );
-  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, extractedColors]);
+  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, albumSubTitle, extractedColors, themeBgImg, themeStickerImg]);
 
   return (
     <div className="flex h-full w-full flex-col items-center">
@@ -255,7 +292,7 @@ export default function AlbumPreview3D({
             <ambientLight intensity={0.6} />
             <directionalLight position={[2, 3, 4]} intensity={0.8} />
             <directionalLight position={[-2, 1, 2]} intensity={3} />
-            <CameraZoom zoom={zoom} />
+            <CameraZoom zoom={typeof externalZoom === "number" ? externalZoom : zoom} />
             <AlbumCover3D
               index={0}
               position={[0, 0, 0]}
@@ -267,6 +304,7 @@ export default function AlbumPreview3D({
               edgeColor={theme.bg}
               isSelected={true}
               isFlipped={isFlipped}
+              rotationY={rotationY}
               onClick={hideControls && onExpand ? onExpand : toggleFlip}
             />
           </Canvas>

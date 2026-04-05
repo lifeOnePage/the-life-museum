@@ -76,16 +76,16 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+        className="w-full max-w-md rounded-2xl bg-[#1e1a14] p-6 shadow-xl ring-1 ring-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 탭 헤더 */}
-        <div className="mb-5 flex gap-1 rounded-xl bg-gray-100 p-1">
+        <div className="mb-5 flex gap-1 rounded-xl bg-white/5 p-1">
           <button
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
               activeTab === "new"
-                ? "bg-white text-black shadow"
-                : "text-black/50 hover:text-black"
+                ? "bg-white/10 text-[#e8d5b7] shadow"
+                : "text-[#9b8b7a] hover:text-[#c4b49a]"
             }`}
             onClick={() => setActiveTab("new")}
           >
@@ -94,8 +94,8 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
           <button
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
               activeTab === "share"
-                ? "bg-white text-black shadow"
-                : "text-black/50 hover:text-black"
+                ? "bg-white/10 text-[#e8d5b7] shadow"
+                : "text-[#9b8b7a] hover:text-[#c4b49a]"
             }`}
             onClick={() => setActiveTab("share")}
           >
@@ -108,7 +108,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             {/* 제목 */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-black/70">
+              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
                 앨범 제목
               </label>
               <input
@@ -116,14 +116,14 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="앨범 제목을 입력하세요"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black outline-none focus:border-black"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
                 required
               />
             </div>
 
             {/* 설명 */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-black/70">
+              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
                 설명
               </label>
               <input
@@ -131,13 +131,13 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
                 placeholder="앨범 설명을 입력하세요"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black outline-none focus:border-black"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>
 
             {/* Google Photo URL */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-black/70">
+              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
                 Google Photo URL
               </label>
               <input
@@ -145,33 +145,33 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
                 value={googlePhotoUrl}
                 onChange={(e) => setGooglePhotoUrl(e.target.value)}
                 placeholder="https://photos.google.com/..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black outline-none focus:border-black"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>
 
             {/* Mybox URL (비활성화) */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-black/40">
+              <label className="mb-1 block text-sm font-medium text-white/20">
                 Mybox URL
               </label>
               <input
                 type="url"
                 disabled
                 placeholder="추후 지원 예정"
-                className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-black/30"
+                className="w-full cursor-not-allowed rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-white/20 placeholder-white/15"
               />
             </div>
 
             {/* iCloud URL (비활성화) */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-black/40">
+              <label className="mb-1 block text-sm font-medium text-white/20">
                 iCloud URL
               </label>
               <input
                 type="url"
                 disabled
                 placeholder="추후 지원 예정"
-                className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-black/30"
+                className="w-full cursor-not-allowed rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-white/20 placeholder-white/15"
               />
             </div>
 
@@ -180,14 +180,14 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-lg border border-gray-300 py-2 font-medium text-black transition hover:bg-gray-100"
+                className="flex-1 rounded-lg border border-white/10 py-2 font-medium text-[#c4b49a] transition hover:bg-white/5"
               >
                 취소
               </button>
               <button
                 type="submit"
                 disabled={submitting || !title.trim()}
-                className="flex-1 rounded-lg bg-black py-2 font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
+                className="flex-1 rounded-lg bg-[#c4b49a] py-2 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
               >
                 {submitting ? "생성 중..." : "만들기"}
               </button>
@@ -198,11 +198,11 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
         {/* 공유 앨범 추가 탭 */}
         {activeTab === "share" && (
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-black/60">
+            <p className="text-sm text-[#9b8b7a]">
               공유받은 전시 링크를 붙여넣으면 내 라이브러리에 앨범이 추가됩니다.
             </p>
             <div>
-              <label className="mb-1 block text-sm font-medium text-black/70">
+              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
                 공유 링크
               </label>
               <input
@@ -210,7 +210,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
                 value={shareUrl}
                 onChange={(e) => setShareUrl(e.target.value)}
                 placeholder="https://.../walk/xxxxxxxx-xxxx-..."
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-black outline-none focus:border-black"
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>
 
@@ -218,14 +218,14 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 rounded-lg border border-gray-300 py-2 font-medium text-black transition hover:bg-gray-100"
+                className="flex-1 rounded-lg border border-white/10 py-2 font-medium text-[#c4b49a] transition hover:bg-white/5"
               >
                 취소
               </button>
               <button
                 onClick={handleAddShared}
                 disabled={sharing || !shareUrl.trim()}
-                className="flex-1 rounded-lg bg-black py-2 font-medium text-white transition hover:bg-black/80 disabled:opacity-40"
+                className="flex-1 rounded-lg bg-[#c4b49a] py-2 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
               >
                 {sharing ? "추가 중..." : "추가하기"}
               </button>

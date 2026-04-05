@@ -61,11 +61,8 @@ export default function FocusClone({
   return (
     <mesh ref={meshRef} scale={[w, h, 1]}>
       <planeGeometry args={[1, 1]} />
-      <meshStandardMaterial
+      <meshBasicMaterial
         map={texture}
-        emissive="#ffffff"
-        emissiveMap={texture}
-        emissiveIntensity={0.5}
         side={THREE.DoubleSide}
         transparent
         opacity={0}

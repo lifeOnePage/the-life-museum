@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useMemo, useState, useEffect, useCallback } from "react";
 import * as THREE from "three";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import Scene from "./scene/Scene";
 import { API_BASE, SEED, CAMERA_SPEED } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
@@ -174,6 +173,7 @@ export default function DisplayScene({ recordId }) {
       />
 
       <Canvas
+        dpr={[1, 1.5]}
         camera={{
           position: [0, 0, 300],
           fov: 80,
@@ -181,7 +181,7 @@ export default function DisplayScene({ recordId }) {
           far: 7200,
         }}
         gl={{
-          antialias: true,
+          antialias: false,
           alpha: false,
           powerPreference: "high-performance",
           toneMapping: THREE.ACESFilmicToneMapping,
@@ -196,9 +196,6 @@ export default function DisplayScene({ recordId }) {
             cameraSpeed={cameraSpeed}
           />
         </Suspense>
-        <EffectComposer>
-          <Bloom intensity={0.3} luminanceThreshold={0.8} radius={0.8} />
-        </EffectComposer>
       </Canvas>
     </div>
   );

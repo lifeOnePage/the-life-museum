@@ -33,7 +33,9 @@ import {
   OPACITY_APPEAR_DIST,
 } from "../lib/constants";
 
-// Imperative floor/light position helpers (called from useFrame to avoid React re-renders)
+// ─── 동시 텍스처 로딩 제한 ───────────────────────────────────────────────
+// 50개 동시 HTTP 요청 → 4개로 제한하여 네트워크/CPU 부하 분산
+const MAX_CONCURRENT_LOADS = 4;
 
 export default function Scene({ planes, isPlaying, cameraSpeed }) {
   const { camera } = useThree();
@@ -45,6 +47,9 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
 
   // Texture cache: { [planeId]: { texture, aspectRatio } }
   const textureMap = useRef(new Map());
+
+  // Shared counter for concurrent texture loads (passed to all WallPlanes)
+  const activeLoadsRef = useRef(0);
 
   // React state for focus mode - drives conditional rendering (mount/unmount)
   const [focusRender, setFocusRender] = useState({
@@ -270,13 +275,6 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     s.cameraZ -= s.smoothSpeed * delta;
     camera.position.z = s.cameraZ;
 
-    // Keep directional light following camera (forward direction)
-    if (dirLightRef.current) {
-      dirLightRef.current.position.set(0, 2, 0);
-      dirLightRef.current.target.position.set(0, 0, 1);
-      dirLightRef.current.target.updateMatrixWorld();
-    }
-
     // Update floor and lights imperatively every frame (no React re-render needed)
     if (floorRef.current) floorRef.current.position.z = s.cameraZ - 4000;
     if (pLight1Ref.current)
@@ -360,7 +358,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       <ambientLight intensity={0.7} />
       <directionalLight ref={dirLightRef} intensity={0.4} />
       {/* Point lights: follow camera ahead+sides — decay=1 (linear) for visible Phong specular */}
-      <pointLight
+      {/* <pointLight
         ref={pLight1Ref}
         position={[-200, 100, -400]}
         intensity={100}
@@ -375,21 +373,16 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
         distance={1500}
         decay={0.5}
         color="#ffdfcb"
-      />
+      /> */}
 
       {/* Floor - follows camera via useFrame (initial Z is a placeholder) */}
       <mesh
         ref={floorRef}
         rotation={[-Math.PI / 2, 0, 0]}
         position={[0, FLOOR_Y, CAMERA_START_Z - 4000]}
-        receiveShadow
       >
         <planeGeometry args={[400, 10000]} />
-        <meshStandardMaterial
-          color={FLOOR_COLOR}
-          roughness={0.3}
-          metalness={0.6}
-        />
+        <meshBasicMaterial color={FLOOR_COLOR} />
       </mesh>
 
       {/* Wall Planes - Z-wrapping is handled imperatively inside each WallPlane.useFrame */}
@@ -415,6 +408,8 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
               displayScale={DISPLAY_SCALE}
               stateRef={state}
               corridorSpan={corridorSpan}
+              activeLoadsRef={activeLoadsRef}
+              maxConcurrentLoads={MAX_CONCURRENT_LOADS}
             />
           </Suspense>
         );

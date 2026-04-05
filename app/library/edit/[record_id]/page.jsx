@@ -18,6 +18,7 @@ import {
   Undo2,
   HelpCircle,
   MoreVertical,
+  BookOpen,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -44,6 +45,7 @@ import TitleOverlayEditor from "./components/TitleOverlayEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
+import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
 // Sortable timeline item component
@@ -85,7 +87,7 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
       <Input
         value={item.event}
         onChange={(e) => onUpdate(index, "event", e.target.value)}
-        placeholder="사건을 입력하세요..."
+        placeholder="내용을 입력하세요..."
         className="h-9 flex-1 rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
       />
       <button
@@ -102,7 +104,7 @@ const Index = ({ params }) => {
   const { record_id } = use(params);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [photoMedia, setPhotoMedia] = useState([]);
+  const photoDrive = usePhotoDrive(record_id);
   const [frontCover, setFrontCover] = useState(null);
   const [albumTitle, setAlbumTitle] = useState("");
   const [albumSubtitle, setAlbumSubtitle] = useState("");
@@ -127,7 +129,8 @@ const Index = ({ params }) => {
   const [coverOpen, setCoverOpen] = useState(true);
   const [storyOpen, setStoryOpen] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(true);
-  const [storyHelpOpen, setStoryHelpOpen] = useState(true);
+  const [keywordsExpanded, setKeywordsExpanded] = useState(false);
+  const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
 
   // Tutorial
@@ -216,10 +219,10 @@ const Index = ({ params }) => {
           }
 
           const savedTheme = data.theme || DEFAULT_THEME;
-          const savedTitleOverlayEnabled = data.titleOverlayEnabled ?? false;
-          const savedTitlePosition = data.titlePosition || "bottom-center";
-          const savedTitleFont = data.titleFont || "Pretendard Variable";
-          const savedTitleColor = data.titleColor || "#ffffff";
+          const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
+          const savedTitlePosition = data.coverTitlePosition || "bottom-center";
+          const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
+          const savedTitleColor = data.coverTitleColor || "#ffffff";
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -239,11 +242,11 @@ const Index = ({ params }) => {
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
 
-          // Prefetch photo media for CoverImageEditor photodrive
+          // Initialize photo drive data for CoverImageEditor
           const images = (data.mediaList ?? []).filter(
             (m) => m.type === "image",
           );
-          setPhotoMedia(images);
+          photoDrive.init(images);
 
           initialState.current = {
             frontCover: coverUrl,
@@ -293,10 +296,10 @@ const Index = ({ params }) => {
           theme: selectedTheme,
           title: albumTitle,
           subTitle: albumSubtitle,
-          titleOverlayEnabled,
-          titlePosition,
-          titleFont,
-          titleColor,
+          coverTitleVisible: titleOverlayEnabled,
+          coverTitlePosition: titlePosition,
+          coverTitleFont: titleFont,
+          coverTitleColor: titleColor,
         }),
       },
     );
@@ -916,6 +919,7 @@ const Index = ({ params }) => {
             timeline={timeline}
             selectedTheme={selectedTheme}
             albumTitle={albumTitle}
+            albumSubTitle={albumSubtitle}
             titleOverlayEnabled={titleOverlayEnabled}
             titlePosition={titlePosition}
             titleFont={titleFont}
@@ -1095,7 +1099,19 @@ const Index = ({ params }) => {
                                 initialFrontCover={
                                   initialState.current.frontCover
                                 }
-                                preloadedPhotoMedia={photoMedia}
+                                photoMedia={photoDrive.photoMedia}
+                                photoBlobUrls={photoDrive.photoBlobUrls}
+                                onRefreshPhotos={photoDrive.refresh}
+                                isRefreshing={photoDrive.isRefreshing}
+                                preloadBlobs={photoDrive.preloadBlobs}
+                                titleOverlayEnabled={titleOverlayEnabled}
+                                titleOverlayConfig={{
+                                  title: albumTitle || "",
+                                  subtitle: "",
+                                  position: titlePosition || "bottom-center",
+                                  font: titleFont || "Pretendard Variable",
+                                  color: titleColor || "#ffffff",
+                                }}
                               />
                             </div>
                           </motion.div>
@@ -1108,6 +1124,17 @@ const Index = ({ params }) => {
                 {/* Back tab - Redesigned */}
                 <TabsContent className="px-4 pt-5 sm:px-5" value="back">
                   <div className="space-y-5 pb-10">
+                    {/* Guide text */}
+                    <div className="flex items-start gap-3 rounded-xl border border-[#e2e8f0] bg-gradient-to-r from-[#f8fafc] to-[#f1f5f9] px-4 py-3.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#67add1]/10">
+                        <BookOpen className="h-3.5 w-3.5 text-[#67add1]" />
+                      </div>
+                      <p className="pt-0.5 text-xs leading-relaxed text-[#64748b]">
+                        앨범 뒷면을 꾸미기 위해 앨범에 맞는 스토리와 타임라인을
+                        적어주세요
+                      </p>
+                    </div>
+
                     {/* Story Section - Collapsible */}
                     <div
                       data-tutorial="story"
@@ -1117,20 +1144,9 @@ const Index = ({ params }) => {
                         onClick={() => setStoryOpen(!storyOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-semibold text-gray-900">
-                            스토리
-                          </span>
-                          <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setStoryHelpOpen(!storyHelpOpen);
-                            }}
-                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${storyHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
-                          >
-                            <HelpCircle className="h-3.5 w-3.5" />
-                          </span>
-                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          스토리
+                        </span>
                         {storyOpen ? (
                           <ChevronDown className="h-4 w-4 text-gray-400" />
                         ) : (
@@ -1148,16 +1164,87 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="space-y-3 border-t border-gray-100 px-4 pt-3 pb-4">
-                              {/* Input area with chips inside */}
-                              {storyHelpOpen && (
-                                <div className="text-[11px] leading-relaxed text-[#67add1]">
-                                  <p>이 앨범에 담긴 이야기를 적어보세요.</p>
-                                  <p className="mt-1">
-                                    기억에 남는 순간, 감정, 또는 의미 있는
-                                    경험을 자유롭게 적어도 좋아요.
-                                  </p>
+                              {/* Keyword chips section */}
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-medium text-[#64748b]">
+                                    키워드 선택
+                                  </span>
+                                  <span
+                                    onClick={() =>
+                                      setKeywordHelpOpen(!keywordHelpOpen)
+                                    }
+                                    className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-colors hover:text-gray-600 ${keywordHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
+                                  >
+                                    <HelpCircle className="h-3.5 w-3.5" />
+                                  </span>
+                                  {usedChips.size > 0 && (
+                                    <span className="text-[11px] text-[#94a3b8]">
+                                      {usedChips.size}개 선택됨
+                                    </span>
+                                  )}
                                 </div>
-                              )}
+                                <AnimatePresence>
+                                  {keywordHelpOpen && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: "auto" }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      transition={{ duration: 0.15 }}
+                                      className="overflow-hidden"
+                                    >
+                                      <div className="mt-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2.5 shadow-sm">
+                                        <p className="text-[11px] leading-relaxed text-[#64748b]">
+                                          💡 글감이 떠오르지 않을 때 키워드를
+                                          선택해보세요. 선택한 키워드가 스토리에
+                                          주제로 추가되어, AI가 이를 바탕으로 더
+                                          풍부한 이야기를 만들어 줄 수 있어요.
+                                        </p>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {(keywordsExpanded
+                                    ? KEYWORD_CHIPS
+                                    : KEYWORD_CHIPS.slice(0, 3)
+                                  ).map((chip) => {
+                                    const isUsed = usedChips.has(chip);
+                                    return (
+                                      <button
+                                        key={chip}
+                                        type="button"
+                                        onClick={() =>
+                                          isUsed
+                                            ? handleChipRemove(chip)
+                                            : handleChipClick(chip)
+                                        }
+                                        className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
+                                          isUsed
+                                            ? "border border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
+                                            : "border border-gray-200 bg-white text-gray-500 hover:border-[#67add1] hover:text-[#67add1]"
+                                        }`}
+                                      >
+                                        {isUsed ? `${chip} ✕` : `+ ${chip}`}
+                                      </button>
+                                    );
+                                  })}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setKeywordsExpanded(!keywordsExpanded)
+                                    }
+                                    className="rounded-full border border-dashed border-gray-300 px-3 py-1 text-[11px] font-medium text-[#94a3b8] transition-colors hover:border-[#67add1] hover:text-[#67add1]"
+                                  >
+                                    {keywordsExpanded
+                                      ? "접기"
+                                      : `+${KEYWORD_CHIPS.length - 3}개 더보기`}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Text input area with selected chips */}
                               <div className="min-h-50 w-full rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-3">
                                 {usedChips.size > 0 && (
                                   <div className="mb-2 flex flex-wrap gap-1.5">
@@ -1184,46 +1271,13 @@ const Index = ({ params }) => {
                                   placeholder={
                                     usedChips.size > 0
                                       ? "추가로 작성하세요..."
-                                      : "키워드를 선택하거나 직접 작성하세요..."
+                                      : "���유롭게 작성하세요..."
                                   }
                                   className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:ring-0 focus:outline-none"
                                 />
                               </div>
-                              {/* Keyword chips */}
-                              <div className="flex items-center gap-1.5">
-                                <p className="text-xs font-medium text-[#64748b]">
-                                  키워드 선택
-                                </p>
-                                {storyHelpOpen && (
-                                  <span className="text-[11px] text-[#67add1]">
-                                    키워드를 선택하면 글을 더 쉽게 시작할 수
-                                    있어요
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {KEYWORD_CHIPS.map((chip) => {
-                                  const isUsed = usedChips.has(chip);
-                                  return (
-                                    <button
-                                      key={chip}
-                                      type="button"
-                                      onClick={() =>
-                                        isUsed
-                                          ? handleChipRemove(chip)
-                                          : handleChipClick(chip)
-                                      }
-                                      className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
-                                        isUsed
-                                          ? "border border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
-                                          : "border border-gray-200 bg-white text-gray-500 hover:border-[#67add1] hover:text-[#67add1]"
-                                      }`}
-                                    >
-                                      {isUsed ? `${chip} ✕` : `+ ${chip}`}
-                                    </button>
-                                  );
-                                })}
-                              </div>
+
+                              {/* Character count */}
                               <div className="flex items-center justify-between">
                                 <p className="text-[11px] text-gray-300">
                                   {getFullBioText().length}자
@@ -1234,6 +1288,8 @@ const Index = ({ params }) => {
                                   </p>
                                 )}
                               </div>
+
+                              {/* Generate button */}
                               <Button
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !getFullBioText()}
@@ -1271,7 +1327,7 @@ const Index = ({ params }) => {
                           <span className="text-sm font-semibold text-gray-900">
                             타임라인
                           </span>
-                          <span
+                          {/* <span
                             onClick={(e) => {
                               e.stopPropagation();
                               setTimelineHelpOpen(!timelineHelpOpen);
@@ -1279,7 +1335,7 @@ const Index = ({ params }) => {
                             className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${timelineHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
                           >
                             <HelpCircle className="h-3.5 w-3.5" />
-                          </span>
+                          </span> */}
                         </div>
                         {timelineOpen ? (
                           <ChevronDown className="h-4 w-4 text-gray-400" />
@@ -1298,13 +1354,13 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="space-y-2 border-t border-gray-100 px-4 pt-3 pb-4">
-                              {timelineHelpOpen && (
+                              {/* {timelineHelpOpen && (
                                 <p className="text-[11px] leading-relaxed text-[#67add1]">
                                   기억에 남는 순간들을 시간 순서대로
                                   기록해보세요. 연도와 간단한 내용을 입력하면
                                   됩니다.
                                 </p>
-                              )}
+                              )} */}
                               <DndContext
                                 sensors={sensors}
                                 collisionDetection={closestCenter}

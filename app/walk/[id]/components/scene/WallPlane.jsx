@@ -1,4 +1,4 @@
-import { useRef, useMemo, useEffect, memo } from "react";
+import { useRef, useMemo, useEffect, useCallback, memo } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import {
@@ -18,10 +18,12 @@ function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
   return cameraZ + behindBuffer - delta;
 }
 
-const BOX_DEPTH = 6;
 const FRAME_COLOR = "#000000";
-const BACK_COLOR = "#0a0a0a";
 const SCREEN_OFF_COLOR = "#050505";
+
+// ─── 텍스처 최대 크기 (최대 변 길이, px) ───────────────────────────────────
+// 모바일 GPU 메모리 보호: 4K(~48MB/tex) → 512px(~1MB/tex)
+const MAX_TEXTURE_SIZE = 512;
 
 // ─── 미디어 패딩 ──────────────────────────────────────────────────────────────
 // 박스 face 기준 상하좌우 여백 크기 (3D scene 단위)
@@ -67,6 +69,8 @@ function WallPlane({
   displayScale,
   stateRef,
   corridorSpan,
+  activeLoadsRef,
+  maxConcurrentLoads,
 }) {
   const meshRef = useRef();
   const frontMatRef = useRef();
@@ -104,6 +108,10 @@ function WallPlane({
     done: false,
   });
 
+  // Lazy loading state: 'idle' | 'loading' | 'loaded'
+  const loadStateRef = useRef("idle");
+  const disposedRef = useRef(false);
+
   // Manual focus fly state
   const manualActiveRef = useRef(false);
   const returningRef = useRef(false);
@@ -117,23 +125,27 @@ function WallPlane({
     return [dummy.rotation.x, dummy.rotation.y, dummy.rotation.z];
   }, [rotation, sign]);
 
-  // Load texture — entirely imperative, no setState
-  useEffect(() => {
-    if (!imageUrl) return;
-    let disposed = false;
+  // Load texture imperatively — triggered by useFrame proximity check (lazy loading)
+  const startLoad = useCallback(() => {
+    if (!imageUrl || loadStateRef.current !== "idle") return;
+
+    // Concurrency gate: skip if too many loads active (will retry next frame)
+    if (activeLoadsRef && activeLoadsRef.current >= maxConcurrentLoads) return;
+
+    loadStateRef.current = "loading";
+    if (activeLoadsRef) activeLoadsRef.current++;
 
     const img = new Image();
     img.crossOrigin = "anonymous";
 
     img.onload = () => {
-      if (disposed) return;
+      if (activeLoadsRef) activeLoadsRef.current--;
+      if (disposedRef.current) return;
       try {
-        // ── 원본 미디어 크기 (3D scene 단위) ──────────────────────────────────
         const mediaAspect = img.width / img.height;
         const mediaH = baseHeight;
         const mediaW = mediaH * mediaAspect;
 
-        // ── 패딩 포함 박스 크기 ───────────────────────────────────────────────
         const boxH = mediaH + 2 * MEDIA_PADDING;
         const boxW = mediaW + 2 * MEDIA_PADDING;
         const boxAspect = boxW / boxH;
@@ -143,62 +155,73 @@ function WallPlane({
         animState.current.currentScale = [boxW, boxH, 1];
         animState.current.targetScale = [boxW, boxH, 1];
 
-        // ── 패딩을 포함한 캔버스 합성 텍스처 생성 ────────────────────────────
-        // 패딩 크기를 픽셀로 환산: (MEDIA_PADDING / mediaH) 비율을 img.height에 적용
-        const paddingPx = Math.round(img.height * (MEDIA_PADDING / mediaH));
-        const cW = img.width + 2 * paddingPx;
-        const cH = img.height + 2 * paddingPx;
+        // Downscale to MAX_TEXTURE_SIZE to limit GPU memory
+        let drawW = img.width;
+        let drawH = img.height;
+        const maxDim = Math.max(drawW, drawH);
+        if (maxDim > MAX_TEXTURE_SIZE) {
+          const scale = MAX_TEXTURE_SIZE / maxDim;
+          drawW = Math.round(drawW * scale);
+          drawH = Math.round(drawH * scale);
+        }
+
+        const paddingPx = Math.round(drawH * (MEDIA_PADDING / mediaH));
+        const cW = drawW + 2 * paddingPx;
+        const cH = drawH + 2 * paddingPx;
 
         const canvas = document.createElement("canvas");
         canvas.width = cW;
         canvas.height = cH;
         const ctx = canvas.getContext("2d");
 
-        // 배경(여백) 색상 채우기
         ctx.fillStyle = FRAME_COLOR;
         ctx.fillRect(0, 0, cW, cH);
-
-        // 미디어를 정중앙에 그리기
-        ctx.drawImage(img, paddingPx, paddingPx, img.width, img.height);
+        ctx.drawImage(img, paddingPx, paddingPx, drawW, drawH);
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.needsUpdate = true;
 
-        // Apply texture to front material imperatively
         const mat = frontMatRef.current;
         if (mat) {
           mat.map = tex;
           mat.needsUpdate = true;
         }
 
-        // Start flicker animation
         flickerState.current = { active: true, elapsed: 0, done: false };
+        loadStateRef.current = "loaded";
 
-        // boxAspect를 전달해야 FocusClone이 동일한 비율로 렌더링됨
         onTextureLoaded?.(id, tex, boxAspect);
       } catch (err) {
         console.error("Texture creation error:", err);
+        loadStateRef.current = "idle";
       }
     };
 
     img.onerror = (err) => {
+      if (activeLoadsRef) activeLoadsRef.current--;
       console.error("Image load failed:", imageUrl.substring(0, 80), err);
+      loadStateRef.current = "idle";
     };
 
     img.src = getProxiedUrl(imageUrl);
+  }, [imageUrl, baseHeight, id, onTextureLoaded, activeLoadsRef, maxConcurrentLoads]);
 
+  // Cleanup on unmount or imageUrl change
+  useEffect(() => {
+    disposedRef.current = false;
+    loadStateRef.current = "idle";
     return () => {
-      disposed = true;
+      disposedRef.current = true;
       const mat = frontMatRef.current;
       if (mat && mat.map) {
         mat.map.dispose();
         mat.map = null;
-        mat.emissiveMap = null;
         mat.needsUpdate = true;
       }
+      loadStateRef.current = "idle";
     };
-  }, [imageUrl, baseHeight]);
+  }, [imageUrl]);
 
   // Update targets based on focusMode
   useEffect(() => {
@@ -260,7 +283,10 @@ function WallPlane({
 
       // Share current animated position & scale so MirrorReflection can track the flying plane
       stateRef.current.manualCurrentZ = state.currentPos[2];
-      stateRef.current.manualCurrentScale = [state.currentScale[0], state.currentScale[1]];
+      stateRef.current.manualCurrentScale = [
+        state.currentScale[0],
+        state.currentScale[1],
+      ];
 
       // Distance-based opacity (same 4-zone curve as FocusClone)
       const focusZ = stateRef.current.focusCloneZ;
@@ -280,22 +306,9 @@ function WallPlane({
         }
       }
 
-      const materials = meshRef.current.material;
-      if (Array.isArray(materials)) {
-        for (const m of materials) {
-          m.transparent = true;
-          m.opacity = opacity;
-        }
-      }
-
-      // Brighten front material — use texture as emissiveMap for natural look
       if (mat) {
-        if (mat.map && !mat.emissiveMap) {
-          mat.emissiveMap = mat.map;
-          mat.needsUpdate = true;
-        }
-        mat.emissive.set("#ffffff");
-        mat.emissiveIntensity = 0.5;
+        mat.transparent = true;
+        mat.opacity = opacity;
         mat.color.setScalar(1);
       }
       return;
@@ -332,22 +345,9 @@ function WallPlane({
       meshRef.current.scale.set(...state.currentScale);
 
       // Reset transparency from manual focus
-      const materials = meshRef.current.material;
-      if (Array.isArray(materials)) {
-        for (const m of materials) {
-          if (m.transparent) {
-            m.transparent = false;
-            m.opacity = 1;
-          }
-        }
-      }
-
-      // Dim emissive back to normal (only trigger material update once)
-      if (mat && mat.emissiveMap) {
-        mat.emissiveMap = null;
-        mat.emissive.setScalar(0);
-        mat.emissiveIntensity = 0;
-        mat.needsUpdate = true;
+      if (mat && mat.transparent) {
+        mat.transparent = false;
+        mat.opacity = 1;
       }
       return;
     }
@@ -355,6 +355,25 @@ function WallPlane({
     // ── Normal wall behavior ───────────────────────────────────────────────
     const wrappedZ = computeWrappedZ(position[2], cameraZ, corridorSpan);
     const distToCamera = Math.abs(cameraZ - wrappedZ);
+
+    // Lazy load: start loading when camera approaches
+    if (loadStateRef.current === "idle" && distToCamera <= FOG_FAR + 800) {
+      startLoad();
+    }
+
+    // Far-distance dispose: release texture to reclaim GPU memory (large corridors only)
+    if (loadStateRef.current === "loaded" && distToCamera > FOG_FAR + 1500) {
+      if (mat) {
+        if (mat.map) {
+          mat.map.dispose();
+          mat.map = null;
+        }
+        mat.color.set(SCREEN_OFF_COLOR);
+        mat.needsUpdate = true;
+      }
+      loadStateRef.current = "idle";
+      flickerState.current = { active: false, elapsed: 0, done: false };
+    }
 
     // Imperative visibility culling: hide planes beyond fog range
     meshRef.current.visible = distToCamera <= FOG_FAR + 500;
@@ -389,62 +408,29 @@ function WallPlane({
       const brightness = flickerBrightness(t);
 
       mat.color.setScalar(brightness);
-      mat.emissive.setScalar(brightness * 0.15);
 
       if (t >= 1) {
         flicker.done = true;
         flicker.active = false;
         mat.color.setScalar(1);
-        mat.emissive.setScalar(0);
-        mat.emissiveIntensity = 0;
       }
     }
   });
 
-  // Box faces: 0=+X, 1=-X, 2=+Y, 3=-Y, 4=+Z(front/corridor-facing), 5=-Z(back/wall-facing)
   return (
     <mesh
       ref={meshRef}
-      castShadow
       onClick={(e) => {
         e.stopPropagation();
         onClick?.(id);
       }}
     >
-      <boxGeometry args={[1, 1, BOX_DEPTH]} />
-      <meshPhongMaterial
-        attach="material-0"
-        color={FRAME_COLOR}
-        shininess={20}
-        specular="#3a2a1a"
-      />
-      <meshPhongMaterial
-        attach="material-1"
-        color={FRAME_COLOR}
-        shininess={20}
-        specular="#3a2a1a"
-      />
-      <meshPhongMaterial
-        attach="material-2"
-        color={FRAME_COLOR}
-        shininess={20}
-        specular="#3a2a1a"
-      />
-      <meshPhongMaterial
-        attach="material-3"
-        color={FRAME_COLOR}
-        shininess={20}
-        specular="#3a2a1a"
-      />
-      <meshStandardMaterial
+      <planeGeometry args={[1, 1]} />
+      <meshBasicMaterial
         ref={frontMatRef}
-        attach="material-4"
         color={SCREEN_OFF_COLOR}
-        emissive={SCREEN_OFF_COLOR}
-        emissiveIntensity={0.5}
         generateMipmaps={true}
       />
-      <meshStandardMaterial attach="material-5" color={BACK_COLOR} />
     </mesh>
   );
 }

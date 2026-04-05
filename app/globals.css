@@ -199,3 +199,25 @@ body {
 .scrollbar-accent::-webkit-scrollbar-thumb:hover {
   background: #67add1;
 }
+
+/* Flip slider thumb */
+.flip-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+}
+
+.flip-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: white;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+}

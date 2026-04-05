@@ -32,8 +32,8 @@ export default function Home() {
     >
       <Header page="main" mypage={mypage} login={login} logout={logout} />
       <Landing />
-      <AboutInfo />
-      <AboutDetail />
+      {/* <AboutInfo /> */}
+      {/* <AboutDetail /> */}
     </div>
   );
 }

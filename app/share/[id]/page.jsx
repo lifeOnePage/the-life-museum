@@ -1,10 +1,32 @@
 "use client";
 
-import { use, useState, useEffect, useMemo } from "react";
+import { use, useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
+import { X } from "lucide-react";
+
+function Icon360({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M14 6a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v6a1 1 0 0 0 1 1h2a1 1 0 0 0 1 -1v-2a1 1 0 0 0 -1 -1h-3" />
+      <path d="M3 5h2.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-2.5" />
+      <path d="M17 7v4a2 2 0 1 0 4 0v-4a2 2 0 1 0 -4 0" />
+      <path d="M3 16c0 1.657 4.03 3 9 3s9 -1.343 9 -3" />
+    </svg>
+  );
+}
+
 // import AlbumPreview3D from "@/app/library/edit/[record_id]/components/AlbumPreview3D";
 
 const AlbumPreview3D = dynamic(
@@ -33,6 +55,9 @@ export default function SharePage({ params }) {
   const [titleFont, setTitleFont] = useState("Pretendard Variable");
   const [titleColor, setTitleColor] = useState("#ffffff");
   const [images, setImages] = useState([]);
+  const [flipProgress, setFlipProgress] = useState(0); // 0 = front, 1 = back
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [bgReady, setBgReady] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -63,10 +88,10 @@ export default function SharePage({ params }) {
         setSubtitle(data.subtitle || "");
         setBio(data.lifestory?.content || "");
         setSelectedTheme(data.theme || DEFAULT_THEME);
-        setTitleOverlayEnabled(data.titleOverlayEnabled ?? false);
-        setTitlePosition(data.titlePosition || "bottom-center");
-        setTitleFont(data.titleFont || "Pretendard Variable");
-        setTitleColor(data.titleColor || "#ffffff");
+        setTitleOverlayEnabled(data.coverTitleVisible ?? false);
+        setTitlePosition(data.coverTitlePosition || "bottom-center");
+        setTitleFont(data.coverTitleFont || "Pretendard Variable");
+        setTitleColor(data.coverTitleColor || "#ffffff");
 
         if (data.timeline?.events) {
           setTimeline(
@@ -117,6 +142,31 @@ export default function SharePage({ params }) {
     });
   }, [images]);
 
+  // Preload all background images, then reveal at once
+  useEffect(() => {
+    if (images.length === 0) return;
+    const urls = [
+      ...new Set(
+        images.map((img) =>
+          getProxiedUrl(img.original_url || img.thumbnail_url),
+        ),
+      ),
+    ];
+    let loaded = 0;
+    let cancelled = false;
+    urls.forEach((url) => {
+      const img = new Image();
+      img.onload = img.onerror = () => {
+        loaded++;
+        if (!cancelled && loaded >= urls.length) setBgReady(true);
+      };
+      img.src = url;
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [images]);
+
   // Loading
   if (loading) {
     return (
@@ -144,7 +194,9 @@ export default function SharePage({ params }) {
     <div className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Background: Concave cylindrical photo grid */}
       {images.length > 0 && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className={`pointer-events-none absolute inset-0 overflow-hidden transition-opacity duration-[1500ms] ${bgReady ? "opacity-100" : "opacity-0"}`}
+        >
           {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />
@@ -181,7 +233,6 @@ export default function SharePage({ params }) {
                         alt=""
                         className="w-full rounded-sm object-cover"
                         style={{ aspectRatio: "1" }}
-                        loading="lazy"
                         draggable={false}
                       />
                     ))}
@@ -225,20 +276,37 @@ export default function SharePage({ params }) {
             timeline={timeline}
             selectedTheme={selectedTheme}
             albumTitle={albumTitle}
+            albumSubTitle={subtitle}
             titleOverlayEnabled={titleOverlayEnabled}
             titlePosition={titlePosition}
             titleFont={titleFont}
             titleColor={titleColor}
+            rotationY={flipProgress * Math.PI}
             hideControls
+            onExpand={() => setIsExpanded(true)}
           />
         </div>
 
-        {/* CTA Button */}
+        {/* Flip Slider + CTA */}
         <div
-          className={`transition-all delay-500 duration-1000 ease-out ${
+          className={`flex flex-col items-center gap-4 transition-all delay-500 duration-1000 ease-out ${
             ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
           }`}
         >
+          {/* Rotation slider */}
+          <div className="flex items-center gap-3">
+            <Icon360 className="h-4 w-4 text-white/30" />
+            <span className="text-[10px] tracking-wider text-white/30">앞</span>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value={flipProgress * 100}
+              onChange={(e) => setFlipProgress(Number(e.target.value) / 100)}
+              className="flip-slider h-0.5 w-40 cursor-pointer appearance-none rounded-full bg-white/20 outline-none"
+            />
+            <span className="text-[10px] tracking-wider text-white/30">뒤</span>
+          </div>
           <button
             onClick={() => router.push(`/walk/${id}`)}
             className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
@@ -247,6 +315,63 @@ export default function SharePage({ params }) {
           </button>
         </div>
       </div>
+
+      {/* Expanded Album Overlay */}
+      {isExpanded && (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95">
+          <button
+            onClick={() => setIsExpanded(false)}
+            className="absolute top-6 right-6 z-10 rounded-full p-2 text-white/40 transition-colors hover:text-white/80"
+          >
+            <X className="h-6 w-6" />
+          </button>
+          <div className="h-[85vh] w-[90vw] max-w-[900px]">
+            <AlbumPreview3D
+              frontCover={frontCover}
+              bio={bio}
+              timeline={timeline}
+              selectedTheme={selectedTheme}
+              albumTitle={albumTitle}
+              titleOverlayEnabled={titleOverlayEnabled}
+              titlePosition={titlePosition}
+              titleFont={titleFont}
+              titleColor={titleColor}
+              rotationY={flipProgress * Math.PI}
+              hideControls
+              expanded
+              onExpand={() => setIsExpanded(false)}
+            />
+          </div>
+          <div className="mt-0 flex flex-col items-center gap-3">
+            <div className="flex items-center gap-3">
+              <Icon360 className="h-4 w-4 text-white/30" />
+              <span className="text-[10px] tracking-wider text-white/30">
+                앞
+              </span>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={flipProgress * 100}
+                onChange={(e) => setFlipProgress(Number(e.target.value) / 100)}
+                className="flip-slider h-0.5 w-full cursor-pointer appearance-none rounded-full bg-white/20 outline-none"
+              />
+              <span className="text-[10px] tracking-wider text-white/30">
+                뒤
+              </span>
+            </div>
+            <button
+              onClick={() => {
+                setIsExpanded(false);
+                router.push(`/walk/${id}`);
+              }}
+              className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
+            >
+              갤러리 보러가기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

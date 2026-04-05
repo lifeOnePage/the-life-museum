@@ -153,12 +153,16 @@ function ImageRing() {
     for (let j = 0; j < RING_COUNT; j++) {
       const angle = (Math.PI * 2 * j) / RING_COUNT;
 
-      const outDir = new THREE.Vector3(0, Math.cos(angle), Math.sin(angle)).normalize();
+      const outDir = new THREE.Vector3(
+        0,
+        Math.cos(angle),
+        Math.sin(angle),
+      ).normalize();
 
       const inDir = outDir.clone().multiplyScalar(-1);
       const quat = new THREE.Quaternion().setFromUnitVectors(
         new THREE.Vector3(0, 1, 0),
-        inDir
+        inDir,
       );
 
       const order = Math.abs(j - mid);
@@ -180,19 +184,19 @@ function ImageRing() {
     currentRadius.current = THREE.MathUtils.lerp(
       currentRadius.current,
       targetRadius,
-      0.05
+      0.05,
     );
 
     if (tiltGroup.current) {
       tiltGroup.current.rotation.x = THREE.MathUtils.lerp(
         tiltGroup.current.rotation.x,
         -0.1,
-        0.05
+        0.05,
       );
       tiltGroup.current.rotation.y = THREE.MathUtils.lerp(
         tiltGroup.current.rotation.y,
         -0.2,
-        0.05
+        0.05,
       );
     }
   });
@@ -249,8 +253,7 @@ function RadialTextRing({ discRadius }) {
     // Text 기본 평면(XY)을 XZ 평면으로 회전시켜 레코드판과 같은 평면에 두기
     <group rotation={[Math.PI / 2, 0, 0]}>
       {texts.map((text, index) => {
-        const t =
-          count === 1 ? 0.5 : index / (count - 1); // 0~1 사이 등분
+        const t = count === 1 ? 0.5 : index / (count - 1); // 0~1 사이 등분
         const angle = THREE.MathUtils.lerp(startAngle, endAngle, t);
 
         // 레코드판 중심에서 엣지까지의 반지름 방향으로 위치
@@ -287,8 +290,8 @@ function RadialTextRing({ discRadius }) {
  */
 function DiscSystem() {
   const outerRef = useRef(null); // 위치/스케일
-  const tiltRef = useRef(null);  // 디스크 기울기(시점용)
-  const spinRef = useRef(null);  // 실제 회전축
+  const tiltRef = useRef(null); // 디스크 기울기(시점용)
+  const spinRef = useRef(null); // 실제 회전축
   const startedAt = useRef(null);
   const [model, setModel] = useState(null);
   const [discRadius, setDiscRadius] = useState(null);
@@ -328,7 +331,7 @@ function DiscSystem() {
       undefined,
       (error) => {
         console.error("Error loading model:", error);
-      }
+      },
     );
   }, []);
 
@@ -353,23 +356,15 @@ function DiscSystem() {
     outerRef.current.scale.set(currentScale, currentScale, currentScale);
 
     // 🎯 2) 디스크 기본 기울기: tiltRef에만 적용 (카메라에 잘 보이도록)
-    const baseRotX = Math.PI / 4;   // 45도 정도 위에서 내려다보는 느낌
-    const baseRotY = -Math.PI / 6;  // 약간 왼쪽으로 틀기
+    const baseRotX = Math.PI / 4; // 45도 정도 위에서 내려다보는 느낌
+    const baseRotY = -Math.PI / 6; // 약간 왼쪽으로 틀기
 
     const wobbleX = Math.sin(state.clock.elapsedTime * 0.3) * 0.05;
     const wobbleY = Math.cos(state.clock.elapsedTime * 0.2) * 0.06;
 
     // 등장 시에는 0 -> base로 lerp
-    tiltRef.current.rotation.x = THREE.MathUtils.lerp(
-      0,
-      baseRotX + wobbleX,
-      e
-    );
-    tiltRef.current.rotation.y = THREE.MathUtils.lerp(
-      0,
-      baseRotY + wobbleY,
-      e
-    );
+    tiltRef.current.rotation.x = THREE.MathUtils.lerp(0, baseRotX + wobbleX, e);
+    tiltRef.current.rotation.y = THREE.MathUtils.lerp(0, baseRotY + wobbleY, e);
 
     // 🌀 3) 실제 스핀: spinRef의 로컬 Y축 = 디스크 평면에 수직
     spinRef.current.rotation.y += 0.02; // 속도는 취향에 맞게 조절

@@ -3,6 +3,9 @@ import { UNIFIED_THEMES } from "@/app/library/edit/[record_id]/themeConfig";
 // Load custom fonts for canvas
 let bookkFontLoaded = false;
 let monoplexFontLoaded = false;
+let a2gFontLoaded = false;
+let yangjinFontLoaded = false;
+let escoredreamFontLoaded = false;
 if (typeof document !== "undefined") {
   const bookkLight = new FontFace(
     "Bookk Gothic",
@@ -19,6 +22,11 @@ if (typeof document !== "undefined") {
     "url(/fonts/MonoplexKR-Light.woff2)",
     { weight: "300" },
   );
+  const a2gSemiBold = new FontFace(
+    "A2G",
+    "url(/fonts/에이투지체-6SemiBold.woff2)",
+    { weight: "600" },
+  );
   Promise.all([bookkLight.load(), bookkBold.load()])
     .then(([l, b]) => {
       document.fonts.add(l);
@@ -31,6 +39,50 @@ if (typeof document !== "undefined") {
     .then((f) => {
       document.fonts.add(f);
       monoplexFontLoaded = true;
+    })
+    .catch(() => {});
+  a2gSemiBold
+    .load()
+    .then((f) => {
+      document.fonts.add(f);
+      a2gFontLoaded = true;
+    })
+    .catch(() => {});
+  const yangjin = new FontFace(
+    "yangjin",
+    "url(https://cdn.jsdelivr.net/gh/supernovice-lab/font@0.9/yangjin.woff)",
+    { weight: "normal" },
+  );
+  yangjin
+    .load()
+    .then((f) => {
+      document.fonts.add(f);
+      yangjinFontLoaded = true;
+    })
+    .catch(() => {});
+  const escoredreamWeights = [
+    ["100", "S-CoreDream-1Thin"],
+    ["200", "S-CoreDream-2ExtraLight"],
+    ["300", "S-CoreDream-3Light"],
+    ["normal", "S-CoreDream-4Regular"],
+    ["500", "S-CoreDream-5Medium"],
+    ["600", "S-CoreDream-6Bold"],
+    ["700", "S-CoreDream-7ExtraBold"],
+    ["800", "S-CoreDream-8Heavy"],
+    ["900", "S-CoreDream-9Black"],
+  ];
+  Promise.all(
+    escoredreamWeights.map(([weight, file]) => {
+      const face = new FontFace(
+        "Escoredream",
+        `url(https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/${file}.woff)`,
+        { weight },
+      );
+      return face.load().then((f) => document.fonts.add(f));
+    }),
+  )
+    .then(() => {
+      escoredreamFontLoaded = true;
     })
     .catch(() => {});
 }
@@ -55,9 +107,409 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-// ─── Elegant layout ───
-// 우상단 bio, 좌하단 사진, 우하단 제목+타임라인, 우측 accent line
-function drawElegantLayout(
+// ─── Barcode helper for Kitchy theme ───
+function drawBarcode(ctx, x, y, width, height) {
+  ctx.fillStyle = "#2c2c2c";
+  const barCount = 40;
+  const barWidth = width / (barCount * 2);
+  for (let i = 0; i < barCount; i++) {
+    const bw = barWidth * (0.5 + Math.random() * 1.2);
+    ctx.fillRect(x + i * (width / barCount), y, bw, height);
+  }
+  // Numbers below barcode
+  ctx.font = "14px monospace";
+  ctx.fillStyle = "#2c2c2c";
+  ctx.textAlign = "center";
+  ctx.fillText("8 809721 371024", x + width / 2, y + height + 16);
+  ctx.textAlign = "left";
+}
+
+// ─── Kitchy layout ───
+// Paper texture background with sticker decorations, vertical timeline, barcode
+function drawKitchyLayout(
+  ctx,
+  size,
+  theme,
+  bio,
+  timeline,
+  albumTitle,
+  albumSubTitle,
+  themeBgImg,
+  frontCoverImg,
+  themeStickerImg,
+) {
+  // Background
+  if (themeBgImg) {
+    ctx.drawImage(themeBgImg, 0, 0, size, size);
+  } else {
+    ctx.fillStyle = theme.bg;
+    ctx.fillRect(0, 0, size, size);
+  }
+
+  const margin = 70;
+  const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
+  const rightPhotoW = size * 0.32;
+  const contentRight = size - margin - rightPhotoW - 30; // left content area limit
+  let cursorY = margin;
+
+  // Right side — front cover photo
+  if (frontCoverImg) {
+    const photoX = size - margin - rightPhotoW;
+    const photoY = margin + 140;
+    const photoH = size * 0.45;
+    const r = 8;
+
+    // Hot pink backing rectangle (offset behind photo)
+    ctx.fillStyle = "#E236A5";
+    ctx.beginPath();
+    ctx.roundRect(photoX + 12, photoY + 12, rightPhotoW, photoH, r);
+    ctx.fill();
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(photoX + r, photoY);
+    ctx.lineTo(photoX + rightPhotoW - r, photoY);
+    ctx.quadraticCurveTo(
+      photoX + rightPhotoW,
+      photoY,
+      photoX + rightPhotoW,
+      photoY + r,
+    );
+    ctx.lineTo(photoX + rightPhotoW, photoY + photoH - r);
+    ctx.quadraticCurveTo(
+      photoX + rightPhotoW,
+      photoY + photoH,
+      photoX + rightPhotoW - r,
+      photoY + photoH,
+    );
+    ctx.lineTo(photoX + r, photoY + photoH);
+    ctx.quadraticCurveTo(photoX, photoY + photoH, photoX, photoY + photoH - r);
+    ctx.lineTo(photoX, photoY + r);
+    ctx.quadraticCurveTo(photoX, photoY, photoX + r, photoY);
+    ctx.closePath();
+    ctx.clip();
+
+    // Cover-fit
+    const imgRatio = frontCoverImg.width / frontCoverImg.height;
+    const boxRatio = rightPhotoW / photoH;
+    let sx, sy, sw, sh;
+    if (imgRatio > boxRatio) {
+      sh = frontCoverImg.height;
+      sw = sh * boxRatio;
+      sx = (frontCoverImg.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = frontCoverImg.width;
+      sh = sw / boxRatio;
+      sx = 0;
+      sy = (frontCoverImg.height - sh) / 2;
+    }
+    ctx.drawImage(
+      frontCoverImg,
+      sx,
+      sy,
+      sw,
+      sh,
+      photoX,
+      photoY,
+      rightPhotoW,
+      photoH,
+    );
+    ctx.restore();
+
+    // Subtle border
+    ctx.strokeStyle = theme.text + "20";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(photoX, photoY, rightPhotoW, photoH, r);
+    ctx.stroke();
+  }
+
+  // Sticker overlay — drawn on top of photo (top-right area)
+  if (themeStickerImg) {
+    const stickerW = size * 0.2;
+    const stickerH =
+      stickerW * (themeStickerImg.height / themeStickerImg.width);
+    const stickerX = size - margin - stickerW + 20;
+    const stickerY = margin - 20;
+    ctx.drawImage(themeStickerImg, stickerX, stickerY, stickerW, stickerH);
+  }
+
+  // Title — center, large bold dark text with cyan stroke (A2G font)
+  const kitchyTitleFont = yangjinFontLoaded ? '"yangjin"' : bookkFont;
+  if (albumTitle) {
+    ctx.font = `76px ${kitchyTitleFont}`;
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "-3px";
+    const titleLines = wrapText(ctx, albumTitle, size - margin * 2);
+    for (const line of titleLines.slice(0, 2)) {
+      ctx.lineJoin = "round";
+      // Outer stroke — lime green
+      ctx.lineWidth = 20;
+      // ctx.strokeStyle = "#E334A1";
+      ctx.strokeText(line, size / 2, cursorY + 50);
+      // Outer stroke — lime green
+      ctx.lineWidth = 12;
+      ctx.strokeStyle = "#ABD263";
+      ctx.strokeText(line, size / 2, cursorY + 50);
+      // Inner stroke — cyan
+      // ctx.lineWidth = 8;
+      // ctx.strokeStyle = "#222";
+      // ctx.strokeText(line, size / 2, cursorY + 50);
+      // Fill
+      ctx.fillStyle = "#000";
+      ctx.fillText(line, size / 2, cursorY + 50);
+      cursorY += 56;
+    }
+    ctx.letterSpacing = "0px";
+    ctx.textAlign = "left";
+    cursorY += 0;
+  }
+
+  // Subtitle — center, magenta stroke
+  if (albumSubTitle) {
+    // const monoplexFont = monoplexFontLoaded ? '"MonoplexKR"' : "sans-serif";
+    ctx.font = `bold 28px ${bookkFont}`;
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "-2px";
+    const subtitleLine =
+      albumSubTitle.length > 30
+        ? albumSubTitle.slice(0, 30) + "..."
+        : albumSubTitle;
+    ctx.lineWidth = 1;
+    ctx.lineJoin = "round";
+    ctx.strokeStyle = "#fff";
+    ctx.strokeText(subtitleLine, size / 2, cursorY + 50);
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillText(subtitleLine, size / 2, cursorY + 50);
+    ctx.textAlign = "left";
+    cursorY += 70;
+  }
+
+  // Timeline — vertical list, centered
+  if (timeline.length > 0) {
+    const maxItems = 6;
+    const items = timeline.slice(0, maxItems);
+    cursorY += 130;
+
+    for (const item of items) {
+      if (cursorY > size - 200) break;
+      ctx.letterSpacing = "-0.5px";
+
+      // Year
+      ctx.font = `bold 28px ${bookkFont}`;
+      ctx.fillStyle = theme.text;
+      ctx.textAlign = "center";
+      ctx.fillText(item.year, size / 2 - 200, cursorY);
+
+      // Event
+      ctx.font = `36px ${bookkFont}`;
+      ctx.fillStyle = theme.text + "cc";
+      ctx.textAlign = "left";
+      const maxLen = 14;
+      const eventText =
+        item.event.length > maxLen
+          ? item.event.slice(0, maxLen) + "..."
+          : item.event;
+      ctx.fillText(eventText, size / 2 - 120, cursorY);
+
+      cursorY += 92;
+    }
+    ctx.textAlign = "left";
+  }
+
+  // Barcode — bottom-left
+  // drawBarcode(ctx, margin, size - margin - 40, 160, 50);
+
+  // "Album story" label + bio text — bottom-right
+  if (bio) {
+    const bioBottom = size - margin - 10;
+    ctx.font = `bold 14px ${bookkFont}`;
+    ctx.fillStyle = theme.text + "80";
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "3px";
+    ctx.fillText("ALBUM STORY", size / 2, bioBottom - 70);
+    ctx.letterSpacing = "0px";
+
+    ctx.font = `16px ${bookkFont}`;
+    ctx.fillStyle = theme.text + "aa";
+    const bioLines = wrapText(ctx, bio, rightPhotoW + 300);
+    const maxBioLines = 4;
+    for (let i = 0; i < Math.min(bioLines.length, maxBioLines); i++) {
+      ctx.fillText(bioLines[i], size / 2, bioBottom - 42 + i * 22);
+    }
+    ctx.textAlign = "left";
+  }
+
+  // Empty state
+  if (!bio && timeline.length === 0 && !frontCoverImg) {
+    ctx.font = "24px sans-serif";
+    ctx.fillStyle = theme.text + "40";
+    ctx.textAlign = "center";
+    ctx.fillText("뒷면 콘텐츠", size / 2, size / 2);
+    ctx.textAlign = "left";
+  }
+}
+
+// ─── Illustration layout ───
+// Scenic landscape background, horizontal timeline, dark bottom band with bio
+function drawIllustrationLayout(
+  ctx,
+  size,
+  theme,
+  bio,
+  timeline,
+  albumTitle,
+  albumSubTitle,
+  themeBgImg,
+) {
+  // Background
+  if (themeBgImg) {
+    ctx.drawImage(themeBgImg, 0, 0, size, size);
+  } else {
+    // Gradient sky fallback
+    const grad = ctx.createLinearGradient(0, 0, 0, size);
+    grad.addColorStop(0, "#87CEEB");
+    grad.addColorStop(0.6, "#b8dff0");
+    grad.addColorStop(1, "#7ab648");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, size, size);
+  }
+
+  const margin = 80;
+  const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
+  const yangjinFont = yangjinFontLoaded ? '"yangjin"' : bookkFont;
+  // Title — top center, white bold with drop shadow
+  let cursorY = margin + 100;
+  if (albumTitle) {
+    ctx.font = `64px ${yangjinFont}`;
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "4px";
+    // Shadow
+    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    const titleLines = wrapText(ctx, albumTitle, size - margin * 2);
+    for (const line of titleLines.slice(0, 2)) {
+      ctx.fillText(line, size / 2 + 2, cursorY + 2);
+      cursorY += 45;
+    }
+    // Main text
+    cursorY = margin + 100;
+    ctx.fillStyle = "#ffffff";
+    for (const line of titleLines.slice(0, 2)) {
+      ctx.fillText(line, size / 2, cursorY);
+      cursorY += 45;
+    }
+    ctx.letterSpacing = "0px";
+    ctx.textAlign = "left";
+    cursorY += 10;
+  }
+
+  // Subtitle — below title, white with shadow
+  if (albumSubTitle) {
+    const subtitleLine =
+      albumSubTitle.length > 40
+        ? albumSubTitle.slice(0, 40) + "..."
+        : albumSubTitle;
+    ctx.font = `24px ${bookkFont}`;
+    ctx.textAlign = "center";
+    ctx.fillStyle = "rgba(255,255,255,0.6)";
+    ctx.fillText(subtitleLine, size / 2, cursorY);
+    ctx.textAlign = "left";
+    cursorY += 40;
+  }
+
+  // Timeline — horizontal line in middle area with filled circle dots
+  if (timeline.length > 0) {
+    const tlY = size * 0.52;
+    const maxItems = Math.min(timeline.length, 6);
+    const items = timeline.slice(0, maxItems);
+    const tlLeft = margin + 40;
+    const tlRight = size - margin - 40;
+    const tlWidth = tlRight - tlLeft;
+
+    // Horizontal line
+    ctx.strokeStyle = "#406E78";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(tlLeft, tlY);
+    ctx.lineTo(tlRight, tlY);
+    ctx.stroke();
+
+    // Dots and labels
+    for (let i = 0; i < maxItems; i++) {
+      const x =
+        maxItems === 1
+          ? (tlLeft + tlRight) / 2
+          : tlLeft + (i / (maxItems - 1)) * tlWidth;
+      const item = items[i];
+
+      // Filled circle dot
+      ctx.beginPath();
+      ctx.arc(x, tlY, 7, 0, Math.PI * 2);
+      ctx.fillStyle = "#fff";
+      ctx.fill();
+      ctx.restore();
+
+      // Year above
+      ctx.font = `bold 16px ${bookkFont}`;
+      ctx.fillStyle = "#406E78";
+      ctx.textAlign = "center";
+      ctx.fillText(item.year, x, tlY - 18);
+
+      // Event below
+      ctx.font = `15px ${bookkFont}`;
+      ctx.textAlign = "center";
+      const maxLen = 12;
+      const eventText =
+        item.event.length > maxLen
+          ? item.event.slice(0, maxLen) + "..."
+          : item.event;
+      ctx.fill();
+      ctx.fillStyle = "#406E78";
+      ctx.fillText(eventText, x, tlY + 30);
+    }
+    ctx.textAlign = "left";
+  }
+
+  // Bottom — semi-transparent dark overlay band with bio text
+  const bandH = 180;
+  const bandY = size - bandH;
+  ctx.fillStyle = "rgba(0,0,0,0.45)";
+
+  if (bio) {
+    const monoplexFont = monoplexFontLoaded ? '"MonoplexKR"' : "sans-serif";
+    ctx.font = `18px ${monoplexFont}`;
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "-1px";
+    const bioLines = wrapText(ctx, bio, size - margin * 2 - 40);
+    const maxLines = 5;
+    let bioY = bandY + 40;
+    for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
+      ctx.fillText(bioLines[i], size / 2, bioY);
+      bioY += 26;
+    }
+    if (bioLines.length > maxLines) {
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+      ctx.fillText("...", size / 2, bioY);
+    }
+    ctx.letterSpacing = "0px";
+    ctx.textAlign = "left";
+  }
+
+  // Empty state
+  if (!bio && timeline.length === 0) {
+    ctx.font = "24px sans-serif";
+    ctx.fillStyle = "rgba(255,255,255,0.5)";
+    ctx.textAlign = "center";
+    ctx.fillText("뒷면 콘텐츠", size / 2, size / 2);
+    ctx.textAlign = "left";
+  }
+}
+
+// ─── Minimalist layout ───
+// White background, centered photo, horizontal timeline, clean text
+function drawMinimalistLayout(
   ctx,
   size,
   theme,
@@ -65,55 +517,58 @@ function drawElegantLayout(
   timeline,
   frontCoverImg,
   albumTitle,
+  albumSubTitle,
 ) {
-  // Background
-  ctx.fillStyle = theme.bg;
+  // Background — pure white
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, size, size);
 
-  const margin = 50;
-  const midX = size * 0.4;
-  const midY = size * 0.6;
+  const margin = 70;
+  const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
+  let cursorY = margin;
 
-  // Right accent line
-  ctx.fillStyle = theme.accent;
-  ctx.fillRect(midX + margin, margin, 2, size - margin * 2);
-
-  // Top-right: Bio section
-  if (bio) {
-    const bioLeft = size - (midX - margin);
-    const bioRight = size - 40;
-    const bioWidth = bioRight - bioLeft;
-
-    const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
-    ctx.font = `19px ${bookkFont}`;
-    ctx.textAlign = "right";
+  // Title — top center, black bold text (Escoredream)
+  const escoredreamFont = escoredreamFontLoaded ? '"Escoredream"' : bookkFont;
+  if (albumTitle) {
+    ctx.font = `700 54px ${escoredreamFont}`;
     ctx.fillStyle = theme.accent;
-    const bioLines = wrapText(ctx, bio, bioWidth);
-    let y = margin + 56;
-    const maxLines = 12;
-    for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
-      if (y > midY - 10) break;
-      ctx.fillText(bioLines[i], bioRight, y);
-      y += 28;
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "0px";
+    const titleLines = wrapText(ctx, albumTitle, size - margin * 2);
+    for (const line of titleLines.slice(0, 2)) {
+      ctx.fillText(line, size / 2, cursorY + 44);
+      cursorY += 42;
     }
-    if (bioLines.length > maxLines) {
-      ctx.fillStyle = theme.text + "80";
-      ctx.font = `18px ${bookkFont}`;
-      ctx.fillText("...", bioRight, y);
-    }
+    ctx.letterSpacing = "0px";
     ctx.textAlign = "left";
+    cursorY += 6;
   }
 
-  // Bottom-left: Front cover photo
-  if (frontCoverImg) {
-    const photoX = margin;
-    const photoY = midY + 10;
-    const photoW = midX - margin - 10;
-    const photoH = size - midY - margin - 10;
+  // Subtitle — below title, gray text
+  if (albumSubTitle) {
+    ctx.font = `20px ${escoredreamFont}`;
+    ctx.fillStyle = theme.text;
+    ctx.textAlign = "center";
+    const subtitleLine =
+      albumSubTitle.length > 35
+        ? albumSubTitle.slice(0, 35) + "..."
+        : albumSubTitle;
+    ctx.fillText(subtitleLine, size / 2, cursorY + 44);
+    ctx.textAlign = "left";
+    cursorY += 120;
+  }
 
+  // Center — front cover photo (rectangular)
+  const photoW = size * 0.68;
+  const photoH = size * 0.4;
+  const photoX = (size - photoW) / 2;
+  const photoY = cursorY + 10;
+
+  if (frontCoverImg) {
     ctx.save();
+    // Rounded rect clip
+    const r = 6;
     ctx.beginPath();
-    const r = 8;
     ctx.moveTo(photoX + r, photoY);
     ctx.lineTo(photoX + photoW - r, photoY);
     ctx.quadraticCurveTo(photoX + photoW, photoY, photoX + photoW, photoY + r);
@@ -160,263 +615,116 @@ function drawElegantLayout(
     ctx.restore();
   } else {
     // Photo placeholder
-    const photoX = margin;
-    const photoY = midY + 10;
-    const photoW = midX - margin - 10;
-    const photoH = size - midY - margin - 10;
-    ctx.fillStyle = theme.text + "15";
+    ctx.fillStyle = "#f0f0f0";
     ctx.fillRect(photoX, photoY, photoW, photoH);
-    ctx.fillStyle = theme.text + "30";
-    ctx.font = "16px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("PHOTO", photoX + photoW / 2, photoY + photoH / 2);
-    ctx.textAlign = "left";
-  }
-
-  // Bottom-right: Title + Timeline
-  const tlLeft = midX + margin * 2;
-  const tlRight = size - margin;
-  let cursorY = midY + 10;
-
-  // Album title
-  if (albumTitle) {
-    ctx.font = "48px sans-serif";
-    ctx.fillStyle = theme.accent;
-    ctx.letterSpacing = "8px";
-    ctx.textAlign = "right";
-    const titleLines = wrapText(ctx, albumTitle, tlRight - tlLeft);
-    for (const line of titleLines.slice(0, 2)) {
-      ctx.fillText(line, tlRight, cursorY + 20);
-      cursorY += 30;
-    }
-    ctx.letterSpacing = "0px";
-    ctx.textAlign = "left";
-    cursorY += 14;
-  }
-
-  // Timeline items
-  if (timeline.length > 0) {
-    const maxItems = 8;
-    const items = timeline.slice(0, maxItems);
-    const dotX = tlLeft + 6;
-    const textX = dotX + 18;
-
-    for (const item of items) {
-      if (cursorY > size - margin - 10) break;
-
-      // Year (left-aligned)
-      ctx.font = "bold 19px sans-serif";
-      ctx.fillStyle = theme.accent;
-      ctx.textAlign = "left";
-      ctx.fillText(item.year, textX, cursorY + 30);
-
-      // Event (right-aligned)
-      ctx.font = "20px sans-serif";
-      ctx.fillStyle = theme.accent;
-      ctx.textAlign = "right";
-      const maxEventLen = 12;
-      const eventText =
-        item.event.length > maxEventLen
-          ? item.event.slice(0, maxEventLen) + "..."
-          : item.event;
-      ctx.fillText(eventText, tlRight, cursorY + 30);
-      ctx.textAlign = "left";
-
-      cursorY += 40;
-    }
-
-    if (timeline.length > maxItems) {
-      ctx.font = "16px sans-serif";
-      ctx.fillStyle = theme.text + "60";
-      ctx.fillText(`+${timeline.length - maxItems}개 더`, textX, cursorY + 4);
-    }
-  }
-
-  // Empty state
-  if (!bio && timeline.length === 0 && !frontCoverImg) {
-    ctx.font = "24px sans-serif";
-    ctx.fillStyle = theme.text + "40";
-    ctx.textAlign = "center";
-    ctx.fillText("뒷면 콘텐츠", size / 2, size / 2);
-    ctx.textAlign = "left";
-  }
-}
-
-// ─── Natural layout ───
-// 상단 대형 사진(70%), 좌하단 타임라인, 우하단 3색dots + bio
-function drawNaturalLayout(
-  ctx,
-  size,
-  theme,
-  bio,
-  timeline,
-  frontCoverImg,
-  albumTitle,
-  extractedColors,
-) {
-  // Background
-  ctx.fillStyle = theme.bg;
-  ctx.fillRect(0, 0, size, size);
-
-  const margin = 50;
-  const photoHeight = size * 0.52;
-
-  // Top: large front cover photo
-  if (frontCoverImg) {
-    const photoX = margin;
-    const photoY = margin;
-    const photoW = size - margin * 2;
-    const photoH = photoHeight - margin;
-
-    ctx.save();
-    const r = 0;
-    ctx.beginPath();
-    ctx.moveTo(photoX + r, photoY);
-    ctx.lineTo(photoX + photoW - r, photoY);
-    ctx.quadraticCurveTo(photoX + photoW, photoY, photoX + photoW, photoY + r);
-    ctx.lineTo(photoX + photoW, photoY + photoH - r);
-    ctx.quadraticCurveTo(
-      photoX + photoW,
-      photoY + photoH,
-      photoX + photoW - r,
-      photoY + photoH,
-    );
-    ctx.lineTo(photoX + r, photoY + photoH);
-    ctx.quadraticCurveTo(photoX, photoY + photoH, photoX, photoY + photoH - r);
-    ctx.lineTo(photoX, photoY + r);
-    ctx.quadraticCurveTo(photoX, photoY, photoX + r, photoY);
-    ctx.closePath();
-    ctx.clip();
-
-    const imgRatio = frontCoverImg.width / frontCoverImg.height;
-    const boxRatio = photoW / photoH;
-    let sx, sy, sw, sh;
-    if (imgRatio > boxRatio) {
-      sh = frontCoverImg.height;
-      sw = sh * boxRatio;
-      sx = (frontCoverImg.width - sw) / 2;
-      sy = 0;
-    } else {
-      sw = frontCoverImg.width;
-      sh = sw / boxRatio;
-      sx = 0;
-      sy = (frontCoverImg.height - sh) / 2;
-    }
-    ctx.drawImage(
-      frontCoverImg,
-      sx,
-      sy,
-      sw,
-      sh,
-      photoX,
-      photoY,
-      photoW,
-      photoH,
-    );
-    ctx.restore();
-  } else {
-    ctx.fillStyle = theme.text + "10";
-    ctx.fillRect(margin, margin, size - margin * 2, photoHeight - margin);
-    ctx.fillStyle = theme.text + "25";
+    ctx.fillStyle = "#ccc";
     ctx.font = "18px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("PHOTO", size / 2, margin + (photoHeight - margin) / 2);
+    ctx.fillText("PHOTO", photoX + photoW / 2, photoY + photoH / 2 + 6);
     ctx.textAlign = "left";
   }
 
-  const bottomY = photoHeight + 60;
-  const halfW = size / 2;
+  cursorY = photoY + photoH + 60;
 
-  // Bottom-left: Timeline
+  // Timeline — horizontal line below photo, open circle dots
   if (timeline.length > 0) {
-    const tlLeft = margin;
-    const dotX = tlLeft + 6;
-    const textX = dotX;
-    let cursorY = bottomY + 10;
-
-    const maxItems = 10;
+    const tlY = cursorY + 20;
+    const maxItems = Math.min(timeline.length, 6);
     const items = timeline.slice(0, maxItems);
+    const tlLeft = margin + 30;
+    const tlRight = size - margin - 30;
+    const tlWidth = tlRight - tlLeft;
 
-    for (const item of items) {
-      if (cursorY > size - margin) break;
+    // Horizontal line
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(tlLeft, tlY);
+    ctx.lineTo(tlRight, tlY);
+    ctx.stroke();
 
-      ctx.font = "bold 17px sans-serif";
+    // Open circle dots and labels
+    for (let i = 0; i < maxItems; i++) {
+      const x =
+        maxItems === 1
+          ? (tlLeft + tlRight) / 2
+          : tlLeft + (i / (maxItems - 1)) * tlWidth;
+      const item = items[i];
+
+      // Open circle dot
+      ctx.beginPath();
+      ctx.arc(x, tlY, 5, 0, Math.PI * 2);
+      ctx.fillStyle = "#ffffff";
+      ctx.fill();
+      ctx.strokeStyle = theme.accent;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Year above
+      ctx.font = `bold 15px ${escoredreamFont}`;
       ctx.fillStyle = theme.accent;
-      ctx.fillText(item.year, textX, cursorY + 5);
+      ctx.textAlign = "center";
+      ctx.fillText(item.year, x, tlY - 16);
 
-      const yearW = ctx.measureText(item.year).width;
-      ctx.font = "18px sans-serif";
+      // Event below
+      ctx.font = `16px ${escoredreamFont}`;
+      ctx.letterSpacing = "-0.7px";
       ctx.fillStyle = theme.text;
-      const maxLen = 20;
+      const maxLen = 12;
       const eventText =
         item.event.length > maxLen
           ? item.event.slice(0, maxLen) + "..."
           : item.event;
-      ctx.fillText(eventText, textX + yearW + 30, cursorY + 5);
-      cursorY += 36;
-    }
-  }
-
-  // Bottom-right: 3-color squares + title + bio
-  const squareColors = extractedColors ||
-    theme.dots || ["#c8c4b8", "#556b2f", "#3a4a23"];
-  const bioLeft = halfW + 20;
-  const bioRight = size - margin;
-  let bioY = bottomY;
-
-  // 3-color dots (right-aligned)
-  const dotRadius = 20;
-  const dotSpacing = 15;
-  const totalDotsWidth = 3 * dotRadius * 2 + 2 * dotSpacing;
-  const dotStartX = bioRight - totalDotsWidth + dotRadius;
-  for (let i = 0; i < 3; i++) {
-    ctx.beginPath();
-    ctx.arc(
-      dotStartX + i * (dotRadius * 2 + dotSpacing),
-      bioY + dotRadius,
-      dotRadius,
-      0,
-      Math.PI * 2,
-    );
-    ctx.fillStyle = squareColors[i];
-    ctx.fill();
-  }
-  bioY += dotRadius * 2 + 70;
-
-  // Album title (right-aligned)
-  const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
-  if (albumTitle) {
-    ctx.font = `50px ${bookkFont}`;
-    ctx.fillStyle = theme.text;
-    ctx.textAlign = "right";
-    ctx.letterSpacing = "10px";
-    const titleLines = wrapText(ctx, albumTitle, bioRight - bioLeft);
-    for (const line of titleLines.slice(0, 2)) {
-      ctx.fillText(line, bioRight, bioY);
-      bioY += 26;
+      ctx.fillText(eventText, x, tlY + 28);
     }
     ctx.textAlign = "left";
-    bioY += 30;
+    cursorY = tlY + 50;
   }
 
-  // Bio text (right-aligned)
+  // "ALBUM STORY" label + bio text at bottom, centered with top/bottom lines
   if (bio) {
-    ctx.font = `17px ${bookkFont}`;
+    const storyY = Math.max(cursorY + 20, size - 160);
+    const lineLeft = margin + 60;
+    const lineRight = size - margin - 60;
+
+    ctx.font = `bold 13px ${escoredreamFont}`;
+    ctx.fillStyle = theme.text + "80";
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "4px";
+    ctx.fillText("ALBUM STORY", size / 2, storyY - 10);
+    ctx.letterSpacing = "0px";
+
+    // Top line
+    // ctx.strokeStyle = theme.text;
+    // ctx.lineWidth = 1;
+    // ctx.beginPath();
+    // ctx.moveTo(lineLeft, storyY);
+    // ctx.lineTo(lineRight, storyY);
+    // ctx.stroke();
+
+    ctx.font = `16px ${escoredreamFont}`;
     ctx.fillStyle = theme.text;
-    ctx.textAlign = "right";
-    ctx.letterSpacing = "1px";
-    const bioLines = wrapText(ctx, bio, bioRight - bioLeft - 10);
-    const maxLines = 8;
+    const bioLines = wrapText(ctx, bio, size - margin * 2 - 100);
+    const maxLines = 3;
+    let bioY = storyY + 24;
     for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
-      if (bioY > size - margin) break;
-      ctx.fillText(bioLines[i], bioRight, bioY);
-      bioY += 27;
+      ctx.fillText(bioLines[i], size / 2, bioY);
+      bioY += 22;
     }
     if (bioLines.length > maxLines) {
       ctx.fillStyle = theme.text + "60";
-      ctx.font = "14px sans-serif";
-      ctx.fillText("...", bioRight, bioY);
+      ctx.fillText("...", size / 2, bioY);
+      bioY += 22;
     }
+
+    // Bottom line
+    // ctx.strokeStyle = theme.text;
+    // ctx.lineWidth = 1;
+    // ctx.beginPath();
+    // ctx.moveTo(lineLeft, bioY + 6);
+    // ctx.lineTo(lineRight, bioY + 6);
+    // ctx.stroke();
+
     ctx.textAlign = "left";
   }
 
@@ -426,141 +734,6 @@ function drawNaturalLayout(
     ctx.fillStyle = theme.text + "40";
     ctx.textAlign = "center";
     ctx.fillText("뒷면 콘텐츠", size / 2, size / 2);
-    ctx.textAlign = "left";
-  }
-}
-
-// ─── Circle layout ───
-// 전체 사진 배경 + 흰 원 오버레이 (타임라인 → 원형사진 → bio)
-function drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg) {
-  // Full background photo (or solid color)
-  if (frontCoverImg) {
-    const imgRatio = frontCoverImg.width / frontCoverImg.height;
-    let sx, sy, sw, sh;
-    if (imgRatio > 1) {
-      sh = frontCoverImg.height;
-      sw = sh;
-      sx = (frontCoverImg.width - sw) / 2;
-      sy = 0;
-    } else {
-      sw = frontCoverImg.width;
-      sh = sw;
-      sx = 0;
-      sy = (frontCoverImg.height - sh) / 2;
-    }
-    ctx.drawImage(frontCoverImg, sx, sy, sw, sh, 0, 0, size, size);
-
-    // Darken overlay for readability
-    ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
-    ctx.fillRect(0, 0, size, size);
-  } else {
-    ctx.fillStyle = "#2c2c2c";
-    ctx.fillRect(0, 0, size, size);
-  }
-
-  // Donut overlay (big circle with center hole punched out like a CD)
-  const cx = size / 2;
-  const cy = size / 2;
-  const radius = size * 0.44;
-  const holeRadius = size * 0.05;
-
-  // Draw white donut using offscreen canvas to punch hole
-  const donutCanvas = document.createElement("canvas");
-  donutCanvas.width = size;
-  donutCanvas.height = size;
-  const dCtx = donutCanvas.getContext("2d");
-
-  // Draw big circle
-  dCtx.beginPath();
-  dCtx.arc(cx, cy, radius, 0, Math.PI * 2);
-  dCtx.fillStyle = theme.circle || "#ffffff";
-  dCtx.fill();
-
-  // Punch center hole
-  dCtx.globalCompositeOperation = "destination-out";
-  dCtx.beginPath();
-  dCtx.arc(cx, cy, holeRadius, 0, Math.PI * 2);
-  dCtx.fill();
-  dCtx.globalCompositeOperation = "source-over";
-
-  // Composite donut onto main canvas
-  ctx.save();
-  ctx.globalAlpha = 0.92;
-  ctx.drawImage(donutCanvas, 0, 0);
-  ctx.globalAlpha = 1.0;
-  ctx.restore();
-
-  // Hole border
-  ctx.beginPath();
-  ctx.arc(cx, cy, holeRadius + 10, 0, Math.PI * 2);
-  ctx.strokeStyle = theme.accent;
-  ctx.lineWidth = 2;
-  ctx.stroke();
-
-  // Content inside circle (below hole)
-  const innerLeft = cx - radius * 0.4;
-  const innerRight = cx + radius * 0.4;
-  const innerWidth = innerRight - innerLeft;
-  let cursorY = size / 2 - radius * 0.7;
-  // Timeline (left-aligned, year + event side by side)
-  if (timeline.length > 0) {
-    const maxItems = 6;
-    const items = timeline.slice(0, maxItems);
-    const tlLeft = innerLeft;
-
-    ctx.textAlign = "left";
-    for (const item of items) {
-      if (cursorY > cy + radius * 0.4) break;
-
-      // Year
-      ctx.font = "bold 16px sans-serif";
-      ctx.fillStyle = theme.accent;
-      ctx.fillText(item.year, tlLeft, cursorY);
-
-      // Event (next to year)
-      const yearW = ctx.measureText(item.year).width;
-      ctx.font = "17px sans-serif";
-      ctx.fillStyle = theme.text;
-      const maxLen = 16;
-      const eventText =
-        item.event.length > maxLen
-          ? item.event.slice(0, maxLen) + "..."
-          : item.event;
-      ctx.fillText(eventText, tlLeft + yearW + 50, cursorY);
-
-      cursorY += 40;
-    }
-  }
-
-  // Bio text (centered)
-  if (bio) {
-    const monoplexFont = monoplexFontLoaded ? '"MonoplexKR"' : "sans-serif";
-    ctx.font = `18px ${monoplexFont}`;
-    ctx.fillStyle = theme.text;
-    ctx.textAlign = "center";
-    ctx.letterSpacing = "1.2px";
-    const bioLines = wrapText(ctx, bio, innerWidth * 1.2);
-    const maxLines = 6;
-    for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
-      if (cursorY > cy + radius * 0.55) break;
-      ctx.fillText(bioLines[i], cx - 10, cursorY + 200);
-      cursorY += 24;
-    }
-    if (bioLines.length > maxLines) {
-      ctx.fillStyle = theme.text + "60";
-      ctx.font = "14px sans-serif";
-      ctx.fillText("...", cx - 10, cursorY + 140);
-      cursorY += 20;
-    }
-    ctx.textAlign = "left";
-  }
-
-  // Empty state
-  if (!bio && timeline.length === 0 && !frontCoverImg) {
-    ctx.font = "24px sans-serif";
-    ctx.fillStyle = theme.text + "80";
-    ctx.textAlign = "center";
-    ctx.fillText("뒷면 콘텐츠", cx, cy);
     ctx.textAlign = "left";
   }
 }
@@ -571,7 +744,10 @@ export function generateBackCoverDataUrl(
   timeline,
   frontCoverImg,
   albumTitle,
+  albumSubTitle,
   extractedColors,
+  themeBgImg,
+  themeStickerImg,
 ) {
   const size = 1024;
   const canvas = document.createElement("canvas");
@@ -579,27 +755,38 @@ export function generateBackCoverDataUrl(
   canvas.height = size;
   const ctx = canvas.getContext("2d");
 
-  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.elegant;
+  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 
   switch (themeKey) {
-    case "natural":
-      drawNaturalLayout(
+    case "kitchy":
+      drawKitchyLayout(
         ctx,
         size,
         theme,
         bio,
         timeline,
-        frontCoverImg,
         albumTitle,
-        extractedColors,
+        albumSubTitle,
+        themeBgImg,
+        frontCoverImg,
+        themeStickerImg,
       );
       break;
-    case "circle":
-      drawCircleLayout(ctx, size, theme, bio, timeline, frontCoverImg);
+    case "illustration":
+      drawIllustrationLayout(
+        ctx,
+        size,
+        theme,
+        bio,
+        timeline,
+        albumTitle,
+        albumSubTitle,
+        themeBgImg,
+      );
       break;
-    case "elegant":
+    case "minimalist":
     default:
-      drawElegantLayout(
+      drawMinimalistLayout(
         ctx,
         size,
         theme,
@@ -607,6 +794,7 @@ export function generateBackCoverDataUrl(
         timeline,
         frontCoverImg,
         albumTitle,
+        albumSubTitle,
       );
       break;
   }

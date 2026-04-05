@@ -11,6 +11,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 import CoverImageGenerator from "./CoverImageGenerator";
 
 const API_URL = "https://the-life-museum-backend-production.up.railway.app";
@@ -45,6 +46,8 @@ const CoverImageEditor = forwardRef(
       onRefreshPhotos,
       isRefreshing,
       preloadBlobs,
+      titleOverlayEnabled,
+      titleOverlayConfig,
     },
     ref,
   ) => {
@@ -55,6 +58,32 @@ const CoverImageEditor = forwardRef(
     const [selectedImageUrl, setSelectedImageUrl] = useState(null);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
 
+    // Helper: load an image URL as HTMLImageElement
+    const loadImage = (src) =>
+      new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+
+    // Helper: composite title overlay onto cover and return as File
+    const compositeCoverWithTitle = async (coverSrc) => {
+      if (!titleOverlayEnabled || !titleOverlayConfig?.title) return null;
+      try {
+        const img = await loadImage(coverSrc);
+        const dataUrl = generateFrontCoverDataUrl(img, titleOverlayConfig);
+        if (!dataUrl) return null;
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        return new File([blob], "cover-with-title.png", { type: "image/png" });
+      } catch (e) {
+        console.error("Title composite failed:", e);
+        return null;
+      }
+    };
+
     useImperativeHandle(ref, () => ({
       save: async () => {
         if (!selectedFile && !selectedImageUrl && !frontCover) return;
@@ -62,8 +91,49 @@ const CoverImageEditor = forwardRef(
         setError("");
 
         try {
-          // AI-generated image or photodrive selection: use PUT /cover/url
+          // Determine the cover source for title compositing
+          let fileToUpload = null;
+
+          if (selectedFile) {
+            // If title overlay enabled, composite onto the selected file
+            if (titleOverlayEnabled && titleOverlayConfig?.title) {
+              const objectUrl = URL.createObjectURL(selectedFile);
+              fileToUpload = await compositeCoverWithTitle(objectUrl);
+              URL.revokeObjectURL(objectUrl);
+            }
+            // Upload composited or original file
+            const formData = new FormData();
+            formData.append("file", fileToUpload || selectedFile);
+            const response = await authedFetch(
+              `${API_URL}/api/v1/record/${record_id}/cover/temp`,
+              { method: "POST", body: formData },
+            );
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.error || "저장에 실패했습니다");
+            }
+            return data;
+          }
+
           if (selectedImageUrl) {
+            // If title overlay enabled, composite and upload as file
+            if (titleOverlayEnabled && titleOverlayConfig?.title) {
+              fileToUpload = await compositeCoverWithTitle(selectedImageUrl);
+            }
+            if (fileToUpload) {
+              const formData = new FormData();
+              formData.append("file", fileToUpload);
+              const response = await authedFetch(
+                `${API_URL}/api/v1/record/${record_id}/cover/temp`,
+                { method: "POST", body: formData },
+              );
+              const data = await response.json();
+              if (!response.ok) {
+                throw new Error(data.error || data.detail || "저장에 실패했습니다");
+              }
+              return data;
+            }
+            // No title overlay — save URL directly
             const response = await authedFetch(
               `${API_URL}/api/v1/record/${record_id}/cover/url`,
               {
@@ -73,7 +143,6 @@ const CoverImageEditor = forwardRef(
               },
             );
             const data = await response.json();
-            console.log("cover/url response:", response.status, data);
             if (!response.ok) {
               throw new Error(
                 data.error || data.detail || "저장에 실패했습니다",
@@ -82,23 +151,22 @@ const CoverImageEditor = forwardRef(
             return data;
           }
 
-          // Direct file upload: use POST /cover/temp
-          if (selectedFile) {
-            const formData = new FormData();
-            formData.append("file", selectedFile);
-
-            const response = await authedFetch(
-              `${API_URL}/api/v1/record/${record_id}/cover/temp`,
-              {
-                method: "POST",
-                body: formData,
-              },
-            );
-            const data = await response.json();
-            if (!response.ok) {
-              throw new Error(data.error || "저장에 실패했습니다");
+          // No new selection but cover exists and title overlay changed
+          if (frontCover && titleOverlayEnabled && titleOverlayConfig?.title) {
+            fileToUpload = await compositeCoverWithTitle(frontCover);
+            if (fileToUpload) {
+              const formData = new FormData();
+              formData.append("file", fileToUpload);
+              const response = await authedFetch(
+                `${API_URL}/api/v1/record/${record_id}/cover/temp`,
+                { method: "POST", body: formData },
+              );
+              const data = await response.json();
+              if (!response.ok) {
+                throw new Error(data.error || "저장에 실패했습니다");
+              }
+              return data;
             }
-            return data;
           }
         } catch (err) {
           setError(err.message);
@@ -196,7 +264,7 @@ const CoverImageEditor = forwardRef(
                     <ImagePlus className="h-[18px] w-[18px] text-[#475569]" />
                   </div>
                   <span className="text-sm font-medium text-[#334155]">
-                    직접 업로드
+                    직접 ��로드
                   </span>
                   <p className="mt-1 text-xs text-[#94a3b8]">
                     JPG, PNG 최대 10MB
@@ -226,7 +294,7 @@ const CoverImageEditor = forwardRef(
                   <span className="text-base font-bold">직접 업로드</span>
                 </button>
                 <p className="text-xs text-[#64748b]">
-                  디바이스에서 직접 업로드하거나, 포토드라이브에서 선택할 수
+                  디바이스에서 직접 ��로드하거나, 포토드라이브에서 선택할 수
                   있습니다.
                 </p>
               </div>

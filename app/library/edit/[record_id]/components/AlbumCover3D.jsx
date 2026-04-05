@@ -177,6 +177,7 @@ export default function AlbumCover3D({
   backImage = null,
   isSelected = false,
   isFlipped = false,
+  rotationY,
   edgeColor = null,
   onClick,
   onHoverChange,
@@ -255,7 +256,12 @@ export default function AlbumCover3D({
       state.targetRotX = 0; // 기울기 제거 (정면으로)
 
       // 플립 상태에 따라 Y축 회전
-      state.targetRotY = isFlipped ? Math.PI : 0;
+      state.targetRotY =
+        typeof rotationY === "number"
+          ? rotationY
+          : isFlipped
+            ? Math.PI
+            : 0;
     } else {
       // original 위치로 복귀
       state.targetX = originalPosition.x;
@@ -264,7 +270,7 @@ export default function AlbumCover3D({
       state.targetRotX = tiltAngle; // 기울기 복원
       state.targetRotY = 0;
     }
-  }, [isSelected, isFlipped, originalPosition, tiltAngle]);
+  }, [isSelected, isFlipped, rotationY, originalPosition, tiltAngle]);
 
   // 프레임 루프 - 부드러운 애니메이션
   useFrame((_, delta) => {

@@ -6,13 +6,76 @@ import { useAuth } from "../contexts/AuthContext";
 import ShelfCanvas from "./components/ShelfCanvas";
 import InfoBlock from "./components/InfoBlock";
 import CreateAlbumModal from "./components/CreateAlbumModal";
+import ShareModal from "./components/ShareModal";
 import Header from "../components/Header";
-import generateBackCoverDataUrl from "./utils/generateBackCover";
+import { Share2 } from "lucide-react";
+import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
+import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 import { cachedAlbums, setCachedAlbums } from "./utils/albumListCache";
 import { authedFetch } from "@/app/utils/authedFetch";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
+
+const THEME_BG_MAP = {
+  kitchy: "/images/albumtheme/kitchy.png",
+  illustration: "/images/albumtheme/illustration.png",
+};
+
+function loadImage(src) {
+  return new Promise((resolve) => {
+    if (!src) { resolve(null); return; }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function generateAlbumCovers(item) {
+  const themeKey = item.theme || "minimalist";
+  const bio = item.lifestory?.content || "";
+  const timeline = (item.timeline?.events || []).map((e) => ({
+    year: e.timestamp,
+    event: e.title,
+  }));
+
+  const [frontCoverImg, themeBgImg, themeStickerImg] = await Promise.all([
+    loadImage(item.coverImage?.url),
+    loadImage(THEME_BG_MAP[themeKey] || null),
+    themeKey === "kitchy"
+      ? loadImage("/images/albumtheme/kitchy 2.png")
+      : Promise.resolve(null),
+  ]);
+
+  const backImage = generateBackCoverDataUrl(
+    themeKey,
+    bio,
+    timeline,
+    frontCoverImg,
+    item.title || "",
+    item.subtitle || "",
+    null,
+    themeBgImg,
+    themeStickerImg,
+  );
+
+  // Front cover with title overlay
+  let frontImage = item.coverImage?.url ?? "#ffffff";
+  if (item.coverTitleVisible && frontCoverImg) {
+    const frontDataUrl = generateFrontCoverDataUrl(frontCoverImg, {
+      title: item.title || "",
+      subtitle: "",
+      position: item.coverTitlePosition || "bottom-center",
+      font: item.coverTitleFont || "Pretendard Variable",
+      color: item.coverTitleColor || "#ffffff",
+    });
+    if (frontDataUrl) frontImage = frontDataUrl;
+  }
+
+  return { frontImage, backImage };
+}
 
 export default function MyShelfPage() {
   const { token } = useAuth();
@@ -29,6 +92,7 @@ export default function MyShelfPage() {
 
   // 모달 상태
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   // 필터 상태: 'all' | 'owner' | 'shared'
   const [filterType, setFilterType] = useState("all");
@@ -44,38 +108,38 @@ export default function MyShelfPage() {
     if (!token) return;
     authedFetch(`${BASE_URL}/library`)
       .then((res) => res.json())
-      .then((json) => {
+      .then(async (json) => {
         if (json.ok && Array.isArray(json.data)) {
-          const newAlbums = json.data.map((item) => {
-            const bio = item.lifestory?.content || "";
-            const timeline = (item.timeline?.events || []).map((e) => ({
-              year: e.timestamp,
-              event: e.title,
-            }));
-            const bgColor = item.bgColor || "#ffffff";
-            const textColor = item.color || "#1c1917";
-            const keyColor = item.keyColor || "#d97706";
-
-            const backImage = generateBackCoverDataUrl(
-              bio,
-              timeline,
-              bgColor,
-              textColor,
-              keyColor,
-            );
-
-            return {
-              id: item.id,
-              title: item.title,
-              subtitle: item.subtitle,
-              frontImage: item.coverImage?.url ?? "#ffffff",
-              backImage,
-              edgeColor: bgColor,
-              role: item.role || "owner",
-            };
-          });
+          // Set albums immediately (no backImage yet)
+          const newAlbums = json.data.map((item) => ({
+            id: item.id,
+            title: item.title,
+            subtitle: item.subtitle,
+            frontImage: item.coverImage?.url ?? "#ffffff",
+            backImage: null,
+            edgeColor: item.bgColor || "#ffffff",
+            role: item.role || "owner",
+          }));
           setCachedAlbums(newAlbums);
           setAlbums(newAlbums);
+
+          // Generate themed covers async, then update
+          const covers = await Promise.all(
+            json.data.map(async (item) => ({
+              id: item.id,
+              ...(await generateAlbumCovers(item)),
+            })),
+          );
+          setAlbums((prev) => {
+            const updated = prev.map((album) => {
+              const match = covers.find((c) => c.id === album.id);
+              return match
+                ? { ...album, frontImage: match.frontImage, backImage: match.backImage }
+                : album;
+            });
+            setCachedAlbums(updated);
+            return updated;
+          });
         }
       })
       .catch((err) => console.error("Failed to fetch library:", err));
@@ -91,34 +155,19 @@ export default function MyShelfPage() {
     if (albumData?.backImage && albumData?.edgeColor) return;
     if (!albumData?.id) return;
 
-    // record detail fetch → back cover 생성
+    // record detail fetch → themed back cover 생성
     authedFetch(`${BASE_URL}/record/${albumData.id}`)
       .then((res) => res.json())
-      .then((json) => {
+      .then(async (json) => {
         if (!json.ok || !json.data) return;
         const d = json.data;
 
-        const bio = d.lifestory?.content || "";
-        const timeline = (d.timeline?.events || []).map((e) => ({
-          year: e.timestamp,
-          event: e.title,
-        }));
-        const bgColor = d.bgColor || "#ffffff";
-        const textColor = d.color || "#1c1917";
-        const keyColor = d.keyColor || "#d97706";
-
-        const backCoverUrl = generateBackCoverDataUrl(
-          bio,
-          timeline,
-          bgColor,
-          textColor,
-          keyColor,
-        );
+        const { frontImage, backImage } = await generateAlbumCovers(d);
 
         setAlbums((prev) =>
           prev.map((a) =>
             a.id === albumData.id
-              ? { ...a, backImage: backCoverUrl, edgeColor: bgColor }
+              ? { ...a, frontImage, backImage, edgeColor: d.bgColor || "#ffffff" }
               : a,
           ),
         );
@@ -291,6 +340,15 @@ export default function MyShelfPage() {
             >
               보러가기
             </button>
+            {selectedRole === "owner" && (
+              <button
+                onClick={() => setShowShareModal(true)}
+                className="flex items-center justify-center rounded-full bg-black/50 p-2.5 text-white transition hover:bg-white hover:text-black"
+                title="공유하기"
+              >
+                <Share2 size={18} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -301,6 +359,15 @@ export default function MyShelfPage() {
           baseUrl={BASE_URL}
           onClose={() => setShowCreateModal(false)}
           onCreated={handleAlbumCreated}
+        />
+      )}
+
+      {/* 공유 모달 */}
+      {showShareModal && selectedAlbum?.data?.id && (
+        <ShareModal
+          albumId={selectedAlbum.data.id}
+          albumTitle={selectedAlbum.data.title || ""}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </div>

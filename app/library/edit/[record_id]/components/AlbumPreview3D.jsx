@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
 import AlbumCover3D from "./AlbumCover3D";
 import { UNIFIED_THEMES } from "../themeConfig";
 import { extractColors } from "extract-colors";
@@ -47,18 +47,33 @@ export default function AlbumPreview3D({
   timeline,
   selectedTheme,
   albumTitle,
+  albumSubTitle,
   titleOverlayEnabled,
   titlePosition,
   titleFont,
   titleColor,
   flipped,
+  rotationY,
+  externalZoom,
   hideControls,
+  onExpand,
+  onFlipChange,
+  expanded,
 }) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const toggleFlip = () => {
+    setIsFlipped((f) => {
+      const next = !f;
+      onFlipChange?.(next);
+      return next;
+    });
+  };
   const [zoomCfg, setZoomCfg] = useState(getZoomConfig);
   const [zoom, setZoom] = useState(() => getZoomConfig().default);
   const [frontCoverImg, setFrontCoverImg] = useState(null);
   const [extractedColors, setExtractedColors] = useState(null);
+  const [themeBgImg, setThemeBgImg] = useState(null);
+  const [themeStickerImg, setThemeStickerImg] = useState(null);
 
   // Update zoom config on resize (mobile <-> desktop)
   useEffect(() => {
@@ -141,13 +156,42 @@ export default function AlbumPreview3D({
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
     if (Math.abs(dx) > 50) {
-      setIsFlipped((f) => !f);
+      toggleFlip();
     }
     dragStartX.current = null;
   };
 
-  const themeKey = selectedTheme || "elegant";
-  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.elegant;
+  // Load theme background image and sticker when themeKey changes
+  useEffect(() => {
+    const key = selectedTheme || "minimalist";
+    const bgMap = {
+      kitchy: "/images/albumtheme/kitchy.png",
+      illustration: "/images/albumtheme/illustration.png",
+    };
+    const bgSrc = bgMap[key];
+    if (!bgSrc) {
+      setThemeBgImg(null);
+      setThemeStickerImg(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => setThemeBgImg(img);
+    img.onerror = () => setThemeBgImg(null);
+    img.src = bgSrc;
+
+    // Load sticker overlay for kitchy theme
+    if (key === "kitchy") {
+      const sticker = new Image();
+      sticker.onload = () => setThemeStickerImg(sticker);
+      sticker.onerror = () => setThemeStickerImg(null);
+      sticker.src = "/images/albumtheme/kitchy 2.png";
+    } else {
+      setThemeStickerImg(null);
+    }
+  }, [selectedTheme]);
+
+  const themeKey = selectedTheme || "minimalist";
+  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 
   const frontCoverDataUrl = useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -176,9 +220,12 @@ export default function AlbumPreview3D({
       timeline || [],
       frontCoverImg,
       albumTitle || "",
+      albumSubTitle || "",
       extractedColors,
+      themeBgImg,
+      themeStickerImg,
     );
-  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, extractedColors]);
+  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, albumSubTitle, extractedColors, themeBgImg, themeStickerImg]);
 
   return (
     <div className="flex h-full w-full flex-col items-center">
@@ -192,7 +239,7 @@ export default function AlbumPreview3D({
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
-            onClick={() => setIsFlipped((f) => !f)}
+            onClick={toggleFlip}
             className="text-xs text-gray-400 transition-colors hover:text-gray-600"
           >
             {isFlipped ? "앞면" : "뒷면"} 보기
@@ -224,13 +271,17 @@ export default function AlbumPreview3D({
             setShowCursorTip(false);
           }}
         >
-          {/* Cursor-following "Flip" tooltip */}
+          {/* Cursor-following expand/shrink hint */}
           {hideControls && showCursorTip && (
             <div
-              className="pointer-events-none absolute z-10 rounded-full bg-white/15 px-3 py-1 text-[11px] tracking-wide text-white/70 backdrop-blur-sm"
+              className="pointer-events-none absolute z-10 rounded-full bg-white/15 p-2 backdrop-blur-sm"
               style={{ left: cursorPos.x + 14, top: cursorPos.y - 10 }}
             >
-              Flip
+              {expanded ? (
+                <Minimize2 className="h-4 w-4 text-white/70" />
+              ) : (
+                <Maximize2 className="h-4 w-4 text-white/70" />
+              )}
             </div>
           )}
           <Canvas
@@ -241,7 +292,7 @@ export default function AlbumPreview3D({
             <ambientLight intensity={0.6} />
             <directionalLight position={[2, 3, 4]} intensity={0.8} />
             <directionalLight position={[-2, 1, 2]} intensity={3} />
-            <CameraZoom zoom={zoom} />
+            <CameraZoom zoom={typeof externalZoom === "number" ? externalZoom : zoom} />
             <AlbumCover3D
               index={0}
               position={[0, 0, 0]}
@@ -253,7 +304,8 @@ export default function AlbumPreview3D({
               edgeColor={theme.bg}
               isSelected={true}
               isFlipped={isFlipped}
-              onClick={() => setIsFlipped((f) => !f)}
+              rotationY={rotationY}
+              onClick={hideControls && onExpand ? onExpand : toggleFlip}
             />
           </Canvas>
         </div>

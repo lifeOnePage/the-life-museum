@@ -18,6 +18,7 @@ import {
   Undo2,
   HelpCircle,
   MoreVertical,
+  BookOpen,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -46,7 +47,6 @@ import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
-import { authedFetch } from "@/app/utils/authedFetch";
 
 // Sortable timeline item component
 function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
@@ -87,7 +87,7 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
       <Input
         value={item.event}
         onChange={(e) => onUpdate(index, "event", e.target.value)}
-        placeholder="사건을 입력하세요..."
+        placeholder="내용을 입력하세요..."
         className="h-9 flex-1 rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
       />
       <button
@@ -129,7 +129,8 @@ const Index = ({ params }) => {
   const [coverOpen, setCoverOpen] = useState(true);
   const [storyOpen, setStoryOpen] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(true);
-  const [storyHelpOpen, setStoryHelpOpen] = useState(true);
+  const [keywordsExpanded, setKeywordsExpanded] = useState(false);
+  const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
 
   // Tutorial
@@ -190,8 +191,13 @@ const Index = ({ params }) => {
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await authedFetch(
+        const response = await fetch(
           `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+            },
+          },
         );
 
         const result = await response.json();
@@ -213,10 +219,10 @@ const Index = ({ params }) => {
           }
 
           const savedTheme = data.theme || DEFAULT_THEME;
-          const savedTitleOverlayEnabled = data.titleOverlayEnabled ?? false;
-          const savedTitlePosition = data.titlePosition || "bottom-center";
-          const savedTitleFont = data.titleFont || "Pretendard Variable";
-          const savedTitleColor = data.titleColor || "#ffffff";
+          const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
+          const savedTitlePosition = data.coverTitlePosition || "bottom-center";
+          const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
+          const savedTitleColor = data.coverTitleColor || "#ffffff";
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -275,11 +281,14 @@ const Index = ({ params }) => {
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
-    const response = await authedFetch(
+    const response = await fetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+        },
         body: JSON.stringify({
           color: theme.text,
           bgColor: theme.bg,
@@ -287,10 +296,10 @@ const Index = ({ params }) => {
           theme: selectedTheme,
           title: albumTitle,
           subTitle: albumSubtitle,
-          titleOverlayEnabled,
-          titlePosition,
-          titleFont,
-          titleColor,
+          coverTitleVisible: titleOverlayEnabled,
+          coverTitlePosition: titlePosition,
+          coverTitleFont: titleFont,
+          coverTitleColor: titleColor,
         }),
       },
     );
@@ -305,11 +314,14 @@ const Index = ({ params }) => {
   // Bio save logic (from BioEditor)
   const saveBio = async () => {
     if (!bio.trim()) return;
-    const response = await authedFetch(
+    const response = await fetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+        },
         body: JSON.stringify({
           result: bio,
           qaList: [],
@@ -336,11 +348,14 @@ const Index = ({ params }) => {
         description: description || "",
       };
     });
-    const response = await authedFetch(
+    const response = await fetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/timeline`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+        },
         body: JSON.stringify({ events }),
       },
     );
@@ -467,11 +482,16 @@ const Index = ({ params }) => {
     console.log("fullText", fullText);
 
     try {
-      const response = await authedFetch(
+      const token = localStorage.getItem("app_token");
+      console.log(token);
+      const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
@@ -606,11 +626,14 @@ const Index = ({ params }) => {
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
     try {
-      const response = await authedFetch(
+      const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+          },
           body: JSON.stringify({
             googlePhotoUrl: finalGoogleUrl,
             icloudUrl: finalIcloudUrl,
@@ -658,9 +681,14 @@ const Index = ({ params }) => {
     setIsDeleting(true);
     setRecordError("");
     try {
-      const response = await authedFetch(
+      const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-        { method: "DELETE" },
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+          },
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -891,6 +919,7 @@ const Index = ({ params }) => {
             timeline={timeline}
             selectedTheme={selectedTheme}
             albumTitle={albumTitle}
+            albumSubTitle={albumSubtitle}
             titleOverlayEnabled={titleOverlayEnabled}
             titlePosition={titlePosition}
             titleFont={titleFont}
@@ -966,7 +995,9 @@ const Index = ({ params }) => {
                     <div className="rounded-lg border border-gray-300">
                       <div className="flex items-center justify-between px-4 py-3">
                         <button
-                          onClick={() => titleOverlayEnabled && setTitleOpen(!titleOpen)}
+                          onClick={() =>
+                            titleOverlayEnabled && setTitleOpen(!titleOpen)
+                          }
                           className="flex items-center gap-2"
                         >
                           <span className="text-sm font-semibold text-gray-900">
@@ -994,7 +1025,9 @@ const Index = ({ params }) => {
                         >
                           <span
                             className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                              titleOverlayEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
+                              titleOverlayEnabled
+                                ? "translate-x-[18px]"
+                                : "translate-x-[3px]"
                             }`}
                           />
                         </button>
@@ -1063,12 +1096,22 @@ const Index = ({ params }) => {
                                 record_id={record_id}
                                 onImageGenerated={setFrontCover}
                                 frontCover={frontCover}
-                                initialFrontCover={initialState.current.frontCover}
+                                initialFrontCover={
+                                  initialState.current.frontCover
+                                }
                                 photoMedia={photoDrive.photoMedia}
                                 photoBlobUrls={photoDrive.photoBlobUrls}
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 preloadBlobs={photoDrive.preloadBlobs}
+                                titleOverlayEnabled={titleOverlayEnabled}
+                                titleOverlayConfig={{
+                                  title: albumTitle || "",
+                                  subtitle: "",
+                                  position: titlePosition || "bottom-center",
+                                  font: titleFont || "Pretendard Variable",
+                                  color: titleColor || "#ffffff",
+                                }}
                               />
                             </div>
                           </motion.div>
@@ -1081,6 +1124,17 @@ const Index = ({ params }) => {
                 {/* Back tab - Redesigned */}
                 <TabsContent className="px-4 pt-5 sm:px-5" value="back">
                   <div className="space-y-5 pb-10">
+                    {/* Guide text */}
+                    <div className="flex items-start gap-3 rounded-xl border border-[#e2e8f0] bg-gradient-to-r from-[#f8fafc] to-[#f1f5f9] px-4 py-3.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#67add1]/10">
+                        <BookOpen className="h-3.5 w-3.5 text-[#67add1]" />
+                      </div>
+                      <p className="pt-0.5 text-xs leading-relaxed text-[#64748b]">
+                        앨범 뒷면을 꾸미기 위해 앨범에 맞는 스토리와 타임라인을
+                        적어주세요
+                      </p>
+                    </div>
+
                     {/* Story Section - Collapsible */}
                     <div
                       data-tutorial="story"
@@ -1090,20 +1144,9 @@ const Index = ({ params }) => {
                         onClick={() => setStoryOpen(!storyOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-semibold text-gray-900">
-                            스토리
-                          </span>
-                          <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setStoryHelpOpen(!storyHelpOpen);
-                            }}
-                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${storyHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
-                          >
-                            <HelpCircle className="h-3.5 w-3.5" />
-                          </span>
-                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          스토리
+                        </span>
                         {storyOpen ? (
                           <ChevronDown className="h-4 w-4 text-gray-400" />
                         ) : (
@@ -1121,13 +1164,87 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="space-y-3 border-t border-gray-100 px-4 pt-3 pb-4">
-                              {/* Input area with chips inside */}
-                              {storyHelpOpen && (
-                                <div className="text-[11px] leading-relaxed text-[#67add1]">
-                                  <p>이 앨범에 담긴 이야기를 적어보세요.</p>
-                                  <p className="mt-1">기억에 남는 순간, 감정, 또는 의미 있는 경험을 자유롭게 적어도 좋아요.</p>
+                              {/* Keyword chips section */}
+                              <div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-xs font-medium text-[#64748b]">
+                                    키워드 선택
+                                  </span>
+                                  <span
+                                    onClick={() =>
+                                      setKeywordHelpOpen(!keywordHelpOpen)
+                                    }
+                                    className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-colors hover:text-gray-600 ${keywordHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
+                                  >
+                                    <HelpCircle className="h-3.5 w-3.5" />
+                                  </span>
+                                  {usedChips.size > 0 && (
+                                    <span className="text-[11px] text-[#94a3b8]">
+                                      {usedChips.size}개 선택됨
+                                    </span>
+                                  )}
                                 </div>
-                              )}
+                                <AnimatePresence>
+                                  {keywordHelpOpen && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: "auto" }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      transition={{ duration: 0.15 }}
+                                      className="overflow-hidden"
+                                    >
+                                      <div className="mt-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2.5 shadow-sm">
+                                        <p className="text-[11px] leading-relaxed text-[#64748b]">
+                                          💡 글감이 떠오르지 않을 때 키워드를
+                                          선택해보세요. 선택한 키워드가 스토리에
+                                          주제로 추가되어, AI가 이를 바탕으로 더
+                                          풍부한 이야기를 만들어 줄 수 있어요.
+                                        </p>
+                                      </div>
+                                    </motion.div>
+                                  )}
+                                </AnimatePresence>
+
+                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                  {(keywordsExpanded
+                                    ? KEYWORD_CHIPS
+                                    : KEYWORD_CHIPS.slice(0, 3)
+                                  ).map((chip) => {
+                                    const isUsed = usedChips.has(chip);
+                                    return (
+                                      <button
+                                        key={chip}
+                                        type="button"
+                                        onClick={() =>
+                                          isUsed
+                                            ? handleChipRemove(chip)
+                                            : handleChipClick(chip)
+                                        }
+                                        className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
+                                          isUsed
+                                            ? "border border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
+                                            : "border border-gray-200 bg-white text-gray-500 hover:border-[#67add1] hover:text-[#67add1]"
+                                        }`}
+                                      >
+                                        {isUsed ? `${chip} ✕` : `+ ${chip}`}
+                                      </button>
+                                    );
+                                  })}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setKeywordsExpanded(!keywordsExpanded)
+                                    }
+                                    className="rounded-full border border-dashed border-gray-300 px-3 py-1 text-[11px] font-medium text-[#94a3b8] transition-colors hover:border-[#67add1] hover:text-[#67add1]"
+                                  >
+                                    {keywordsExpanded
+                                      ? "접기"
+                                      : `+${KEYWORD_CHIPS.length - 3}개 더보기`}
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Text input area with selected chips */}
                               <div className="min-h-50 w-full rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-3">
                                 {usedChips.size > 0 && (
                                   <div className="mb-2 flex flex-wrap gap-1.5">
@@ -1154,45 +1271,13 @@ const Index = ({ params }) => {
                                   placeholder={
                                     usedChips.size > 0
                                       ? "추가로 작성하세요..."
-                                      : "키워드를 선택하거나 직접 작성하세요..."
+                                      : "���유롭게 작성하세요..."
                                   }
                                   className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:ring-0 focus:outline-none"
                                 />
                               </div>
-                              {/* Keyword chips */}
-                              <div className="flex items-center gap-1.5">
-                                <p className="text-xs font-medium text-[#64748b]">
-                                  키워드 선택
-                                </p>
-                                {storyHelpOpen && (
-                                  <span className="text-[11px] text-[#67add1]">
-                                    키워드를 선택하면 글을 더 쉽게 시작할 수 있어요
-                                  </span>
-                                )}
-                              </div>
-                              <div className="flex flex-wrap gap-1.5">
-                                {KEYWORD_CHIPS.map((chip) => {
-                                  const isUsed = usedChips.has(chip);
-                                  return (
-                                    <button
-                                      key={chip}
-                                      type="button"
-                                      onClick={() =>
-                                        isUsed
-                                          ? handleChipRemove(chip)
-                                          : handleChipClick(chip)
-                                      }
-                                      className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
-                                        isUsed
-                                          ? "border border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
-                                          : "border border-gray-200 bg-white text-gray-500 hover:border-[#67add1] hover:text-[#67add1]"
-                                      }`}
-                                    >
-                                      {isUsed ? `${chip} ✕` : `+ ${chip}`}
-                                    </button>
-                                  );
-                                })}
-                              </div>
+
+                              {/* Character count */}
                               <div className="flex items-center justify-between">
                                 <p className="text-[11px] text-gray-300">
                                   {getFullBioText().length}자
@@ -1203,6 +1288,8 @@ const Index = ({ params }) => {
                                   </p>
                                 )}
                               </div>
+
+                              {/* Generate button */}
                               <Button
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !getFullBioText()}
@@ -1240,7 +1327,7 @@ const Index = ({ params }) => {
                           <span className="text-sm font-semibold text-gray-900">
                             타임라인
                           </span>
-                          <span
+                          {/* <span
                             onClick={(e) => {
                               e.stopPropagation();
                               setTimelineHelpOpen(!timelineHelpOpen);
@@ -1248,7 +1335,7 @@ const Index = ({ params }) => {
                             className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${timelineHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
                           >
                             <HelpCircle className="h-3.5 w-3.5" />
-                          </span>
+                          </span> */}
                         </div>
                         {timelineOpen ? (
                           <ChevronDown className="h-4 w-4 text-gray-400" />
@@ -1267,15 +1354,18 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="space-y-2 border-t border-gray-100 px-4 pt-3 pb-4">
-                              {timelineHelpOpen && (
+                              {/* {timelineHelpOpen && (
                                 <p className="text-[11px] leading-relaxed text-[#67add1]">
-                                  기억에 남는 순간들을 시간 순서대로 기록해보세요. 연도와 간단한 내용을 입력하면 됩니다.
+                                  기억에 남는 순간들을 시간 순서대로
+                                  기록해보세요. 연도와 간단한 내용을 입력하면
+                                  됩니다.
                                 </p>
-                              )}
+                              )} */}
                               <DndContext
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
                                 onDragEnd={handleDragEnd}
+                                ㅇ
                               >
                                 <SortableContext
                                   items={timelineIdsRef.current}

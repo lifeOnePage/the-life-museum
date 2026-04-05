@@ -151,10 +151,41 @@ export default function ShareScene({
   timeline,
   selectedTheme,
   albumTitle,
+  albumSubTitle,
 }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [frontCoverImg, setFrontCoverImg] = useState(null);
   const [extractedColors, setExtractedColors] = useState(null);
+  const [themeBgImg, setThemeBgImg] = useState(null);
+  const [themeStickerImg, setThemeStickerImg] = useState(null);
+
+  // Load theme background image and sticker
+  useEffect(() => {
+    const key = selectedTheme || "minimalist";
+    const bgMap = {
+      kitchy: "/images/albumtheme/kitchy.png",
+      illustration: "/images/albumtheme/illustration.png",
+    };
+    const bgSrc = bgMap[key];
+    if (!bgSrc) {
+      setThemeBgImg(null);
+      setThemeStickerImg(null);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => setThemeBgImg(img);
+    img.onerror = () => setThemeBgImg(null);
+    img.src = bgSrc;
+
+    if (key === "kitchy") {
+      const sticker = new Image();
+      sticker.onload = () => setThemeStickerImg(sticker);
+      sticker.onerror = () => setThemeStickerImg(null);
+      sticker.src = "/images/albumtheme/kitchy 2.png";
+    } else {
+      setThemeStickerImg(null);
+    }
+  }, [selectedTheme]);
 
   // Load front cover as HTMLImageElement for canvas drawing
   useEffect(() => {
@@ -203,8 +234,8 @@ export default function ShareScene({
       .catch(() => setExtractedColors(null));
   }, [frontCoverImg]);
 
-  const themeKey = selectedTheme || "elegant";
-  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.elegant;
+  const themeKey = selectedTheme || "minimalist";
+  const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 
   const backCoverDataUrl = useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -214,9 +245,12 @@ export default function ShareScene({
       timeline || [],
       frontCoverImg,
       albumTitle || "",
+      albumSubTitle || "",
       extractedColors,
+      themeBgImg,
+      themeStickerImg,
     );
-  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, extractedColors]);
+  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, albumSubTitle, extractedColors, themeBgImg, themeStickerImg]);
 
   // Drag-to-flip
   const dragStartX = useRef(null);

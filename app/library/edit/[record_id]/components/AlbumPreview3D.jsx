@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
-import { ZoomIn, ZoomOut } from "lucide-react";
+import { ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
 import AlbumCover3D from "./AlbumCover3D";
 import { UNIFIED_THEMES } from "../themeConfig";
 import { extractColors } from "extract-colors";
@@ -53,8 +53,18 @@ export default function AlbumPreview3D({
   titleColor,
   flipped,
   hideControls,
+  onExpand,
+  onFlipChange,
+  expanded,
 }) {
   const [isFlipped, setIsFlipped] = useState(false);
+  const toggleFlip = () => {
+    setIsFlipped((f) => {
+      const next = !f;
+      onFlipChange?.(next);
+      return next;
+    });
+  };
   const [zoomCfg, setZoomCfg] = useState(getZoomConfig);
   const [zoom, setZoom] = useState(() => getZoomConfig().default);
   const [frontCoverImg, setFrontCoverImg] = useState(null);
@@ -141,7 +151,7 @@ export default function AlbumPreview3D({
     if (dragStartX.current === null) return;
     const dx = e.clientX - dragStartX.current;
     if (Math.abs(dx) > 50) {
-      setIsFlipped((f) => !f);
+      toggleFlip();
     }
     dragStartX.current = null;
   };
@@ -192,7 +202,7 @@ export default function AlbumPreview3D({
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
-            onClick={() => setIsFlipped((f) => !f)}
+            onClick={toggleFlip}
             className="text-xs text-gray-400 transition-colors hover:text-gray-600"
           >
             {isFlipped ? "앞면" : "뒷면"} 보기
@@ -224,13 +234,17 @@ export default function AlbumPreview3D({
             setShowCursorTip(false);
           }}
         >
-          {/* Cursor-following "Flip" tooltip */}
+          {/* Cursor-following expand/shrink hint */}
           {hideControls && showCursorTip && (
             <div
-              className="pointer-events-none absolute z-10 rounded-full bg-white/15 px-3 py-1 text-[11px] tracking-wide text-white/70 backdrop-blur-sm"
+              className="pointer-events-none absolute z-10 rounded-full bg-white/15 p-2 backdrop-blur-sm"
               style={{ left: cursorPos.x + 14, top: cursorPos.y - 10 }}
             >
-              Flip
+              {expanded ? (
+                <Minimize2 className="h-4 w-4 text-white/70" />
+              ) : (
+                <Maximize2 className="h-4 w-4 text-white/70" />
+              )}
             </div>
           )}
           <Canvas
@@ -253,7 +267,7 @@ export default function AlbumPreview3D({
               edgeColor={theme.bg}
               isSelected={true}
               isFlipped={isFlipped}
-              onClick={() => setIsFlipped((f) => !f)}
+              onClick={hideControls && onExpand ? onExpand : toggleFlip}
             />
           </Canvas>
         </div>

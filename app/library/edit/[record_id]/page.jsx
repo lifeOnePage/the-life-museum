@@ -45,7 +45,6 @@ import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
-import { authedFetch } from "@/app/utils/authedFetch";
 
 // Sortable timeline item component
 function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
@@ -189,8 +188,13 @@ const Index = ({ params }) => {
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await authedFetch(
+        const response = await fetch(
           `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+            },
+          },
         );
 
         const result = await response.json();
@@ -274,11 +278,14 @@ const Index = ({ params }) => {
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
-    const response = await authedFetch(
+    const response = await fetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
       {
         method: "PATCH",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+        },
         body: JSON.stringify({
           color: theme.text,
           bgColor: theme.bg,
@@ -304,11 +311,14 @@ const Index = ({ params }) => {
   // Bio save logic (from BioEditor)
   const saveBio = async () => {
     if (!bio.trim()) return;
-    const response = await authedFetch(
+    const response = await fetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+        },
         body: JSON.stringify({
           result: bio,
           qaList: [],
@@ -335,11 +345,14 @@ const Index = ({ params }) => {
         description: description || "",
       };
     });
-    const response = await authedFetch(
+    const response = await fetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/timeline`,
       {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+        },
         body: JSON.stringify({ events }),
       },
     );
@@ -466,11 +479,16 @@ const Index = ({ params }) => {
     console.log("fullText", fullText);
 
     try {
-      const response = await authedFetch(
+      const token = localStorage.getItem("app_token");
+      console.log(token);
+      const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
@@ -605,11 +623,14 @@ const Index = ({ params }) => {
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
     try {
-      const response = await authedFetch(
+      const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
         {
           method: "PATCH",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+          },
           body: JSON.stringify({
             googlePhotoUrl: finalGoogleUrl,
             icloudUrl: finalIcloudUrl,
@@ -657,9 +678,14 @@ const Index = ({ params }) => {
     setIsDeleting(true);
     setRecordError("");
     try {
-      const response = await authedFetch(
+      const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-        { method: "DELETE" },
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+          },
+        },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -965,7 +991,9 @@ const Index = ({ params }) => {
                     <div className="rounded-lg border border-gray-300">
                       <div className="flex items-center justify-between px-4 py-3">
                         <button
-                          onClick={() => titleOverlayEnabled && setTitleOpen(!titleOpen)}
+                          onClick={() =>
+                            titleOverlayEnabled && setTitleOpen(!titleOpen)
+                          }
                           className="flex items-center gap-2"
                         >
                           <span className="text-sm font-semibold text-gray-900">
@@ -993,7 +1021,9 @@ const Index = ({ params }) => {
                         >
                           <span
                             className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-                              titleOverlayEnabled ? "translate-x-[18px]" : "translate-x-[3px]"
+                              titleOverlayEnabled
+                                ? "translate-x-[18px]"
+                                : "translate-x-[3px]"
                             }`}
                           />
                         </button>
@@ -1062,7 +1092,9 @@ const Index = ({ params }) => {
                                 record_id={record_id}
                                 onImageGenerated={setFrontCover}
                                 frontCover={frontCover}
-                                initialFrontCover={initialState.current.frontCover}
+                                initialFrontCover={
+                                  initialState.current.frontCover
+                                }
                                 preloadedPhotoMedia={photoMedia}
                               />
                             </div>
@@ -1120,7 +1152,10 @@ const Index = ({ params }) => {
                               {storyHelpOpen && (
                                 <div className="text-[11px] leading-relaxed text-[#67add1]">
                                   <p>이 앨범에 담긴 이야기를 적어보세요.</p>
-                                  <p className="mt-1">기억에 남는 순간, 감정, 또는 의미 있는 경험을 자유롭게 적어도 좋아요.</p>
+                                  <p className="mt-1">
+                                    기억에 남는 순간, 감정, 또는 의미 있는
+                                    경험을 자유롭게 적어도 좋아요.
+                                  </p>
                                 </div>
                               )}
                               <div className="min-h-50 w-full rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-3">
@@ -1161,7 +1196,8 @@ const Index = ({ params }) => {
                                 </p>
                                 {storyHelpOpen && (
                                   <span className="text-[11px] text-[#67add1]">
-                                    키워드를 선택하면 글을 더 쉽게 시작할 수 있어요
+                                    키워드를 선택하면 글을 더 쉽게 시작할 수
+                                    있어요
                                   </span>
                                 )}
                               </div>
@@ -1264,13 +1300,16 @@ const Index = ({ params }) => {
                             <div className="space-y-2 border-t border-gray-100 px-4 pt-3 pb-4">
                               {timelineHelpOpen && (
                                 <p className="text-[11px] leading-relaxed text-[#67add1]">
-                                  기억에 남는 순간들을 시간 순서대로 기록해보세요. 연도와 간단한 내용을 입력하면 됩니다.
+                                  기억에 남는 순간들을 시간 순서대로
+                                  기록해보세요. 연도와 간단한 내용을 입력하면
+                                  됩니다.
                                 </p>
                               )}
                               <DndContext
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
                                 onDragEnd={handleDragEnd}
+                                ㅇ
                               >
                                 <SortableContext
                                   items={timelineIdsRef.current}

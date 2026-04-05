@@ -14,6 +14,7 @@ import {
   Check,
 } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 
 const API_URL = "https://the-life-museum-backend-production.up.railway.app";
 
@@ -43,6 +44,8 @@ const CoverImageEditor = forwardRef(
       initialFrontCover,
       record_id,
       preloadedPhotoMedia,
+      titleOverlayEnabled,
+      titleOverlayConfig,
     },
     ref,
   ) => {
@@ -91,6 +94,32 @@ const CoverImageEditor = forwardRef(
       fetchGenCount();
     }, [record_id]);
 
+    // Helper: load an image URL as HTMLImageElement
+    const loadImage = (src) =>
+      new Promise((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+
+    // Helper: composite title overlay onto cover and return as File
+    const compositeCoverWithTitle = async (coverSrc) => {
+      if (!titleOverlayEnabled || !titleOverlayConfig?.title) return null;
+      try {
+        const img = await loadImage(coverSrc);
+        const dataUrl = generateFrontCoverDataUrl(img, titleOverlayConfig);
+        if (!dataUrl) return null;
+        const res = await fetch(dataUrl);
+        const blob = await res.blob();
+        return new File([blob], "cover-with-title.png", { type: "image/png" });
+      } catch (e) {
+        console.error("Title composite failed:", e);
+        return null;
+      }
+    };
+
     useImperativeHandle(ref, () => ({
       save: async () => {
         if (!selectedFile && !selectedImageUrl && !frontCover) return;
@@ -98,8 +127,49 @@ const CoverImageEditor = forwardRef(
         setError("");
 
         try {
-          // AI-generated image or photodrive selection: use PUT /cover/url
+          // Determine the cover source for title compositing
+          let fileToUpload = null;
+
+          if (selectedFile) {
+            // If title overlay enabled, composite onto the selected file
+            if (titleOverlayEnabled && titleOverlayConfig?.title) {
+              const objectUrl = URL.createObjectURL(selectedFile);
+              fileToUpload = await compositeCoverWithTitle(objectUrl);
+              URL.revokeObjectURL(objectUrl);
+            }
+            // Upload composited or original file
+            const formData = new FormData();
+            formData.append("file", fileToUpload || selectedFile);
+            const response = await authedFetch(
+              `${API_URL}/api/v1/record/${record_id}/cover/temp`,
+              { method: "POST", body: formData },
+            );
+            const data = await response.json();
+            if (!response.ok) {
+              throw new Error(data.error || "저장에 실패했습니다");
+            }
+            return data;
+          }
+
           if (selectedImageUrl) {
+            // If title overlay enabled, composite and upload as file
+            if (titleOverlayEnabled && titleOverlayConfig?.title) {
+              fileToUpload = await compositeCoverWithTitle(selectedImageUrl);
+            }
+            if (fileToUpload) {
+              const formData = new FormData();
+              formData.append("file", fileToUpload);
+              const response = await authedFetch(
+                `${API_URL}/api/v1/record/${record_id}/cover/temp`,
+                { method: "POST", body: formData },
+              );
+              const data = await response.json();
+              if (!response.ok) {
+                throw new Error(data.error || data.detail || "저장에 실패했습니다");
+              }
+              return data;
+            }
+            // No title overlay — save URL directly
             const response = await authedFetch(
               `${API_URL}/api/v1/record/${record_id}/cover/url`,
               {
@@ -109,30 +179,28 @@ const CoverImageEditor = forwardRef(
               },
             );
             const data = await response.json();
-            console.log("cover/url response:", response.status, data);
             if (!response.ok) {
               throw new Error(data.error || data.detail || "저장에 실패했습니다");
             }
             return data;
           }
 
-          // Direct file upload: use POST /cover/temp
-          if (selectedFile) {
-            const formData = new FormData();
-            formData.append("file", selectedFile);
-
-            const response = await authedFetch(
-              `${API_URL}/api/v1/record/${record_id}/cover/temp`,
-              {
-                method: "POST",
-                body: formData,
-              },
-            );
-            const data = await response.json();
-            if (!response.ok) {
-              throw new Error(data.error || "저장에 실패했습니다");
+          // No new selection but cover exists and title overlay changed
+          if (frontCover && titleOverlayEnabled && titleOverlayConfig?.title) {
+            fileToUpload = await compositeCoverWithTitle(frontCover);
+            if (fileToUpload) {
+              const formData = new FormData();
+              formData.append("file", fileToUpload);
+              const response = await authedFetch(
+                `${API_URL}/api/v1/record/${record_id}/cover/temp`,
+                { method: "POST", body: formData },
+              );
+              const data = await response.json();
+              if (!response.ok) {
+                throw new Error(data.error || "저장에 실패했습니다");
+              }
+              return data;
             }
-            return data;
           }
         } catch (err) {
           setError(err.message);
@@ -206,19 +274,13 @@ const CoverImageEditor = forwardRef(
 
     const handleImageRef = (e) => {
       const file = e.target.files?.[0];
-      if (file) {
-        setImageRefFile(file);
-        setImageRefPreview(URL.createObjectURL(file));
-        setRefPhotoMode(false);
+      if (file && imageRefFiles.length < 3) {
+        setImageRefFiles((prev) => [...prev, file]);
+        setImageRefPreviews((prev) => [...prev, URL.createObjectURL(file)]);
       }
       e.target.value = "";
     };
 
-    const removeImageRef = () => {
-      setImageRefFile(null);
-      setImageRefPreview(null);
-      setImageStrength(0.5);
-      setRefPhotoMode(false);
     const removeImageRef = (index) => {
       setImageRefFiles((prev) => prev.filter((_, i) => i !== index));
       setImageRefPreviews((prev) => {
@@ -329,6 +391,8 @@ const CoverImageEditor = forwardRef(
       } finally {
         setIsLoadingPhotos(false);
       }
+    };
+
     const preloadBlobUrls = () => {
       if (photoBlobUrls.length > 0 || photoMedia.length === 0) return;
       const apiUrl =
@@ -376,10 +440,10 @@ const CoverImageEditor = forwardRef(
         const ext = blob.type === "image/png" ? "png" : "jpg";
         const file = new File([blob], `photo-drive.${ext}`, { type: blob.type });
         setSelectedFile(file);
-        setSelectedVideoUrl(null);
+        setSelectedImageUrl(null);
       } catch (e) {
         console.error("Photo drive file conversion failed:", e);
-        setSelectedVideoUrl(rawUrl);
+        setSelectedImageUrl(rawUrl);
         setSelectedFile(null);
       }
     };
@@ -423,8 +487,10 @@ const CoverImageEditor = forwardRef(
     };
 
     const handleSelectRefPhoto = (photo) => {
-      setImageRefFile(photo.file);
-      setImageRefPreview(photo.blobUrl);
+      if (imageRefFiles.length < 3) {
+        setImageRefFiles((prev) => [...prev, photo.file]);
+        setImageRefPreviews((prev) => [...prev, photo.blobUrl]);
+      }
       setRefPhotoMode(false);
     };
 
@@ -753,19 +819,22 @@ const CoverImageEditor = forwardRef(
                 </span>
               </label>
 
-                  {/* Image strength slider */}
-                  <div>
-                    <div className="mb-1.5 flex items-center justify-between">
-                      <label className="text-xs font-medium text-[#64748b]">
-                        참고 이미지 반영 강도
-                      </label>
-                      <span className="text-xs text-[#64748b]">
-                        {imageStrength < 0.35
-                          ? "낮음"
-                          : imageStrength > 0.65
-                            ? "높음"
-                            : "보통"}
-                      </span>
+              {/* Preview of selected refs */}
+              {imageRefPreviews.length > 0 && (
+                <div className="mb-3 flex gap-2">
+                  {imageRefPreviews.map((preview, i) => (
+                    <div key={i} className="relative">
+                      <img
+                        src={preview}
+                        alt={`참고 이미지 ${i + 1}`}
+                        className="h-20 w-20 rounded-lg object-cover"
+                      />
+                      <button
+                        onClick={() => removeImageRef(i)}
+                        className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-gray-700 text-white transition-colors hover:bg-gray-900"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
                     </div>
                   ))}
                 </div>
@@ -796,76 +865,6 @@ const CoverImageEditor = forwardRef(
                   >
                     <FolderOpen className="mb-1 h-4 w-4 text-[#6b7280]" />
                     <span className="text-[11px] text-[#6b7280]">
-                      포토드라이브
-                    </span>
-                  </button>
-                </div>
-              ) : refPhotoMode ? (
-                <div>
-                  <button
-                    onClick={() => setRefPhotoMode(false)}
-                    className="mb-3 flex items-center gap-1.5 text-[#475569] transition-colors hover:text-[#1e1e1e]"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    <span className="text-xs font-medium">돌아가기</span>
-                  </button>
-                  {isLoadingRefPhotos ? (
-                    <div className="grid grid-cols-3 gap-2">
-                      {Array.from({ length: 6 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="aspect-square animate-pulse rounded-md bg-[#d5d5d7]"
-                        />
-                      ))}
-                    </div>
-                  ) : refPhotos.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-8 text-center">
-                      <ImagePlus className="mb-2 h-6 w-6 text-[#cbd5e1]" />
-                      <p className="text-xs text-[#94a3b8]">
-                        사용 가능한 사진이 없습니다.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid max-h-[30vh] grid-cols-3 gap-2 overflow-y-auto">
-                      {refPhotos.map((photo, i) => (
-                        <button
-                          key={i}
-                          onClick={() => handleSelectRefPhoto(photo)}
-                          className="aspect-square overflow-hidden rounded-md transition-all hover:opacity-80"
-                        >
-                          <img
-                            src={photo.blobUrl}
-                            alt={`사진 ${i + 1}`}
-                            className="h-full w-full object-cover"
-                          />
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex gap-3">
-                  <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-3 py-5 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)]">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={handleImageRef}
-                    />
-                    <Upload className="mb-2 h-4 w-4 text-[#475569]" />
-                    <span className="text-xs font-medium text-[#334155]">
-                      직접 업로드
-                    </span>
-                  </label>
-                  <button
-                    onClick={() => {
-                      setRefPhotoMode(true);
-                      fetchRefPhotos();
-                    }}
-                    className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-3 py-5 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)]"
-                  >
-                    <FolderOpen className="mb-2 h-4 w-4 text-[#475569]" />
-                    <span className="text-xs font-medium text-[#334155]">
                       포토드라이브
                     </span>
                   </button>

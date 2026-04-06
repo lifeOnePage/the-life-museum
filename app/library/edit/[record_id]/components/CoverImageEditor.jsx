@@ -129,7 +129,9 @@ const CoverImageEditor = forwardRef(
               );
               const data = await response.json();
               if (!response.ok) {
-                throw new Error(data.error || data.detail || "저장에 실패했습니다");
+                throw new Error(
+                  data.error || data.detail || "저장에 실패했습니다",
+                );
               }
               return data;
             }
@@ -264,7 +266,7 @@ const CoverImageEditor = forwardRef(
                     <ImagePlus className="h-[18px] w-[18px] text-[#475569]" />
                   </div>
                   <span className="text-sm font-medium text-[#334155]">
-                    직접 ��로드
+                    직접 업로드
                   </span>
                   <p className="mt-1 text-xs text-[#94a3b8]">
                     JPG, PNG 최대 10MB
@@ -294,7 +296,7 @@ const CoverImageEditor = forwardRef(
                   <span className="text-base font-bold">직접 업로드</span>
                 </button>
                 <p className="text-xs text-[#64748b]">
-                  디바이스에서 직접 ��로드하거나, 포토드라이브에서 선택할 수
+                  디바이스에서 직접 업로드하거나, 포토드라이브에서 선택할 수
                   있습니다.
                 </p>
               </div>

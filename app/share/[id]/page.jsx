@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState, useEffect, useMemo, useCallback } from "react";
+import { use, useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
@@ -57,7 +57,6 @@ export default function SharePage({ params }) {
   const [images, setImages] = useState([]);
   const [flipProgress, setFlipProgress] = useState(0); // 0 = front, 1 = back
   const [isExpanded, setIsExpanded] = useState(false);
-  const [bgReady, setBgReady] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -142,31 +141,6 @@ export default function SharePage({ params }) {
     });
   }, [images]);
 
-  // Preload all background images, then reveal at once
-  useEffect(() => {
-    if (images.length === 0) return;
-    const urls = [
-      ...new Set(
-        images.map((img) =>
-          getProxiedUrl(img.original_url || img.thumbnail_url),
-        ),
-      ),
-    ];
-    let loaded = 0;
-    let cancelled = false;
-    urls.forEach((url) => {
-      const img = new Image();
-      img.onload = img.onerror = () => {
-        loaded++;
-        if (!cancelled && loaded >= urls.length) setBgReady(true);
-      };
-      img.src = url;
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [images]);
-
   // Loading
   if (loading) {
     return (
@@ -195,7 +169,7 @@ export default function SharePage({ params }) {
       {/* Background: Concave cylindrical photo grid */}
       {images.length > 0 && (
         <div
-          className={`pointer-events-none absolute inset-0 overflow-hidden transition-opacity duration-[1500ms] ${bgReady ? "opacity-100" : "opacity-0"}`}
+          className="pointer-events-none absolute inset-0 overflow-hidden"
         >
           {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
@@ -204,7 +178,7 @@ export default function SharePage({ params }) {
 
           <div
             className="absolute inset-0 flex items-center justify-center opacity-35"
-            style={{ perspective: "1200px", perspectiveOrigin: "50% 50%" }}
+            style={{ perspective: "clamp(600px, 60vw, 1200px)", perspectiveOrigin: "50% 50%" }}
           >
             <div
               className="relative"
@@ -231,9 +205,10 @@ export default function SharePage({ params }) {
                         key={i}
                         src={url}
                         alt=""
-                        className="w-full rounded-sm object-cover"
+                        className="w-full rounded-sm object-cover opacity-0 transition-opacity duration-[1200ms] ease-out"
                         style={{ aspectRatio: "1" }}
                         draggable={false}
+                        onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
                       />
                     ))}
                   </div>

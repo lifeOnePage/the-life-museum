@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { authedFetch } from "@/app/utils/authedFetch";
 
 export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState("new"); // 'new' | 'share'
 
   // 새 앨범 만들기 상태
@@ -35,6 +37,9 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
       if (json.ok) {
         onCreated?.(json.data);
         onClose();
+        if (json.data?.id) {
+          router.push(`/library/edit/${json.data.id}`);
+        }
       } else {
         console.error("Failed to create album:", json.message);
       }

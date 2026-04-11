@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
-import { X, Maximize2, Minimize2 } from "lucide-react";
+import { X, Maximize2, Minimize2, Info } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
 
 function Icon360({ className }) {
@@ -46,6 +46,7 @@ export default function SharePage({ params }) {
   const [flipProgress, setFlipProgress] = useState(0);
   const [isAutoRotating, setIsAutoRotating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
 
   const autoRotatingRef = useRef(false);
   const lastTimeRef = useRef(null);
@@ -128,13 +129,20 @@ export default function SharePage({ params }) {
     [recordData],
   );
 
-  // Build cylindrical column strips
-  const GRID_COLS = 14;
-  const ARC_SPREAD = 180;
-  const RADIUS = 600;
+  // Build cylindrical column strips — viewport-responsive
   const ROWS_PER_COL = 8;
+  const RADIUS = 700;
+
+  const { GRID_COLS, ARC_SPREAD } = useMemo(() => {
+    if (typeof window === "undefined") return { GRID_COLS: 16, ARC_SPREAD: 200 };
+    const aspect = window.innerWidth / window.innerHeight;
+    // 넓을수록 더 많은 컬럼과 더 넓은 호각도
+    const spread = Math.min(Math.round(aspect * 130), 280);
+    const cols = Math.max(14, Math.round(spread / 12));
+    return { GRID_COLS: cols, ARC_SPREAD: spread };
+  }, []);
+
   const angleStep = ARC_SPREAD / (GRID_COLS - 1);
-  // Width so adjacent columns tile seamlessly on the cylinder
   const cellWidth = Math.ceil(
     2 * RADIUS * Math.tan(((angleStep / 2) * Math.PI) / 180),
   );
@@ -152,7 +160,7 @@ export default function SharePage({ params }) {
       const angle = (colIdx / (GRID_COLS - 1) - 0.5) * ARC_SPREAD;
       return { colIdx, angle, images: colImages };
     });
-  }, [images]);
+  }, [images, GRID_COLS, ARC_SPREAD]);
 
   // Loading
   if (loading) {
@@ -254,7 +262,7 @@ export default function SharePage({ params }) {
 
         {/* 3D Album Preview */}
         <div
-          className={`h-[50vh] w-[80vw] max-w-[400px] transition-all delay-200 duration-1000 ease-out ${
+          className={`h-[50vh] w-[80vw] max-w-[400px] lg:max-w-[520px] xl:max-w-[640px] transition-all delay-200 duration-1000 ease-out ${
             ready ? "scale-100 opacity-100" : "scale-[0.95] opacity-0"
           }`}
         >
@@ -284,6 +292,12 @@ export default function SharePage({ params }) {
         >
           {/* Front / Auto / Back toggle + Expand */}
           <div className="flex items-center gap-2">
+          <button
+              onClick={() => setIsInfoOpen(true)}
+              className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+            >
+              <Info className="h-4 w-4" />
+            </button>
           <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-sm">
             <button
               onClick={() => snapTo(0)}
@@ -354,6 +368,12 @@ export default function SharePage({ params }) {
           </div>
           <div className="mt-0 flex flex-col items-center gap-3">
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsInfoOpen(true)}
+                className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+              >
+                <Info className="h-4 w-4" />
+              </button>
               <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-sm">
                 <button
                   onClick={() => snapTo(0)}
@@ -391,6 +411,65 @@ export default function SharePage({ params }) {
               className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
             >
               갤러리 보러가기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Info Popup */}
+      {isInfoOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+          onClick={() => setIsInfoOpen(false)}
+        >
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div
+            className="relative z-10 w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="overflow-y-auto max-h-[85vh] px-7 py-7">
+              {/* Title */}
+              {albumTitle && (
+                <div className="mb-5">
+                  <p className="text-[9px] tracking-[0.2em] text-white/30 uppercase mb-1">Title</p>
+                  <p className="text-3xl font-light tracking-wide text-white leading-tight">{albumTitle}</p>
+                  {subtitle && (
+                    <p className="mt-1.5 text-[11px] tracking-wide text-white/50">{subtitle}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Timeline */}
+              {timeline.length > 0 && (
+                <div className="mb-5">
+                  <div className="border-t border-white/10 mb-4" />
+                  <p className="text-[9px] tracking-[0.2em] text-white/30 uppercase mb-3">Timeline</p>
+                  <div className="space-y-2">
+                    {timeline.map((t, i) => (
+                      <div key={i} className="flex gap-5">
+                        <span className="text-[11px] font-medium text-white/50 shrink-0 w-10">{t.year}</span>
+                        <span className="text-[11px] text-white/60">{t.event}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Story */}
+              {bio && (
+                <div>
+                  <div className="border-t border-white/10 mb-4" />
+                  <p className="text-[9px] tracking-[0.2em] text-white/30 uppercase mb-3">Story</p>
+                  <p className="text-[11px] leading-relaxed text-white/60 whitespace-pre-wrap">{bio}</p>
+                </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => setIsInfoOpen(false)}
+              className="absolute top-4 right-4 text-white/30 hover:text-white/70 transition-colors"
+            >
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>

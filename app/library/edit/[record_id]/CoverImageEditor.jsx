@@ -314,7 +314,7 @@ const CoverImageEditor = forwardRef(
                 {/* AI Generate card */}
                 <button
                   onClick={() => setView("generate")}
-                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="hover:border-[#e8d5b7 ] flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <Sparkles className="h-4 w-4 text-[#475569]" />
@@ -328,7 +328,7 @@ const CoverImageEditor = forwardRef(
                 {/* Upload card */}
                 <button
                   onClick={() => setView("upload")}
-                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="hover:border-[#e8d5b7 ] flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <ImagePlus className="h-[18px] w-[18px] text-[#475569]" />
@@ -372,7 +372,7 @@ const CoverImageEditor = forwardRef(
               {/* Two option cards */}
               <div className="flex gap-4">
                 {/* Device upload card */}
-                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
+                <label className="hover:border-[#e8d5b7 ] flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-[#cbd5e1] bg-transparent px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
                   <input
                     type="file"
                     accept="image/*"
@@ -396,7 +396,7 @@ const CoverImageEditor = forwardRef(
                     setView("photodrive");
                     fetchPhotoMedia();
                   }}
-                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:border-[#67add1] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="hover:border-[#e8d5b7 ] flex flex-1 flex-col items-center justify-center rounded-xl border border-[#cbd5e1] px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <FolderOpen className="h-[18px] w-[18px] text-[#475569]" />
@@ -513,9 +513,7 @@ const CoverImageEditor = forwardRef(
 
               {/* Remaining generations indicator */}
               <div className="mb-4 flex items-center justify-between rounded-lg bg-[#f1f5f9] px-3 py-2">
-                <span className="text-xs text-[#64748b]">
-                  남은 생성 횟수
-                </span>
+                <span className="text-xs text-[#64748b]">남은 생성 횟수</span>
                 <span
                   className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#475569]"}`}
                 >
@@ -584,7 +582,7 @@ const CoverImageEditor = forwardRef(
                       step="0.05"
                       value={imageStrength}
                       onChange={(e) => setImageStrength(Number(e.target.value))}
-                      className="h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#cfcfd1] accent-[#67ADD1]"
+                      className="accent-[#e8d5b7 ] h-1.5 w-full cursor-pointer appearance-none rounded-full bg-[#cfcfd1]"
                     />
                     <div className="mt-1 flex justify-between text-[10px] text-[#94a3b8]">
                       <span>창의적</span>
@@ -609,7 +607,7 @@ const CoverImageEditor = forwardRef(
                       </p>
                       <button
                         onClick={() => setRefPhotoMode(false)}
-                        className="mt-2 text-xs text-[#67ADD1] hover:underline"
+                        className="text-[#e8d5b7 ] mt-2 text-xs hover:underline"
                       >
                         돌아가기
                       </button>
@@ -664,7 +662,7 @@ const CoverImageEditor = forwardRef(
                       setRefPhotoMode(true);
                       fetchRefPhotos();
                     }}
-                    className="flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs text-[#67ADD1] transition-colors hover:bg-[rgba(103,173,209,0.05)]"
+                    className="text-[#e8d5b7 ] flex w-full items-center justify-center gap-1.5 rounded-lg py-1.5 text-xs transition-colors hover:bg-[rgba(103,173,209,0.05)]"
                   >
                     <FolderOpen className="h-3.5 w-3.5" />
                     포토드라이브에서 선택
@@ -675,12 +673,8 @@ const CoverImageEditor = forwardRef(
               {/* Generate button */}
               <button
                 onClick={handleGenerate}
-                disabled={
-                  isGenerating ||
-                  !prompt.trim() ||
-                  remainingGens <= 0
-                }
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#67ADD1] py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
+                disabled={isGenerating || !prompt.trim() || remainingGens <= 0}
+                className="bg-[#e8d5b7 ] mt-4 flex w-full items-center justify-center gap-2 rounded-lg py-[10px] text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
               >
                 {isGenerating ? (
                   <>

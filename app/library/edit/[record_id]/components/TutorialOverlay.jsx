@@ -29,8 +29,7 @@ const TUTORIAL_STEPS = [
   {
     targetSelector: '[data-tutorial="timeline"]',
     title: "타임라인",
-    description:
-      "인생의 주요 순간들을 기록하세요. 드래그로 순서 변경 가능해요",
+    description: "인생의 주요 순간들을 기록하세요. 드래그로 순서 변경 가능해요",
     position: "left",
     tab: "back",
   },
@@ -114,7 +113,8 @@ export default function TutorialOverlay({
 
   // Compute tooltip box position
   const getTooltipStyle = () => {
-    if (!targetRect) return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
+    if (!targetRect)
+      return { top: "50%", left: "50%", transform: "translate(-50%, -50%)" };
 
     const padding = 16;
     const tooltipWidth = 300;
@@ -204,9 +204,9 @@ export default function TutorialOverlay({
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${
                   i === currentStep
-                    ? "w-4 bg-[#67add1]"
+                    ? "bg-[#e8d5b7 ] w-4"
                     : i < currentStep
-                      ? "w-1.5 bg-[#67add1]/40"
+                      ? "bg-[#e8d5b7 ]/40 w-1.5"
                       : "w-1.5 bg-gray-200"
                 }`}
               />
@@ -238,7 +238,7 @@ export default function TutorialOverlay({
             </button>
             <button
               onClick={handleNext}
-              className="flex items-center gap-1 rounded-lg bg-[#67add1] px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#5a9dc0]"
+              className="bg-[#e8d5b7 ] flex items-center gap-1 rounded-lg px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#5a9dc0]"
             >
               {currentStep === TUTORIAL_STEPS.length - 1 ? "완료" : "다음"}
               {currentStep < TUTORIAL_STEPS.length - 1 && (

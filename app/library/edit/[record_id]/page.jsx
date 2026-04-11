@@ -80,16 +80,23 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
       </div>
       <Input
         value={item.year}
-        onChange={(e) => onUpdate(index, "year", e.target.value)}
+        onChange={(e) => onUpdate(index, "year", e.target.value.slice(0, 8))}
         placeholder="연도"
+        maxLength={8}
         className="h-9 w-[70px] rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
       />
-      <Input
-        value={item.event}
-        onChange={(e) => onUpdate(index, "event", e.target.value)}
-        placeholder="내용을 입력하세요..."
-        className="h-9 flex-1 rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
-      />
+      <div className="relative flex-1">
+        <Input
+          value={item.event}
+          onChange={(e) => onUpdate(index, "event", e.target.value.slice(0, 10))}
+          placeholder="내용을 입력하세요..."
+          maxLength={10}
+          className="h-9 w-full rounded-[5px] border-gray-200 bg-[#CFCFD1] pr-8 text-xs text-gray-700 placeholder:text-gray-400"
+        />
+        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400">
+          {item.event.length}/10
+        </span>
+      </div>
       <button
         onClick={() => onRemove(index)}
         className="flex h-9 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-50 transition-opacity group-hover:opacity-100 hover:text-red-500"
@@ -123,6 +130,7 @@ const Index = ({ params }) => {
   const [titlePosition, setTitlePosition] = useState("bottom-center");
   const [titleFont, setTitleFont] = useState("Pretendard Variable");
   const [titleColor, setTitleColor] = useState("#ffffff");
+  const [titleStroke, setTitleStroke] = useState("none");
 
   // Collapsible sections
   const [titleOpen, setTitleOpen] = useState(true);
@@ -223,6 +231,11 @@ const Index = ({ params }) => {
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
           const savedTitleColor = data.coverTitleColor || "#ffffff";
+          const rawStroke = data.coverTitleStroke;
+          const savedTitleStroke =
+            rawStroke === true ? "black" :
+            rawStroke === false || !rawStroke ? "none" :
+            rawStroke;
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -238,6 +251,7 @@ const Index = ({ params }) => {
           setTitlePosition(savedTitlePosition);
           setTitleFont(savedTitleFont);
           setTitleColor(savedTitleColor);
+          setTitleStroke(savedTitleStroke);
           setGooglePhotoUrl(data.googlePhotoUrl || "");
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
@@ -259,6 +273,7 @@ const Index = ({ params }) => {
             titlePosition: savedTitlePosition,
             titleFont: savedTitleFont,
             titleColor: savedTitleColor,
+            titleStroke: savedTitleStroke,
           };
         }
       } catch (error) {
@@ -300,6 +315,7 @@ const Index = ({ params }) => {
           coverTitlePosition: titlePosition,
           coverTitleFont: titleFont,
           coverTitleColor: titleColor,
+          coverTitleStroke: titleStroke,
         }),
       },
     );
@@ -462,7 +478,8 @@ const Index = ({ params }) => {
     titleOverlayEnabled !== initialState.current.titleOverlayEnabled ||
     titlePosition !== initialState.current.titlePosition ||
     titleFont !== initialState.current.titleFont ||
-    titleColor !== initialState.current.titleColor;
+    titleColor !== initialState.current.titleColor ||
+    titleStroke !== initialState.current.titleStroke;
 
   const handleExit = () => {
     router.push("/library");
@@ -561,6 +578,7 @@ const Index = ({ params }) => {
 
   // Timeline helpers
   const addTimelineItem = () => {
+    if (timeline.length >= 6) return;
     const newId = `tl-${nextIdRef.current++}`;
     timelineIdsRef.current = [...timelineIdsRef.current, newId];
     setTimeline([...timeline, { year: "", event: "" }]);
@@ -924,6 +942,7 @@ const Index = ({ params }) => {
             titlePosition={titlePosition}
             titleFont={titleFont}
             titleColor={titleColor}
+            titleStroke={titleStroke}
             flipped={activeTab === "back"}
           />
         </div>
@@ -966,25 +985,29 @@ const Index = ({ params }) => {
                     {/* Title / Subtitle inputs (always visible) */}
                     <div className="space-y-3">
                       <div>
-                        <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
-                          제목
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-medium text-[#64748b]">제목</label>
+                          <span className="text-[10px] text-gray-400">{albumTitle.length}/14</span>
+                        </div>
                         <input
                           type="text"
                           value={albumTitle}
-                          onChange={(e) => setAlbumTitle(e.target.value)}
+                          onChange={(e) => setAlbumTitle(e.target.value.slice(0, 14))}
+                          maxLength={14}
                           placeholder="앨범 제목을 입력하세요"
                           className="w-full rounded-[5px] border border-gray-200 bg-[#CFCFD1] px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-[#67add1] focus:outline-none"
                         />
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
-                          부제목
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className="block text-xs font-medium text-[#64748b]">부제목</label>
+                          <span className="text-[10px] text-gray-400">{albumSubtitle.length}/25</span>
+                        </div>
                         <input
                           type="text"
                           value={albumSubtitle}
-                          onChange={(e) => setAlbumSubtitle(e.target.value)}
+                          onChange={(e) => setAlbumSubtitle(e.target.value.slice(0, 25))}
+                          maxLength={25}
                           placeholder="부제목을 입력하세요"
                           className="w-full rounded-[5px] border border-gray-200 bg-[#CFCFD1] px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-[#67add1] focus:outline-none"
                         />
@@ -1047,9 +1070,11 @@ const Index = ({ params }) => {
                                 position={titlePosition}
                                 font={titleFont}
                                 color={titleColor}
+                                stroke={titleStroke}
                                 onPositionChange={setTitlePosition}
                                 onFontChange={setTitleFont}
                                 onColorChange={setTitleColor}
+                                onStrokeChange={setTitleStroke}
                               />
                             </div>
                           </motion.div>
@@ -1111,6 +1136,7 @@ const Index = ({ params }) => {
                                   position: titlePosition || "bottom-center",
                                   font: titleFont || "Pretendard Variable",
                                   color: titleColor || "#ffffff",
+                                  stroke: titleStroke,
                                 }}
                               />
                             </div>
@@ -1267,11 +1293,11 @@ const Index = ({ params }) => {
                                 )}
                                 <Textarea
                                   value={bio}
-                                  onChange={(e) => setBio(e.target.value)}
+                                  onChange={(e) => setBio(e.target.value.slice(0, 190))}
                                   placeholder={
                                     usedChips.size > 0
                                       ? "추가로 작성하세요..."
-                                      : "���유롭게 작성하세요..."
+                                      : "자유롭게 작성하세요..."
                                   }
                                   className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:ring-0 focus:outline-none"
                                 />
@@ -1279,8 +1305,8 @@ const Index = ({ params }) => {
 
                               {/* Character count */}
                               <div className="flex items-center justify-between">
-                                <p className="text-[11px] text-gray-300">
-                                  {getFullBioText().length}자
+                                <p className={`text-[11px] ${getFullBioText().length >= 190 ? "text-red-400" : "text-gray-300"}`}>
+                                  {getFullBioText().length}/190자
                                 </p>
                                 {bioError && (
                                   <p className="text-xs text-red-500">
@@ -1386,9 +1412,10 @@ const Index = ({ params }) => {
 
                               <button
                                 onClick={addTimelineItem}
-                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#67ADD1] text-xs text-[#67ADD1] transition-colors hover:border-solid hover:bg-[#67ADD1] hover:text-white"
+                                disabled={timeline.length >= 6}
+                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#67ADD1] text-xs text-[#67ADD1] transition-colors hover:border-solid hover:bg-[#67ADD1] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#67ADD1]"
                               >
-                                <Plus className="h-3 w-3" /> 항목 추가
+                                <Plus className="h-3 w-3" /> 항목 추가 ({timeline.length}/6)
                               </button>
 
                               {timeline.length === 0 && (

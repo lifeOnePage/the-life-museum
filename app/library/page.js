@@ -18,7 +18,7 @@ const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
 
 const THEME_BG_MAP = {
-  kitchy: "/images/albumtheme/kitchy.png",
+  kitsch: "/images/albumtheme/kitsch.png",
   illustration: "/images/albumtheme/illustration.png",
 };
 
@@ -44,8 +44,8 @@ async function generateAlbumCovers(item) {
   const [frontCoverImg, themeBgImg, themeStickerImg] = await Promise.all([
     loadImage(item.coverImage?.url),
     loadImage(THEME_BG_MAP[themeKey] || null),
-    themeKey === "kitchy"
-      ? loadImage("/images/albumtheme/kitchy 2.png")
+    themeKey === "kitsch"
+      ? loadImage("/images/albumtheme/kitsch 2.png")
       : Promise.resolve(null),
   ]);
 
@@ -70,6 +70,7 @@ async function generateAlbumCovers(item) {
       position: item.coverTitlePosition || "bottom-center",
       font: item.coverTitleFont || "Pretendard Variable",
       color: item.coverTitleColor || "#ffffff",
+      stroke: item.coverTitleStroke ?? false,
     });
     if (frontDataUrl) frontImage = frontDataUrl;
   }

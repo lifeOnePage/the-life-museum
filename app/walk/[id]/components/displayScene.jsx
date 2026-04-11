@@ -2,11 +2,12 @@
 
 import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo, useState, useEffect, useCallback } from "react";
+import { Suspense, useMemo, useState, useCallback } from "react";
 import * as THREE from "three";
 import Scene from "./scene/Scene";
-import { API_BASE, SEED, CAMERA_SPEED } from "./lib/constants";
+import { SEED, CAMERA_SPEED } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
+import { useRecordData } from "@/app/lib/useRecordData";
 
 // Playback Controls UI
 function PlaybackControls({
@@ -75,45 +76,14 @@ function PlaybackControls({
 
 export default function DisplayScene({ recordId }) {
   const router = useRouter();
-  const [mediaList, setMediaList] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: recordData, loading, error } = useRecordData(recordId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
 
-  // API fetch
-  useEffect(() => {
-    if (!recordId) return;
-
-    async function fetchMedia() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch(`${API_BASE}/record/${recordId}`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        const mediaItems = data?.data?.mediaList;
-
-        if (mediaItems && mediaItems.length > 0) {
-          const images = mediaItems.filter((m) => m.type === "image");
-          setMediaList(images);
-        } else {
-          throw new Error("No media found");
-        }
-      } catch (err) {
-        console.error("Failed to fetch media:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchMedia();
-  }, [recordId]);
+  const mediaList = useMemo(
+    () => (recordData?.mediaList ?? []).filter((m) => m.type === "image"),
+    [recordData],
+  );
 
   const planes = useMemo(() => {
     if (mediaList.length === 0) return [];

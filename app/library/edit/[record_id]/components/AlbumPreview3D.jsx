@@ -52,6 +52,7 @@ export default function AlbumPreview3D({
   titlePosition,
   titleFont,
   titleColor,
+  titleStroke,
   flipped,
   rotationY,
   externalZoom,
@@ -202,6 +203,7 @@ export default function AlbumPreview3D({
       position: titlePosition || "bottom-center",
       font: titleFont || "Pretendard Variable",
       color: titleColor || "#ffffff",
+      stroke: titleStroke ?? false,
     });
   }, [
     frontCoverImg,
@@ -210,6 +212,7 @@ export default function AlbumPreview3D({
     titlePosition,
     titleFont,
     titleColor,
+    titleStroke,
   ]);
 
   const backCoverDataUrl = useMemo(() => {

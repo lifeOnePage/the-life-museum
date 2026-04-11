@@ -70,6 +70,7 @@ async function generateAlbumCovers(item) {
       position: item.coverTitlePosition || "bottom-center",
       font: item.coverTitleFont || "Pretendard Variable",
       color: item.coverTitleColor || "#ffffff",
+      stroke: item.coverTitleStroke ?? false,
     });
     if (frontDataUrl) frontImage = frontDataUrl;
   }

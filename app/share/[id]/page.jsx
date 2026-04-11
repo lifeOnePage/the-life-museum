@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
-import { X } from "lucide-react";
+import { X, Maximize2, Minimize2 } from "lucide-react";
+import { useRecordData } from "@/app/lib/useRecordData";
 
 function Icon360({ className }) {
   return (
@@ -40,80 +41,92 @@ export default function SharePage({ params }) {
   const { id } = use(params);
   const router = useRouter();
 
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: recordData, loading, error } = useRecordData(id);
   const [ready, setReady] = useState(false);
-
-  const [frontCover, setFrontCover] = useState(null);
-  const [albumTitle, setAlbumTitle] = useState("");
-  const [subtitle, setSubtitle] = useState("");
-  const [bio, setBio] = useState("");
-  const [timeline, setTimeline] = useState([]);
-  const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
-  const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
-  const [titlePosition, setTitlePosition] = useState("bottom-center");
-  const [titleFont, setTitleFont] = useState("Pretendard Variable");
-  const [titleColor, setTitleColor] = useState("#ffffff");
-  const [images, setImages] = useState([]);
-  const [flipProgress, setFlipProgress] = useState(0); // 0 = front, 1 = back
+  const [flipProgress, setFlipProgress] = useState(0);
+  const [isAutoRotating, setIsAutoRotating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  useEffect(() => {
-    if (!id) return;
+  const autoRotatingRef = useRef(false);
+  const lastTimeRef = useRef(null);
+  const rafRef = useRef(null);
+  const ROTATE_SPEED = 0.08; // 1바퀴(0→1)에 약 12.5초
 
-    async function fetchRecord() {
-      try {
-        setLoading(true);
-        setError(null);
+  const stopAutoRotate = useCallback(() => {
+    autoRotatingRef.current = false;
+    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    setIsAutoRotating(false);
+  }, []);
 
-        const apiUrl =
-          "https://the-life-museum-backend-production.up.railway.app";
-        const response = await fetch(`${apiUrl}/api/v1/record/${id}`);
+  const startAutoRotate = useCallback(() => {
+    autoRotatingRef.current = true;
+    lastTimeRef.current = null;
+    setIsAutoRotating(true);
 
-        if (!response.ok) {
-          throw new Error(`앨범을 불러올 수 없습니다 (${response.status})`);
-        }
+    function loop(timestamp) {
+      if (!autoRotatingRef.current) return;
+      if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
+      const dt = Math.min((timestamp - lastTimeRef.current) / 1000, 0.1);
+      lastTimeRef.current = timestamp;
 
-        const result = await response.json();
+      setFlipProgress((prev) => prev + ROTATE_SPEED * dt);
 
-        if (!result.ok || !result.data) {
-          throw new Error("앨범 데이터가 없습니다");
-        }
-
-        const data = result.data;
-
-        setFrontCover(data.coverImage?.url || null);
-        setAlbumTitle(data.title || "");
-        setSubtitle(data.subtitle || "");
-        setBio(data.lifestory?.content || "");
-        setSelectedTheme(data.theme || DEFAULT_THEME);
-        setTitleOverlayEnabled(data.coverTitleVisible ?? false);
-        setTitlePosition(data.coverTitlePosition || "bottom-center");
-        setTitleFont(data.coverTitleFont || "Pretendard Variable");
-        setTitleColor(data.coverTitleColor || "#ffffff");
-
-        if (data.timeline?.events) {
-          setTimeline(
-            data.timeline.events.map((e) => ({
-              year: e.timestamp || "",
-              event: `${e.title || ""}${e.description ? ` - ${e.description}` : ""}`,
-            })),
-          );
-        }
-
-        const imgs = (data.mediaList ?? []).filter((m) => m.type === "image");
-        setImages(imgs);
-      } catch (err) {
-        console.error("Failed to fetch record:", err);
-        setError(err.message);
-      } finally {
-        setLoading(false);
-        setTimeout(() => setReady(true), 100);
-      }
+      rafRef.current = requestAnimationFrame(loop);
     }
+    rafRef.current = requestAnimationFrame(loop);
+  }, []);
 
-    fetchRecord();
-  }, [id]);
+  // value: 0 = 앞면, 0.5 = 뒷면 (한 사이클 내 상대 위치)
+  const snapTo = useCallback((value, currentProgress) => {
+    stopAutoRotate();
+    setFlipProgress((prev) => {
+      const base = Math.floor(prev);
+      const frac = prev - base;
+      // 현재 위치에서 가장 가까운 목표 절대값 계산
+      const candidates = [base + value, base + value + 1, base + value - 1];
+      return candidates.reduce((a, b) => Math.abs(a - prev) < Math.abs(b - prev) ? a : b);
+    });
+  }, [stopAutoRotate]);
+
+  useEffect(() => {
+    if (!loading && !error) {
+      const timer = setTimeout(() => setReady(true), 100);
+      return () => clearTimeout(timer);
+    }
+  }, [loading, error]);
+
+  // 페이지 진입 후 자동 회전 시작
+  useEffect(() => {
+    if (ready) {
+      startAutoRotate();
+      return () => stopAutoRotate();
+    }
+  }, [ready]);
+
+  const frontCover = recordData?.coverImage?.url || null;
+  const albumTitle = recordData?.title || "";
+  const subtitle = recordData?.subtitle || "";
+  const bio = recordData?.lifestory?.content || "";
+  const selectedTheme = recordData?.theme || DEFAULT_THEME;
+  const titleOverlayEnabled = recordData?.coverTitleVisible ?? false;
+  const titlePosition = recordData?.coverTitlePosition || "bottom-center";
+  const titleFont = recordData?.coverTitleFont || "Pretendard Variable";
+  const titleColor = recordData?.coverTitleColor || "#ffffff";
+  const rawStroke = recordData?.coverTitleStroke;
+  const titleStroke = rawStroke === true ? "black" : (rawStroke === false || !rawStroke) ? "none" : rawStroke;
+
+  const timeline = useMemo(() => {
+    if (!recordData?.timeline?.events) return [];
+    return recordData.timeline.events.map((e) => ({
+      year: e.timestamp || "",
+      event: `${e.title || ""}${e.description ? ` - ${e.description}` : ""}`,
+    }));
+  }, [recordData]);
+
+  const images = useMemo(
+    () => (recordData?.mediaList ?? []).filter((m) => m.type === "image"),
+    [recordData],
+  );
 
   // Build cylindrical column strips
   const GRID_COLS = 14;
@@ -256,9 +269,10 @@ export default function SharePage({ params }) {
             titlePosition={titlePosition}
             titleFont={titleFont}
             titleColor={titleColor}
-            rotationY={flipProgress * Math.PI}
+            titleStroke={titleStroke}
+            rotationY={flipProgress * 2 * Math.PI}
             hideControls
-            onExpand={() => setIsExpanded(true)}
+            onExpand={() => { const f = flipProgress % 1; stopAutoRotate(); snapTo(f < 0.25 || f > 0.75 ? 0 : 0.5); setIsExpanded(true); }}
           />
         </div>
 
@@ -268,19 +282,46 @@ export default function SharePage({ params }) {
             ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
           }`}
         >
-          {/* Rotation slider */}
-          <div className="flex items-center gap-3">
-            <Icon360 className="h-4 w-4 text-white/30" />
-            <span className="text-[10px] tracking-wider text-white/30">앞</span>
-            <input
-              type="range"
-              min="0"
-              max="100"
-              value={flipProgress * 100}
-              onChange={(e) => setFlipProgress(Number(e.target.value) / 100)}
-              className="flip-slider h-0.5 w-40 cursor-pointer appearance-none rounded-full bg-white/20 outline-none"
-            />
-            <span className="text-[10px] tracking-wider text-white/30">뒤</span>
+          {/* Front / Auto / Back toggle + Expand */}
+          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-sm">
+            <button
+              onClick={() => snapTo(0)}
+              className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
+                !isAutoRotating && (flipProgress % 1 < 0.15 || flipProgress % 1 > 0.85)
+                  ? "bg-white/20 text-white"
+                  : "text-white/35 hover:text-white/70"
+              }`}
+            >
+              앞
+            </button>
+            <button
+              onClick={() => isAutoRotating ? stopAutoRotate() : startAutoRotate()}
+              className={`rounded-full px-3 py-1.5 transition-all duration-300 ${
+                isAutoRotating
+                  ? "bg-white/20 text-white"
+                  : "text-white/35 hover:text-white/70"
+              }`}
+            >
+              <Icon360 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => snapTo(0.5)}
+              className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
+                !isAutoRotating && flipProgress % 1 > 0.35 && flipProgress % 1 < 0.65
+                  ? "bg-white/20 text-white"
+                  : "text-white/35 hover:text-white/70"
+              }`}
+            >
+              뒤
+            </button>
+          </div>
+          <button
+            onClick={() => { const f = flipProgress % 1; stopAutoRotate(); snapTo(f < 0.25 || f > 0.75 ? 0 : 0.5); setIsExpanded(true); }}
+            className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
           </div>
           <button
             onClick={() => router.push(`/walk/${id}`)}
@@ -294,12 +335,6 @@ export default function SharePage({ params }) {
       {/* Expanded Album Overlay */}
       {isExpanded && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95">
-          <button
-            onClick={() => setIsExpanded(false)}
-            className="absolute top-6 right-6 z-10 rounded-full p-2 text-white/40 transition-colors hover:text-white/80"
-          >
-            <X className="h-6 w-6" />
-          </button>
           <div className="h-[85vh] w-[90vw] max-w-[900px]">
             <AlbumPreview3D
               frontCover={frontCover}
@@ -311,29 +346,42 @@ export default function SharePage({ params }) {
               titlePosition={titlePosition}
               titleFont={titleFont}
               titleColor={titleColor}
-              rotationY={flipProgress * Math.PI}
+              rotationY={(flipProgress % 1) * 2 * Math.PI}
               hideControls
               expanded
               onExpand={() => setIsExpanded(false)}
             />
           </div>
           <div className="mt-0 flex flex-col items-center gap-3">
-            <div className="flex items-center gap-3">
-              <Icon360 className="h-4 w-4 text-white/30" />
-              <span className="text-[10px] tracking-wider text-white/30">
-                앞
-              </span>
-              <input
-                type="range"
-                min="0"
-                max="100"
-                value={flipProgress * 100}
-                onChange={(e) => setFlipProgress(Number(e.target.value) / 100)}
-                className="flip-slider h-0.5 w-full cursor-pointer appearance-none rounded-full bg-white/20 outline-none"
-              />
-              <span className="text-[10px] tracking-wider text-white/30">
-                뒤
-              </span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-sm">
+                <button
+                  onClick={() => snapTo(0)}
+                  className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
+                    flipProgress % 1 < 0.15 || flipProgress % 1 > 0.85
+                      ? "bg-white/20 text-white"
+                      : "text-white/35 hover:text-white/70"
+                  }`}
+                >
+                  앞
+                </button>
+                <button
+                  onClick={() => snapTo(0.5)}
+                  className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
+                    flipProgress % 1 > 0.35 && flipProgress % 1 < 0.65
+                      ? "bg-white/20 text-white"
+                      : "text-white/35 hover:text-white/70"
+                  }`}
+                >
+                  뒤
+                </button>
+              </div>
+              <button
+                onClick={() => setIsExpanded(false)}
+                className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </button>
             </div>
             <button
               onClick={() => {

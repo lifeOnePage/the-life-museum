@@ -13,15 +13,17 @@ const FONTS = [
   { label: "북크고딕", family: "Bookk Gothic" },
 ];
 
-const COLOR_PRESETS = ["#ffffff", "#000000", "#cccccc", "#67add1"];
+const COLOR_PRESETS = ["#ffffff", "#000000", "#cccccc"];
 
 export default function TitleOverlayEditor({
   position,
   font,
   color,
+  stroke,
   onPositionChange,
   onFontChange,
   onColorChange,
+  onStrokeChange,
 }) {
   return (
     <div className="space-y-4">
@@ -44,7 +46,7 @@ export default function TitleOverlayEditor({
                 title={pos}
               >
                 <span
-                  className={`block h-1.5 w-1.5 rounded-full mx-auto ${
+                  className={`mx-auto block h-1.5 w-1.5 rounded-full ${
                     position === pos ? "bg-white" : "bg-gray-400"
                   }`}
                 />
@@ -88,7 +90,7 @@ export default function TitleOverlayEditor({
               key={c}
               onClick={() => onColorChange(c)}
               className={`h-7 w-7 rounded-full border-2 transition-all ${
-                color === c ? "border-[#67add1] scale-110" : "border-gray-300"
+                color === c ? "scale-110 border-[#67add1]" : "border-gray-300"
               }`}
               style={{ backgroundColor: c }}
               title={c}
@@ -102,12 +104,50 @@ export default function TitleOverlayEditor({
               className="absolute inset-0 h-7 w-7 cursor-pointer opacity-0"
             />
             <div
-              className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-[10px] text-gray-400"
+              className="flex h-7 w-7 items-center justify-center rounded-full border-2 border-dashed border-gray-300 text-[14px] text-gray-400"
               title="커스텀 색상"
             >
               +
             </div>
           </label>
+        </div>
+      </div>
+
+      {/* Stroke selector */}
+      <div>
+        <label className="mb-1.5 block text-xs font-medium text-[#64748b]">
+          외곽선
+        </label>
+        <div className="flex items-center gap-2">
+          {[
+            { value: "none", label: "없음" },
+            { value: "white", label: "흰색" },
+            { value: "black", label: "검은색" },
+          ].map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => onStrokeChange?.(value)}
+              title={label}
+              className={`h-7 w-7 rounded-full border-2 transition-all ${
+                stroke === value
+                  ? "scale-110 border-[#67add1]"
+                  : "border-gray-300"
+              } ${value === "white" ? "bg-white" : value === "black" ? "bg-black" : "transparent"}`}
+            >
+              {value === "none" && (
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-full w-full p-0.5 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <circle cx="12" cy="12" r="11" />
+                  <line x1="5" y1="5" x2="19" y2="19" />
+                </svg>
+              )}
+            </button>
+          ))}
         </div>
       </div>
     </div>

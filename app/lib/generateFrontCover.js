@@ -107,10 +107,11 @@ function getTextLayout(position, size) {
  * @param {string} config.position - one of 9 positions e.g. "bottom-center"
  * @param {string} config.font - font family name
  * @param {string} config.color - text color hex
+ * @param {"none"|"white"|"black"} [config.stroke] - stroke color, or "none" for no stroke
  * @returns {string|null} data URL or null if no text to render
  */
 export function generateFrontCoverDataUrl(frontCoverImg, config) {
-  const { title, subtitle, position, font, color } = config;
+  const { title, subtitle, position, font, color, stroke } = config;
 
   // No image to composite onto
   if (!frontCoverImg) return null;
@@ -147,7 +148,14 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
 
   // Title only (subtitle is not rendered on front cover)
   if (title) {
-    ctx.font = `bold 52px ${fontFamily}`;
+    ctx.font = `bold 65px ${fontFamily}`;
+    const strokeColor = stroke === "white" ? "#ffffff" : stroke === "black" ? "#000000" : null;
+    if (strokeColor) {
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 6;
+      ctx.lineJoin = "round";
+      ctx.strokeText(title, layout.x, layout.anchorY);
+    }
     ctx.fillText(title, layout.x, layout.anchorY);
   }
 

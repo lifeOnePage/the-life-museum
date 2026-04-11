@@ -163,7 +163,7 @@ export default function ShareScene({
   useEffect(() => {
     const key = selectedTheme || "minimalist";
     const bgMap = {
-      kitchy: "/images/albumtheme/kitchy.png",
+      kitsch: "/images/albumtheme/kitsch.png",
       illustration: "/images/albumtheme/illustration.png",
     };
     const bgSrc = bgMap[key];
@@ -177,11 +177,11 @@ export default function ShareScene({
     img.onerror = () => setThemeBgImg(null);
     img.src = bgSrc;
 
-    if (key === "kitchy") {
+    if (key === "kitsch") {
       const sticker = new Image();
       sticker.onload = () => setThemeStickerImg(sticker);
       sticker.onerror = () => setThemeStickerImg(null);
-      sticker.src = "/images/albumtheme/kitchy 2.png";
+      sticker.src = "/images/albumtheme/kitsch 2.png";
     } else {
       setThemeStickerImg(null);
     }

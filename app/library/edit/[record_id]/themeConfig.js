@@ -1,7 +1,7 @@
 export const UNIFIED_THEMES = {
-  kitchy: {
-    key: "kitchy",
-    name: "Kitchy",
+  kitsch: {
+    key: "kitsch",
+    name: "Kitsch",
     description: "스티커와 종이 질감의 레트로 감성",
     bg: "#e8e0d0",
     accent: "#d6336c",

@@ -5,7 +5,7 @@ import { UNIFIED_THEMES } from "../themeConfig";
 const THEME_LIST = Object.values(UNIFIED_THEMES);
 
 // Mini SVG previews for each theme layout
-function KitchyPreview({ theme }) {
+function KitschPreview({ theme }) {
   return (
     <svg viewBox="0 0 44 56" className="h-full w-full">
       {/* Paper texture background */}
@@ -106,7 +106,7 @@ function MinimalistPreview({ theme }) {
 }
 
 const PREVIEW_MAP = {
-  kitchy: KitchyPreview,
+  kitsch: KitschPreview,
   illustration: IllustrationPreview,
   minimalist: MinimalistPreview,
 };

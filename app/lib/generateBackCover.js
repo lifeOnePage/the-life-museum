@@ -107,7 +107,7 @@ function wrapText(ctx, text, maxWidth) {
   return lines;
 }
 
-// ─── Barcode helper for Kitchy theme ───
+// ─── Barcode helper for Kitsch theme ───
 function drawBarcode(ctx, x, y, width, height) {
   ctx.fillStyle = "#2c2c2c";
   const barCount = 40;
@@ -124,9 +124,9 @@ function drawBarcode(ctx, x, y, width, height) {
   ctx.textAlign = "left";
 }
 
-// ─── Kitchy layout ───
+// ─── Kitsch layout ───
 // Paper texture background with sticker decorations, vertical timeline, barcode
-function drawKitchyLayout(
+function drawKitschLayout(
   ctx,
   size,
   theme,
@@ -236,9 +236,9 @@ function drawKitchyLayout(
   }
 
   // Title — center, large bold dark text with cyan stroke (A2G font)
-  const kitchyTitleFont = yangjinFontLoaded ? '"yangjin"' : bookkFont;
+  const kitschTitleFont = yangjinFontLoaded ? '"yangjin"' : bookkFont;
   if (albumTitle) {
-    ctx.font = `76px ${kitchyTitleFont}`;
+    ctx.font = `76px ${kitschTitleFont}`;
     ctx.textAlign = "center";
     ctx.letterSpacing = "-3px";
     const titleLines = wrapText(ctx, albumTitle, size - margin * 2);
@@ -324,6 +324,7 @@ function drawKitchyLayout(
   // "Album story" label + bio text — bottom-right
   if (bio) {
     const bioBottom = size - margin - 10;
+    const escoredreamFont = escoredreamFontLoaded ? '"Escoredream"' : bookkFont;
     ctx.font = `bold 14px ${bookkFont}`;
     ctx.fillStyle = theme.text + "80";
     ctx.textAlign = "center";
@@ -331,7 +332,7 @@ function drawKitchyLayout(
     ctx.fillText("ALBUM STORY", size / 2, bioBottom - 70);
     ctx.letterSpacing = "0px";
 
-    ctx.font = `16px ${bookkFont}`;
+    ctx.font = `500 16px ${escoredreamFont}`;
     ctx.fillStyle = theme.text + "aa";
     const bioLines = wrapText(ctx, bio, rightPhotoW + 300);
     const maxBioLines = 4;
@@ -451,13 +452,13 @@ function drawIllustrationLayout(
       ctx.restore();
 
       // Year above
-      ctx.font = `bold 16px ${bookkFont}`;
+      ctx.font = `bold 24px ${bookkFont}`;
       ctx.fillStyle = "#406E78";
       ctx.textAlign = "center";
       ctx.fillText(item.year, x, tlY - 18);
 
       // Event below
-      ctx.font = `15px ${bookkFont}`;
+      ctx.font = `17px ${bookkFont}`;
       ctx.textAlign = "center";
       const maxLen = 12;
       const eventText =
@@ -478,12 +479,28 @@ function drawIllustrationLayout(
 
   if (bio) {
     const monoplexFont = monoplexFontLoaded ? '"MonoplexKR"' : "sans-serif";
-    ctx.font = `18px ${monoplexFont}`;
-    ctx.fillStyle = "rgba(0,0,0,0.6)";
-    ctx.textAlign = "center";
-    ctx.letterSpacing = "-1px";
+    const escoredreamFont = escoredreamFontLoaded ? '"Escoredream"' : bookkFont;
+    ctx.font = `500 18px ${escoredreamFont}`;
     const bioLines = wrapText(ctx, bio, size - margin * 2 - 40);
     const maxLines = 5;
+    const lineCount = Math.min(bioLines.length, maxLines);
+    const textBlockH = lineCount * 26 + 20;
+
+    // Semi-transparent semicircle backdrop behind bio text
+    const scR = size * 0.62;
+    const scCx = size / 2;
+    const scCy = size * 1.3; // flat edge at very bottom
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(scCx, scCy, scR, Math.PI, 0); // upper half-circle
+    ctx.closePath();
+    ctx.fillStyle = "rgba(110, 156, 193, 0.3)";
+    ctx.fill();
+    ctx.restore();
+
+    ctx.fillStyle = "#406E78";
+    ctx.textAlign = "center";
+    ctx.letterSpacing = "-1px";
     let bioY = bandY + 40;
     for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
       ctx.fillText(bioLines[i], size / 2, bioY);
@@ -661,13 +678,13 @@ function drawMinimalistLayout(
       ctx.stroke();
 
       // Year above
-      ctx.font = `bold 15px ${escoredreamFont}`;
+      ctx.font = `bold 24px ${escoredreamFont}`;
       ctx.fillStyle = theme.accent;
       ctx.textAlign = "center";
       ctx.fillText(item.year, x, tlY - 16);
 
       // Event below
-      ctx.font = `16px ${escoredreamFont}`;
+      ctx.font = `18px ${escoredreamFont}`;
       ctx.letterSpacing = "-0.7px";
       ctx.fillStyle = theme.text;
       const maxLen = 12;
@@ -702,10 +719,10 @@ function drawMinimalistLayout(
     // ctx.lineTo(lineRight, storyY);
     // ctx.stroke();
 
-    ctx.font = `16px ${escoredreamFont}`;
+    ctx.font = `500 16px ${escoredreamFont}`;
     ctx.fillStyle = theme.text;
     const bioLines = wrapText(ctx, bio, size - margin * 2 - 100);
-    const maxLines = 3;
+    const maxLines = 4;
     let bioY = storyY + 24;
     for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
       ctx.fillText(bioLines[i], size / 2, bioY);
@@ -758,8 +775,8 @@ export function generateBackCoverDataUrl(
   const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 
   switch (themeKey) {
-    case "kitchy":
-      drawKitchyLayout(
+    case "kitsch":
+      drawKitschLayout(
         ctx,
         size,
         theme,

@@ -166,7 +166,7 @@ export default function AlbumPreview3D({
   useEffect(() => {
     const key = selectedTheme || "minimalist";
     const bgMap = {
-      kitchy: "/images/albumtheme/kitchy.png",
+      kitsch: "/images/albumtheme/kitsch.png",
       illustration: "/images/albumtheme/illustration.png",
     };
     const bgSrc = bgMap[key];
@@ -180,12 +180,12 @@ export default function AlbumPreview3D({
     img.onerror = () => setThemeBgImg(null);
     img.src = bgSrc;
 
-    // Load sticker overlay for kitchy theme
-    if (key === "kitchy") {
+    // Load sticker overlay for kitsch theme
+    if (key === "kitsch") {
       const sticker = new Image();
       sticker.onload = () => setThemeStickerImg(sticker);
       sticker.onerror = () => setThemeStickerImg(null);
-      sticker.src = "/images/albumtheme/kitchy 2.png";
+      sticker.src = "/images/albumtheme/kitsch 2.png";
     } else {
       setThemeStickerImg(null);
     }

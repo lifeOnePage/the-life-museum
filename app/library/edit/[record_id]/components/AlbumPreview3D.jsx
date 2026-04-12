@@ -237,20 +237,20 @@ export default function AlbumPreview3D({
           <button
             onClick={() => setZoom((z) => Math.min(z + ZOOM_STEP, zoomCfg.max))}
             disabled={zoom >= zoomCfg.max}
-            className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 disabled:opacity-30"
+            className="rounded-md p-1.5 text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7] disabled:opacity-30"
           >
             <ZoomOut className="h-4 w-4" />
           </button>
           <button
             onClick={toggleFlip}
-            className="text-xs text-gray-400 transition-colors hover:text-gray-600"
+            className="text-xs text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
           >
             {isFlipped ? "앞면" : "뒷면"} 보기
           </button>
           <button
             onClick={() => setZoom((z) => Math.max(z - ZOOM_STEP, zoomCfg.min))}
             disabled={zoom <= zoomCfg.min}
-            className="rounded-md p-1.5 text-gray-400 transition-colors hover:bg-gray-200 hover:text-gray-600 disabled:opacity-30"
+            className="rounded-md p-1.5 text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7] disabled:opacity-30"
           >
             <ZoomIn className="h-4 w-4" />
           </button>

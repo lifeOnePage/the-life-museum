@@ -185,6 +185,21 @@ export default function SharePage({ params }) {
     );
   }
 
+  // Private album
+  if (recordData?.isPublic === false) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center">
+        <p className="text-2xl">🔒</p>
+        <p className="text-sm font-light tracking-wide text-white/60">
+          비공개 앨범입니다
+        </p>
+        <p className="text-xs tracking-wider text-white/30">
+          앨범 소유자만 열람할 수 있어요
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Background: Concave cylindrical photo grid */}

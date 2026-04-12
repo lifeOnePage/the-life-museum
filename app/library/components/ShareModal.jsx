@@ -7,10 +7,9 @@ import { authedFetch } from "@/app/utils/authedFetch";
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
 
-export default function ShareModal({ albumId, albumTitle, onClose }) {
-  const [isShared, setIsShared] = useState(false);
+export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, onClose }) {
+  const [isShared, setIsShared] = useState(initialIsPublic);
   const [copied, setCopied] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const shareLink =
     typeof window !== "undefined"
@@ -19,21 +18,18 @@ export default function ShareModal({ albumId, albumTitle, onClose }) {
 
   const handleSetPublic = async (value) => {
     if (value === isShared) return;
-    setLoading(true);
+    setIsShared(value); // 낙관적 업데이트
     try {
-      const res = await authedFetch(`${BASE_URL}/record/${albumId}`, {
+      const res = await authedFetch(`${BASE_URL}/record/${albumId}/public`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ isPublic: value }),
       });
       const json = await res.json();
-      if (json.ok) {
-        setIsShared(value);
-      }
+      if (!json.ok) setIsShared(!value); // 실패 시 롤백
     } catch (err) {
       console.error("Failed to update share status:", err);
-    } finally {
-      setLoading(false);
+      setIsShared(!value); // 실패 시 롤백
     }
   };
 
@@ -63,7 +59,6 @@ export default function ShareModal({ albumId, albumTitle, onClose }) {
         <div className="flex gap-2">
           <button
             onClick={() => handleSetPublic(true)}
-            disabled={loading}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition ${
               isShared
                 ? "bg-[#c4b49a] text-[#1a1510]"
@@ -74,7 +69,6 @@ export default function ShareModal({ albumId, albumTitle, onClose }) {
           </button>
           <button
             onClick={() => handleSetPublic(false)}
-            disabled={loading}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition ${
               !isShared
                 ? "bg-[#c4b49a] text-[#1a1510]"
@@ -85,16 +79,8 @@ export default function ShareModal({ albumId, albumTitle, onClose }) {
           </button>
         </div>
 
-        {/* 로딩 */}
-        {loading && (
-          <div className="mt-4 flex items-center justify-center gap-2 py-2">
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[#c4b49a] border-t-transparent" />
-            <span className="text-sm text-[#9b8b7a]">변경 중...</span>
-          </div>
-        )}
-
         {/* 링크 + 복사 */}
-        {isShared && !loading && (
+        {isShared && (
           <div className="mt-4 flex items-center gap-2">
             <input
               type="text"

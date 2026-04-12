@@ -72,7 +72,7 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
       className="group flex items-start gap-1.5"
     >
       <div
-        className="cursor-grab pt-2 text-gray-300 active:cursor-grabbing"
+        className="cursor-grab pt-2 text-[#9b8b7a]/40 active:cursor-grabbing"
         {...attributes}
         {...listeners}
       >
@@ -83,23 +83,25 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
         onChange={(e) => onUpdate(index, "year", e.target.value.slice(0, 8))}
         placeholder="연도"
         maxLength={8}
-        className="h-9 w-[70px] rounded-[5px] border-gray-200 bg-[#CFCFD1] text-xs text-gray-700 placeholder:text-gray-400"
+        className="h-9 w-[70px] rounded-[5px] border-white/10 bg-[#2e2720] text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
       />
       <div className="relative flex-1">
         <Input
           value={item.event}
-          onChange={(e) => onUpdate(index, "event", e.target.value.slice(0, 10))}
+          onChange={(e) =>
+            onUpdate(index, "event", e.target.value.slice(0, 10))
+          }
           placeholder="내용을 입력하세요..."
           maxLength={10}
-          className="h-9 w-full rounded-[5px] border-gray-200 bg-[#CFCFD1] pr-8 text-xs text-gray-700 placeholder:text-gray-400"
+          className="h-9 w-full rounded-[5px] border-white/10 bg-[#2e2720] pr-8 text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
         />
-        <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[9px] text-gray-400">
+        <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[9px] text-[#9b8b7a]">
           {item.event.length}/10
         </span>
       </div>
       <button
         onClick={() => onRemove(index)}
-        className="flex h-9 w-8 shrink-0 items-center justify-center rounded text-gray-400 opacity-50 transition-opacity group-hover:opacity-100 hover:text-red-500"
+        className="flex h-9 w-8 shrink-0 items-center justify-center rounded text-[#9b8b7a] opacity-50 transition-opacity group-hover:opacity-100 hover:text-red-400"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -226,16 +228,16 @@ const Index = ({ params }) => {
             }));
           }
 
-          const savedTheme = data.theme || DEFAULT_THEME;
+          const savedTheme = UNIFIED_THEMES[data.theme] ? data.theme : DEFAULT_THEME;
           const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
           const savedTitleColor = data.coverTitleColor || "#ffffff";
-          const rawStroke = data.coverTitleStroke;
+          const rawBgColor = data.coverTitleBgColor;
           const savedTitleStroke =
-            rawStroke === true ? "black" :
-            rawStroke === false || !rawStroke ? "none" :
-            rawStroke;
+            rawBgColor === "black" || rawBgColor === "white"
+              ? rawBgColor
+              : "none";
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -315,7 +317,7 @@ const Index = ({ params }) => {
           coverTitlePosition: titlePosition,
           coverTitleFont: titleFont,
           coverTitleColor: titleColor,
-          coverTitleStroke: titleStroke,
+          coverTitleBgColor: titleStroke === "none" ? null : titleStroke,
         }),
       },
     );
@@ -722,30 +724,30 @@ const Index = ({ params }) => {
 
   if (isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-gray-500">불러오는 중...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#1e1a14]">
+        <p className="text-[#9b8b7a]">불러오는 중...</p>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-[#f8f7f6]">
+    <div className="flex h-screen flex-col overflow-hidden bg-[#1e1a14]">
       {/* Header - Mobile */}
-      <header className="border-b border-[rgba(30,30,30,0.1)] bg-[#f0eee9]">
+      <header className="border-b border-[rgba(255,255,255,0.08)] bg-[#241f18]">
         <div className="relative flex items-center justify-between px-3 py-2 lg:hidden">
           <button
             data-tutorial="exit"
             onClick={() => setShowExitDialog(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500"
+            className="flex h-9 w-9 items-center justify-center rounded-md text-[#9b8b7a]"
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div className="absolute left-1/2 -translate-x-1/2 text-center">
-            <h1 className="text-sm font-semibold text-gray-900">
+            <h1 className="text-sm font-semibold text-[#e8d5b7]">
               {albumTitle || "앨범 편집"}
             </h1>
             {albumSubtitle && (
-              <p className="text-[11px] leading-tight text-gray-400">
+              <p className="text-[11px] leading-tight text-[#9b8b7a]">
                 {albumSubtitle}
               </p>
             )}
@@ -753,7 +755,7 @@ const Index = ({ params }) => {
           <div className="relative">
             <button
               onClick={() => setShowHeaderMenu(!showHeaderMenu)}
-              className="flex h-9 w-9 items-center justify-center rounded-md text-gray-500"
+              className="flex h-9 w-9 items-center justify-center rounded-md text-[#9b8b7a]"
             >
               <MoreVertical className="h-5 w-5" />
             </button>
@@ -769,16 +771,16 @@ const Index = ({ params }) => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -4 }}
                     transition={{ duration: 0.15 }}
-                    className="absolute top-full right-0 z-40 mt-1 w-48 overflow-hidden rounded-xl bg-white py-1 shadow-lg ring-1 ring-black/5"
+                    className="absolute top-full right-0 z-40 mt-1 w-48 overflow-hidden rounded-xl bg-[#2a2318] py-1 shadow-lg ring-1 ring-white/10"
                   >
                     <button
                       onClick={() => {
                         openRecordEditDialog();
                         setShowHeaderMenu(false);
                       }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 active:bg-gray-50"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#e8d5b7] active:bg-white/5"
                     >
-                      <Pencil className="h-4 w-4 text-gray-400" />
+                      <Pencil className="h-4 w-4 text-[#9b8b7a]" />
                       앨범 정보 수정
                     </button>
                     <button
@@ -787,7 +789,7 @@ const Index = ({ params }) => {
                         setShowHeaderMenu(false);
                       }}
                       disabled={isSaving || !isDirty}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#67add1] active:bg-gray-50 disabled:opacity-40"
+                      className="text-[#e8d5b7 ] flex w-full items-center gap-3 px-4 py-2.5 text-[13px] active:bg-white/5 disabled:opacity-40"
                     >
                       {isSaving ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -802,9 +804,9 @@ const Index = ({ params }) => {
                         setShowHeaderMenu(false);
                       }}
                       disabled={!isDirty}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 active:bg-gray-50 disabled:opacity-40"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#e8d5b7] active:bg-white/5 disabled:opacity-40"
                     >
-                      <Undo2 className="h-4 w-4 text-gray-400" />
+                      <Undo2 className="h-4 w-4 text-[#9b8b7a]" />
                       변경사항 초기화
                     </button>
                     <button
@@ -812,9 +814,9 @@ const Index = ({ params }) => {
                         setShowTutorial(true);
                         setShowHeaderMenu(false);
                       }}
-                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-gray-700 active:bg-gray-50"
+                      className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#e8d5b7] active:bg-white/5"
                     >
-                      <HelpCircle className="h-4 w-4 text-gray-400" />
+                      <HelpCircle className="h-4 w-4 text-[#9b8b7a]" />
                       튜토리얼
                     </button>
                   </motion.div>
@@ -831,20 +833,20 @@ const Index = ({ params }) => {
               <button
                 data-tutorial="exit"
                 onClick={() => setShowExitDialog(true)}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+                className="flex h-8 w-8 items-center justify-center rounded-md text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7]"
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                 나가기
               </span>
             </div>
             <div>
-              <h1 className="text-sm leading-tight font-semibold text-gray-900">
+              <h1 className="text-sm leading-tight font-semibold text-[#e8d5b7]">
                 {albumTitle || "앨범 편집"}
               </h1>
               {albumSubtitle && (
-                <p className="text-[11px] leading-tight text-gray-400">
+                <p className="text-[11px] leading-tight text-[#9b8b7a]">
                   {albumSubtitle}
                 </p>
               )}
@@ -853,11 +855,11 @@ const Index = ({ params }) => {
               <div className="group relative">
                 <button
                   onClick={openRecordEditDialog}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
+                  className="hover:text-[#e8d5b7 ] flex h-8 w-8 items-center justify-center rounded-md text-[#9b8b7a] transition-colors hover:bg-white/8"
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                   앨범 정보 수정
                 </span>
               </div>
@@ -865,15 +867,15 @@ const Index = ({ params }) => {
                 <button
                   disabled={!isDirty}
                   onClick={handleReset}
-                  className={`flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors ${
+                  className={`flex h-8 w-8 items-center justify-center rounded-md text-[#9b8b7a] transition-colors ${
                     isDirty
-                      ? "hover:bg-gray-100 hover:text-red-500"
-                      : "cursor-default text-gray-300"
+                      ? "hover:bg-white/8 hover:text-red-400"
+                      : "cursor-default text-[#9b8b7a]/40"
                   }`}
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                   변경사항 초기화
                 </span>
               </div>
@@ -884,8 +886,8 @@ const Index = ({ params }) => {
                   disabled={isSaving || !isDirty}
                   className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
                     isDirty
-                      ? "text-[#67add1] hover:bg-[#67add1]/10"
-                      : "cursor-default text-gray-300"
+                      ? "text-[#c4b49a] hover:bg-[#c4b49a]/10"
+                      : "cursor-default text-[#9b8b7a]/40"
                   }`}
                 >
                   {isSaving ? (
@@ -894,18 +896,18 @@ const Index = ({ params }) => {
                     <Save className="h-3.5 w-3.5" />
                   )}
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                   저장하기
                 </span>
               </div>
               <div className="group relative">
                 <button
                   onClick={() => setShowTutorial(true)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-gray-400 transition-colors hover:bg-gray-100 hover:text-[#67add1]"
+                  className="hover:text-[#e8d5b7 ] flex h-8 w-8 items-center justify-center rounded-md text-[#9b8b7a] transition-colors hover:bg-white/8"
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                   튜토리얼
                 </span>
               </div>
@@ -913,7 +915,7 @@ const Index = ({ params }) => {
           </div>
           <div className="flex shrink-0 items-center gap-2">
             {lastSavedAt && (
-              <p className="text-[10px] text-gray-300">
+              <p className="text-[10px] text-[#9b8b7a]/60">
                 마지막 저장{" "}
                 {lastSavedAt.toLocaleTimeString("ko-KR", {
                   hour: "2-digit",
@@ -928,7 +930,7 @@ const Index = ({ params }) => {
       <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Preview Panel - top half on mobile, right side on desktop */}
         <div
-          className="h-[50vh] shrink-0 bg-[#C0C0C0] lg:order-2 lg:h-auto lg:flex-1"
+          className="h-[50vh] shrink-0 bg-[#1a1510] lg:order-2 lg:h-auto lg:flex-1"
           data-tutorial="preview"
         >
           <AlbumPreview3D
@@ -948,7 +950,7 @@ const Index = ({ params }) => {
         </div>
 
         {/* Editor: bottom half on mobile, sidebar on desktop */}
-        <div className="min-h-0 flex-1 overflow-hidden bg-[#f0eee9] lg:order-1 lg:h-auto lg:w-[420px] lg:flex-none lg:shrink-0 lg:border-r lg:border-[#e2e8f0]">
+        <div className="min-h-0 flex-1 overflow-hidden bg-[#241f18] lg:order-1 lg:h-auto lg:w-[420px] lg:flex-none lg:shrink-0 lg:border-r lg:border-white/10">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -959,16 +961,16 @@ const Index = ({ params }) => {
               onValueChange={setActiveTab}
               className="flex h-full w-full flex-col"
             >
-              <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-[#e2e8f0] bg-transparent p-0">
+              <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-white/10 bg-transparent p-0">
                 <TabsTrigger
                   value="front"
-                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
+                  className="data-[state=active]:border-[#c4b49a] relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
                   앞면
                 </TabsTrigger>
                 <TabsTrigger
                   value="back"
-                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#94a3b8] transition-colors hover:text-[#475569] data-[state=active]:border-[#67add1] data-[state=active]:bg-transparent data-[state=active]:text-[#1e1e1e] data-[state=active]:shadow-none"
+                  className="data-[state=active]:border-[#c4b49a] relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
                   뒷면
                 </TabsTrigger>
@@ -985,37 +987,49 @@ const Index = ({ params }) => {
                     {/* Title / Subtitle inputs (always visible) */}
                     <div className="space-y-3">
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="block text-xs font-medium text-[#64748b]">제목</label>
-                          <span className="text-[10px] text-gray-400">{albumTitle.length}/14</span>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <label className="block text-xs font-medium text-[#9b8b7a]">
+                            제목
+                          </label>
+                          <span className="text-[10px] text-[#9b8b7a]">
+                            {albumTitle.length}/14
+                          </span>
                         </div>
                         <input
                           type="text"
                           value={albumTitle}
-                          onChange={(e) => setAlbumTitle(e.target.value.slice(0, 14))}
+                          onChange={(e) =>
+                            setAlbumTitle(e.target.value.slice(0, 14))
+                          }
                           maxLength={14}
                           placeholder="앨범 제목을 입력하세요"
-                          className="w-full rounded-[5px] border border-gray-200 bg-[#CFCFD1] px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-[#67add1] focus:outline-none"
+                          className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
                         />
                       </div>
                       <div>
-                        <div className="flex items-center justify-between mb-1.5">
-                          <label className="block text-xs font-medium text-[#64748b]">부제목</label>
-                          <span className="text-[10px] text-gray-400">{albumSubtitle.length}/25</span>
+                        <div className="mb-1.5 flex items-center justify-between">
+                          <label className="block text-xs font-medium text-[#9b8b7a]">
+                            부제목
+                          </label>
+                          <span className="text-[10px] text-[#9b8b7a]">
+                            {albumSubtitle.length}/25
+                          </span>
                         </div>
                         <input
                           type="text"
                           value={albumSubtitle}
-                          onChange={(e) => setAlbumSubtitle(e.target.value.slice(0, 25))}
+                          onChange={(e) =>
+                            setAlbumSubtitle(e.target.value.slice(0, 25))
+                          }
                           maxLength={25}
                           placeholder="부제목을 입력하세요"
-                          className="w-full rounded-[5px] border border-gray-200 bg-[#CFCFD1] px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-[#67add1] focus:outline-none"
+                          className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
                         />
                       </div>
                     </div>
 
                     {/* Title Overlay Section - Collapsible with toggle */}
-                    <div className="rounded-lg border border-gray-300">
+                    <div className="rounded-lg border border-white/10">
                       <div className="flex items-center justify-between px-4 py-3">
                         <button
                           onClick={() =>
@@ -1023,14 +1037,14 @@ const Index = ({ params }) => {
                           }
                           className="flex items-center gap-2"
                         >
-                          <span className="text-sm font-semibold text-gray-900">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
                             표지에 제목 표시하기
                           </span>
                           {titleOverlayEnabled &&
                             (titleOpen ? (
-                              <ChevronDown className="h-4 w-4 text-gray-400" />
+                              <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
                             ) : (
-                              <ChevronRight className="h-4 w-4 text-gray-400" />
+                              <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
                             ))}
                         </button>
                         <button
@@ -1043,7 +1057,9 @@ const Index = ({ params }) => {
                             if (next) setTitleOpen(true);
                           }}
                           className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                            titleOverlayEnabled ? "bg-[#67add1]" : "bg-gray-300"
+                            titleOverlayEnabled
+                              ? "bg-[#c4b49a]"
+                              : "bg-[#9b8b7a]/40"
                           }`}
                         >
                           <span
@@ -1065,7 +1081,7 @@ const Index = ({ params }) => {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <div className="border-t border-gray-100 px-4 pt-3 pb-4">
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
                               <TitleOverlayEditor
                                 position={titlePosition}
                                 font={titleFont}
@@ -1085,24 +1101,24 @@ const Index = ({ params }) => {
                     {/* Cover Design Section - Collapsible */}
                     <div
                       data-tutorial="cover-editor"
-                      className="rounded-lg border border-gray-300"
+                      className="rounded-lg border border-white/10"
                     >
                       <button
                         onClick={() => setCoverOpen(!coverOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-gray-900">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
                             표지 디자인
                           </span>
-                          <span className="text-[11px] text-gray-400">
+                          <span className="text-[11px] text-[#9b8b7a]">
                             AI 생성 또는 직접 업로드
                           </span>
                         </div>
                         {coverOpen ? (
-                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
                         )}
                       </button>
 
@@ -1115,7 +1131,7 @@ const Index = ({ params }) => {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <div className="border-t border-gray-100 px-4 pt-3 pb-4">
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
                               <CoverImageEditor
                                 ref={coverRef}
                                 record_id={record_id}
@@ -1151,11 +1167,11 @@ const Index = ({ params }) => {
                 <TabsContent className="px-4 pt-5 sm:px-5" value="back">
                   <div className="space-y-5 pb-10">
                     {/* Guide text */}
-                    <div className="flex items-start gap-3 rounded-xl border border-[#e2e8f0] bg-gradient-to-r from-[#f8fafc] to-[#f1f5f9] px-4 py-3.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#67add1]/10">
-                        <BookOpen className="h-3.5 w-3.5 text-[#67add1]" />
+                    <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#2a2318] px-4 py-3.5">
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c4b49a]/10">
+                        <BookOpen className="h-3.5 w-3.5 text-[#c4b49a]" />
                       </div>
-                      <p className="pt-0.5 text-xs leading-relaxed text-[#64748b]">
+                      <p className="pt-0.5 text-xs leading-relaxed text-[#9b8b7a]">
                         앨범 뒷면을 꾸미기 위해 앨범에 맞는 스토리와 타임라인을
                         적어주세요
                       </p>
@@ -1164,19 +1180,19 @@ const Index = ({ params }) => {
                     {/* Story Section - Collapsible */}
                     <div
                       data-tutorial="story"
-                      className="rounded-lg border border-gray-300"
+                      className="rounded-lg border border-white/10"
                     >
                       <button
                         onClick={() => setStoryOpen(!storyOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-[#e8d5b7]">
                           스토리
                         </span>
                         {storyOpen ? (
-                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
                         )}
                       </button>
 
@@ -1189,23 +1205,23 @@ const Index = ({ params }) => {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <div className="space-y-3 border-t border-gray-100 px-4 pt-3 pb-4">
+                            <div className="space-y-3 border-t border-white/8 px-4 pt-3 pb-4">
                               {/* Keyword chips section */}
                               <div>
                                 <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-medium text-[#64748b]">
+                                  <span className="text-xs font-medium text-[#9b8b7a]">
                                     키워드 선택
                                   </span>
                                   <span
                                     onClick={() =>
                                       setKeywordHelpOpen(!keywordHelpOpen)
                                     }
-                                    className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-colors hover:text-gray-600 ${keywordHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
+                                    className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-colors hover:text-[#c4a882] ${keywordHelpOpen ? "text-[#c4b49a]" : "text-[#9b8b7a]"}`}
                                   >
                                     <HelpCircle className="h-3.5 w-3.5" />
                                   </span>
                                   {usedChips.size > 0 && (
-                                    <span className="text-[11px] text-[#94a3b8]">
+                                    <span className="text-[11px] text-[#9b8b7a]">
                                       {usedChips.size}개 선택됨
                                     </span>
                                   )}
@@ -1219,8 +1235,8 @@ const Index = ({ params }) => {
                                       transition={{ duration: 0.15 }}
                                       className="overflow-hidden"
                                     >
-                                      <div className="mt-1.5 rounded-lg border border-[#e2e8f0] bg-white px-3 py-2.5 shadow-sm">
-                                        <p className="text-[11px] leading-relaxed text-[#64748b]">
+                                      <div className="mt-1.5 rounded-lg border border-white/10 bg-[#2a2318] px-3 py-2.5 shadow-sm">
+                                        <p className="text-[11px] leading-relaxed text-[#9b8b7a]">
                                           💡 글감이 떠오르지 않을 때 키워드를
                                           선택해보세요. 선택한 키워드가 스토리에
                                           주제로 추가되어, AI가 이를 바탕으로 더
@@ -1248,8 +1264,8 @@ const Index = ({ params }) => {
                                         }
                                         className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
                                           isUsed
-                                            ? "border border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
-                                            : "border border-gray-200 bg-white text-gray-500 hover:border-[#67add1] hover:text-[#67add1]"
+                                            ? "border border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
+                                            : "border border-white/15 bg-white/5 text-[#9b8b7a] hover:border-[#c4b49a] hover:text-[#c4b49a]"
                                         }`}
                                       >
                                         {isUsed ? `${chip} ✕` : `+ ${chip}`}
@@ -1261,7 +1277,7 @@ const Index = ({ params }) => {
                                     onClick={() =>
                                       setKeywordsExpanded(!keywordsExpanded)
                                     }
-                                    className="rounded-full border border-dashed border-gray-300 px-3 py-1 text-[11px] font-medium text-[#94a3b8] transition-colors hover:border-[#67add1] hover:text-[#67add1]"
+                                    className="rounded-full border border-dashed border-white/15 px-3 py-1 text-[11px] font-medium text-[#9b8b7a] transition-colors hover:border-[#c4b49a] hover:text-[#c4b49a]"
                                   >
                                     {keywordsExpanded
                                       ? "접기"
@@ -1271,19 +1287,19 @@ const Index = ({ params }) => {
                               </div>
 
                               {/* Text input area with selected chips */}
-                              <div className="min-h-50 w-full rounded-lg bg-[#cfcfd1] px-4 pt-3 pb-3">
+                              <div className="min-h-50 w-full rounded-lg bg-[#2e2720] px-4 pt-3 pb-3">
                                 {usedChips.size > 0 && (
                                   <div className="mb-2 flex flex-wrap gap-1.5">
                                     {[...usedChips].map((chip) => (
                                       <span
                                         key={chip}
-                                        className="inline-flex items-center gap-1 rounded-full border border-[#67add1] bg-[#67add1]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#67add1]"
+                                        className="inline-flex items-center gap-1 rounded-full border border-[#c4b49a] bg-[#c4b49a]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#c4b49a]"
                                       >
                                         {chip}
                                         <button
                                           type="button"
                                           onClick={() => handleChipRemove(chip)}
-                                          className="ml-0.5 text-[#67add1]/60 transition-colors hover:text-[#67add1]"
+                                          className="ml-0.5 text-[#c4b49a]/60 transition-colors hover:text-[#c4b49a]"
                                         >
                                           <X className="h-3 w-3" />
                                         </button>
@@ -1293,19 +1309,23 @@ const Index = ({ params }) => {
                                 )}
                                 <Textarea
                                   value={bio}
-                                  onChange={(e) => setBio(e.target.value.slice(0, 190))}
+                                  onChange={(e) =>
+                                    setBio(e.target.value.slice(0, 190))
+                                  }
                                   placeholder={
                                     usedChips.size > 0
                                       ? "추가로 작성하세요..."
                                       : "자유롭게 작성하세요..."
                                   }
-                                  className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-gray-600 placeholder:text-[#6b7280] focus:ring-0 focus:outline-none"
+                                  className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:ring-0 focus:outline-none"
                                 />
                               </div>
 
                               {/* Character count */}
                               <div className="flex items-center justify-between">
-                                <p className={`text-[11px] ${getFullBioText().length >= 190 ? "text-red-400" : "text-gray-300"}`}>
+                                <p
+                                  className={`text-[11px] ${getFullBioText().length >= 190 ? "text-red-400" : "text-[#9b8b7a]/60"}`}
+                                >
                                   {getFullBioText().length}/190자
                                 </p>
                                 {bioError && (
@@ -1320,7 +1340,7 @@ const Index = ({ params }) => {
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !getFullBioText()}
                                 size="sm"
-                                className="h-8 w-full bg-[#67add1] text-xs"
+                                className="h-8 w-full bg-[#c4b49a] text-xs text-[#1a1510] hover:bg-[#e8d5b7]"
                               >
                                 {isGenerating ? (
                                   <>
@@ -1343,14 +1363,14 @@ const Index = ({ params }) => {
                     {/* Timeline Section - Collapsible */}
                     <div
                       data-tutorial="timeline"
-                      className="rounded-lg border border-gray-300"
+                      className="rounded-lg border border-white/10"
                     >
                       <button
                         onClick={() => setTimelineOpen(!timelineOpen)}
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
                         <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-semibold text-gray-900">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
                             타임라인
                           </span>
                           {/* <span
@@ -1358,15 +1378,15 @@ const Index = ({ params }) => {
                               e.stopPropagation();
                               setTimelineHelpOpen(!timelineHelpOpen);
                             }}
-                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${timelineHelpOpen ? "text-[#67add1]" : "text-gray-400"}`}
+                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${timelineHelpOpen ? "text-[#e8d5b7 ]" : "text-gray-400"}`}
                           >
                             <HelpCircle className="h-3.5 w-3.5" />
                           </span> */}
                         </div>
                         {timelineOpen ? (
-                          <ChevronDown className="h-4 w-4 text-gray-400" />
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 text-gray-400" />
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
                         )}
                       </button>
 
@@ -1379,9 +1399,9 @@ const Index = ({ params }) => {
                             transition={{ duration: 0.2 }}
                             className="overflow-hidden"
                           >
-                            <div className="space-y-2 border-t border-gray-100 px-4 pt-3 pb-4">
+                            <div className="space-y-2 border-t border-white/8 px-4 pt-3 pb-4">
                               {/* {timelineHelpOpen && (
-                                <p className="text-[11px] leading-relaxed text-[#67add1]">
+                                <p className="text-[11px] leading-relaxed text-[#e8d5b7 ]">
                                   기억에 남는 순간들을 시간 순서대로
                                   기록해보세요. 연도와 간단한 내용을 입력하면
                                   됩니다.
@@ -1413,14 +1433,15 @@ const Index = ({ params }) => {
                               <button
                                 onClick={addTimelineItem}
                                 disabled={timeline.length >= 6}
-                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#67ADD1] text-xs text-[#67ADD1] transition-colors hover:border-solid hover:bg-[#67ADD1] hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#67ADD1]"
+                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
                               >
-                                <Plus className="h-3 w-3" /> 항목 추가 ({timeline.length}/6)
+                                <Plus className="h-3 w-3" /> 항목 추가 (
+                                {timeline.length}/6)
                               </button>
 
                               {timeline.length === 0 && (
                                 <div className="py-4 text-center">
-                                  <p className="text-xs text-gray-400">
+                                  <p className="text-xs text-[#9b8b7a]">
                                     타임라인 항목을 추가해보세요
                                   </p>
                                 </div>
@@ -1439,7 +1460,7 @@ const Index = ({ params }) => {
 
                     {/* Theme Section */}
                     <div data-tutorial="theme">
-                      <h3 className="mb-3 text-sm font-semibold text-gray-900">
+                      <h3 className="mb-3 text-sm font-semibold text-[#e8d5b7]">
                         테마
                       </h3>
                       <ThemeSelector
@@ -1470,15 +1491,15 @@ const Index = ({ params }) => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative mx-4 w-full max-w-sm rounded-xl bg-white p-6 shadow-xl"
+              className="relative mx-4 w-full max-w-sm rounded-xl bg-[#2a2318] p-6 shadow-xl"
             >
               <button
                 onClick={() => setShowExitDialog(false)}
-                className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-md text-gray-400 hover:text-gray-600"
+                className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-md text-[#9b8b7a] hover:text-[#e8d5b7]"
               >
                 <X className="h-5 w-5" />
               </button>
-              <p className="text-center text-lg font-semibold text-gray-900">
+              <p className="text-center text-lg font-semibold text-[#e8d5b7]">
                 {isDirty
                   ? "변경사항이 있습니다. 저장하시겠습니까?"
                   : "나가시겠습니까?"}
@@ -1489,7 +1510,7 @@ const Index = ({ params }) => {
                     <Button
                       variant="outline"
                       onClick={handleExit}
-                      className="flex-1 border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-900"
+                      className="flex-1 border-white/15 text-[#9b8b7a] hover:border-white/30 hover:text-[#e8d5b7]"
                     >
                       나가기
                     </Button>
@@ -1523,15 +1544,15 @@ const Index = ({ params }) => {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
               onClick={(e) => e.stopPropagation()}
-              className="mx-4 w-full max-w-md rounded-xl bg-white p-6 shadow-xl"
+              className="mx-4 w-full max-w-md rounded-xl bg-[#2a2318] p-6 shadow-xl"
             >
               <div className="mb-5 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">
+                <h2 className="text-lg font-semibold text-[#e8d5b7]">
                   앨범 정보 수정
                 </h2>
                 <button
                   onClick={() => setShowRecordEditDialog(false)}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-[#9b8b7a] hover:text-[#e8d5b7]"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -1539,7 +1560,7 @@ const Index = ({ params }) => {
 
               <div className="space-y-4">
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-gray-500">
+                  <label className="mb-2 block text-xs font-medium text-[#9b8b7a]">
                     사진 저장소
                   </label>
                   <div className="mb-3 flex gap-2">
@@ -1563,8 +1584,8 @@ const Index = ({ params }) => {
                         }}
                         className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
                           selectedUrlType === opt.key
-                            ? "border-[#67add1] bg-[#67add1]/10 text-[#67add1]"
-                            : "border-gray-200 text-gray-500 hover:border-gray-300"
+                            ? "border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
+                            : "border-white/15 text-[#9b8b7a] hover:border-white/25"
                         }`}
                       >
                         {opt.label}
@@ -1581,10 +1602,10 @@ const Index = ({ params }) => {
                         ? "https://photos.google.com/..."
                         : "서비스 준비중입니다"
                     }
-                    className={`w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none placeholder:text-gray-400 focus:border-gray-500 ${
+                    className={`w-full rounded-md border border-white/15 px-3 py-2 text-sm outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30 ${
                       selectedUrlType !== "google"
-                        ? "cursor-not-allowed bg-gray-100 text-gray-400"
-                        : "bg-white text-gray-900"
+                        ? "cursor-not-allowed bg-white/5 text-[#9b8b7a]"
+                        : "bg-[#2e2720] text-[#e8d5b7]"
                     }`}
                   />
                 </div>
@@ -1598,7 +1619,7 @@ const Index = ({ params }) => {
                 <Button
                   variant="outline"
                   onClick={() => setShowRecordEditDialog(false)}
-                  className="flex-1 border-gray-300 text-gray-500"
+                  className="flex-1 border-white/15 text-[#9b8b7a] hover:border-white/30 hover:text-[#e8d5b7]"
                 >
                   취소
                 </Button>
@@ -1621,11 +1642,11 @@ const Index = ({ params }) => {
               </div>
 
               {/* Delete record */}
-              <div className="mt-6 border-t border-gray-100 pt-4">
+              <div className="mt-6 border-t border-white/8 pt-4">
                 {!showDeleteConfirm ? (
                   <button
                     onClick={() => setShowDeleteConfirm(true)}
-                    className="w-full rounded-lg py-2.5 text-center text-sm font-medium text-red-500 transition-colors hover:bg-red-50"
+                    className="w-full rounded-lg py-2.5 text-center text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10"
                   >
                     <Trash2 className="mr-1.5 inline h-3.5 w-3.5" />
                     앨범 삭제하기
@@ -1639,7 +1660,7 @@ const Index = ({ params }) => {
                       <Button
                         variant="outline"
                         onClick={() => setShowDeleteConfirm(false)}
-                        className="flex-1 border-gray-300 text-xs text-gray-500"
+                        className="flex-1 border-white/15 text-xs text-[#9b8b7a]"
                         size="sm"
                       >
                         취소

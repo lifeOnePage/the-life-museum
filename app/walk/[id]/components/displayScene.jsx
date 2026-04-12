@@ -119,6 +119,20 @@ export default function DisplayScene({ recordId }) {
     );
   }
 
+  if (recordData?.isPublic === false) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6 text-center">
+        <p className="text-2xl">🔒</p>
+        <p className="text-sm font-light tracking-wide text-white/60">
+          비공개 앨범입니다
+        </p>
+        <p className="text-xs tracking-wider text-white/30">
+          앨범 소유자만 열람할 수 있어요
+        </p>
+      </div>
+    );
+  }
+
   if (mediaList.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-black text-white">

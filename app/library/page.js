@@ -120,6 +120,7 @@ export default function MyShelfPage() {
             backImage: null,
             edgeColor: item.bgColor || "#ffffff",
             role: item.role || "owner",
+            isPublic: item.isPublic ?? false,
           }));
           setCachedAlbums(newAlbums);
           setAlbums(newAlbums);
@@ -368,6 +369,7 @@ export default function MyShelfPage() {
         <ShareModal
           albumId={selectedAlbum.data.id}
           albumTitle={selectedAlbum.data.title || ""}
+          initialIsPublic={selectedAlbum.data.isPublic ?? false}
           onClose={() => setShowShareModal(false)}
         />
       )}

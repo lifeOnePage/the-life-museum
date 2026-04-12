@@ -109,7 +109,7 @@ const BioEditor = forwardRef(
     return (
       <div className="space-y-6">
         <div>
-          <label className="mb-2 block text-xs tracking-widest text-gray-500 uppercase">
+          <label className="mb-2 block text-xs tracking-widest text-[#9b8b7a] uppercase">
             <Sparkles className="mr-1 inline h-3 w-3" />
             AI 생애문 생성
           </label>
@@ -118,20 +118,20 @@ const BioEditor = forwardRef(
             value={userName}
             onChange={(e) => setUserName(e.target.value)}
             placeholder="이름을 입력하세요"
-            className="mb-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400"
+            className="mb-3 border border-white/10 bg-[#2e2720] text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
           />
 
           <Input
             value={keywords}
             onChange={(e) => setKeywords(e.target.value)}
             placeholder="키워드를 입력하세요... 예: 피아니스트, 서울, 음악을 사랑함"
-            className="mb-3 border border-gray-300 bg-white text-gray-900 placeholder:text-gray-400"
+            className="mb-3 border border-white/10 bg-[#2e2720] text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
           />
 
           <select
             value={style}
             onChange={(e) => setStyle(e.target.value)}
-            className="mb-3 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900"
+            className="mb-3 w-full rounded-md border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7]"
           >
             {STYLE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -140,7 +140,7 @@ const BioEditor = forwardRef(
             ))}
           </select>
 
-          {error && <p className="mb-3 text-sm text-red-500">{error}</p>}
+          {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
 
           <Button
             onClick={handleGenerate}
@@ -160,30 +160,26 @@ const BioEditor = forwardRef(
         </div>
 
         <div>
-          <label className="mb-2 block text-xs tracking-widest text-gray-500 uppercase">
+          <label className="mb-2 block text-xs tracking-widest text-[#9b8b7a] uppercase">
             생애문 편집
           </label>
           <Textarea
             value={bio}
             onChange={(e) => onBioChange(e.target.value)}
             placeholder="생애문을 직접 작성하거나 AI로 생성하세요..."
-            className="min-h-[200px] resize-none border border-gray-300 bg-white leading-relaxed text-gray-900 placeholder:text-gray-400"
+            className="min-h-[200px] resize-none border border-white/10 bg-[#2e2720] leading-relaxed text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
           />
-          <p className="mt-2 text-xs text-gray-400">{bio.length}자</p>
+          <p className="mt-2 text-xs text-[#9b8b7a]">{bio.length}자</p>
         </div>
 
         {isSaving && (
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-[#9b8b7a]">
             <RefreshCw className="h-4 w-4 animate-spin" /> 저장 중...
           </div>
         )}
 
-        <div className="border-t border-gray-200 pt-6">
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            className="w-full border-gray-300 text-gray-500 hover:border-gray-400 hover:text-gray-900"
-          >
+        <div className="border-t border-white/10 pt-6">
+          <Button onClick={handleReset} variant="outline" className="w-full">
             <RotateCcw className="mr-2 h-4 w-4" /> 초기화
           </Button>
         </div>

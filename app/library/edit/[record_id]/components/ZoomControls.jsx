@@ -12,19 +12,19 @@ const ZoomControls = ({ zoom, onZoomChange }) => {
   };
 
   return (
-    <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-gray-200 bg-white px-2 py-1 shadow-sm">
+    <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full border border-white/10 bg-[#2e2720] px-2 py-1 shadow-sm">
       <button
         onClick={handleZoomOut}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+        className="flex h-7 w-7 items-center justify-center rounded-full text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7]"
       >
         <Minus className="h-3.5 w-3.5" />
       </button>
-      <span className="min-w-[40px] text-center text-xs font-medium text-gray-600">
+      <span className="min-w-[40px] text-center text-xs font-medium text-[#9b8b7a]">
         {zoom}%
       </span>
       <button
         onClick={handleZoomIn}
-        className="flex h-7 w-7 items-center justify-center rounded-full text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-900"
+        className="flex h-7 w-7 items-center justify-center rounded-full text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7]"
       >
         <Plus className="h-3.5 w-3.5" />
       </button>

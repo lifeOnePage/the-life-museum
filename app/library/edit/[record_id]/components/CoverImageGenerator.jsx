@@ -268,10 +268,10 @@ export default function CoverImageGenerator({
           </div>
 
           {/* Remaining generations indicator */}
-          <div className="border-[#e8d5b7 ] mb-4 flex items-center justify-between rounded-lg border-[1.5px] px-3 py-2">
-            <span className="text-[#e8d5b7 ] text-xs">사용한 생성 횟수</span>
+          <div className="mb-4 flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
+            <span className="text-xs text-[#c4b49a]">사용한 생성 횟수</span>
             <span
-              className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#e8d5b7 ]"}`}
+              className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
             >
               {3 - remainingGens}/3
             </span>
@@ -308,7 +308,7 @@ export default function CoverImageGenerator({
             </div>
           ) : (
             <div className="mb-4 flex gap-3">
-              <label className="hover:border-[#e8d5b7 ] flex flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors">
+              <label className="hover:border-[#c4b49a] flex flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors">
                 <input
                   type="file"
                   accept="image/*"
@@ -323,7 +323,7 @@ export default function CoverImageGenerator({
                   preloadBlobs();
                   setView("ref-photodrive");
                 }}
-                className="hover:border-[#e8d5b7 ] flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors"
+                className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors"
               >
                 <FolderOpen className="mb-1 h-4 w-4 text-[#9b8b7a]" />
                 <span className="text-[11px] text-[#9b8b7a]">포토드라이브</span>
@@ -364,10 +364,10 @@ export default function CoverImageGenerator({
                   disabled={disabled}
                   className={`flex flex-1 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-center transition-all ${
                     selectedStyle === opt.key
-                      ? "border-[#e8d5b7 ] bg-[#e8d5b7 ]/10"
+                      ? "border-[#c4b49a] bg-[#c4b49a]/10"
                       : disabled
                         ? "border-white/10 opacity-40"
-                        : "hover:border-[#e8d5b7 ] border-white/15"
+                        : "hover:border-[#c4b49a] border-white/15"
                   }`}
                 >
                   <img
@@ -378,7 +378,7 @@ export default function CoverImageGenerator({
                   <span
                     className={`text-xs font-medium ${
                       selectedStyle === opt.key
-                        ? "text-[#e8d5b7 ]"
+                        ? "text-[#c4b49a]"
                         : "text-[#e8d5b7]"
                     }`}
                   >
@@ -398,7 +398,7 @@ export default function CoverImageGenerator({
             disabled={
               isGenerating || imageRefFiles.length === 0 || remainingGens <= 0
             }
-            className="bg-[#e8d5b7 ] flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-medium text-white transition-opacity hover:bg-[#334a6d] disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#c4b49a] py-2.5 text-sm font-medium text-[#1a1510] transition-opacity hover:bg-[#e8d5b7] disabled:opacity-50"
           >
             {isGenerating ? (
               <>

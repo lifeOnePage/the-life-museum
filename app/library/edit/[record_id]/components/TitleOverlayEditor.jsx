@@ -40,7 +40,7 @@ export default function TitleOverlayEditor({
                 onClick={() => onPositionChange(pos)}
                 className={`h-7 w-7 rounded transition-all ${
                   position === pos
-                    ? "bg-[#e8d5b7 ] shadow-sm"
+                    ? "bg-[#c4b49a] shadow-sm"
                     : "bg-white/10 hover:bg-white/20"
                 }`}
                 title={pos}
@@ -69,8 +69,8 @@ export default function TitleOverlayEditor({
               style={{ fontFamily: f.family }}
               className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition-all ${
                 font === f.family
-                  ? "border-[#e8d5b7 ] bg-[#e8d5b7 ]/10 text-[#e8d5b7 ]"
-                  : "hover:border-[#e8d5b7 ] hover:text-[#e8d5b7 ] border-white/15 bg-white/5 text-[#9b8b7a]"
+                  ? "border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
+                  : "hover:border-[#c4b49a] hover:text-[#c4b49a] border-white/15 bg-white/5 text-[#9b8b7a]"
               }`}
             >
               {f.label}
@@ -90,7 +90,7 @@ export default function TitleOverlayEditor({
               key={c}
               onClick={() => onColorChange(c)}
               className={`h-7 w-7 rounded-full border-2 transition-all ${
-                color === c ? "border-[#e8d5b7 ] scale-110" : "border-white/20"
+                color === c ? "border-[#c4b49a] scale-110" : "border-white/20"
               }`}
               style={{ backgroundColor: c }}
               title={c}
@@ -113,39 +113,34 @@ export default function TitleOverlayEditor({
         </div>
       </div>
 
-      {/* Stroke selector */}
+      {/* Background selector */}
       <div>
         <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-          외곽선
+          배경
         </label>
         <div className="flex items-center gap-2">
           {[
             { value: "none", label: "없음" },
+            { value: "black", label: "검정" },
             { value: "white", label: "흰색" },
-            { value: "black", label: "검은색" },
           ].map(({ value, label }) => (
             <button
               key={value}
               onClick={() => onStrokeChange?.(value)}
               title={label}
-              className={`h-7 w-7 rounded-full border-2 transition-all ${
+              className={`rounded px-2.5 py-1 text-xs font-medium border-2 transition-all ${
                 stroke === value
-                  ? "border-[#e8d5b7 ] scale-110"
+                  ? "border-[#e8d5b7] scale-105"
                   : "border-white/20"
-              } ${value === "white" ? "bg-white" : value === "black" ? "bg-black" : "transparent"}`}
+              } ${
+                value === "white"
+                  ? "bg-white text-black"
+                  : value === "black"
+                    ? "bg-black text-white"
+                    : "bg-white/10 text-[#9b8b7a]"
+              }`}
             >
-              {value === "none" && (
-                <svg
-                  viewBox="0 0 24 24"
-                  className="h-full w-full p-0.5 text-[#9b8b7a]"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <circle cx="12" cy="12" r="11" />
-                  <line x1="5" y1="5" x2="19" y2="19" />
-                </svg>
-              )}
+              {label}
             </button>
           ))}
         </div>

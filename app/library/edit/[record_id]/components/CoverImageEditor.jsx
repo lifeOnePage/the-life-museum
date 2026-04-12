@@ -246,7 +246,7 @@ const CoverImageEditor = forwardRef(
                 {/* AI Generate card */}
                 <button
                   onClick={() => setView("generate")}
-                  className="hover:border-[#e8d5b7 ] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <Sparkles className="h-4 w-4 text-[#9b8b7a]" />
@@ -260,7 +260,7 @@ const CoverImageEditor = forwardRef(
                 {/* Upload card */}
                 <button
                   onClick={() => setView("upload")}
-                  className="hover:border-[#e8d5b7 ] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <ImagePlus className="h-[18px] w-[18px] text-[#9b8b7a]" />
@@ -304,7 +304,7 @@ const CoverImageEditor = forwardRef(
               {/* Two option cards */}
               <div className="flex gap-4">
                 {/* Device upload card */}
-                <label className="hover:border-[#e8d5b7 ] flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-white/15 bg-transparent px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
+                <label className="hover:border-[#c4b49a] flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-white/15 bg-transparent px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
                   <input
                     type="file"
                     accept="image/*"
@@ -329,7 +329,7 @@ const CoverImageEditor = forwardRef(
                     setSelectedPhotoIndex(-1);
                     preloadBlobs();
                   }}
-                  className="hover:border-[#e8d5b7 ] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <FolderOpen className="h-[18px] w-[18px] text-[#9b8b7a]" />

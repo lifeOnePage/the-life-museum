@@ -187,12 +187,12 @@ export default function TutorialOverlay({
           exit={{ opacity: 0, y: -8 }}
           transition={{ duration: 0.2 }}
           style={getTooltipStyle()}
-          className="fixed z-[62] rounded-xl bg-white p-5 shadow-2xl"
+          className="fixed z-[62] rounded-xl bg-[#1e1a14] p-5 shadow-2xl ring-1 ring-white/10"
         >
           {/* Close button */}
           <button
             onClick={onClose}
-            className="absolute top-3 right-3 text-gray-300 transition-colors hover:text-gray-600"
+            className="absolute top-3 right-3 text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
           >
             <X className="h-4 w-4" />
           </button>
@@ -204,21 +204,21 @@ export default function TutorialOverlay({
                 key={i}
                 className={`h-1.5 rounded-full transition-all ${
                   i === currentStep
-                    ? "bg-[#e8d5b7 ] w-4"
+                    ? "bg-[#c4b49a] w-4"
                     : i < currentStep
-                      ? "bg-[#e8d5b7 ]/40 w-1.5"
-                      : "w-1.5 bg-gray-200"
+                      ? "bg-[#c4b49a]/40 w-1.5"
+                      : "w-1.5 bg-white/10"
                 }`}
               />
             ))}
-            <span className="ml-auto text-[11px] text-gray-400">
+            <span className="ml-auto text-[11px] text-[#9b8b7a]">
               {currentStep + 1}/{TUTORIAL_STEPS.length}
             </span>
           </div>
 
           {/* Content */}
-          <h3 className="mb-1 text-sm font-bold text-gray-900">{step.title}</h3>
-          <p className="mb-4 text-[13px] leading-relaxed text-gray-500">
+          <h3 className="mb-1 text-sm font-bold text-[#e8d5b7]">{step.title}</h3>
+          <p className="mb-4 text-[13px] leading-relaxed text-[#9b8b7a]">
             {step.description}
           </p>
 
@@ -229,8 +229,8 @@ export default function TutorialOverlay({
               disabled={currentStep === 0}
               className={`flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
                 currentStep === 0
-                  ? "cursor-default text-gray-300"
-                  : "text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                  ? "cursor-default text-[#9b8b7a]/30"
+                  : "text-[#9b8b7a] hover:bg-white/8 hover:text-[#e8d5b7]"
               }`}
             >
               <ChevronLeft className="h-3.5 w-3.5" />
@@ -238,7 +238,7 @@ export default function TutorialOverlay({
             </button>
             <button
               onClick={handleNext}
-              className="bg-[#e8d5b7 ] flex items-center gap-1 rounded-lg px-4 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-[#5a9dc0]"
+              className="flex items-center gap-1 rounded-lg bg-[#c4b49a] px-4 py-1.5 text-xs font-semibold text-[#1a1510] transition-colors hover:bg-[#e8d5b7]"
             >
               {currentStep === TUTORIAL_STEPS.length - 1 ? "완료" : "다음"}
               {currentStep < TUTORIAL_STEPS.length - 1 && (

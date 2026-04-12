@@ -149,14 +149,29 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
   // Title only (subtitle is not rendered on front cover)
   if (title) {
     ctx.font = `bold 65px ${fontFamily}`;
-    const strokeColor = stroke === "white" ? "#ffffff" : stroke === "black" ? "#000000" : null;
-    if (strokeColor) {
-      ctx.strokeStyle = strokeColor;
-      ctx.lineWidth = 6;
-      ctx.lineJoin = "round";
-      ctx.strokeText(title, layout.x, layout.anchorY);
+    const bgColor =
+      stroke === "white" ? "#ffffff" : stroke === "black" ? "#000000" : null;
+    if (bgColor) {
+      const metrics = ctx.measureText(title);
+      const textWidth = metrics.width;
+      const textHeight = 55;
+      const padX = 16;
+      const padY = 10;
+      let rectX;
+      if (layout.textAlign === "left") rectX = layout.x - padX;
+      else if (layout.textAlign === "right")
+        rectX = layout.x - textWidth - padX;
+      else rectX = layout.x - textWidth / 2 - padX;
+      ctx.fillStyle = bgColor;
+      ctx.fillRect(
+        rectX,
+        layout.anchorY - textHeight + 4,
+        textWidth + padX * 2,
+        textHeight + padY * 2 - 4,
+      );
+      ctx.fillStyle = color || "#ffffff";
     }
-    ctx.fillText(title, layout.x, layout.anchorY);
+    ctx.fillText(title, layout.x, layout.anchorY + 8);
   }
 
   return canvas.toDataURL("image/png");

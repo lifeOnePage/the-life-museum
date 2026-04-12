@@ -228,18 +228,16 @@ const Index = ({ params }) => {
             }));
           }
 
-          const savedTheme = data.theme || DEFAULT_THEME;
+          const savedTheme = UNIFIED_THEMES[data.theme] ? data.theme : DEFAULT_THEME;
           const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
           const savedTitleColor = data.coverTitleColor || "#ffffff";
-          const rawStroke = data.coverTitleStroke;
+          const rawBgColor = data.coverTitleBgColor;
           const savedTitleStroke =
-            rawStroke === true
-              ? "black"
-              : rawStroke === false || !rawStroke
-                ? "none"
-                : rawStroke;
+            rawBgColor === "black" || rawBgColor === "white"
+              ? rawBgColor
+              : "none";
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -319,7 +317,7 @@ const Index = ({ params }) => {
           coverTitlePosition: titlePosition,
           coverTitleFont: titleFont,
           coverTitleColor: titleColor,
-          coverTitleStroke: titleStroke,
+          coverTitleBgColor: titleStroke === "none" ? null : titleStroke,
         }),
       },
     );
@@ -839,7 +837,7 @@ const Index = ({ params }) => {
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                 나가기
               </span>
             </div>
@@ -861,7 +859,7 @@ const Index = ({ params }) => {
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                   앨범 정보 수정
                 </span>
               </div>
@@ -877,7 +875,7 @@ const Index = ({ params }) => {
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                   변경사항 초기화
                 </span>
               </div>
@@ -888,7 +886,7 @@ const Index = ({ params }) => {
                   disabled={isSaving || !isDirty}
                   className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
                     isDirty
-                      ? "text-[#e8d5b7 ] hover:bg-[#e8d5b7 ]/10"
+                      ? "text-[#c4b49a] hover:bg-[#c4b49a]/10"
                       : "cursor-default text-[#9b8b7a]/40"
                   }`}
                 >
@@ -898,7 +896,7 @@ const Index = ({ params }) => {
                     <Save className="h-3.5 w-3.5" />
                   )}
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                   저장하기
                 </span>
               </div>
@@ -909,7 +907,7 @@ const Index = ({ params }) => {
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-gray-800 px-2 py-1 text-[10px] whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
                   튜토리얼
                 </span>
               </div>
@@ -966,13 +964,13 @@ const Index = ({ params }) => {
               <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-white/10 bg-transparent p-0">
                 <TabsTrigger
                   value="front"
-                  className="data-[state=active]:border-[#e8d5b7 ] relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:bg-transparent data-[state=active]:text-[#e8d5b7] data-[state=active]:shadow-none"
+                  className="data-[state=active]:border-[#c4b49a] relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
                   앞면
                 </TabsTrigger>
                 <TabsTrigger
                   value="back"
-                  className="data-[state=active]:border-[#e8d5b7 ] relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:bg-transparent data-[state=active]:text-[#e8d5b7] data-[state=active]:shadow-none"
+                  className="data-[state=active]:border-[#c4b49a] relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
                   뒷면
                 </TabsTrigger>
@@ -1060,7 +1058,7 @@ const Index = ({ params }) => {
                           }}
                           className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
                             titleOverlayEnabled
-                              ? "bg-[#e8d5b7 ]"
+                              ? "bg-[#c4b49a]"
                               : "bg-[#9b8b7a]/40"
                           }`}
                         >
@@ -1170,8 +1168,8 @@ const Index = ({ params }) => {
                   <div className="space-y-5 pb-10">
                     {/* Guide text */}
                     <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#2a2318] px-4 py-3.5">
-                      <div className="bg-[#e8d5b7 ]/10 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg">
-                        <BookOpen className="text-[#e8d5b7 ] h-3.5 w-3.5" />
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c4b49a]/10">
+                        <BookOpen className="h-3.5 w-3.5 text-[#c4b49a]" />
                       </div>
                       <p className="pt-0.5 text-xs leading-relaxed text-[#9b8b7a]">
                         앨범 뒷면을 꾸미기 위해 앨범에 맞는 스토리와 타임라인을
@@ -1218,7 +1216,7 @@ const Index = ({ params }) => {
                                     onClick={() =>
                                       setKeywordHelpOpen(!keywordHelpOpen)
                                     }
-                                    className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-colors hover:text-[#c4a882] ${keywordHelpOpen ? "text-[#e8d5b7 ]" : "text-[#9b8b7a]"}`}
+                                    className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-colors hover:text-[#c4a882] ${keywordHelpOpen ? "text-[#c4b49a]" : "text-[#9b8b7a]"}`}
                                   >
                                     <HelpCircle className="h-3.5 w-3.5" />
                                   </span>
@@ -1266,8 +1264,8 @@ const Index = ({ params }) => {
                                         }
                                         className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
                                           isUsed
-                                            ? "border-[#e8d5b7 ] bg-[#e8d5b7 ]/10 text-[#e8d5b7 ] border"
-                                            : "hover:border-[#e8d5b7 ] hover:text-[#e8d5b7 ] border border-white/15 bg-white/5 text-[#9b8b7a]"
+                                            ? "border border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
+                                            : "border border-white/15 bg-white/5 text-[#9b8b7a] hover:border-[#c4b49a] hover:text-[#c4b49a]"
                                         }`}
                                       >
                                         {isUsed ? `${chip} ✕` : `+ ${chip}`}
@@ -1279,7 +1277,7 @@ const Index = ({ params }) => {
                                     onClick={() =>
                                       setKeywordsExpanded(!keywordsExpanded)
                                     }
-                                    className="hover:border-[#e8d5b7 ] hover:text-[#e8d5b7 ] rounded-full border border-dashed border-white/15 px-3 py-1 text-[11px] font-medium text-[#9b8b7a] transition-colors"
+                                    className="rounded-full border border-dashed border-white/15 px-3 py-1 text-[11px] font-medium text-[#9b8b7a] transition-colors hover:border-[#c4b49a] hover:text-[#c4b49a]"
                                   >
                                     {keywordsExpanded
                                       ? "접기"
@@ -1295,13 +1293,13 @@ const Index = ({ params }) => {
                                     {[...usedChips].map((chip) => (
                                       <span
                                         key={chip}
-                                        className="border-[#e8d5b7 ] bg-[#e8d5b7 ]/10 text-[#e8d5b7 ] inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-medium"
+                                        className="inline-flex items-center gap-1 rounded-full border border-[#c4b49a] bg-[#c4b49a]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#c4b49a]"
                                       >
                                         {chip}
                                         <button
                                           type="button"
                                           onClick={() => handleChipRemove(chip)}
-                                          className="text-[#e8d5b7 ]/60 hover:text-[#e8d5b7 ] ml-0.5 transition-colors"
+                                          className="ml-0.5 text-[#c4b49a]/60 transition-colors hover:text-[#c4b49a]"
                                         >
                                           <X className="h-3 w-3" />
                                         </button>
@@ -1342,7 +1340,7 @@ const Index = ({ params }) => {
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !getFullBioText()}
                                 size="sm"
-                                className="bg-[#e8d5b7 ] h-8 w-full text-xs"
+                                className="h-8 w-full bg-[#c4b49a] text-xs text-[#1a1510] hover:bg-[#e8d5b7]"
                               >
                                 {isGenerating ? (
                                   <>
@@ -1435,7 +1433,7 @@ const Index = ({ params }) => {
                               <button
                                 onClick={addTimelineItem}
                                 disabled={timeline.length >= 6}
-                                className="border-[#e8d5b7 ] text-[#e8d5b7 ] hover:bg-[#e8d5b7 ] disabled:hover:text-[#e8d5b7 ] flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed text-xs transition-colors hover:border-solid hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
                               >
                                 <Plus className="h-3 w-3" /> 항목 추가 (
                                 {timeline.length}/6)
@@ -1586,7 +1584,7 @@ const Index = ({ params }) => {
                         }}
                         className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
                           selectedUrlType === opt.key
-                            ? "border-[#e8d5b7 ] bg-[#e8d5b7 ]/10 text-[#e8d5b7 ]"
+                            ? "border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
                             : "border-white/15 text-[#9b8b7a] hover:border-white/25"
                         }`}
                       >

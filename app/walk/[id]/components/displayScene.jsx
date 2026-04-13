@@ -5,7 +5,7 @@ import { Canvas } from "@react-three/fiber";
 import { Suspense, useMemo, useState, useCallback } from "react";
 import * as THREE from "three";
 import Scene from "./scene/Scene";
-import { SEED, CAMERA_SPEED } from "./lib/constants";
+import { SEED, CAMERA_SPEED, getTextureConfig } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
 import { useRecordData } from "@/app/lib/useRecordData";
 
@@ -79,6 +79,7 @@ export default function DisplayScene({ recordId }) {
   const { data: recordData, loading, error } = useRecordData(recordId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
+  const textureConfig = useMemo(() => getTextureConfig(), []);
 
   const mediaList = useMemo(
     () => (recordData?.mediaList ?? []).filter((m) => m.type === "image"),
@@ -119,19 +120,19 @@ export default function DisplayScene({ recordId }) {
     );
   }
 
-  if (recordData?.isPublic === false) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6 text-center">
-        <p className="text-2xl">🔒</p>
-        <p className="text-sm font-light tracking-wide text-white/60">
-          비공개 앨범입니다
-        </p>
-        <p className="text-xs tracking-wider text-white/30">
-          앨범 소유자만 열람할 수 있어요
-        </p>
-      </div>
-    );
-  }
+  // if (recordData?.isPublic === false) {
+  //   return (
+  //     <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6 text-center">
+  //       <p className="text-2xl">🔒</p>
+  //       <p className="text-sm font-light tracking-wide text-white/60">
+  //         비공개 앨범입니다
+  //       </p>
+  //       <p className="text-xs tracking-wider text-white/30">
+  //         앨범 소유자만 열람할 수 있어요
+  //       </p>
+  //     </div>
+  //   );
+  // }
 
   if (mediaList.length === 0) {
     return (
@@ -178,6 +179,7 @@ export default function DisplayScene({ recordId }) {
             planes={planes}
             isPlaying={isPlaying}
             cameraSpeed={cameraSpeed}
+            textureConfig={textureConfig}
           />
         </Suspense>
       </Canvas>

@@ -37,7 +37,7 @@ import {
 // 50개 동시 HTTP 요청 → 4개로 제한하여 네트워크/CPU 부하 분산
 const MAX_CONCURRENT_LOADS = 4;
 
-export default function Scene({ planes, isPlaying, cameraSpeed }) {
+export default function Scene({ planes, isPlaying, cameraSpeed, textureConfig }) {
   const { camera } = useThree();
   const controlsRef = useRef();
   const dirLightRef = useRef();
@@ -120,7 +120,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       if (wrappedPZ >= s.cameraZ) return;
 
       // Land at OPACITY_PEAK_DIST so the plane arrives fully visible (opacity=1.0)
-      const offset = OPACITY_APPEAR_DIST;
+      const offset = OPACITY_PEAK_DIST;
 
       // Switch to manual mode
       s.focusMode = "manual";
@@ -185,13 +185,8 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
   const manualVelocityRef = useRef(0);
   const keysRef = useRef({ fwd: false, back: false });
 
-  // Event listeners for manual movement while paused
+  // Event listeners for manual movement (always active — works both playing and paused)
   useEffect(() => {
-    if (isPlaying) {
-      manualVelocityRef.current = 0;
-      keysRef.current = { fwd: false, back: false };
-      return;
-    }
     const onWheel = (e) => {
       manualVelocityRef.current += e.deltaY * 0.8;
     };
@@ -211,7 +206,7 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
     };
-  }, [isPlaying]);
+  }, []);
 
   // OrbitControls always disabled — play/pause only controls camera movement
   if (controlsRef.current) {
@@ -273,6 +268,17 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
     s.smoothSpeed +=
       (targetEffectiveSpeed - s.smoothSpeed) * (1 - Math.pow(0.01, delta * k));
     s.cameraZ -= s.smoothSpeed * delta;
+
+    // Manual input while playing (additive to auto-advance)
+    if (keysRef.current.fwd) s.cameraZ -= 150 * delta;
+    if (keysRef.current.back) s.cameraZ += 150 * delta;
+    if (Math.abs(manualVelocityRef.current) > 0.5) {
+      s.cameraZ -= manualVelocityRef.current * delta;
+      manualVelocityRef.current *= Math.pow(0.005, delta);
+    } else {
+      manualVelocityRef.current = 0;
+    }
+
     camera.position.z = s.cameraZ;
 
     // Update floor and lights imperatively every frame (no React re-render needed)
@@ -410,6 +416,8 @@ export default function Scene({ planes, isPlaying, cameraSpeed }) {
               corridorSpan={corridorSpan}
               activeLoadsRef={activeLoadsRef}
               maxConcurrentLoads={MAX_CONCURRENT_LOADS}
+              maxTextureSize={textureConfig.maxTextureSize}
+              anisotropy={textureConfig.anisotropy}
             />
           </Suspense>
         );

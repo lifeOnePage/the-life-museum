@@ -539,13 +539,15 @@ export default function AlbumCover({
         metalness: 1,
         emissive: "#ffffff",
         emissiveMap: actualFrontTex,
-        emissiveIntensity: 1,
+        emissiveIntensity: 0.5,
       }),
       // 뒷면 (-Z) - 뒤 이미지 (매트 인쇄면)
       new THREE.MeshStandardMaterial({
         map: actualBackTex,
         roughness: 0.65,
         metalness: 0.1,
+        emissive: "#ffffff",
+        emissiveIntensity: 0.2,
       }),
     ];
   }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);

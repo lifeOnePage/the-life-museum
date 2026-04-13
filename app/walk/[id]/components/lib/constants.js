@@ -54,3 +54,17 @@ export const FOG_FAR = 2000;
 // Glow
 export const GLOW_COLOR = "#ffffff";
 export const GLOW_POINTS_PER_EDGE = 40;
+
+// Texture quality — device-adaptive
+export function getTextureConfig() {
+  if (typeof window === "undefined") {
+    return { maxTextureSize: 512, anisotropy: 1 };
+  }
+  const isMobile =
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
+    ("ontouchstart" in window && window.innerWidth < 1024);
+  if (isMobile) {
+    return { maxTextureSize: 768, anisotropy: 2 };
+  }
+  return { maxTextureSize: 1024, anisotropy: 4 };
+}

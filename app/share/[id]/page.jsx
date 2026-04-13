@@ -20,10 +20,8 @@ function Icon360({ className }) {
       strokeLinejoin="round"
       className={className}
     >
-      <path d="M14 6a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v6a1 1 0 0 0 1 1h2a1 1 0 0 0 1 -1v-2a1 1 0 0 0 -1 -1h-3" />
-      <path d="M3 5h2.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-2.5" />
-      <path d="M17 7v4a2 2 0 1 0 4 0v-4a2 2 0 1 0 -4 0" />
-      <path d="M3 16c0 1.657 4.03 3 9 3s9 -1.343 9 -3" />
+      <path d="M17 15.328c2.414 -.718 4 -1.94 4 -3.328c0 -2.21 -4.03 -4 -9 -4s-9 1.79 -9 4s4.03 4 9 4" />
+      <path d="M9 13l3 3l-3 3" />
     </svg>
   );
 }
@@ -47,16 +45,45 @@ export default function SharePage({ params }) {
   const [isAutoRotating, setIsAutoRotating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [expandedTilt, setExpandedTilt] = useState({ x: 0, y: 0 });
+  const [idleTilt, setIdleTilt] = useState({ x: 0, y: 0 });
+  const albumRef = useRef(null);
+  const expandedAlbumRef = useRef(null);
+  const idleTimeRef = useRef(0);
+  const idleRafRef = useRef(null);
 
   const autoRotatingRef = useRef(false);
   const lastTimeRef = useRef(null);
   const rafRef = useRef(null);
   const ROTATE_SPEED = 0.08; // 1바퀴(0→1)에 약 12.5초
 
+  // Idle floating animation
+  useEffect(() => {
+    let running = true;
+    function loop(timestamp) {
+      if (!running) return;
+      const t = timestamp / 1000;
+      const x = Math.sin(t * 1.4) * 8 + Math.sin(t * 0.7 + 1.0) * 4;
+      const y = Math.sin(t * 1.0 + 1.2) * 12 + Math.sin(t * 1.8 + 0.4) * 4;
+      setIdleTilt({ x, y });
+      idleRafRef.current = requestAnimationFrame(loop);
+    }
+    idleRafRef.current = requestAnimationFrame(loop);
+    return () => {
+      running = false;
+      if (idleRafRef.current) cancelAnimationFrame(idleRafRef.current);
+    };
+  }, []);
+
   const stopAutoRotate = useCallback(() => {
     autoRotatingRef.current = false;
-    if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null; }
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
     setIsAutoRotating(false);
+    setFlipProgress((prev) => prev % 1);
   }, []);
 
   const startAutoRotate = useCallback(() => {
@@ -78,14 +105,88 @@ export default function SharePage({ params }) {
   }, []);
 
   // value: 0 = 앞면, 0.5 = 뒷면 (한 사이클 내 상대 위치)
-  const snapTo = useCallback((value, currentProgress) => {
+  const snapTo = useCallback(
+    (value, currentProgress) => {
+      stopAutoRotate();
+      setFlipProgress((prev) => {
+        const base = Math.floor(prev);
+        const frac = prev - base;
+        // 현재 위치에서 가장 가까운 목표 절대값 계산
+        const candidates = [base + value, base + value + 1, base + value - 1];
+        return candidates.reduce((a, b) =>
+          Math.abs(a - prev) < Math.abs(b - prev) ? a : b,
+        );
+      });
+    },
+    [stopAutoRotate],
+  );
+
+  const calcTilt = (clientX, clientY, el) => {
+    const rect = el.getBoundingClientRect();
+    const nx = (clientX - rect.left) / rect.width - 0.5;
+    const ny = (clientY - rect.top) / rect.height - 0.5;
+    return { x: ny * -14, y: nx * 14 };
+  };
+
+  // 메인 앨범 — 마우스
+  const handleAlbumMouseMove = useCallback((e) => {
+    if (!albumRef.current) return;
+    setTilt(calcTilt(e.clientX, e.clientY, albumRef.current));
+  }, []);
+
+  const handleAlbumMouseEnter = useCallback(() => {
+    if (isAutoRotating) stopAutoRotate();
+  }, [stopAutoRotate, isAutoRotating]);
+
+  const handleAlbumMouseLeave = useCallback(() => {
+    setTilt({ x: 0, y: 0 });
+  }, []);
+
+  // 메인 앨범 — 터치
+  const handleAlbumTouchStart = useCallback(() => {
+    if (isAutoRotating) stopAutoRotate();
+  }, [stopAutoRotate, isAutoRotating]);
+
+  const handleAlbumTouchMove = useCallback((e) => {
+    if (!albumRef.current) return;
+    const touch = e.touches[0];
+    setTilt(calcTilt(touch.clientX, touch.clientY, albumRef.current));
+  }, []);
+
+  const handleAlbumTouchEnd = useCallback(() => {
+    setTilt({ x: 0, y: 0 });
+  }, []);
+
+  // Expanded 오버레이 — 마우스
+  const handleExpandedMouseMove = useCallback((e) => {
+    if (!expandedAlbumRef.current) return;
+    setExpandedTilt(calcTilt(e.clientX, e.clientY, expandedAlbumRef.current));
+  }, []);
+
+  const handleExpandedMouseLeave = useCallback(() => {
+    setExpandedTilt({ x: 0, y: 0 });
+  }, []);
+
+  // Expanded 오버레이 — 터치
+  const handleExpandedTouchMove = useCallback((e) => {
+    if (!expandedAlbumRef.current) return;
+    const touch = e.touches[0];
+    setExpandedTilt(
+      calcTilt(touch.clientX, touch.clientY, expandedAlbumRef.current),
+    );
+  }, []);
+
+  const handleExpandedTouchEnd = useCallback(() => {
+    setExpandedTilt({ x: 0, y: 0 });
+  }, []);
+
+  const handleAlbumClick = useCallback(() => {
     stopAutoRotate();
     setFlipProgress((prev) => {
       const base = Math.floor(prev);
       const frac = prev - base;
-      // 현재 위치에서 가장 가까운 목표 절대값 계산
-      const candidates = [base + value, base + value + 1, base + value - 1];
-      return candidates.reduce((a, b) => Math.abs(a - prev) < Math.abs(b - prev) ? a : b);
+      const isOnFront = frac < 0.25 || frac > 0.75;
+      return isOnFront ? base + 0.5 : base + 1;
     });
   }, [stopAutoRotate]);
 
@@ -96,13 +197,9 @@ export default function SharePage({ params }) {
     }
   }, [loading, error]);
 
-  // 페이지 진입 후 자동 회전 시작
   useEffect(() => {
-    if (ready) {
-      startAutoRotate();
-      return () => stopAutoRotate();
-    }
-  }, [ready]);
+    return () => stopAutoRotate();
+  }, []);
 
   const frontCover = recordData?.coverImage?.url || null;
   const albumTitle = recordData?.title || "";
@@ -113,8 +210,7 @@ export default function SharePage({ params }) {
   const titlePosition = recordData?.coverTitlePosition || "bottom-center";
   const titleFont = recordData?.coverTitleFont || "Pretendard Variable";
   const titleColor = recordData?.coverTitleColor || "#ffffff";
-  const rawStroke = recordData?.coverTitleStroke;
-  const titleStroke = rawStroke === true ? "black" : (rawStroke === false || !rawStroke) ? "none" : rawStroke;
+  const titleStroke = recordData?.coverTitleBgColor ?? false;
 
   const timeline = useMemo(() => {
     if (!recordData?.timeline?.events) return [];
@@ -134,7 +230,8 @@ export default function SharePage({ params }) {
   const RADIUS = 700;
 
   const { GRID_COLS, ARC_SPREAD } = useMemo(() => {
-    if (typeof window === "undefined") return { GRID_COLS: 16, ARC_SPREAD: 200 };
+    if (typeof window === "undefined")
+      return { GRID_COLS: 16, ARC_SPREAD: 200 };
     const aspect = window.innerWidth / window.innerHeight;
     // 넓을수록 더 많은 컬럼과 더 넓은 호각도
     const spread = Math.min(Math.round(aspect * 130), 280);
@@ -204,9 +301,7 @@ export default function SharePage({ params }) {
     <div className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Background: Concave cylindrical photo grid */}
       {images.length > 0 && (
-        <div
-          className="pointer-events-none absolute inset-0 overflow-hidden"
-        >
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />
@@ -214,7 +309,10 @@ export default function SharePage({ params }) {
 
           <div
             className="absolute inset-0 flex items-center justify-center opacity-35"
-            style={{ perspective: "clamp(600px, 60vw, 1200px)", perspectiveOrigin: "50% 50%" }}
+            style={{
+              perspective: "clamp(600px, 60vw, 1200px)",
+              perspectiveOrigin: "50% 50%",
+            }}
           >
             <div
               className="relative"
@@ -244,7 +342,9 @@ export default function SharePage({ params }) {
                         className="w-full rounded-sm object-cover opacity-0 transition-opacity duration-[1200ms] ease-out"
                         style={{ aspectRatio: "1" }}
                         draggable={false}
-                        onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+                        onLoad={(e) => {
+                          e.currentTarget.style.opacity = "1";
+                        }}
                       />
                     ))}
                   </div>
@@ -277,26 +377,46 @@ export default function SharePage({ params }) {
 
         {/* 3D Album Preview */}
         <div
-          className={`h-[50vh] w-[80vw] max-w-[400px] lg:max-w-[520px] xl:max-w-[640px] transition-all delay-200 duration-1000 ease-out ${
+          className={`h-[50vh] w-[80vw] max-w-[400px] transition-all delay-200 duration-1000 ease-out lg:max-w-[520px] xl:max-w-[640px] ${
             ready ? "scale-100 opacity-100" : "scale-[0.95] opacity-0"
           }`}
         >
-          <AlbumPreview3D
-            frontCover={frontCover}
-            bio={bio}
-            timeline={timeline}
-            selectedTheme={selectedTheme}
-            albumTitle={albumTitle}
-            albumSubTitle={subtitle}
-            titleOverlayEnabled={titleOverlayEnabled}
-            titlePosition={titlePosition}
-            titleFont={titleFont}
-            titleColor={titleColor}
-            titleStroke={titleStroke}
-            rotationY={flipProgress * 2 * Math.PI}
-            hideControls
-            onExpand={() => { const f = flipProgress % 1; stopAutoRotate(); snapTo(f < 0.25 || f > 0.75 ? 0 : 0.5); setIsExpanded(true); }}
-          />
+          <div
+            ref={albumRef}
+            className="h-full w-full"
+            onMouseMove={handleAlbumMouseMove}
+            onMouseEnter={handleAlbumMouseEnter}
+            onMouseLeave={handleAlbumMouseLeave}
+            onTouchStart={handleAlbumTouchStart}
+            onTouchMove={handleAlbumTouchMove}
+            onTouchEnd={handleAlbumTouchEnd}
+            style={{
+              transform: `perspective(1000px) rotateX(${tilt.x + idleTilt.x}deg) rotateY(${tilt.y + idleTilt.y}deg)`,
+              transition:
+                tilt.x === 0 && tilt.y === 0
+                  ? "transform 1.2s ease-out"
+                  : "transform 0.08s ease-out",
+              touchAction: "none",
+            }}
+          >
+            <AlbumPreview3D
+              frontCover={frontCover}
+              bio={bio}
+              timeline={timeline}
+              selectedTheme={selectedTheme}
+              albumTitle={albumTitle}
+              albumSubTitle={subtitle}
+              titleOverlayEnabled={titleOverlayEnabled}
+              titlePosition={titlePosition}
+              titleFont={titleFont}
+              titleColor={titleColor}
+              titleStroke={titleStroke}
+              rotationY={flipProgress * 2 * Math.PI}
+              hideControls
+              cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
+              onExpand={handleAlbumClick}
+            />
+          </div>
         </div>
 
         {/* Flip Slider + CTA */}
@@ -305,52 +425,42 @@ export default function SharePage({ params }) {
             ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
           }`}
         >
-          {/* Front / Auto / Back toggle + Expand */}
-          <div className="flex items-center gap-2">
-          <button
+          <div className="flex items-center gap-6">
+            <button
               onClick={() => setIsInfoOpen(true)}
               className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
             >
               <Info className="h-4 w-4" />
             </button>
-          <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-sm">
             <button
-              onClick={() => snapTo(0)}
-              className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
-                !isAutoRotating && (flipProgress % 1 < 0.15 || flipProgress % 1 > 0.85)
-                  ? "bg-white/20 text-white"
-                  : "text-white/35 hover:text-white/70"
-              }`}
-            >
-              앞
-            </button>
-            <button
-              onClick={() => isAutoRotating ? stopAutoRotate() : startAutoRotate()}
-              className={`rounded-full px-3 py-1.5 transition-all duration-300 ${
+              onClick={() =>
+                isAutoRotating ? stopAutoRotate() : startAutoRotate()
+              }
+              className={`rounded-full border border-white/15 bg-white/5 p-2.5 backdrop-blur-sm transition-all duration-300 ${
                 isAutoRotating
-                  ? "bg-white/20 text-white"
+                  ? "text-white"
                   : "text-white/35 hover:text-white/70"
               }`}
             >
-              <Icon360 className="h-4 w-4" />
+              <img
+                src="/flip-auto.svg"
+                className="h-4 w-4"
+                style={{ filter: isAutoRotating ? "invert(1)" : "invert(0.6)" }}
+                alt=""
+              />
             </button>
             <button
-              onClick={() => snapTo(0.5)}
-              className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
-                !isAutoRotating && flipProgress % 1 > 0.35 && flipProgress % 1 < 0.65
-                  ? "bg-white/20 text-white"
-                  : "text-white/35 hover:text-white/70"
-              }`}
+              onClick={() => {
+                stopAutoRotate();
+                snapTo(
+                  flipProgress % 1 < 0.25 || flipProgress % 1 > 0.75 ? 0 : 0,
+                );
+                setIsExpanded(true);
+              }}
+              className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
             >
-              뒤
+              <Maximize2 className="h-4 w-4" />
             </button>
-          </div>
-          <button
-            onClick={() => { const f = flipProgress % 1; stopAutoRotate(); snapTo(f < 0.25 || f > 0.75 ? 0 : 0.5); setIsExpanded(true); }}
-            className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </button>
           </div>
           <button
             onClick={() => router.push(`/walk/${id}`)}
@@ -365,21 +475,40 @@ export default function SharePage({ params }) {
       {isExpanded && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95">
           <div className="h-[85vh] w-[90vw] max-w-[900px]">
-            <AlbumPreview3D
-              frontCover={frontCover}
-              bio={bio}
-              timeline={timeline}
-              selectedTheme={selectedTheme}
-              albumTitle={albumTitle}
-              titleOverlayEnabled={titleOverlayEnabled}
-              titlePosition={titlePosition}
-              titleFont={titleFont}
-              titleColor={titleColor}
-              rotationY={(flipProgress % 1) * 2 * Math.PI}
-              hideControls
-              expanded
-              onExpand={() => setIsExpanded(false)}
-            />
+            <div
+              ref={expandedAlbumRef}
+              className="h-full w-full"
+              onMouseMove={handleExpandedMouseMove}
+              onMouseLeave={handleExpandedMouseLeave}
+              onTouchMove={handleExpandedTouchMove}
+              onTouchEnd={handleExpandedTouchEnd}
+              style={{
+                transform: `perspective(1000px) rotateX(${expandedTilt.x + idleTilt.x}deg) rotateY(${expandedTilt.y + idleTilt.y}deg)`,
+                transition:
+                  expandedTilt.x === 0 && expandedTilt.y === 0
+                    ? "transform 1.2s ease-out"
+                    : "transform 0.08s ease-out",
+                touchAction: "none",
+              }}
+            >
+              <AlbumPreview3D
+                frontCover={frontCover}
+                bio={bio}
+                timeline={timeline}
+                selectedTheme={selectedTheme}
+                albumTitle={albumTitle}
+                titleOverlayEnabled={titleOverlayEnabled}
+                titlePosition={titlePosition}
+                titleFont={titleFont}
+                titleColor={titleColor}
+                titleStroke={titleStroke}
+                rotationY={flipProgress * 2 * Math.PI}
+                hideControls
+                expanded
+                cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
+                onExpand={handleAlbumClick}
+              />
+            </div>
           </div>
           <div className="mt-0 flex flex-col items-center gap-3">
             <div className="flex items-center gap-2">
@@ -389,28 +518,23 @@ export default function SharePage({ params }) {
               >
                 <Info className="h-4 w-4" />
               </button>
-              <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-sm">
-                <button
-                  onClick={() => snapTo(0)}
-                  className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
-                    flipProgress % 1 < 0.15 || flipProgress % 1 > 0.85
-                      ? "bg-white/20 text-white"
-                      : "text-white/35 hover:text-white/70"
-                  }`}
-                >
-                  앞
-                </button>
-                <button
-                  onClick={() => snapTo(0.5)}
-                  className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
-                    flipProgress % 1 > 0.35 && flipProgress % 1 < 0.65
-                      ? "bg-white/20 text-white"
-                      : "text-white/35 hover:text-white/70"
-                  }`}
-                >
-                  뒤
-                </button>
-              </div>
+              <button
+                onClick={() =>
+                  isAutoRotating ? stopAutoRotate() : startAutoRotate()
+                }
+                className={`rounded-full border border-white/15 bg-white/5 p-2.5 backdrop-blur-sm transition-all duration-300 ${
+                  isAutoRotating
+                    ? "text-white"
+                    : "text-white/35 hover:text-white/70"
+                }`}
+              >
+                <img
+                  src="/flip-auto.svg"
+                  className="h-4 w-4"
+                  style={{ filter: isAutoRotating ? "invert(1)" : "invert(0.6)" }}
+                  alt=""
+                />
+              </button>
               <button
                 onClick={() => setIsExpanded(false)}
                 className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
@@ -439,17 +563,23 @@ export default function SharePage({ params }) {
         >
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
           <div
-            className="relative z-10 w-full max-w-sm rounded-t-2xl sm:rounded-2xl overflow-hidden bg-black/80 border border-white/10"
+            className="relative z-10 w-full max-w-sm overflow-hidden rounded-t-2xl border border-white/10 bg-black/80 sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="overflow-y-auto max-h-[85vh] px-7 py-7">
+            <div className="max-h-[85vh] overflow-y-auto px-7 py-7">
               {/* Title */}
               {albumTitle && (
                 <div className="mb-5">
-                  <p className="text-[9px] tracking-[0.2em] text-white/30 uppercase mb-1">Title</p>
-                  <p className="text-3xl font-light tracking-wide text-white leading-tight">{albumTitle}</p>
+                  <p className="mb-1 text-[9px] tracking-[0.2em] text-white/30 uppercase">
+                    Title
+                  </p>
+                  <p className="text-3xl leading-tight font-light tracking-wide text-white">
+                    {albumTitle}
+                  </p>
                   {subtitle && (
-                    <p className="mt-1.5 text-[11px] tracking-wide text-white/50">{subtitle}</p>
+                    <p className="mt-1.5 text-[11px] tracking-wide text-white/50">
+                      {subtitle}
+                    </p>
                   )}
                 </div>
               )}
@@ -457,13 +587,19 @@ export default function SharePage({ params }) {
               {/* Timeline */}
               {timeline.length > 0 && (
                 <div className="mb-5">
-                  <div className="border-t border-white/10 mb-4" />
-                  <p className="text-[9px] tracking-[0.2em] text-white/30 uppercase mb-3">Timeline</p>
+                  <div className="mb-4 border-t border-white/10" />
+                  <p className="mb-3 text-[9px] tracking-[0.2em] text-white/30 uppercase">
+                    Timeline
+                  </p>
                   <div className="space-y-2">
                     {timeline.map((t, i) => (
                       <div key={i} className="flex gap-5">
-                        <span className="text-[11px] font-medium text-white/50 shrink-0 w-10">{t.year}</span>
-                        <span className="text-[11px] text-white/60">{t.event}</span>
+                        <span className="w-10 shrink-0 text-[11px] font-medium text-white/50">
+                          {t.year}
+                        </span>
+                        <span className="text-[11px] text-white/60">
+                          {t.event}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -473,16 +609,20 @@ export default function SharePage({ params }) {
               {/* Story */}
               {bio && (
                 <div>
-                  <div className="border-t border-white/10 mb-4" />
-                  <p className="text-[9px] tracking-[0.2em] text-white/30 uppercase mb-3">Story</p>
-                  <p className="text-[11px] leading-relaxed text-white/60 whitespace-pre-wrap">{bio}</p>
+                  <div className="mb-4 border-t border-white/10" />
+                  <p className="mb-3 text-[9px] tracking-[0.2em] text-white/30 uppercase">
+                    Story
+                  </p>
+                  <p className="text-[11px] leading-relaxed whitespace-pre-wrap text-white/60">
+                    {bio}
+                  </p>
                 </div>
               )}
             </div>
 
             <button
               onClick={() => setIsInfoOpen(false)}
-              className="absolute top-4 right-4 text-white/30 hover:text-white/70 transition-colors"
+              className="absolute top-4 right-4 text-white/30 transition-colors hover:text-white/70"
             >
               <X className="h-3.5 w-3.5" />
             </button>

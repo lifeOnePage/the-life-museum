@@ -48,6 +48,21 @@ import ThemeSelector from "./components/ThemeSelector";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
+// Convert stroke color to a DB-safe hex string.
+// Opacity is not persisted (backend only accepts #rrggbb).
+function strokeToDbColor(stroke) {
+  if (!stroke || stroke === "none") return null;
+  return stroke;
+}
+
+// Parse a DB color string back into { stroke, strokeOpacity }.
+function dbColorToStroke(raw) {
+  if (!raw) return { stroke: "none", strokeOpacity: 100 };
+  if (raw === "black" || raw === "white" || raw.startsWith("#"))
+    return { stroke: raw, strokeOpacity: 100 };
+  return { stroke: "none", strokeOpacity: 100 };
+}
+
 // Sortable timeline item component
 function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
   const {
@@ -133,6 +148,7 @@ const Index = ({ params }) => {
   const [titleFont, setTitleFont] = useState("Pretendard Variable");
   const [titleColor, setTitleColor] = useState("#ffffff");
   const [titleStroke, setTitleStroke] = useState("none");
+  const [titleStrokeOpacity, setTitleStrokeOpacity] = useState(100);
 
   // Collapsible sections
   const [titleOpen, setTitleOpen] = useState(true);
@@ -150,6 +166,8 @@ const Index = ({ params }) => {
   // AI story generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [bioError, setBioError] = useState("");
+  const [storyGenCount, setStoryGenCount] = useState(0);
+  const storyRemainingGens = 3 - storyGenCount;
   const [usedChips, setUsedChips] = useState(new Set());
 
   const [timelineError, setTimelineError] = useState("");
@@ -196,6 +214,7 @@ const Index = ({ params }) => {
     titlePosition: "bottom-center",
     titleFont: "Pretendard Variable",
     titleColor: "#ffffff",
+    titleStrokeOpacity: 100,
   });
 
   useEffect(() => {
@@ -233,11 +252,8 @@ const Index = ({ params }) => {
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
           const savedTitleColor = data.coverTitleColor || "#ffffff";
-          const rawBgColor = data.coverTitleBgColor;
-          const savedTitleStroke =
-            rawBgColor === "black" || rawBgColor === "white"
-              ? rawBgColor
-              : "none";
+          const { stroke: savedTitleStroke, strokeOpacity: savedTitleStrokeOpacity } =
+            dbColorToStroke(data.coverTitleBgColor);
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -254,9 +270,14 @@ const Index = ({ params }) => {
           setTitleFont(savedTitleFont);
           setTitleColor(savedTitleColor);
           setTitleStroke(savedTitleStroke);
+          setTitleStrokeOpacity(savedTitleStrokeOpacity);
           setGooglePhotoUrl(data.googlePhotoUrl || "");
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
+          console.log("storyGenCount from GET:", data.storyGenCount);
+          if (data.storyGenCount != null) {
+            setStoryGenCount(data.storyGenCount);
+          }
 
           // Initialize photo drive data for CoverImageEditor
           const images = (data.mediaList ?? []).filter(
@@ -276,6 +297,7 @@ const Index = ({ params }) => {
             titleFont: savedTitleFont,
             titleColor: savedTitleColor,
             titleStroke: savedTitleStroke,
+            titleStrokeOpacity: savedTitleStrokeOpacity,
           };
         }
       } catch (error) {
@@ -317,14 +339,15 @@ const Index = ({ params }) => {
           coverTitlePosition: titlePosition,
           coverTitleFont: titleFont,
           coverTitleColor: titleColor,
-          coverTitleBgColor: titleStroke === "none" ? null : titleStroke,
+          coverTitleBgColor: strokeToDbColor(titleStroke),
         }),
       },
     );
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || "컬러 저장에 실패했습니다");
+      console.error("saveRecordColors 422 detail:", JSON.stringify(data));
+      throw new Error(data.error || data.detail || "컬러 저장에 실패했습니다");
     }
     return data;
   };
@@ -457,6 +480,7 @@ const Index = ({ params }) => {
           initialState.current.titlePosition = titlePosition;
           initialState.current.titleFont = titleFont;
           initialState.current.titleColor = titleColor;
+          initialState.current.titleStrokeOpacity = titleStrokeOpacity;
         }
       }
     }
@@ -481,7 +505,8 @@ const Index = ({ params }) => {
     titlePosition !== initialState.current.titlePosition ||
     titleFont !== initialState.current.titleFont ||
     titleColor !== initialState.current.titleColor ||
-    titleStroke !== initialState.current.titleStroke;
+    titleStroke !== initialState.current.titleStroke ||
+    titleStrokeOpacity !== initialState.current.titleStrokeOpacity;
 
   const handleExit = () => {
     router.push("/library");
@@ -495,14 +520,17 @@ const Index = ({ params }) => {
   // AI story generation
   const handleGenerate = async () => {
     const fullText = getFullBioText();
-    if (!fullText) return;
+    if (!fullText || storyRemainingGens <= 0) return;
     setIsGenerating(true);
     setBioError("");
     console.log("fullText", fullText);
 
+    // Optimistic update
+    const optimisticCount = storyGenCount + 1;
+    setStoryGenCount(optimisticCount);
+
     try {
       const token = localStorage.getItem("app_token");
-      console.log(token);
       const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
@@ -517,9 +545,32 @@ const Index = ({ params }) => {
 
       const data = await response.json();
       if (!response.ok) {
+        setStoryGenCount(optimisticCount - 1); // rollback
         throw new Error(data.error || "생성에 실패했습니다");
       }
       setBio(data.data?.result || "");
+      // Sync with server value if provided
+      const newCount =
+        data.data?.storyGenCount != null
+          ? data.data.storyGenCount
+          : optimisticCount;
+      setStoryGenCount(newCount);
+
+      // Persist count to server
+      fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ storyGenCount: newCount }),
+        },
+      )
+        .then((r) => r.json())
+        .then((d) => console.log("storyGenCount PATCH response:", d))
+        .catch((e) => console.error("Failed to persist storyGenCount:", e));
     } catch (err) {
       setBioError(err.message);
     } finally {
@@ -691,6 +742,7 @@ const Index = ({ params }) => {
     setTitlePosition(s.titlePosition);
     setTitleFont(s.titleFont);
     setTitleColor(s.titleColor);
+    setTitleStrokeOpacity(s.titleStrokeOpacity ?? 100);
     setUsedChips(new Set());
   };
 
@@ -945,6 +997,7 @@ const Index = ({ params }) => {
             titleFont={titleFont}
             titleColor={titleColor}
             titleStroke={titleStroke}
+            titleStrokeOpacity={titleStrokeOpacity}
             flipped={activeTab === "back"}
           />
         </div>
@@ -1087,10 +1140,12 @@ const Index = ({ params }) => {
                                 font={titleFont}
                                 color={titleColor}
                                 stroke={titleStroke}
+                                strokeOpacity={titleStrokeOpacity}
                                 onPositionChange={setTitlePosition}
                                 onFontChange={setTitleFont}
                                 onColorChange={setTitleColor}
                                 onStrokeChange={setTitleStroke}
+                                onStrokeOpacityChange={setTitleStrokeOpacity}
                               />
                             </div>
                           </motion.div>
@@ -1145,15 +1200,6 @@ const Index = ({ params }) => {
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 preloadBlobs={photoDrive.preloadBlobs}
-                                titleOverlayEnabled={titleOverlayEnabled}
-                                titleOverlayConfig={{
-                                  title: albumTitle || "",
-                                  subtitle: "",
-                                  position: titlePosition || "bottom-center",
-                                  font: titleFont || "Pretendard Variable",
-                                  color: titleColor || "#ffffff",
-                                  stroke: titleStroke,
-                                }}
                               />
                             </div>
                           </motion.div>
@@ -1335,10 +1381,24 @@ const Index = ({ params }) => {
                                 )}
                               </div>
 
+                              {/* Generation count */}
+                              <div className="flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
+                                <span className="text-xs text-[#c4b49a]">사용한 생성 횟수</span>
+                                <span className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}>
+                                  {storyGenCount}/3
+                                </span>
+                              </div>
+
+                              {storyRemainingGens <= 0 && (
+                                <div className="rounded-lg bg-red-500/10 px-3 py-2">
+                                  <p className="text-xs text-red-500">생성 횟수를 모두 사용했습니다.</p>
+                                </div>
+                              )}
+
                               {/* Generate button */}
                               <Button
                                 onClick={handleGenerate}
-                                disabled={isGenerating || !getFullBioText()}
+                                disabled={isGenerating || !getFullBioText() || storyRemainingGens <= 0}
                                 size="sm"
                                 className="h-8 w-full bg-[#c4b49a] text-xs text-[#1a1510] hover:bg-[#e8d5b7]"
                               >

@@ -70,7 +70,7 @@ async function generateAlbumCovers(item) {
       position: item.coverTitlePosition || "bottom-center",
       font: item.coverTitleFont || "Pretendard Variable",
       color: item.coverTitleColor || "#ffffff",
-      stroke: item.coverTitleStroke ?? false,
+      stroke: item.coverTitleBgColor ?? false,
     });
     if (frontDataUrl) frontImage = frontDataUrl;
   }
@@ -103,6 +103,7 @@ export default function MyShelfPage() {
 
   // 호버 라벨 상태 (앨범 top-left 화면 좌표 + 앨범 데이터)
   const [hoverLabel, setHoverLabel] = useState(null);
+  const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
 
   // API fetch
   useEffect(() => {
@@ -229,7 +230,34 @@ export default function MyShelfPage() {
   const selectedRole = selectedAlbum?.data?.role;
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-[#1a1510]">
+    <div
+      className="relative h-screen w-screen overflow-hidden bg-[#1a1510]"
+      onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
+    >
+      {/* 커서팁: 선택된 앨범 호버 시 */}
+      {hoverLabel && selectedAlbum && hoverLabel.album?.id === selectedAlbum?.data?.id && (
+        <div
+          className="pointer-events-none fixed z-50"
+          style={{ left: cursorPos.x + 14, top: cursorPos.y - 10 }}
+        >
+          <div className="rounded-full bg-white/15 p-2 backdrop-blur-sm">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="h-4 w-4 text-white/70"
+            >
+              <path d="M17 15.328c2.414 -.718 4 -1.94 4 -3.328c0 -2.21 -4.03 -4 -9 -4s-9 1.79 -9 4s4.03 4 9 4" />
+              <path d="M9 13l3 3l-3 3" />
+            </svg>
+          </div>
+        </div>
+      )}
+
       {/* 3D 캔버스 */}
       <ShelfCanvas
         albums={visibleAlbums}

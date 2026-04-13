@@ -53,10 +53,12 @@ export default function AlbumPreview3D({
   titleFont,
   titleColor,
   titleStroke,
+  titleStrokeOpacity,
   flipped,
   rotationY,
   externalZoom,
   hideControls,
+  cursorTipIcon,
   onExpand,
   onFlipChange,
   expanded,
@@ -204,6 +206,7 @@ export default function AlbumPreview3D({
       font: titleFont || "Pretendard Variable",
       color: titleColor || "#ffffff",
       stroke: titleStroke ?? false,
+      strokeOpacity: titleStrokeOpacity ?? 100,
     });
   }, [
     frontCoverImg,
@@ -213,6 +216,7 @@ export default function AlbumPreview3D({
     titleFont,
     titleColor,
     titleStroke,
+    titleStrokeOpacity,
   ]);
 
   const backCoverDataUrl = useMemo(() => {
@@ -228,7 +232,17 @@ export default function AlbumPreview3D({
       themeBgImg,
       themeStickerImg,
     );
-  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, albumSubTitle, extractedColors, themeBgImg, themeStickerImg]);
+  }, [
+    themeKey,
+    bio,
+    timeline,
+    frontCoverImg,
+    albumTitle,
+    albumSubTitle,
+    extractedColors,
+    themeBgImg,
+    themeStickerImg,
+  ]);
 
   return (
     <div className="flex h-full w-full flex-col items-center">
@@ -237,22 +251,23 @@ export default function AlbumPreview3D({
           <button
             onClick={() => setZoom((z) => Math.min(z + ZOOM_STEP, zoomCfg.max))}
             disabled={zoom >= zoomCfg.max}
-            className="rounded-md p-1.5 text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7] disabled:opacity-30"
+            className="rounded-md p-1 text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7] disabled:opacity-30"
           >
             <ZoomOut className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setZoom((z) => Math.max(z - ZOOM_STEP, zoomCfg.min))}
+            disabled={zoom <= zoomCfg.min}
+            className="rounded-md p-1 text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7] disabled:opacity-30"
+          >
+            <ZoomIn className="h-4 w-4" />
           </button>
           <button
             onClick={toggleFlip}
             className="text-xs text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
           >
-            {isFlipped ? "앞면" : "뒷면"} 보기
-          </button>
-          <button
-            onClick={() => setZoom((z) => Math.max(z - ZOOM_STEP, zoomCfg.min))}
-            disabled={zoom <= zoomCfg.min}
-            className="rounded-md p-1.5 text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7] disabled:opacity-30"
-          >
-            <ZoomIn className="h-4 w-4" />
+            {/* {isFlipped ? "앞면" : "뒷면"} 보기 */}
+            앨범 뒤집기
           </button>
         </div>
       )}
@@ -264,7 +279,10 @@ export default function AlbumPreview3D({
           onPointerMove={(e) => {
             if (hideControls) {
               const rect = e.currentTarget.getBoundingClientRect();
-              setCursorPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+              setCursorPos({
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top,
+              });
               setShowCursorTip(true);
             }
           }}
@@ -274,17 +292,17 @@ export default function AlbumPreview3D({
             setShowCursorTip(false);
           }}
         >
-          {/* Cursor-following expand/shrink hint */}
+          {/* Cursor-following hint */}
           {hideControls && showCursorTip && (
             <div
               className="pointer-events-none absolute z-10 rounded-full bg-white/15 p-2 backdrop-blur-sm"
               style={{ left: cursorPos.x + 14, top: cursorPos.y - 10 }}
             >
-              {expanded ? (
+              {cursorTipIcon ?? (expanded ? (
                 <Minimize2 className="h-4 w-4 text-white/70" />
               ) : (
                 <Maximize2 className="h-4 w-4 text-white/70" />
-              )}
+              ))}
             </div>
           )}
           <Canvas
@@ -295,7 +313,9 @@ export default function AlbumPreview3D({
             <ambientLight intensity={0.6} />
             <directionalLight position={[2, 3, 4]} intensity={0.8} />
             <directionalLight position={[-2, 1, 2]} intensity={3} />
-            <CameraZoom zoom={typeof externalZoom === "number" ? externalZoom : zoom} />
+            <CameraZoom
+              zoom={typeof externalZoom === "number" ? externalZoom : zoom}
+            />
             <AlbumCover3D
               index={0}
               position={[0, 0, 0]}

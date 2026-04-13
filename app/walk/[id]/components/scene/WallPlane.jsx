@@ -21,10 +21,6 @@ function computeWrappedZ(originalZ, cameraZ, corridorSpan) {
 const FRAME_COLOR = "#000000";
 const SCREEN_OFF_COLOR = "#050505";
 
-// ─── 텍스처 최대 크기 (최대 변 길이, px) ───────────────────────────────────
-// 모바일 GPU 메모리 보호: 4K(~48MB/tex) → 512px(~1MB/tex)
-const MAX_TEXTURE_SIZE = 512;
-
 // ─── 미디어 패딩 ──────────────────────────────────────────────────────────────
 // 박스 face 기준 상하좌우 여백 크기 (3D scene 단위)
 // 이 값을 변경하면 미디어와 박스 테두리 사이의 여백이 조정됩니다.
@@ -71,6 +67,8 @@ function WallPlane({
   corridorSpan,
   activeLoadsRef,
   maxConcurrentLoads,
+  maxTextureSize,
+  anisotropy,
 }) {
   const meshRef = useRef();
   const frontMatRef = useRef();
@@ -155,14 +153,14 @@ function WallPlane({
         animState.current.currentScale = [boxW, boxH, 1];
         animState.current.targetScale = [boxW, boxH, 1];
 
-        // Downscale to MAX_TEXTURE_SIZE to limit GPU memory
+        // Downscale to maxTextureSize to limit GPU memory
         let drawW = img.width;
         let drawH = img.height;
         const maxDim = Math.max(drawW, drawH);
-        if (maxDim > MAX_TEXTURE_SIZE) {
-          const scale = MAX_TEXTURE_SIZE / maxDim;
-          drawW = Math.round(drawW * scale);
-          drawH = Math.round(drawH * scale);
+        if (maxDim > maxTextureSize) {
+          const ratio = maxTextureSize / maxDim;
+          drawW = Math.round(drawW * ratio);
+          drawH = Math.round(drawH * ratio);
         }
 
         const paddingPx = Math.round(drawH * (MEDIA_PADDING / mediaH));
@@ -180,6 +178,7 @@ function WallPlane({
 
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = anisotropy;
         tex.needsUpdate = true;
 
         const mat = frontMatRef.current;
@@ -205,7 +204,7 @@ function WallPlane({
     };
 
     img.src = getProxiedUrl(imageUrl);
-  }, [imageUrl, baseHeight, id, onTextureLoaded, activeLoadsRef, maxConcurrentLoads]);
+  }, [imageUrl, baseHeight, id, onTextureLoaded, activeLoadsRef, maxConcurrentLoads, maxTextureSize, anisotropy]);
 
   // Cleanup on unmount or imageUrl change
   useEffect(() => {
@@ -289,8 +288,9 @@ function WallPlane({
       ];
 
       // Distance-based opacity (same 4-zone curve as FocusClone)
-      const focusZ = stateRef.current.focusCloneZ;
-      const dist = Math.abs(cameraZ - focusZ);
+      // Use the plane's actual animated position so opacity tracks proximity
+      // during the fly-in animation, not just the target position.
+      const dist = Math.abs(cameraZ - state.currentPos[2]);
       let opacity = 0;
       if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
         if (dist >= OPACITY_PEAK_DIST) {
@@ -307,7 +307,10 @@ function WallPlane({
       }
 
       if (mat) {
-        mat.transparent = true;
+        if (!mat.transparent) {
+          mat.transparent = true;
+          mat.needsUpdate = true;
+        }
         mat.opacity = opacity;
         mat.color.setScalar(1);
       }
@@ -347,6 +350,7 @@ function WallPlane({
       // Reset transparency from manual focus
       if (mat && mat.transparent) {
         mat.transparent = false;
+        mat.needsUpdate = true;
         mat.opacity = 1;
       }
       return;

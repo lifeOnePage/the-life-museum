@@ -380,6 +380,7 @@ export default function SharePage({ params }) {
           className={`h-[50vh] w-[80vw] max-w-[400px] transition-all delay-200 duration-1000 ease-out lg:max-w-[520px] xl:max-w-[640px] ${
             ready ? "scale-100 opacity-100" : "scale-[0.95] opacity-0"
           }`}
+          style={{ visibility: isExpanded ? "hidden" : "visible" }}
         >
           <div
             ref={albumRef}

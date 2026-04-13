@@ -396,7 +396,7 @@ export default function SharePage({ params }) {
                 tilt.x === 0 && tilt.y === 0
                   ? "transform 1.2s ease-out"
                   : "transform 0.08s ease-out",
-              touchAction: "none",
+              touchAction: "pinch-zoom",
             }}
           >
             <AlbumPreview3D
@@ -488,7 +488,7 @@ export default function SharePage({ params }) {
                   expandedTilt.x === 0 && expandedTilt.y === 0
                     ? "transform 1.2s ease-out"
                     : "transform 0.08s ease-out",
-                touchAction: "none",
+                touchAction: "pinch-zoom",
               }}
             >
               <AlbumPreview3D

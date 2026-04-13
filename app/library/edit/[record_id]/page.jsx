@@ -45,6 +45,7 @@ import TitleOverlayEditor from "./components/TitleOverlayEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
+import BgmEditor from "./components/BgmEditor";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
@@ -153,6 +154,7 @@ const Index = ({ params }) => {
   // Collapsible sections
   const [titleOpen, setTitleOpen] = useState(true);
   const [coverOpen, setCoverOpen] = useState(true);
+  const [bgmOpen, setBgmOpen] = useState(false);
   const [storyOpen, setStoryOpen] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(true);
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
@@ -171,6 +173,9 @@ const Index = ({ params }) => {
   const [usedChips, setUsedChips] = useState(new Set());
 
   const [timelineError, setTimelineError] = useState("");
+
+  // BGM
+  const [bgmUrl, setBgmUrl] = useState(null);
 
   // Record edit dialog
   const [showRecordEditDialog, setShowRecordEditDialog] = useState(false);
@@ -278,6 +283,7 @@ const Index = ({ params }) => {
           if (data.storyGenCount != null) {
             setStoryGenCount(data.storyGenCount);
           }
+          setBgmUrl(data.bgmUrl || null);
 
           // Initialize photo drive data for CoverImageEditor
           const images = (data.mediaList ?? []).filter(
@@ -340,6 +346,7 @@ const Index = ({ params }) => {
           coverTitleFont: titleFont,
           coverTitleColor: titleColor,
           coverTitleBgColor: strokeToDbColor(titleStroke),
+          bgmUrl: bgmUrl || null,
         }),
       },
     );
@@ -1200,6 +1207,45 @@ const Index = ({ params }) => {
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 preloadBlobs={photoDrive.preloadBlobs}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    {/* BGM Section */}
+                    <div className="rounded-lg border border-white/10">
+                      <button
+                        onClick={() => setBgmOpen(!bgmOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
+                            배경음악
+                          </span>
+                          {bgmUrl && (
+                            <span className="text-[11px] text-[#c4b49a]">선택됨</span>
+                          )}
+                        </div>
+                        {bgmOpen ? (
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {bgmOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                              <BgmEditor
+                                selectedBgmUrl={bgmUrl}
+                                onBgmChange={setBgmUrl}
                               />
                             </div>
                           </motion.div>

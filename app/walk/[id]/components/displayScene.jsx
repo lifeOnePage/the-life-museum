@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useMemo, useState, useCallback } from "react";
 import * as THREE from "three";
+import { LogOut } from "lucide-react";
 import Scene from "./scene/Scene";
 import { SEED, CAMERA_SPEED, getTextureConfig } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
@@ -21,16 +22,9 @@ function PlaybackControls({
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
       <button
         onClick={onExit}
-        className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm text-white transition-colors hover:bg-white/30"
+        className="flex h-10 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm text-white transition-colors hover:bg-white/30"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="white"
-          className="h-4 w-4"
-        >
-          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-        </svg>
+        <LogOut className="h-4 w-4" />
         나가기
       </button>
 

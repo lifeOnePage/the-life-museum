@@ -184,10 +184,11 @@ function WallPlane({
         const mat = frontMatRef.current;
         if (mat) {
           mat.map = tex;
+          mat.color.setScalar(1);
           mat.needsUpdate = true;
         }
 
-        flickerState.current = { active: true, elapsed: 0, done: false };
+        flickerState.current = { active: false, elapsed: 0, done: true };
         loadStateRef.current = "loaded";
 
         onTextureLoaded?.(id, tex, boxAspect);
@@ -204,7 +205,16 @@ function WallPlane({
     };
 
     img.src = getProxiedUrl(imageUrl);
-  }, [imageUrl, baseHeight, id, onTextureLoaded, activeLoadsRef, maxConcurrentLoads, maxTextureSize, anisotropy]);
+  }, [
+    imageUrl,
+    baseHeight,
+    id,
+    onTextureLoaded,
+    activeLoadsRef,
+    maxConcurrentLoads,
+    maxTextureSize,
+    anisotropy,
+  ]);
 
   // Cleanup on unmount or imageUrl change
   useEffect(() => {
@@ -409,7 +419,7 @@ function WallPlane({
     if (flicker.active && !flicker.done) {
       flicker.elapsed += delta;
       const t = Math.min(1, flicker.elapsed / FLICKER_DURATION);
-      const brightness = flickerBrightness(t);
+      const brightness = 1.0;
 
       mat.color.setScalar(brightness);
 

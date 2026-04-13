@@ -35,9 +35,14 @@ import {
 
 // ─── 동시 텍스처 로딩 제한 ───────────────────────────────────────────────
 // 50개 동시 HTTP 요청 → 4개로 제한하여 네트워크/CPU 부하 분산
-const MAX_CONCURRENT_LOADS = 4;
+const MAX_CONCURRENT_LOADS = 30;
 
-export default function Scene({ planes, isPlaying, cameraSpeed, textureConfig }) {
+export default function Scene({
+  planes,
+  isPlaying,
+  cameraSpeed,
+  textureConfig,
+}) {
   const { camera } = useThree();
   const controlsRef = useRef();
   const dirLightRef = useRef();

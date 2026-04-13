@@ -4,8 +4,9 @@ import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useMemo, useState, useCallback, useEffect, useRef } from "react";
 import * as THREE from "three";
+import { LogOut } from "lucide-react";
 import Scene from "./scene/Scene";
-import { SEED, CAMERA_SPEED } from "./lib/constants";
+import { SEED, CAMERA_SPEED, getTextureConfig } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
 import { useRecordData } from "@/app/lib/useRecordData";
 
@@ -24,16 +25,9 @@ function PlaybackControls({
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
       <button
         onClick={onExit}
-        className="flex items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm text-white transition-colors hover:bg-white/30"
+        className="flex h-10 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm text-white transition-colors hover:bg-white/30"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="white"
-          className="h-4 w-4"
-        >
-          <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z" />
-        </svg>
+        <LogOut className="h-4 w-4" />
         나가기
       </button>
 
@@ -109,6 +103,7 @@ export default function DisplayScene({ recordId }) {
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
   const [isMuted, setIsMuted] = useState(false);
   const bgmRef = useRef(null);
+  const textureConfig = useMemo(() => getTextureConfig(), []);
 
   const BGM1_URL = "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/01.mp3";
   const bgmUrl = recordData?.bgmUrl || BGM1_URL;
@@ -181,19 +176,19 @@ export default function DisplayScene({ recordId }) {
     );
   }
 
-  if (recordData?.isPublic === false) {
-    return (
-      <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6 text-center">
-        <p className="text-2xl">🔒</p>
-        <p className="text-sm font-light tracking-wide text-white/60">
-          비공개 앨범입니다
-        </p>
-        <p className="text-xs tracking-wider text-white/30">
-          앨범 소유자만 열람할 수 있어요
-        </p>
-      </div>
-    );
-  }
+  // if (recordData?.isPublic === false) {
+  //   return (
+  //     <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6 text-center">
+  //       <p className="text-2xl">🔒</p>
+  //       <p className="text-sm font-light tracking-wide text-white/60">
+  //         비공개 앨범입니다
+  //       </p>
+  //       <p className="text-xs tracking-wider text-white/30">
+  //         앨범 소유자만 열람할 수 있어요
+  //       </p>
+  //     </div>
+  //   );
+  // }
 
   if (mediaList.length === 0) {
     return (
@@ -243,6 +238,7 @@ export default function DisplayScene({ recordId }) {
             planes={planes}
             isPlaying={isPlaying}
             cameraSpeed={cameraSpeed}
+            textureConfig={textureConfig}
           />
         </Suspense>
       </Canvas>

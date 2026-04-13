@@ -11,7 +11,6 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
-import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 import CoverImageGenerator from "./CoverImageGenerator";
 
 const API_URL = "https://the-life-museum-backend-production.up.railway.app";
@@ -46,8 +45,6 @@ const CoverImageEditor = forwardRef(
       onRefreshPhotos,
       isRefreshing,
       preloadBlobs,
-      titleOverlayEnabled,
-      titleOverlayConfig,
     },
     ref,
   ) => {
@@ -58,52 +55,16 @@ const CoverImageEditor = forwardRef(
     const [selectedImageUrl, setSelectedImageUrl] = useState(null);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
 
-    // Helper: load an image URL as HTMLImageElement
-    const loadImage = (src) =>
-      new Promise((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = src;
-      });
-
-    // Helper: composite title overlay onto cover and return as File
-    const compositeCoverWithTitle = async (coverSrc) => {
-      if (!titleOverlayEnabled || !titleOverlayConfig?.title) return null;
-      try {
-        const img = await loadImage(coverSrc);
-        const dataUrl = generateFrontCoverDataUrl(img, titleOverlayConfig);
-        if (!dataUrl) return null;
-        const res = await fetch(dataUrl);
-        const blob = await res.blob();
-        return new File([blob], "cover-with-title.png", { type: "image/png" });
-      } catch (e) {
-        console.error("Title composite failed:", e);
-        return null;
-      }
-    };
-
     useImperativeHandle(ref, () => ({
       save: async () => {
-        if (!selectedFile && !selectedImageUrl && !frontCover) return;
+        if (!selectedFile && !selectedImageUrl) return;
         setIsSaving(true);
         setError("");
 
         try {
-          // Determine the cover source for title compositing
-          let fileToUpload = null;
-
           if (selectedFile) {
-            // If title overlay enabled, composite onto the selected file
-            if (titleOverlayEnabled && titleOverlayConfig?.title) {
-              const objectUrl = URL.createObjectURL(selectedFile);
-              fileToUpload = await compositeCoverWithTitle(objectUrl);
-              URL.revokeObjectURL(objectUrl);
-            }
-            // Upload composited or original file
             const formData = new FormData();
-            formData.append("file", fileToUpload || selectedFile);
+            formData.append("file", selectedFile);
             const response = await authedFetch(
               `${API_URL}/api/v1/record/${record_id}/cover/temp`,
               { method: "POST", body: formData },
@@ -116,26 +77,6 @@ const CoverImageEditor = forwardRef(
           }
 
           if (selectedImageUrl) {
-            // If title overlay enabled, composite and upload as file
-            if (titleOverlayEnabled && titleOverlayConfig?.title) {
-              fileToUpload = await compositeCoverWithTitle(selectedImageUrl);
-            }
-            if (fileToUpload) {
-              const formData = new FormData();
-              formData.append("file", fileToUpload);
-              const response = await authedFetch(
-                `${API_URL}/api/v1/record/${record_id}/cover/temp`,
-                { method: "POST", body: formData },
-              );
-              const data = await response.json();
-              if (!response.ok) {
-                throw new Error(
-                  data.error || data.detail || "저장에 실패했습니다",
-                );
-              }
-              return data;
-            }
-            // No title overlay — save URL directly
             const response = await authedFetch(
               `${API_URL}/api/v1/record/${record_id}/cover/url`,
               {
@@ -151,24 +92,6 @@ const CoverImageEditor = forwardRef(
               );
             }
             return data;
-          }
-
-          // No new selection but cover exists and title overlay changed
-          if (frontCover && titleOverlayEnabled && titleOverlayConfig?.title) {
-            fileToUpload = await compositeCoverWithTitle(frontCover);
-            if (fileToUpload) {
-              const formData = new FormData();
-              formData.append("file", fileToUpload);
-              const response = await authedFetch(
-                `${API_URL}/api/v1/record/${record_id}/cover/temp`,
-                { method: "POST", body: formData },
-              );
-              const data = await response.json();
-              if (!response.ok) {
-                throw new Error(data.error || "저장에 실패했습니다");
-              }
-              return data;
-            }
           }
         } catch (err) {
           setError(err.message);

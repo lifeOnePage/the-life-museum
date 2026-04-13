@@ -307,7 +307,7 @@ export default function AlbumPreview3D({
           )}
           <Canvas
             camera={{ position: [0, 0, 6], fov: 30 }}
-            dpr={[1, 2]}
+            dpr={typeof window !== "undefined" && window.innerWidth < 768 ? 1 : [1, 2]}
             gl={{ antialias: true }}
             resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
           >

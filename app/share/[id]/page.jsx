@@ -226,17 +226,19 @@ export default function SharePage({ params }) {
   );
 
   // Build cylindrical column strips — viewport-responsive
-  const ROWS_PER_COL = 8;
   const RADIUS = 700;
 
-  const { GRID_COLS, ARC_SPREAD } = useMemo(() => {
+  const { GRID_COLS, ARC_SPREAD, ROWS_PER_COL } = useMemo(() => {
     if (typeof window === "undefined")
-      return { GRID_COLS: 16, ARC_SPREAD: 200 };
+      return { GRID_COLS: 16, ARC_SPREAD: 200, ROWS_PER_COL: 8 };
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      return { GRID_COLS: 6, ARC_SPREAD: 120, ROWS_PER_COL: 4 };
+    }
     const aspect = window.innerWidth / window.innerHeight;
-    // 넓을수록 더 많은 컬럼과 더 넓은 호각도
     const spread = Math.min(Math.round(aspect * 130), 280);
     const cols = Math.max(14, Math.round(spread / 12));
-    return { GRID_COLS: cols, ARC_SPREAD: spread };
+    return { GRID_COLS: cols, ARC_SPREAD: spread, ROWS_PER_COL: 8 };
   }, []);
 
   const angleStep = ARC_SPREAD / (GRID_COLS - 1);
@@ -246,8 +248,11 @@ export default function SharePage({ params }) {
 
   const gridColumns = useMemo(() => {
     if (images.length === 0) return [];
+    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     const urls = images.map((img) =>
-      getProxiedUrl(img.original_url || img.thumbnail_url),
+      getProxiedUrl(isMobile
+        ? (img.thumbnail_url || img.original_url)
+        : (img.original_url || img.thumbnail_url)),
     );
     return Array.from({ length: GRID_COLS }, (_, colIdx) => {
       const colImages = [];

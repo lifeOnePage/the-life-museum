@@ -225,20 +225,17 @@ export default function SharePage({ params }) {
     [recordData],
   );
 
-  // Build cylindrical column strips — viewport-responsive
+  // Build cylindrical column strips — viewport-responsive (desktop only)
+  const ROWS_PER_COL = 8;
   const RADIUS = 700;
 
-  const { GRID_COLS, ARC_SPREAD, ROWS_PER_COL } = useMemo(() => {
+  const { GRID_COLS, ARC_SPREAD } = useMemo(() => {
     if (typeof window === "undefined")
-      return { GRID_COLS: 16, ARC_SPREAD: 200, ROWS_PER_COL: 8 };
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      return { GRID_COLS: 6, ARC_SPREAD: 120, ROWS_PER_COL: 4 };
-    }
+      return { GRID_COLS: 16, ARC_SPREAD: 200 };
     const aspect = window.innerWidth / window.innerHeight;
     const spread = Math.min(Math.round(aspect * 130), 280);
     const cols = Math.max(14, Math.round(spread / 12));
-    return { GRID_COLS: cols, ARC_SPREAD: spread, ROWS_PER_COL: 8 };
+    return { GRID_COLS: cols, ARC_SPREAD: spread };
   }, []);
 
   const angleStep = ARC_SPREAD / (GRID_COLS - 1);
@@ -248,11 +245,8 @@ export default function SharePage({ params }) {
 
   const gridColumns = useMemo(() => {
     if (images.length === 0) return [];
-    const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
     const urls = images.map((img) =>
-      getProxiedUrl(isMobile
-        ? (img.thumbnail_url || img.original_url)
-        : (img.original_url || img.thumbnail_url)),
+      getProxiedUrl(img.original_url || img.thumbnail_url),
     );
     return Array.from({ length: GRID_COLS }, (_, colIdx) => {
       const colImages = [];
@@ -304,8 +298,8 @@ export default function SharePage({ params }) {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Background: Concave cylindrical photo grid */}
-      {images.length > 0 && (
+      {/* Background: Concave cylindrical photo grid (desktop only) */}
+      {images.length > 0 && typeof window !== "undefined" && window.innerWidth >= 768 && (
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo, useState, useCallback } from "react";
+import { Suspense, useMemo, useState, useCallback, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { LogOut } from "lucide-react";
 import Scene from "./scene/Scene";
@@ -17,6 +17,9 @@ function PlaybackControls({
   cameraSpeed,
   onCameraSpeedChange,
   onExit,
+  isMuted,
+  onToggleMute,
+  hasBgm,
 }) {
   return (
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
@@ -64,6 +67,31 @@ function PlaybackControls({
         onChange={(e) => onCameraSpeedChange(Number(e.target.value))}
         className="w-24 accent-white"
       />
+
+      {hasBgm && (
+        <>
+          <div className="h-6 w-px bg-white/20" />
+          <button
+            onClick={onToggleMute}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+            title={isMuted ? "음악 켜기" : "음악 끄기"}
+          >
+            {isMuted ? (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <line x1="23" y1="9" x2="17" y2="15" />
+                <line x1="17" y1="9" x2="23" y2="15" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            )}
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -73,7 +101,41 @@ export default function DisplayScene({ recordId }) {
   const { data: recordData, loading, error } = useRecordData(recordId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
+  const [isMuted, setIsMuted] = useState(false);
+  const bgmRef = useRef(null);
   const textureConfig = useMemo(() => getTextureConfig(), []);
+
+  const BGM1_URL = "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/01.mp3";
+  const bgmUrl = recordData?.bgmUrl || BGM1_URL;
+
+  // BGM 초기화
+  useEffect(() => {
+    if (!bgmUrl) return;
+    const audio = new Audio(bgmUrl);
+    audio.loop = true;
+    audio.volume = 0.4;
+    bgmRef.current = audio;
+    return () => {
+      audio.pause();
+      audio.src = "";
+    };
+  }, [bgmUrl]);
+
+  // isPlaying 변화에 따라 BGM 재생/정지
+  useEffect(() => {
+    if (!bgmRef.current) return;
+    if (isPlaying) {
+      bgmRef.current.play().catch(() => {});
+    } else {
+      bgmRef.current.pause();
+    }
+  }, [isPlaying]);
+
+  // isMuted 변화에 따라 볼륨 조절
+  useEffect(() => {
+    if (!bgmRef.current) return;
+    bgmRef.current.volume = isMuted ? 0 : 0.4;
+  }, [isMuted]);
 
   const mediaList = useMemo(
     () => (recordData?.mediaList ?? []).filter((m) => m.type === "image"),
@@ -149,6 +211,9 @@ export default function DisplayScene({ recordId }) {
         cameraSpeed={cameraSpeed}
         onCameraSpeedChange={setCameraSpeed}
         onExit={() => router.back()}
+        hasBgm={true}
+        isMuted={isMuted}
+        onToggleMute={() => setIsMuted((m) => !m)}
       />
 
       <Canvas

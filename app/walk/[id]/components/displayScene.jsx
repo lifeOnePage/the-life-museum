@@ -59,7 +59,7 @@ function PlaybackControls({
       <input
         type="range"
         min={5}
-        max={100}
+        max={300}
         value={cameraSpeed}
         onChange={(e) => onCameraSpeedChange(Number(e.target.value))}
         className="w-24 accent-white"
@@ -88,6 +88,10 @@ export default function DisplayScene({ recordId }) {
 
   const handleTogglePlay = useCallback(() => {
     setIsPlaying((prev) => !prev);
+  }, []);
+
+  const handleAutoPlay = useCallback(() => {
+    setIsPlaying(true);
   }, []);
 
   if (loading) {
@@ -174,6 +178,7 @@ export default function DisplayScene({ recordId }) {
             isPlaying={isPlaying}
             cameraSpeed={cameraSpeed}
             textureConfig={textureConfig}
+            onAutoPlay={handleAutoPlay}
           />
         </Suspense>
       </Canvas>

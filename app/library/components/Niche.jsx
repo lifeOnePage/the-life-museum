@@ -48,14 +48,13 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
   return (
     <group position={position}>
       {/* 외부 배경 벽 */}
-      <mesh receiveShadow raycast={() => null} position={[0, 0, 0]}>
-        <boxGeometry args={[100, 100, 0.1]} />
-        <meshStandardMaterial color={CREAM} roughness={1.5} metalness={0.0} />
+      <mesh raycast={() => null} position={[0, 0, 0]}>
+        <planeGeometry args={[12, 10]} />
+        <meshBasicMaterial color={CREAM} />
       </mesh>
 
       {/* 크림색 내부 뒷판 */}
       <mesh
-        receiveShadow
         raycast={() => null}
         position={[0, wallCenterY, 0.06]}
       >
@@ -69,7 +68,6 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
 
       {/* 좌측 벽 */}
       <mesh
-        receiveShadow
         raycast={() => null}
         position={[
           -(nicheWidth / 2 + wallThickness / 2),
@@ -83,7 +81,6 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
 
       {/* 우측 벽 */}
       <mesh
-        receiveShadow
         raycast={() => null}
         position={[
           nicheWidth / 2 + wallThickness / 2,
@@ -96,7 +93,6 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
       </mesh>
 
       <mesh
-        receiveShadow
         raycast={() => null}
         position={[0, wallCenterY - wallHeight, nicheDepth / 2]}
       >

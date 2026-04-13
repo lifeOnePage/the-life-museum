@@ -52,8 +52,6 @@ export default function Shelf({
     <group position={position}>
       {/* 선반 상판 */}
       <mesh
-        castShadow
-        receiveShadow
         raycast={() => null}
         position={[0, thickness / 2, depth / 2]}
       >
@@ -86,7 +84,7 @@ export default function Shelf({
         <boxGeometry args={[width - 0.1, 0.05, 0.025]} />
         <meshStandardMaterial
           emissive="#ffaa40"
-          emissiveIntensity={10}
+          emissiveIntensity={1.5}
           color="#ffaa40"
           roughness={0.1}
         />

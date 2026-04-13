@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useMemo, useState, useRef, useCallback, useEffect } from "react";
+import { useMemo, useRef, useCallback, useEffect, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import Niche from "./Niche";
 import Shelf from "./Shelf";
@@ -36,18 +36,9 @@ export default function ShelfScene({
   onFlipAlbum,
   onCloseAlbum,
   onHoverLabelPos,
+  windowWidth = 1280,
 }) {
   const { camera, gl } = useThree();
-
-  // 반응형 COLS
-  const [windowWidth, setWindowWidth] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1280,
-  );
-  useEffect(() => {
-    const handler = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, []);
 
   const COLS = useMemo(() => {
     if (windowWidth >= 1280) return 5;
@@ -68,8 +59,6 @@ export default function ShelfScene({
 
   // ROWS: 데스크탑은 2 고정, 모바일은 앨범 수에 따라 동적 확장 (최대 5)
   const ROWS = useMemo(() => {
-    // if (windowWidth >= 768) return 2;
-    console.log("albums.length", albums.length);
     return Math.min(5, Math.max(2, Math.ceil(albums.length / COLS)));
   }, [windowWidth, albums.length, COLS]);
 

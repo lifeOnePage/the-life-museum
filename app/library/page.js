@@ -319,7 +319,7 @@ export default function MyShelfPage() {
 
         {/* 선택된 앨범: 아래에 버튼 (role에 따라 분기) */}
         {selectedAlbum && (
-          <div className="pointer-events-auto absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap pb-6 sm:pb-8 md:pb-[10vh]">
+          <div className="pointer-events-auto absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap pb-6 will-change-transform sm:pb-8 md:pb-[10vh]">
             {selectedRole === "owner" && (
               <button
                 onClick={() => {
@@ -327,7 +327,7 @@ export default function MyShelfPage() {
                     router.push(`library/edit/${selectedAlbum.data.id}`);
                   }
                 }}
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-black/50 px-5 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
               >
                 <Pencil size={14} />
                 편집하기
@@ -339,7 +339,7 @@ export default function MyShelfPage() {
                   router.push(`/walk/${selectedAlbum.data.id}`);
                 }
               }}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-black/50 px-5 py-2 text-sm font-medium text-white transition hover:bg-white hover:text-black"
+              className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
             >
               <ArrowRight size={14} />
               보러가기
@@ -347,7 +347,7 @@ export default function MyShelfPage() {
             {selectedRole === "owner" && (
               <button
                 onClick={() => setShowShareModal(true)}
-                className="flex shrink-0 items-center justify-center rounded-full bg-black/50 p-2.5 text-white transition hover:bg-white hover:text-black"
+                className="flex shrink-0 items-center justify-center rounded-full bg-neutral-800/80 p-2.5 text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
                 title="공유하기"
               >
                 <Share2 size={16} />

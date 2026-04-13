@@ -90,29 +90,23 @@ function useGifTexture(imageUrl, isPlayable) {
     };
   }, [imageUrl]);
 
-  // useFrame으로 프레임 갱신 (isPlayable일 때만)
+  // GIF 프레임 갱신
   useFrame((_, delta) => {
-    if (!ready || !isPlayable) return;
+    if (!isPlayable || !ready || framesRef.current.length === 0) return;
     const frames = framesRef.current;
-    if (frames.length <= 1) return;
-
-    elapsedRef.current += delta * 1000; // ms
-    const currentFrame = frames[frameIndexRef.current];
-    const delay = currentFrame.delay * 1.5 || 100;
-
+    elapsedRef.current += delta * 1000;
+    const delay = frames[frameIndexRef.current]?.delay || 100;
     if (elapsedRef.current >= delay) {
       elapsedRef.current -= delay;
       frameIndexRef.current = (frameIndexRef.current + 1) % frames.length;
-
-      const ctx = ctxRef.current;
       const canvas = canvasRef.current;
       drawFrame(
-        ctx,
+        ctxRef.current,
         frames[frameIndexRef.current],
         canvas.width,
         canvas.height,
       );
-      textureRef.current.needsUpdate = true;
+      if (textureRef.current) textureRef.current.needsUpdate = true;
     }
   });
 
@@ -234,8 +228,9 @@ function useVideoTexture(videoUrl, isPlayable) {
     return () => document.removeEventListener("visibilitychange", onVisChange);
   }, [isPlayable]);
 
+  // Video 텍스처 매 프레임 갱신
   useFrame(() => {
-    if (ready && textureRef.current) {
+    if (textureRef.current && videoRef.current && !videoRef.current.paused) {
       textureRef.current.needsUpdate = true;
     }
   });
@@ -245,19 +240,23 @@ function useVideoTexture(videoUrl, isPlayable) {
 
 // 이미지 URL에 따라 GIF/video/정적 텍스처를 자동 선택하는 훅
 function useAlbumTexture(imageUrl, isPlayable) {
-  const type = getMediaType(imageUrl);
-  // 훅 조건부 호출 금지 → null 전달로 비활성화
+  const mediaType = getMediaType(imageUrl);
+
+  // 훅 조건부 호출 금지 — 비활성 경로에 null 전달
   const gifTexture = useGifTexture(
-    type === "gif" ? imageUrl : null,
+    mediaType === "gif" ? imageUrl : null,
     isPlayable,
   );
   const videoTexture = useVideoTexture(
-    type === "video" ? imageUrl : null,
+    mediaType === "video" ? imageUrl : null,
     isPlayable,
   );
-  const staticTexture = useStaticTexture(type === "image" ? imageUrl : null);
-  if (type === "gif") return gifTexture;
-  if (type === "video") return videoTexture;
+  const staticTexture = useStaticTexture(
+    mediaType === "image" ? imageUrl : null,
+  );
+
+  if (mediaType === "gif") return gifTexture;
+  if (mediaType === "video") return videoTexture;
   return staticTexture;
 }
 
@@ -446,29 +445,41 @@ export default function AlbumCover({
   // 호버 시 위로 리프트
   useEffect(() => {
     if (!isSelected && hovered) {
-      animationState.current.targetZ = originalPosition.z + 0.5;
+      animationState.current.targetZ = originalPosition.z + 0.3;
     } else if (!isSelected) {
       animationState.current.targetZ = originalPosition.z;
     }
   }, [hovered, isSelected, originalPosition.y]);
 
-  // 프레임 루프 - 부드러운 애니메이션
+  // 프레임 루프 - 부드러운 애니메이션 (수렴 시 연산 중단)
   useFrame((_, delta) => {
     if (!outerGroupRef.current || !groupRef.current) return;
 
     const state = animationState.current;
-    const lerpFactor = 1 - Math.pow(0.001, delta);
+    const EPSILON = 0.0005;
 
-    // 위치 보간
-    state.currentX += (state.targetX - state.currentX) * lerpFactor;
-    state.currentY += (state.targetY - state.currentY) * lerpFactor;
-    state.currentZ += (state.targetZ - state.currentZ) * lerpFactor;
+    // 위치/회전이 target에 수렴했는지 체크
+    const posDiff =
+      Math.abs(state.targetX - state.currentX) +
+      Math.abs(state.targetY - state.currentY) +
+      Math.abs(state.targetZ - state.currentZ) +
+      Math.abs(state.targetRotX - state.currentRotX) +
+      Math.abs(state.targetRotY - state.currentRotY);
 
-    // 회전 보간
-    state.currentRotX += (state.targetRotX - state.currentRotX) * lerpFactor;
-    state.currentRotY += (state.targetRotY - state.currentRotY) * lerpFactor;
+    if (posDiff > EPSILON) {
+      const lerpFactor = 1 - Math.pow(0.001, delta);
 
-    // 적용 (outerGroupRef에 절대 위치 적용)
+      // 위치 보간
+      state.currentX += (state.targetX - state.currentX) * lerpFactor;
+      state.currentY += (state.targetY - state.currentY) * lerpFactor;
+      state.currentZ += (state.targetZ - state.currentZ) * lerpFactor;
+
+      // 회전 보간
+      state.currentRotX += (state.targetRotX - state.currentRotX) * lerpFactor;
+      state.currentRotY += (state.targetRotY - state.currentRotY) * lerpFactor;
+    }
+
+    // 항상 적용 (초기화 직후 target===current일 때도 위치 반영 보장)
     outerGroupRef.current.position.x = state.currentX;
     outerGroupRef.current.position.y = state.currentY;
     outerGroupRef.current.position.z = state.currentZ;
@@ -478,21 +489,20 @@ export default function AlbumCover({
     // 마우스 tilt 효과 (선택된 상태에서만)
     const mouse = mouseState.current;
     if (isSelected) {
-      // 목표 tilt 값 계산
       const targetTiltY = mouse.mouseX * TILT_CONFIG.maxAngle;
       const targetTiltX = -mouse.mouseY * TILT_CONFIG.maxAngle;
 
-      // 부드럽게 보간
       mouse.currentTiltX +=
         (targetTiltX - mouse.currentTiltX) * TILT_CONFIG.smoothing;
       mouse.currentTiltY +=
         (targetTiltY - mouse.currentTiltY) * TILT_CONFIG.smoothing;
 
-      // groupRef에 tilt 적용 (outerGroup의 회전과 별도로)
       groupRef.current.rotation.x = mouse.currentTiltX;
       groupRef.current.rotation.y = mouse.currentTiltY;
-    } else {
-      // 선택 해제 시 tilt 초기화
+    } else if (
+      Math.abs(mouse.currentTiltX) > 0.001 ||
+      Math.abs(mouse.currentTiltY) > 0.001
+    ) {
       mouse.currentTiltX += (0 - mouse.currentTiltX) * TILT_CONFIG.smoothing;
       mouse.currentTiltY += (0 - mouse.currentTiltY) * TILT_CONFIG.smoothing;
       groupRef.current.rotation.x = mouse.currentTiltX;
@@ -500,57 +510,55 @@ export default function AlbumCover({
     }
   });
 
-  // 머티리얼 생성
+  // 측면 머티리얼 (색상만 다를 때 재생성, BasicMaterial로 PBR 비용 제거)
+  const sideMaterial = useMemo(() => {
+    return new THREE.MeshBasicMaterial({ color: edgeColor || "#efefef" });
+  }, [edgeColor]);
+
+  // 머티리얼 생성 + 이전 머티리얼 dispose
+  const prevMaterialsRef = useRef([]);
   const materials = useMemo(() => {
+    // 이전 앞/뒷면 머티리얼만 dispose (측면은 별도 관리)
+    prevMaterialsRef.current.forEach((m) => m.dispose());
+
     const actualFrontTex = frontTexture || placeholderFront;
     const actualBackTex = backTexture || placeholderBack;
-    const sideColor = edgeColor || "#efefef";
+
+    // 앞면 (+Z) - 커버 이미지
+    const front = new THREE.MeshStandardMaterial({
+      map: actualFrontTex,
+      roughness: 0.3,
+      metalness: 0.3,
+      // emissive: "#ffffff",
+      // emissiveIntensity: 0.1,
+    });
+    // 뒷면 (-Z) - 뒤 이미지
+    const back = new THREE.MeshStandardMaterial({
+      map: actualBackTex,
+      roughness: 0.65,
+      metalness: 0.1,
+      // emissive: "#ffffff",
+      // emissiveIntensity: 0.1,
+    });
+
+    prevMaterialsRef.current = [front, back];
 
     // 6면 머티리얼: [+X, -X, +Y, -Y, +Z(앞면), -Z(뒷면)]
     return [
-      // 오른쪽 측면
-      new THREE.MeshStandardMaterial({
-        color: sideColor,
-        roughness: 0.7,
-        metalness: 0.1,
-      }),
-      // 왼쪽 측면
-      new THREE.MeshStandardMaterial({
-        color: sideColor,
-        roughness: 0.7,
-        metalness: 0.1,
-      }),
-      // 위쪽
-      new THREE.MeshStandardMaterial({
-        color: sideColor,
-        roughness: 0.7,
-        metalness: 0.1,
-      }),
-      // 아래쪽
-      new THREE.MeshStandardMaterial({
-        color: sideColor,
-        roughness: 0.7,
-        metalness: 0.1,
-      }),
-      // 앞면 (+Z) - 커버 이미지 (emissive로 발광감)
-      new THREE.MeshStandardMaterial({
-        map: actualFrontTex,
-        roughness: 0.3,
-        metalness: 1,
-        emissive: "#ffffff",
-        emissiveMap: actualFrontTex,
-        emissiveIntensity: 0.5,
-      }),
-      // 뒷면 (-Z) - 뒤 이미지 (매트 인쇄면)
-      new THREE.MeshStandardMaterial({
-        map: actualBackTex,
-        roughness: 0.65,
-        metalness: 0.1,
-        emissive: "#ffffff",
-        emissiveIntensity: 0.2,
-      }),
+      sideMaterial,
+      sideMaterial,
+      sideMaterial,
+      sideMaterial,
+      front,
+      back,
     ];
-  }, [frontTexture, backTexture, placeholderFront, placeholderBack, edgeColor]);
+  }, [
+    frontTexture,
+    backTexture,
+    placeholderFront,
+    placeholderBack,
+    sideMaterial,
+  ]);
 
   // 선택 시 outerGroupRef를 부모에 노출 (BlurLayer용, 현재 비활성화)
   useEffect(() => {
@@ -578,8 +586,6 @@ export default function AlbumCover({
         <mesh
           ref={meshRef}
           material={materials}
-          castShadow
-          receiveShadow
           onClick={(e) => {
             e.stopPropagation();
             onClick?.();

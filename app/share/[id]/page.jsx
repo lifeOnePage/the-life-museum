@@ -20,10 +20,8 @@ function Icon360({ className }) {
       strokeLinejoin="round"
       className={className}
     >
-      <path d="M14 6a1 1 0 0 0 -1 -1h-2a1 1 0 0 0 -1 1v6a1 1 0 0 0 1 1h2a1 1 0 0 0 1 -1v-2a1 1 0 0 0 -1 -1h-3" />
-      <path d="M3 5h2.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-1.5h1.5a1.5 1.5 0 0 1 1.5 1.5v1a1.5 1.5 0 0 1 -1.5 1.5h-2.5" />
-      <path d="M17 7v4a2 2 0 1 0 4 0v-4a2 2 0 1 0 -4 0" />
-      <path d="M3 16c0 1.657 4.03 3 9 3s9 -1.343 9 -3" />
+      <path d="M17 15.328c2.414 -.718 4 -1.94 4 -3.328c0 -2.21 -4.03 -4 -9 -4s-9 1.79 -9 4s4.03 4 9 4" />
+      <path d="M9 13l3 3l-3 3" />
     </svg>
   );
 }
@@ -44,58 +42,96 @@ export default function SharePage({ params }) {
   const { data: recordData, loading, error } = useRecordData(id);
   const [ready, setReady] = useState(false);
   const [flipProgress, setFlipProgress] = useState(0);
-  const [isAutoRotating, setIsAutoRotating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const [expandedTilt, setExpandedTilt] = useState({ x: 0, y: 0 });
+  const [idleTilt, setIdleTilt] = useState({ x: 0, y: 0 });
+  const albumRef = useRef(null);
+  const expandedAlbumRef = useRef(null);
+  const idleRafRef = useRef(null);
 
-  const autoRotatingRef = useRef(false);
-  const lastTimeRef = useRef(null);
-  const rafRef = useRef(null);
-  const ROTATE_SPEED = 0.08; // 1바퀴(0→1)에 약 12.5초
-
-  const stopAutoRotate = useCallback(() => {
-    autoRotatingRef.current = false;
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    setIsAutoRotating(false);
-  }, []);
-
-  const startAutoRotate = useCallback(() => {
-    autoRotatingRef.current = true;
-    lastTimeRef.current = null;
-    setIsAutoRotating(true);
-
+  // Idle floating animation
+  useEffect(() => {
+    let running = true;
     function loop(timestamp) {
-      if (!autoRotatingRef.current) return;
-      if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
-      const dt = Math.min((timestamp - lastTimeRef.current) / 1000, 0.1);
-      lastTimeRef.current = timestamp;
-
-      setFlipProgress((prev) => prev + ROTATE_SPEED * dt);
-
-      rafRef.current = requestAnimationFrame(loop);
+      if (!running) return;
+      const t = timestamp / 1000;
+      const x = Math.sin(t * 1.4) * 8 + Math.sin(t * 0.7 + 1.0) * 4;
+      const y = Math.sin(t * 1.0 + 1.2) * 12 + Math.sin(t * 1.8 + 0.4) * 4;
+      setIdleTilt({ x, y });
+      idleRafRef.current = requestAnimationFrame(loop);
     }
-    rafRef.current = requestAnimationFrame(loop);
+    idleRafRef.current = requestAnimationFrame(loop);
+    return () => {
+      running = false;
+      if (idleRafRef.current) cancelAnimationFrame(idleRafRef.current);
+    };
   }, []);
 
-  // value: 0 = 앞면, 0.5 = 뒷면 (한 사이클 내 상대 위치)
-  const snapTo = useCallback(
-    (value, currentProgress) => {
-      stopAutoRotate();
-      setFlipProgress((prev) => {
-        const base = Math.floor(prev);
-        const frac = prev - base;
-        // 현재 위치에서 가장 가까운 목표 절대값 계산
-        const candidates = [base + value, base + value + 1, base + value - 1];
-        return candidates.reduce((a, b) =>
-          Math.abs(a - prev) < Math.abs(b - prev) ? a : b,
-        );
-      });
-    },
-    [stopAutoRotate],
-  );
+  const calcTilt = (clientX, clientY, el) => {
+    const rect = el.getBoundingClientRect();
+    const nx = (clientX - rect.left) / rect.width - 0.5;
+    const ny = (clientY - rect.top) / rect.height - 0.5;
+    return { x: ny * -14, y: nx * 14 };
+  };
+
+  // 메인 앨범 — 마우스
+  const handleAlbumMouseMove = useCallback((e) => {
+    if (!albumRef.current) return;
+    setTilt(calcTilt(e.clientX, e.clientY, albumRef.current));
+  }, []);
+
+  const handleAlbumMouseEnter = useCallback(() => {}, []);
+
+  const handleAlbumMouseLeave = useCallback(() => {
+    setTilt({ x: 0, y: 0 });
+  }, []);
+
+  // 메인 앨범 — 터치
+  const handleAlbumTouchStart = useCallback(() => {}, []);
+
+  const handleAlbumTouchMove = useCallback((e) => {
+    if (!albumRef.current) return;
+    const touch = e.touches[0];
+    setTilt(calcTilt(touch.clientX, touch.clientY, albumRef.current));
+  }, []);
+
+  const handleAlbumTouchEnd = useCallback(() => {
+    setTilt({ x: 0, y: 0 });
+  }, []);
+
+  // Expanded 오버레이 — 마우스
+  const handleExpandedMouseMove = useCallback((e) => {
+    if (!expandedAlbumRef.current) return;
+    setExpandedTilt(calcTilt(e.clientX, e.clientY, expandedAlbumRef.current));
+  }, []);
+
+  const handleExpandedMouseLeave = useCallback(() => {
+    setExpandedTilt({ x: 0, y: 0 });
+  }, []);
+
+  // Expanded 오버레이 — 터치
+  const handleExpandedTouchMove = useCallback((e) => {
+    if (!expandedAlbumRef.current) return;
+    const touch = e.touches[0];
+    setExpandedTilt(
+      calcTilt(touch.clientX, touch.clientY, expandedAlbumRef.current),
+    );
+  }, []);
+
+  const handleExpandedTouchEnd = useCallback(() => {
+    setExpandedTilt({ x: 0, y: 0 });
+  }, []);
+
+  const handleAlbumClick = useCallback(() => {
+    setFlipProgress((prev) => {
+      const base = Math.floor(prev);
+      const frac = prev - base;
+      const isOnFront = frac < 0.25 || frac > 0.75;
+      return isOnFront ? base + 0.5 : base + 1;
+    });
+  }, []);
 
   useEffect(() => {
     if (!loading && !error) {
@@ -103,14 +139,6 @@ export default function SharePage({ params }) {
       return () => clearTimeout(timer);
     }
   }, [loading, error]);
-
-  // 페이지 진입 후 자동 회전 시작
-  useEffect(() => {
-    if (ready) {
-      startAutoRotate();
-      return () => stopAutoRotate();
-    }
-  }, [ready]);
 
   const frontCover = recordData?.coverImage?.url || null;
   const albumTitle = recordData?.title || "";
@@ -121,13 +149,7 @@ export default function SharePage({ params }) {
   const titlePosition = recordData?.coverTitlePosition || "bottom-center";
   const titleFont = recordData?.coverTitleFont || "Pretendard Variable";
   const titleColor = recordData?.coverTitleColor || "#ffffff";
-  const rawStroke = recordData?.coverTitleStroke;
-  const titleStroke =
-    rawStroke === true
-      ? "black"
-      : rawStroke === false || !rawStroke
-        ? "none"
-        : rawStroke;
+  const titleStroke = recordData?.coverTitleBgColor ?? false;
 
   const timeline = useMemo(() => {
     if (!recordData?.timeline?.events) return [];
@@ -142,7 +164,7 @@ export default function SharePage({ params }) {
     [recordData],
   );
 
-  // Build cylindrical column strips — viewport-responsive
+  // Build cylindrical column strips — viewport-responsive (desktop only)
   const ROWS_PER_COL = 8;
   const RADIUS = 700;
 
@@ -150,7 +172,6 @@ export default function SharePage({ params }) {
     if (typeof window === "undefined")
       return { GRID_COLS: 16, ARC_SPREAD: 200 };
     const aspect = window.innerWidth / window.innerHeight;
-    // 넓을수록 더 많은 컬럼과 더 넓은 호각도
     const spread = Math.min(Math.round(aspect * 130), 280);
     const cols = Math.max(14, Math.round(spread / 12));
     return { GRID_COLS: cols, ARC_SPREAD: spread };
@@ -200,25 +221,25 @@ export default function SharePage({ params }) {
   }
 
   // Private album
-  // if (recordData?.isPublic === false) {
-  //   return (
-  //     <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center">
-  //       <p className="text-2xl">🔒</p>
-  //       <p className="text-sm font-light tracking-wide text-white/60">
-  //         비공개 앨범입니다
-  //       </p>
-  //       <p className="text-xs tracking-wider text-white/30">
-  //         앨범 소유자만 열람할 수 있어요
-  //       </p>
-  //     </div>
-  //   );
-  // }
+  if (recordData?.isPublic === false) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center">
+        <p className="text-2xl">🔒</p>
+        <p className="text-sm font-light tracking-wide text-white/60">
+          비공개 앨범입니다
+        </p>
+        <p className="text-xs tracking-wider text-white/30">
+          앨범 소유자만 열람할 수 있어요
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Background: Concave cylindrical photo grid */}
+      {/* Background: Concave cylindrical photo grid (desktop only) */}
       {images.length > 0 && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block">
           {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />
@@ -297,28 +318,44 @@ export default function SharePage({ params }) {
           className={`h-[50vh] w-[80vw] max-w-[400px] transition-all delay-200 duration-1000 ease-out lg:max-w-[520px] xl:max-w-[640px] ${
             ready ? "scale-100 opacity-100" : "scale-[0.95] opacity-0"
           }`}
+          style={{ visibility: isExpanded ? "hidden" : "visible" }}
         >
-          <AlbumPreview3D
-            frontCover={frontCover}
-            bio={bio}
-            timeline={timeline}
-            selectedTheme={selectedTheme}
-            albumTitle={albumTitle}
-            albumSubTitle={subtitle}
-            titleOverlayEnabled={titleOverlayEnabled}
-            titlePosition={titlePosition}
-            titleFont={titleFont}
-            titleColor={titleColor}
-            titleStroke={titleStroke}
-            rotationY={flipProgress * 2 * Math.PI}
-            hideControls
-            onExpand={() => {
-              const f = flipProgress % 1;
-              stopAutoRotate();
-              snapTo(f < 0.25 || f > 0.75 ? 0 : 0.5);
-              setIsExpanded(true);
+          <div
+            ref={albumRef}
+            className="h-full w-full"
+            onMouseMove={handleAlbumMouseMove}
+            onMouseEnter={handleAlbumMouseEnter}
+            onMouseLeave={handleAlbumMouseLeave}
+            onTouchStart={handleAlbumTouchStart}
+            onTouchMove={handleAlbumTouchMove}
+            onTouchEnd={handleAlbumTouchEnd}
+            style={{
+              transform: `perspective(1000px) rotateX(${tilt.x + idleTilt.x}deg) rotateY(${tilt.y + idleTilt.y}deg)`,
+              transition:
+                tilt.x === 0 && tilt.y === 0
+                  ? "transform 1.2s ease-out"
+                  : "transform 0.08s ease-out",
+              touchAction: "pinch-zoom",
             }}
-          />
+          >
+            <AlbumPreview3D
+              frontCover={frontCover}
+              bio={bio}
+              timeline={timeline}
+              selectedTheme={selectedTheme}
+              albumTitle={albumTitle}
+              albumSubTitle={subtitle}
+              titleOverlayEnabled={titleOverlayEnabled}
+              titlePosition={titlePosition}
+              titleFont={titleFont}
+              titleColor={titleColor}
+              titleStroke={titleStroke}
+              rotationY={flipProgress * 2 * Math.PI}
+              hideControls
+              cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
+              onExpand={handleAlbumClick}
+            />
+          </div>
         </div>
 
         {/* Flip Slider + CTA */}
@@ -327,58 +364,21 @@ export default function SharePage({ params }) {
             ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
           }`}
         >
-          {/* Front / Auto / Back toggle + Expand */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6">
             <button
               onClick={() => setIsInfoOpen(true)}
               className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
             >
               <Info className="h-4 w-4" />
             </button>
-            <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-sm">
-              <button
-                onClick={() => snapTo(0)}
-                className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
-                  !isAutoRotating &&
-                  (flipProgress % 1 < 0.15 || flipProgress % 1 > 0.85)
-                    ? "bg-white/20 text-white"
-                    : "text-white/35 hover:text-white/70"
-                }`}
-              >
-                앞
-              </button>
-              <button
-                onClick={() =>
-                  isAutoRotating ? stopAutoRotate() : startAutoRotate()
-                }
-                className={`rounded-full px-3 py-1.5 transition-all duration-300 ${
-                  isAutoRotating
-                    ? "bg-white/20 text-white"
-                    : "text-white/35 hover:text-white/70"
-                }`}
-              >
-                <Icon360 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => snapTo(0.5)}
-                className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
-                  !isAutoRotating &&
-                  flipProgress % 1 > 0.35 &&
-                  flipProgress % 1 < 0.65
-                    ? "bg-white/20 text-white"
-                    : "text-white/35 hover:text-white/70"
-                }`}
-              >
-                뒤
-              </button>
-            </div>
             <button
-              onClick={() => {
-                const f = flipProgress % 1;
-                stopAutoRotate();
-                snapTo(f < 0.25 || f > 0.75 ? 0 : 0.5);
-                setIsExpanded(true);
-              }}
+              onClick={handleAlbumClick}
+              className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+            >
+              <Icon360 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setIsExpanded(true)}
               className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
             >
               <Maximize2 className="h-4 w-4" />
@@ -397,21 +397,40 @@ export default function SharePage({ params }) {
       {isExpanded && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95">
           <div className="h-[85vh] w-[90vw] max-w-[900px]">
-            <AlbumPreview3D
-              frontCover={frontCover}
-              bio={bio}
-              timeline={timeline}
-              selectedTheme={selectedTheme}
-              albumTitle={albumTitle}
-              titleOverlayEnabled={titleOverlayEnabled}
-              titlePosition={titlePosition}
-              titleFont={titleFont}
-              titleColor={titleColor}
-              rotationY={(flipProgress % 1) * 2 * Math.PI}
-              hideControls
-              expanded
-              onExpand={() => setIsExpanded(false)}
-            />
+            <div
+              ref={expandedAlbumRef}
+              className="h-full w-full"
+              onMouseMove={handleExpandedMouseMove}
+              onMouseLeave={handleExpandedMouseLeave}
+              onTouchMove={handleExpandedTouchMove}
+              onTouchEnd={handleExpandedTouchEnd}
+              style={{
+                transform: `perspective(1000px) rotateX(${expandedTilt.x + idleTilt.x}deg) rotateY(${expandedTilt.y + idleTilt.y}deg)`,
+                transition:
+                  expandedTilt.x === 0 && expandedTilt.y === 0
+                    ? "transform 1.2s ease-out"
+                    : "transform 0.08s ease-out",
+                touchAction: "pinch-zoom",
+              }}
+            >
+              <AlbumPreview3D
+                frontCover={frontCover}
+                bio={bio}
+                timeline={timeline}
+                selectedTheme={selectedTheme}
+                albumTitle={albumTitle}
+                titleOverlayEnabled={titleOverlayEnabled}
+                titlePosition={titlePosition}
+                titleFont={titleFont}
+                titleColor={titleColor}
+                titleStroke={titleStroke}
+                rotationY={flipProgress * 2 * Math.PI}
+                hideControls
+                expanded
+                cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
+                onExpand={handleAlbumClick}
+              />
+            </div>
           </div>
           <div className="mt-0 flex flex-col items-center gap-3">
             <div className="flex items-center gap-2">
@@ -421,28 +440,12 @@ export default function SharePage({ params }) {
               >
                 <Info className="h-4 w-4" />
               </button>
-              <div className="flex items-center gap-1 rounded-full border border-white/15 bg-white/5 p-1 backdrop-blur-sm">
-                <button
-                  onClick={() => snapTo(0)}
-                  className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
-                    flipProgress % 1 < 0.15 || flipProgress % 1 > 0.85
-                      ? "bg-white/20 text-white"
-                      : "text-white/35 hover:text-white/70"
-                  }`}
-                >
-                  앞
-                </button>
-                <button
-                  onClick={() => snapTo(0.5)}
-                  className={`rounded-full px-4 py-1.5 text-[11px] tracking-wider transition-all duration-300 ${
-                    flipProgress % 1 > 0.35 && flipProgress % 1 < 0.65
-                      ? "bg-white/20 text-white"
-                      : "text-white/35 hover:text-white/70"
-                  }`}
-                >
-                  뒤
-                </button>
-              </div>
+              <button
+                onClick={handleAlbumClick}
+                className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+              >
+                <Icon360 className="h-4 w-4" />
+              </button>
               <button
                 onClick={() => setIsExpanded(false)}
                 className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"

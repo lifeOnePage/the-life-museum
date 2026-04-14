@@ -19,6 +19,7 @@ import {
   HelpCircle,
   MoreVertical,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -45,8 +46,47 @@ import TitleOverlayEditor from "./components/TitleOverlayEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
+import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
+
+// Convert a 6-digit hex to 8-digit (#RRGGBB → #RRGGBBff) for API.
+function toApiColor(hex) {
+  if (!hex) return hex;
+  if (hex.startsWith("#") && hex.length === 9) return hex;
+  return `${hex}ff`;
+}
+
+// Strip alpha from 8-digit hex for use in color pickers (#RRGGBBaa → #RRGGBB).
+function fromApiColor(hex) {
+  if (!hex) return hex;
+  if (hex.startsWith("#") && hex.length === 9) return hex.slice(0, 7);
+  return hex;
+}
+
+// Convert stroke color + opacity to an 8-digit hex string for API.
+function strokeToDbColor(stroke, opacity = 100) {
+  if (!stroke || stroke === "none") return null;
+  let hex = stroke;
+  if (stroke === "black") hex = "#000000";
+  else if (stroke === "white") hex = "#ffffff";
+  const alpha = Math.round((opacity / 100) * 255);
+  return `${hex}${alpha.toString(16).padStart(2, "0")}`;
+}
+
+// Parse an 8-digit hex back into { stroke, strokeOpacity }.
+function dbColorToStroke(raw) {
+  if (!raw) return { stroke: "none", strokeOpacity: 100 };
+  if (raw.startsWith("#") && raw.length === 9) {
+    const color = raw.slice(0, 7);
+    const alpha = parseInt(raw.slice(7, 9), 16);
+    const strokeOpacity = Math.round((alpha / 255) * 100);
+    return { stroke: color, strokeOpacity };
+  }
+  if (raw === "black" || raw === "white" || raw.startsWith("#"))
+    return { stroke: raw, strokeOpacity: 100 };
+  return { stroke: "none", strokeOpacity: 100 };
+}
 
 // Sortable timeline item component
 function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
@@ -133,10 +173,12 @@ const Index = ({ params }) => {
   const [titleFont, setTitleFont] = useState("Pretendard Variable");
   const [titleColor, setTitleColor] = useState("#ffffff");
   const [titleStroke, setTitleStroke] = useState("none");
+  const [titleStrokeOpacity, setTitleStrokeOpacity] = useState(100);
 
   // Collapsible sections
   const [titleOpen, setTitleOpen] = useState(true);
   const [coverOpen, setCoverOpen] = useState(true);
+  const [bgmOpen, setBgmOpen] = useState(false);
   const [storyOpen, setStoryOpen] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(true);
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
@@ -150,9 +192,21 @@ const Index = ({ params }) => {
   // AI story generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [bioError, setBioError] = useState("");
+  const [storyGenCount, setStoryGenCount] = useState(0);
+  const storyRemainingGens = 3 - storyGenCount;
   const [usedChips, setUsedChips] = useState(new Set());
 
   const [timelineError, setTimelineError] = useState("");
+
+  // BGM
+  const [bgmUrl, setBgmUrl] = useState(null);
+  const [bgmId, setBgmId] = useState(null);
+
+  const handleBgmChange = (url) => {
+    setBgmUrl(url);
+    const found = BGM_LIST.find((b) => b.url === url);
+    setBgmId(found ? found.id : null);
+  };
 
   // Record edit dialog
   const [showRecordEditDialog, setShowRecordEditDialog] = useState(false);
@@ -196,6 +250,10 @@ const Index = ({ params }) => {
     titlePosition: "bottom-center",
     titleFont: "Pretendard Variable",
     titleColor: "#ffffff",
+    titleStroke: "none",
+    titleStrokeOpacity: 100,
+    bgmUrl: null,
+    bgmId: null,
   });
 
   useEffect(() => {
@@ -232,12 +290,9 @@ const Index = ({ params }) => {
           const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
-          const savedTitleColor = data.coverTitleColor || "#ffffff";
-          const rawBgColor = data.coverTitleBgColor;
-          const savedTitleStroke =
-            rawBgColor === "black" || rawBgColor === "white"
-              ? rawBgColor
-              : "none";
+          const savedTitleColor = fromApiColor(data.coverTitleColor) || "#ffffff";
+          const { stroke: savedTitleStroke, strokeOpacity: savedTitleStrokeOpacity } =
+            dbColorToStroke(data.coverTitleBgColor);
 
           setFrontCover(coverUrl);
           setAlbumTitle(title);
@@ -254,9 +309,16 @@ const Index = ({ params }) => {
           setTitleFont(savedTitleFont);
           setTitleColor(savedTitleColor);
           setTitleStroke(savedTitleStroke);
+          setTitleStrokeOpacity(savedTitleStrokeOpacity);
           setGooglePhotoUrl(data.googlePhotoUrl || "");
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
+          console.log("storyGenCount from GET:", data.storyGenCount);
+          if (data.storyGenCount != null) {
+            setStoryGenCount(data.storyGenCount);
+          }
+          setBgmUrl(data.bgmUrl || null);
+          setBgmId(data.bgmId ? `bgm${data.bgmId}` : null);
 
           // Initialize photo drive data for CoverImageEditor
           const images = (data.mediaList ?? []).filter(
@@ -276,6 +338,9 @@ const Index = ({ params }) => {
             titleFont: savedTitleFont,
             titleColor: savedTitleColor,
             titleStroke: savedTitleStroke,
+            titleStrokeOpacity: savedTitleStrokeOpacity,
+            bgmUrl: data.bgmUrl || null,
+            bgmId: data.bgmId ? `bgm${data.bgmId}` : null,
           };
         }
       } catch (error) {
@@ -307,24 +372,27 @@ const Index = ({ params }) => {
           Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
-          color: theme.text,
-          bgColor: theme.bg,
-          keyColor: theme.accent,
+          color: toApiColor(theme.text),
+          bgColor: toApiColor(theme.bg),
+          keyColor: toApiColor(theme.accent),
           theme: selectedTheme,
           title: albumTitle,
           subTitle: albumSubtitle,
           coverTitleVisible: titleOverlayEnabled,
           coverTitlePosition: titlePosition,
           coverTitleFont: titleFont,
-          coverTitleColor: titleColor,
-          coverTitleBgColor: titleStroke === "none" ? null : titleStroke,
+          coverTitleColor: toApiColor(titleColor),
+          coverTitleBgColor: strokeToDbColor(titleStroke, titleStrokeOpacity),
+          bgmId: bgmId ? parseInt(bgmId.replace("bgm", ""), 10) : null,
+          bgmUrl: bgmUrl || null,
         }),
       },
     );
 
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || "컬러 저장에 실패했습니다");
+      console.error("saveRecordColors 422 detail:", JSON.stringify(data));
+      throw new Error(data.error || data.detail || "컬러 저장에 실패했습니다");
     }
     return data;
   };
@@ -397,7 +465,10 @@ const Index = ({ params }) => {
       titleOverlayEnabled !== initialState.current.titleOverlayEnabled ||
       titlePosition !== initialState.current.titlePosition ||
       titleFont !== initialState.current.titleFont ||
-      titleColor !== initialState.current.titleColor;
+      titleColor !== initialState.current.titleColor ||
+      titleStroke !== initialState.current.titleStroke ||
+      titleStrokeOpacity !== initialState.current.titleStrokeOpacity ||
+      bgmUrl !== initialState.current.bgmUrl;
 
     if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isThemeDirty)
       return;
@@ -457,6 +528,10 @@ const Index = ({ params }) => {
           initialState.current.titlePosition = titlePosition;
           initialState.current.titleFont = titleFont;
           initialState.current.titleColor = titleColor;
+          initialState.current.titleStroke = titleStroke;
+          initialState.current.titleStrokeOpacity = titleStrokeOpacity;
+          initialState.current.bgmUrl = bgmUrl;
+          initialState.current.bgmId = bgmId;
         }
       }
     }
@@ -481,7 +556,9 @@ const Index = ({ params }) => {
     titlePosition !== initialState.current.titlePosition ||
     titleFont !== initialState.current.titleFont ||
     titleColor !== initialState.current.titleColor ||
-    titleStroke !== initialState.current.titleStroke;
+    titleStroke !== initialState.current.titleStroke ||
+    titleStrokeOpacity !== initialState.current.titleStrokeOpacity ||
+    bgmUrl !== initialState.current.bgmUrl;
 
   const handleExit = () => {
     router.push("/library");
@@ -495,14 +572,17 @@ const Index = ({ params }) => {
   // AI story generation
   const handleGenerate = async () => {
     const fullText = getFullBioText();
-    if (!fullText) return;
+    if (!fullText || storyRemainingGens <= 0) return;
     setIsGenerating(true);
     setBioError("");
     console.log("fullText", fullText);
 
+    // Optimistic update
+    const optimisticCount = storyGenCount + 1;
+    setStoryGenCount(optimisticCount);
+
     try {
       const token = localStorage.getItem("app_token");
-      console.log(token);
       const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
@@ -517,9 +597,32 @@ const Index = ({ params }) => {
 
       const data = await response.json();
       if (!response.ok) {
+        setStoryGenCount(optimisticCount - 1); // rollback
         throw new Error(data.error || "생성에 실패했습니다");
       }
       setBio(data.data?.result || "");
+      // Sync with server value if provided
+      const newCount =
+        data.data?.storyGenCount != null
+          ? data.data.storyGenCount
+          : optimisticCount;
+      setStoryGenCount(newCount);
+
+      // Persist count to server
+      fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ storyGenCount: newCount }),
+        },
+      )
+        .then((r) => r.json())
+        .then((d) => console.log("storyGenCount PATCH response:", d))
+        .catch((e) => console.error("Failed to persist storyGenCount:", e));
     } catch (err) {
       setBioError(err.message);
     } finally {
@@ -691,6 +794,7 @@ const Index = ({ params }) => {
     setTitlePosition(s.titlePosition);
     setTitleFont(s.titleFont);
     setTitleColor(s.titleColor);
+    setTitleStrokeOpacity(s.titleStrokeOpacity ?? 100);
     setUsedChips(new Set());
   };
 
@@ -945,6 +1049,7 @@ const Index = ({ params }) => {
             titleFont={titleFont}
             titleColor={titleColor}
             titleStroke={titleStroke}
+            titleStrokeOpacity={titleStrokeOpacity}
             flipped={activeTab === "back"}
           />
         </div>
@@ -1087,10 +1192,12 @@ const Index = ({ params }) => {
                                 font={titleFont}
                                 color={titleColor}
                                 stroke={titleStroke}
+                                strokeOpacity={titleStrokeOpacity}
                                 onPositionChange={setTitlePosition}
                                 onFontChange={setTitleFont}
                                 onColorChange={setTitleColor}
                                 onStrokeChange={setTitleStroke}
+                                onStrokeOpacityChange={setTitleStrokeOpacity}
                               />
                             </div>
                           </motion.div>
@@ -1145,15 +1252,45 @@ const Index = ({ params }) => {
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 preloadBlobs={photoDrive.preloadBlobs}
-                                titleOverlayEnabled={titleOverlayEnabled}
-                                titleOverlayConfig={{
-                                  title: albumTitle || "",
-                                  subtitle: "",
-                                  position: titlePosition || "bottom-center",
-                                  font: titleFont || "Pretendard Variable",
-                                  color: titleColor || "#ffffff",
-                                  stroke: titleStroke,
-                                }}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                    {/* BGM Section */}
+                    <div className="rounded-lg border border-white/10">
+                      <button
+                        onClick={() => setBgmOpen(!bgmOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
+                            배경음악
+                          </span>
+                          {bgmUrl && (
+                            <span className="text-[11px] text-[#c4b49a]">선택됨</span>
+                          )}
+                        </div>
+                        {bgmOpen ? (
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {bgmOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                              <BgmEditor
+                                selectedBgmUrl={bgmUrl}
+                                onBgmChange={handleBgmChange}
                               />
                             </div>
                           </motion.div>
@@ -1335,10 +1472,24 @@ const Index = ({ params }) => {
                                 )}
                               </div>
 
+                              {/* Generation count */}
+                              <div className="flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
+                                <span className="text-xs text-[#c4b49a]">사용한 생성 횟수</span>
+                                <span className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}>
+                                  {storyGenCount}/3
+                                </span>
+                              </div>
+
+                              {storyRemainingGens <= 0 && (
+                                <div className="rounded-lg bg-red-500/10 px-3 py-2">
+                                  <p className="text-xs text-red-500">생성 횟수를 모두 사용했습니다.</p>
+                                </div>
+                              )}
+
                               {/* Generate button */}
                               <Button
                                 onClick={handleGenerate}
-                                disabled={isGenerating || !getFullBioText()}
+                                disabled={isGenerating || !getFullBioText() || storyRemainingGens <= 0}
                                 size="sm"
                                 className="h-8 w-full bg-[#c4b49a] text-xs text-[#1a1510] hover:bg-[#e8d5b7]"
                               >
@@ -1514,8 +1665,13 @@ const Index = ({ params }) => {
                     >
                       나가기
                     </Button>
-                    <Button onClick={handleSaveAndExit} className="flex-1">
-                      <Save className="mr-2 h-4 w-4" /> 저장하고 나가기
+                    <Button onClick={handleSaveAndExit} disabled={isSaving} className="flex-1">
+                      {isSaving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      {isSaving ? "저장 중..." : "저장하고 나가기"}
                     </Button>
                   </>
                 ) : (

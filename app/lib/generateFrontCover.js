@@ -107,11 +107,12 @@ function getTextLayout(position, size) {
  * @param {string} config.position - one of 9 positions e.g. "bottom-center"
  * @param {string} config.font - font family name
  * @param {string} config.color - text color hex
- * @param {"none"|"white"|"black"} [config.stroke] - stroke color, or "none" for no stroke
+ * @param {"none"|"white"|"black"|string} [config.stroke] - stroke color, or "none" for no stroke
+ * @param {number} [config.strokeOpacity] - background opacity 0-100 (default 100)
  * @returns {string|null} data URL or null if no text to render
  */
 export function generateFrontCoverDataUrl(frontCoverImg, config) {
-  const { title, subtitle, position, font, color, stroke } = config;
+  const { title, subtitle, position, font, color, stroke, strokeOpacity = 100 } = config;
 
   // No image to composite onto
   if (!frontCoverImg) return null;
@@ -150,7 +151,13 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
   if (title) {
     ctx.font = `bold 65px ${fontFamily}`;
     const bgColor =
-      stroke === "white" ? "#ffffff" : stroke === "black" ? "#000000" : null;
+      stroke === "white"
+        ? "#ffffff"
+        : stroke === "black"
+          ? "#000000"
+          : stroke && stroke !== "none"
+            ? stroke
+            : null;
     if (bgColor) {
       const metrics = ctx.measureText(title);
       const textWidth = metrics.width;
@@ -162,6 +169,7 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
       else if (layout.textAlign === "right")
         rectX = layout.x - textWidth - padX;
       else rectX = layout.x - textWidth / 2 - padX;
+      ctx.globalAlpha = strokeOpacity / 100;
       ctx.fillStyle = bgColor;
       ctx.fillRect(
         rectX,
@@ -169,6 +177,7 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
         textWidth + padX * 2,
         textHeight + padY * 2 - 4,
       );
+      ctx.globalAlpha = 1;
       ctx.fillStyle = color || "#ffffff";
     }
     ctx.fillText(title, layout.x, layout.anchorY + 8);

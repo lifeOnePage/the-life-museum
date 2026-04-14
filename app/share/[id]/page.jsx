@@ -42,7 +42,6 @@ export default function SharePage({ params }) {
   const { data: recordData, loading, error } = useRecordData(id);
   const [ready, setReady] = useState(false);
   const [flipProgress, setFlipProgress] = useState(0);
-  const [isAutoRotating, setIsAutoRotating] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
@@ -50,13 +49,7 @@ export default function SharePage({ params }) {
   const [idleTilt, setIdleTilt] = useState({ x: 0, y: 0 });
   const albumRef = useRef(null);
   const expandedAlbumRef = useRef(null);
-  const idleTimeRef = useRef(0);
   const idleRafRef = useRef(null);
-
-  const autoRotatingRef = useRef(false);
-  const lastTimeRef = useRef(null);
-  const rafRef = useRef(null);
-  const ROTATE_SPEED = 0.08; // 1바퀴(0→1)에 약 12.5초
 
   // Idle floating animation
   useEffect(() => {
@@ -76,51 +69,6 @@ export default function SharePage({ params }) {
     };
   }, []);
 
-  const stopAutoRotate = useCallback(() => {
-    autoRotatingRef.current = false;
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-    setIsAutoRotating(false);
-    setFlipProgress((prev) => prev % 1);
-  }, []);
-
-  const startAutoRotate = useCallback(() => {
-    autoRotatingRef.current = true;
-    lastTimeRef.current = null;
-    setIsAutoRotating(true);
-
-    function loop(timestamp) {
-      if (!autoRotatingRef.current) return;
-      if (lastTimeRef.current === null) lastTimeRef.current = timestamp;
-      const dt = Math.min((timestamp - lastTimeRef.current) / 1000, 0.1);
-      lastTimeRef.current = timestamp;
-
-      setFlipProgress((prev) => prev + ROTATE_SPEED * dt);
-
-      rafRef.current = requestAnimationFrame(loop);
-    }
-    rafRef.current = requestAnimationFrame(loop);
-  }, []);
-
-  // value: 0 = 앞면, 0.5 = 뒷면 (한 사이클 내 상대 위치)
-  const snapTo = useCallback(
-    (value, currentProgress) => {
-      stopAutoRotate();
-      setFlipProgress((prev) => {
-        const base = Math.floor(prev);
-        const frac = prev - base;
-        // 현재 위치에서 가장 가까운 목표 절대값 계산
-        const candidates = [base + value, base + value + 1, base + value - 1];
-        return candidates.reduce((a, b) =>
-          Math.abs(a - prev) < Math.abs(b - prev) ? a : b,
-        );
-      });
-    },
-    [stopAutoRotate],
-  );
-
   const calcTilt = (clientX, clientY, el) => {
     const rect = el.getBoundingClientRect();
     const nx = (clientX - rect.left) / rect.width - 0.5;
@@ -134,18 +82,14 @@ export default function SharePage({ params }) {
     setTilt(calcTilt(e.clientX, e.clientY, albumRef.current));
   }, []);
 
-  const handleAlbumMouseEnter = useCallback(() => {
-    if (isAutoRotating) stopAutoRotate();
-  }, [stopAutoRotate, isAutoRotating]);
+  const handleAlbumMouseEnter = useCallback(() => {}, []);
 
   const handleAlbumMouseLeave = useCallback(() => {
     setTilt({ x: 0, y: 0 });
   }, []);
 
   // 메인 앨범 — 터치
-  const handleAlbumTouchStart = useCallback(() => {
-    if (isAutoRotating) stopAutoRotate();
-  }, [stopAutoRotate, isAutoRotating]);
+  const handleAlbumTouchStart = useCallback(() => {}, []);
 
   const handleAlbumTouchMove = useCallback((e) => {
     if (!albumRef.current) return;
@@ -181,14 +125,13 @@ export default function SharePage({ params }) {
   }, []);
 
   const handleAlbumClick = useCallback(() => {
-    stopAutoRotate();
     setFlipProgress((prev) => {
       const base = Math.floor(prev);
       const frac = prev - base;
       const isOnFront = frac < 0.25 || frac > 0.75;
       return isOnFront ? base + 0.5 : base + 1;
     });
-  }, [stopAutoRotate]);
+  }, []);
 
   useEffect(() => {
     if (!loading && !error) {
@@ -196,10 +139,6 @@ export default function SharePage({ params }) {
       return () => clearTimeout(timer);
     }
   }, [loading, error]);
-
-  useEffect(() => {
-    return () => stopAutoRotate();
-  }, []);
 
   const frontCover = recordData?.coverImage?.url || null;
   const albumTitle = recordData?.title || "";
@@ -299,8 +238,8 @@ export default function SharePage({ params }) {
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
       {/* Background: Concave cylindrical photo grid (desktop only) */}
-      {images.length > 0 && typeof window !== "undefined" && window.innerWidth >= 768 && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {images.length > 0 && (
+        <div className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block">
           {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />
@@ -433,30 +372,13 @@ export default function SharePage({ params }) {
               <Info className="h-4 w-4" />
             </button>
             <button
-              onClick={() =>
-                isAutoRotating ? stopAutoRotate() : startAutoRotate()
-              }
-              className={`rounded-full border border-white/15 bg-white/5 p-2.5 backdrop-blur-sm transition-all duration-300 ${
-                isAutoRotating
-                  ? "text-white"
-                  : "text-white/35 hover:text-white/70"
-              }`}
+              onClick={handleAlbumClick}
+              className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
             >
-              <img
-                src="/flip-auto.svg"
-                className="h-4 w-4"
-                style={{ filter: isAutoRotating ? "invert(1)" : "invert(0.6)" }}
-                alt=""
-              />
+              <Icon360 className="h-4 w-4" />
             </button>
             <button
-              onClick={() => {
-                stopAutoRotate();
-                snapTo(
-                  flipProgress % 1 < 0.25 || flipProgress % 1 > 0.75 ? 0 : 0,
-                );
-                setIsExpanded(true);
-              }}
+              onClick={() => setIsExpanded(true)}
               className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
             >
               <Maximize2 className="h-4 w-4" />
@@ -519,21 +441,10 @@ export default function SharePage({ params }) {
                 <Info className="h-4 w-4" />
               </button>
               <button
-                onClick={() =>
-                  isAutoRotating ? stopAutoRotate() : startAutoRotate()
-                }
-                className={`rounded-full border border-white/15 bg-white/5 p-2.5 backdrop-blur-sm transition-all duration-300 ${
-                  isAutoRotating
-                    ? "text-white"
-                    : "text-white/35 hover:text-white/70"
-                }`}
+                onClick={handleAlbumClick}
+                className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
               >
-                <img
-                  src="/flip-auto.svg"
-                  className="h-4 w-4"
-                  style={{ filter: isAutoRotating ? "invert(1)" : "invert(0.6)" }}
-                  alt=""
-                />
+                <Icon360 className="h-4 w-4" />
               </button>
               <button
                 onClick={() => setIsExpanded(false)}

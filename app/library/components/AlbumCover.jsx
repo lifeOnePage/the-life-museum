@@ -577,10 +577,59 @@ export default function AlbumCover({
     };
   }, [hovered]);
 
+  // 라디얼 그라데이션 그림자 텍스처
+  const shadowTexture = useMemo(() => {
+    const res = 64;
+    const canvas = document.createElement("canvas");
+    canvas.width = res;
+    canvas.height = res;
+    const ctx = canvas.getContext("2d");
+    const gradient = ctx.createRadialGradient(
+      res / 2, res / 2, 0,
+      res / 2, res / 2, res / 2,
+    );
+    gradient.addColorStop(0, "rgba(0,0,0,0.22)");
+    gradient.addColorStop(0.5, "rgba(0,0,0,0.10)");
+    gradient.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, res, res);
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.needsUpdate = true;
+    return tex;
+  }, []);
+
+  // Fake shadow: 앨범 아래 타원형 그림자
+  const shadowRef = useRef();
+  const shadowOpacityRef = useRef(1);
+
+  // 선택 시 그림자 페이드아웃
+  useFrame(() => {
+    if (!shadowRef.current) return;
+    const target = isSelected ? 0 : 1;
+    shadowOpacityRef.current += (target - shadowOpacityRef.current) * 0.1;
+    shadowRef.current.material.opacity = shadowOpacityRef.current;
+  });
+
   // 선택 상태에 따라 layer 변경 (블러 렌더링에서 제외하기 위함)
   return (
     // 최외곽 그룹: 절대 위치 + 회전 애니메이션 적용
     <group ref={outerGroupRef}>
+      {/* Fake shadow: 선반 위 앨범 아래 부드러운 타원 그림자 */}
+      <mesh
+        ref={shadowRef}
+        raycast={() => null}
+        position={[0, -size / 2 + 0.002, thickness / 2]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        scale={[1, 0.5, 1]}
+      >
+        <planeGeometry args={[size * 0.9, size * 0.9]} />
+        <meshBasicMaterial
+          map={shadowTexture}
+          transparent
+          depthWrite={false}
+        />
+      </mesh>
+
       {/* 내부 그룹: 메시 포함 */}
       <group ref={groupRef}>
         <mesh

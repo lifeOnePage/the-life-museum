@@ -22,7 +22,7 @@ function PlaybackControls({
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
       <button
         onClick={onExit}
-        className="flex h-10 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm text-white transition-colors hover:bg-white/30"
+        className="flex h-10 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm whitespace-nowrap text-white transition-colors hover:bg-white/30"
       >
         <LogOut className="h-4 w-4" />
         나가기

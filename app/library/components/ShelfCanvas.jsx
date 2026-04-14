@@ -3,7 +3,7 @@
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, useState, useMemo } from "react";
-import { EffectComposer, Bloom, N8AO } from "@react-three/postprocessing";
+
 import ShelfScene from "./ShelfScene";
 // import { OrbitControls, useHelper } from "@react-three/drei";
 
@@ -18,8 +18,6 @@ function CameraYController({ yOffsetRef }) {
   return null;
 }
 
-const CREAM = "#f5ede0";
-const DARK_WALL = "#1a1510";
 // Canvas 내부에서만 호출 가능한 훅(useHelper)을 사용하는 서브컴포넌트
 // castShadow=true인 경우에만 고품질 shadowMap 설정 적용
 function DirLightWithHelper({ position, intensity, color }) {
@@ -177,7 +175,7 @@ export default function ShelfCanvas({
           alpha: false,
           powerPreference: "high-performance",
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 0.75,
+          toneMappingExposure: 0.85,
         }}
         style={{
           width: "100%",
@@ -189,33 +187,27 @@ export default function ShelfCanvas({
           camera.lookAt(0, 1.5, 0);
         }}
       >
-        {/* 라이팅 설정 */}
-        <ambientLight intensity={3} color="#957A57" />
-        {/* 방향광 (shadow 없음 — N8AO가 contact shadow 처리) */}
+        {/* 라이팅: 따뜻한 앰버/골드 무드 */}
+        <ambientLight intensity={2} color="#957A57" />
         <DirLightWithHelper
           position={[0, 0.1, 0.2]}
-          intensity={3}
+          intensity={2}
           color="#D8BB95"
-          helperSize={0}
         />
         <DirLightWithHelper
-          position={[0, 2.4, 0.5]}
-          intensity={3}
+          position={[0, 2.4, 0.2]}
+          intensity={2}
           color="#D8BB95"
-          helperSize={0}
-        />
-
-        <DirLightWithHelper
-          position={[0.05, 0, -0.09]}
-          intensity={3}
-          color={CREAM}
-          helperSize={0}
         />
         <DirLightWithHelper
-          position={[-0.05, 0, -0.09]}
-          intensity={3}
-          color={CREAM}
-          helperSize={0}
+          position={[0.05, 0, 0.09]}
+          intensity={0.8}
+          color="#CB9B65"
+        />
+        <DirLightWithHelper
+          position={[-0.05, 0, 0.09]}
+          intensity={0.8}
+          color="#CB9B65"
         />
 
         {/* 메인 씬 */}
@@ -235,23 +227,6 @@ export default function ShelfCanvas({
         {/* 모바일 세로 드래그 스크롤: 카메라 Y 오프셋 부드럽게 반영 */}
         <CameraYController yOffsetRef={cameraYOffsetRef} />
 
-        {/* [PERF TEST] Post-processing 비활성화 — 성능 비교 후 주석 해제 */}
-        <EffectComposer>
-          <N8AO
-            aoRadius={0.5}
-            intensity={1.5}
-            aoSamples={2}
-            denoiseSamples={1}
-            denoiseRadius={3}
-            color="#34221D"
-          />
-          <Bloom
-            intensity={0.1}
-            luminanceThreshold={0.1}
-            luminanceSmoothing={0.05}
-            radius={0.1}
-          />
-        </EffectComposer>
         {/* <OrbitControls /> */}
       </Canvas>
     </div>

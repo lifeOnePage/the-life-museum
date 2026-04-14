@@ -24,7 +24,10 @@ const THEME_BG_MAP = {
 
 function loadImage(src) {
   return new Promise((resolve) => {
-    if (!src) { resolve(null); return; }
+    if (!src) {
+      resolve(null);
+      return;
+    }
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
@@ -136,7 +139,11 @@ export default function MyShelfPage() {
             const updated = prev.map((album) => {
               const match = covers.find((c) => c.id === album.id);
               return match
-                ? { ...album, frontImage: match.frontImage, backImage: match.backImage }
+                ? {
+                    ...album,
+                    frontImage: match.frontImage,
+                    backImage: match.backImage,
+                  }
                 : album;
             });
             setCachedAlbums(updated);
@@ -169,7 +176,12 @@ export default function MyShelfPage() {
         setAlbums((prev) =>
           prev.map((a) =>
             a.id === albumData.id
-              ? { ...a, frontImage, backImage, edgeColor: d.bgColor || "#ffffff" }
+              ? {
+                  ...a,
+                  frontImage,
+                  backImage,
+                  edgeColor: d.bgColor || "#ffffff",
+                }
               : a,
           ),
         );
@@ -319,7 +331,7 @@ export default function MyShelfPage() {
 
         {/* 선택된 앨범: 아래에 버튼 (role에 따라 분기) */}
         {selectedAlbum && (
-          <div className="pointer-events-auto absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap pb-6 will-change-transform sm:pb-8 md:pb-[10vh]">
+          <div className="pointer-events-auto absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-2.5 pb-6 whitespace-nowrap will-change-transform sm:pb-8 md:pb-[10vh]">
             {selectedRole === "owner" && (
               <button
                 onClick={() => {

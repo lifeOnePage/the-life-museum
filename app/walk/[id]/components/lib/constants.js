@@ -17,7 +17,7 @@ export const BASE_HEIGHT = 80;
 export const CORRIDOR_HALF = 300;
 
 // Camera
-export const CAMERA_SPEED = 150;
+export const CAMERA_SPEED = 110;
 export const CAMERA_START_Z = 0;
 
 // Focus system

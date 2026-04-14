@@ -113,19 +113,22 @@ export default function Scene({
   const autoPlayFiredRef = useRef(false);
 
   // Handle texture loaded from WallPlane
-  const handleTextureLoaded = useCallback((planeId, texture, aspectRatio) => {
-    textureMap.current.set(planeId, { texture, aspectRatio });
+  const handleTextureLoaded = useCallback(
+    (planeId, texture, aspectRatio) => {
+      textureMap.current.set(planeId, { texture, aspectRatio });
 
-    // 전체 plane의 30% 이상 또는 최소 3개 로딩 완료 시 자동 재생
-    if (!autoPlayFiredRef.current && planes.length > 0) {
-      const loadedCount = textureMap.current.size;
-      const threshold = Math.max(3, Math.ceil(planes.length * 0.3));
-      if (loadedCount >= threshold) {
-        autoPlayFiredRef.current = true;
-        onAutoPlay?.();
+      // 전체 plane의 30% 이상 또는 최소 3개 로딩 완료 시 자동 재생
+      if (!autoPlayFiredRef.current && planes.length > 0) {
+        const loadedCount = textureMap.current.size;
+        const threshold = Math.ceil(planes.length * 0.8);
+        if (loadedCount >= threshold) {
+          autoPlayFiredRef.current = true;
+          onAutoPlay?.();
+        }
       }
-    }
-  }, [planes.length, onAutoPlay]);
+    },
+    [planes.length, onAutoPlay],
+  );
 
   // Handle plane click for manual focus (works both playing and paused)
   const handlePlaneClick = useCallback(

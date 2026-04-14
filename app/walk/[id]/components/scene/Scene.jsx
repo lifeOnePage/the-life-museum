@@ -42,6 +42,7 @@ export default function Scene({
   isPlaying,
   cameraSpeed,
   textureConfig,
+  onAutoPlay,
 }) {
   const { camera } = useThree();
   const controlsRef = useRef();
@@ -108,10 +109,23 @@ export default function Scene({
     return cameraZ + behindBuffer - delta;
   }
 
+  // Auto-play trigger: fire once when enough textures are loaded
+  const autoPlayFiredRef = useRef(false);
+
   // Handle texture loaded from WallPlane
   const handleTextureLoaded = useCallback((planeId, texture, aspectRatio) => {
     textureMap.current.set(planeId, { texture, aspectRatio });
-  }, []);
+
+    // 전체 plane의 30% 이상 또는 최소 3개 로딩 완료 시 자동 재생
+    if (!autoPlayFiredRef.current && planes.length > 0) {
+      const loadedCount = textureMap.current.size;
+      const threshold = Math.max(3, Math.ceil(planes.length * 0.3));
+      if (loadedCount >= threshold) {
+        autoPlayFiredRef.current = true;
+        onAutoPlay?.();
+      }
+    }
+  }, [planes.length, onAutoPlay]);
 
   // Handle plane click for manual focus (works both playing and paused)
   const handlePlaneClick = useCallback(
@@ -186,9 +200,10 @@ export default function Scene({
   // Note: focus state is intentionally preserved when paused so the focused
   // plane stays visible. The camera simply stops moving.
 
-  // Manual movement refs (used when paused)
+  // Manual movement refs (used when paused and playing)
   const manualVelocityRef = useRef(0);
   const keysRef = useRef({ fwd: false, back: false });
+  const touchRef = useRef({ active: false, lastY: 0 });
 
   // Event listeners for manual movement (always active — works both playing and paused)
   useEffect(() => {
@@ -203,13 +218,35 @@ export default function Scene({
       if (["ArrowUp", "w", "W"].includes(e.key)) keysRef.current.fwd = false;
       if (["ArrowDown", "s", "S"].includes(e.key)) keysRef.current.back = false;
     };
+    const onTouchStart = (e) => {
+      if (e.touches.length === 1) {
+        touchRef.current = { active: true, lastY: e.touches[0].clientY };
+      }
+    };
+    const onTouchMove = (e) => {
+      if (!touchRef.current.active || e.touches.length !== 1) return;
+      const currentY = e.touches[0].clientY;
+      const deltaY = touchRef.current.lastY - currentY;
+      // 위로 스와이프(deltaY>0) → 앞으로 이동, 아래로 스와이프 → 뒤로 이동
+      manualVelocityRef.current += deltaY * 3;
+      touchRef.current.lastY = currentY;
+    };
+    const onTouchEnd = () => {
+      touchRef.current.active = false;
+    };
     window.addEventListener("wheel", onWheel, { passive: true });
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
     return () => {
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
     };
   }, []);
 
@@ -448,14 +485,14 @@ export default function Scene({
             displayScale={DISPLAY_SCALE}
             cloneZ={focusCloneZ}
           />
-          <GlowBorder
+          {/* <GlowBorder
             position={focusPlaneWrappedPos}
             rotation={focusPlane.rotation}
             sign={focusPlane.sign}
             width={focusPlane.baseHeight * (focusTexInfo.aspectRatio || 1)}
             height={focusPlane.baseHeight}
             stateRef={state}
-          />
+          /> */}
         </>
       )}
 

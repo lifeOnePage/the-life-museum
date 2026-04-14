@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useMemo, useState, useRef, useCallback, useEffect } from "react";
+import { useMemo, useRef, useCallback, useEffect, useState } from "react";
 import { useThree } from "@react-three/fiber";
 import Niche from "./Niche";
 import Shelf from "./Shelf";
@@ -14,7 +14,7 @@ const SHELF_CONFIG = {
   width: 5, // 선반 너비
   depth: 0.4, // 선반 깊이
   thickness: 0.08, // 선반 두께
-  spacing: 1.4, // 선반 간 수직 간격
+  spacing: 1.2, // 선반 간 수직 간격
   wallOffset: 0.02, // 벽과의 거리
 };
 
@@ -28,6 +28,40 @@ const ALBUM_CONFIG = {
 // 호버 시 앨범이 올라가는 양 (AlbumCover.jsx의 targetY + 0.35 와 일치해야 함)
 const HOVER_LIFT = 0.35;
 
+// 선반 하단 스팟라이트 — 따뜻한 앰버 톤으로 선반 너비만큼 조사
+function ShelfSpotlight({ y, z, shelfWidth, spacing }) {
+  const lightRef = useRef();
+  const targetRef = useRef();
+
+  useEffect(() => {
+    if (lightRef.current && targetRef.current) {
+      lightRef.current.target = targetRef.current;
+    }
+  }, []);
+
+  // 선반 너비를 커버하는 조사각 (반각)
+  const angle = useMemo(
+    () => Math.atan2(shelfWidth / 2, spacing),
+    [shelfWidth, spacing],
+  );
+
+  return (
+    <>
+      <object3D ref={targetRef} position={[0, y - spacing, z]} />
+      <spotLight
+        ref={lightRef}
+        position={[0, y, z]}
+        angle={Math.PI / 2}
+        penumbra={0}
+        intensity={10}
+        color="#E8913A"
+        distance={spacing * 4}
+        decay={2}
+      />
+    </>
+  );
+}
+
 export default function ShelfScene({
   albums,
   selectedAlbum,
@@ -36,18 +70,9 @@ export default function ShelfScene({
   onFlipAlbum,
   onCloseAlbum,
   onHoverLabelPos,
+  windowWidth = 1280,
 }) {
   const { camera, gl } = useThree();
-
-  // 반응형 COLS
-  const [windowWidth, setWindowWidth] = useState(() =>
-    typeof window !== "undefined" ? window.innerWidth : 1280,
-  );
-  useEffect(() => {
-    const handler = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
-  }, []);
 
   const COLS = useMemo(() => {
     if (windowWidth >= 1280) return 5;
@@ -68,8 +93,6 @@ export default function ShelfScene({
 
   // ROWS: 데스크탑은 2 고정, 모바일은 앨범 수에 따라 동적 확장 (최대 5)
   const ROWS = useMemo(() => {
-    // if (windowWidth >= 768) return 2;
-    console.log("albums.length", albums.length);
     return Math.min(5, Math.max(2, Math.ceil(albums.length / COLS)));
   }, [windowWidth, albums.length, COLS]);
 
@@ -197,6 +220,23 @@ export default function ShelfScene({
         width={SHELF_CONFIG.width}
         depth={SHELF_CONFIG.depth}
         thickness={SHELF_CONFIG.thickness}
+      />
+
+      {/* 선반 하단 스팟라이트 (선반 수에 따라 동적 배치) */}
+      {shelfPositions.map((pos, i) => (
+        <ShelfSpotlight
+          key={`spotlight-${i}`}
+          y={pos.y}
+          z={pos.z + SHELF_CONFIG.depth * 0.5}
+          shelfWidth={SHELF_CONFIG.width}
+          spacing={SHELF_CONFIG.spacing}
+        />
+      ))}
+      <ShelfSpotlight
+        y={DECORATIVE_SHELF_Y}
+        z={-SHELF_CONFIG.wallOffset + SHELF_CONFIG.depth * 0.5}
+        shelfWidth={SHELF_CONFIG.width}
+        spacing={SHELF_CONFIG.spacing}
       />
 
       {/* 배경 블러 레이어: 비활성화 */}

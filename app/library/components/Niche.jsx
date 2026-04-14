@@ -3,8 +3,8 @@
 import * as THREE from "three";
 import { useMemo } from "react";
 
-const CREAM = "#ffffff";
-const DARK_WALL = "#644F48";
+const CREAM = "#f5ede0";
+const NICHE_BACK = "#543F45";
 
 export default function Niche({ position = [0, 0, 0], rows = 2 }) {
   const nicheWidth = 5; // 내부 너비 (선반 5 + 여백)
@@ -17,14 +17,14 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
   const wallCenterY = (bottomY + straightTopY) / 2;
   const nicheDepth = 0.6; // 틈새 깊이
 
-  // 어두운 외벽 노이즈 텍스처
+  // 밝은 벽면 미세 노이즈 텍스처
   const wallTexture = useMemo(() => {
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = 512;
     const ctx = canvas.getContext("2d");
 
-    ctx.fillStyle = DARK_WALL;
+    ctx.fillStyle = NICHE_BACK;
     ctx.fillRect(0, 0, 512, 512);
 
     // 미세 노이즈
@@ -48,17 +48,13 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
   return (
     <group position={position}>
       {/* 외부 배경 벽 */}
-      <mesh receiveShadow raycast={() => null} position={[0, 0, 0]}>
-        <boxGeometry args={[100, 100, 0.1]} />
-        <meshStandardMaterial color={CREAM} roughness={1.5} metalness={0.0} />
+      <mesh raycast={() => null} position={[0, 0, 0]}>
+        <planeGeometry args={[12, 10]} />
+        <meshBasicMaterial color={CREAM} />
       </mesh>
 
       {/* 크림색 내부 뒷판 */}
-      <mesh
-        receiveShadow
-        raycast={() => null}
-        position={[0, wallCenterY, 0.06]}
-      >
+      <mesh raycast={() => null} position={[0, wallCenterY, 0.06]}>
         <planeGeometry args={[nicheWidth, wallHeight + 0.6]} />
         <meshStandardMaterial
           map={wallTexture}
@@ -69,7 +65,6 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
 
       {/* 좌측 벽 */}
       <mesh
-        receiveShadow
         raycast={() => null}
         position={[
           -(nicheWidth / 2 + wallThickness / 2),
@@ -83,7 +78,6 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
 
       {/* 우측 벽 */}
       <mesh
-        receiveShadow
         raycast={() => null}
         position={[
           nicheWidth / 2 + wallThickness / 2,
@@ -96,7 +90,6 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
       </mesh>
 
       <mesh
-        receiveShadow
         raycast={() => null}
         position={[0, wallCenterY - wallHeight, nicheDepth / 2]}
       >

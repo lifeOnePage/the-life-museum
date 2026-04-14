@@ -3,14 +3,9 @@
 import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, useState, useMemo } from "react";
-import {
-  EffectComposer,
-  Bloom,
-  Vignette,
-  N8AO,
-} from "@react-three/postprocessing";
+
 import ShelfScene from "./ShelfScene";
-import { OrbitControls, useHelper } from "@react-three/drei";
+// import { OrbitControls, useHelper } from "@react-three/drei";
 
 // Canvas 내부 서브컴포넌트: 드래그 yOffset을 카메라 Y에 부드럽게 반영
 function CameraYController({ yOffsetRef }) {
@@ -23,37 +18,11 @@ function CameraYController({ yOffsetRef }) {
   return null;
 }
 
-const CREAM = "#f5ede0";
-const DARK_WALL = "#1a1510";
 // Canvas 내부에서만 호출 가능한 훅(useHelper)을 사용하는 서브컴포넌트
 // castShadow=true인 경우에만 고품질 shadowMap 설정 적용
-function DirLightWithHelper({
-  position,
-  intensity,
-  color,
-  helperSize = 0,
-  castShadow = false,
-  blurSamples = 25,
-}) {
-  const lightRef = useRef();
-  // useHelper(lightRef, THREE.DirectionalLightHelper, helperSize);
+function DirLightWithHelper({ position, intensity, color }) {
   return (
-    <directionalLight
-      ref={lightRef}
-      position={position}
-      intensity={intensity}
-      color={color}
-      castShadow={castShadow}
-      shadow-mapSize={[2048, 2048]}
-      shadow-camera-near={0.5}
-      shadow-camera-far={20}
-      shadow-camera-left={-7}
-      shadow-camera-right={7}
-      shadow-camera-top={5}
-      shadow-camera-bottom={-4}
-      shadow-bias={0}
-      shadow-blurSamples={blurSamples}
-    />
+    <directionalLight position={position} intensity={intensity} color={color} />
   );
 }
 
@@ -75,9 +44,19 @@ export default function ShelfCanvas({
     typeof window !== "undefined" ? window.innerWidth : 1280,
   );
   useEffect(() => {
-    const handler = () => setWindowWidth(window.innerWidth);
+    let rafId = null;
+    const handler = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        setWindowWidth(window.innerWidth);
+        rafId = null;
+      });
+    };
     window.addEventListener("resize", handler);
-    return () => window.removeEventListener("resize", handler);
+    return () => {
+      window.removeEventListener("resize", handler);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
   }, []);
 
   // COLS/ROWS: 스크롤 범위 계산용 (ShelfScene과 동일 로직)
@@ -112,7 +91,10 @@ export default function ShelfCanvas({
     const newOffset = dragRef.current.startOffset + delta * 0.003;
     // ROWS=2 데스크탑도 ±0.7 허용, 더 많은 행일수록 범위 확장
     const scrollRange = (ROWS - 1) * 0.7;
-    cameraYOffsetRef.current = Math.max(-scrollRange, Math.min(scrollRange, newOffset));
+    cameraYOffsetRef.current = Math.max(
+      -scrollRange,
+      Math.min(scrollRange, newOffset),
+    );
   };
 
   const handlePointerUp = () => {
@@ -123,7 +105,10 @@ export default function ShelfCanvas({
   const handleWheel = (e) => {
     const scrollRange = (ROWS - 1) * 0.7;
     const newOffset = cameraYOffsetRef.current + e.deltaY * 0.001;
-    cameraYOffsetRef.current = Math.max(-scrollRange, Math.min(scrollRange, newOffset));
+    cameraYOffsetRef.current = Math.max(
+      -scrollRange,
+      Math.min(scrollRange, newOffset),
+    );
   };
 
   // 카메라 제어 메서드를 부모에 노출
@@ -177,96 +162,73 @@ export default function ShelfCanvas({
       onPointerLeave={handlePointerUp}
       onWheel={handleWheel}
     >
-    <Canvas
-      shadows={false}
-      camera={{
-        position: [0, 1.5, 3.8],
-        fov: 52,
-        near: 0.1,
-        far: 100,
-      }}
-      gl={{
-        antialias: true,
-        alpha: false,
-        powerPreference: "high-performance",
-        toneMapping: THREE.ACESFilmicToneMapping,
-        toneMappingExposure: 0.75,
-      }}
-      style={{
-        width: "100%",
-        height: "100%",
-      }}
-      onCreated={({ camera }) => {
-        cameraRef.current = camera;
-        // 하이앵글: 선반 중심을 내려다봄
-        camera.lookAt(0, 1.5, 0);
-      }}
-    >
-      {/* 라이팅 설정 */}
-      <ambientLight intensity={2} color="#957A57" />
-      {/* 방향광 (shadow 없음 — N8AO가 contact shadow 처리) */}
-      <DirLightWithHelper
-        position={[0, 0.1, 0.2]}
-        intensity={0.4}
-        color="#D8BB95"
-        helperSize={0}
-      />
-      <DirLightWithHelper
-        position={[0, 2.4, 0.5]}
-        intensity={1}
-        color="#D8BB95"
-        helperSize={0}
-      />
-
-      <DirLightWithHelper
-        position={[0.05, 0, -0.09]}
-        intensity={1.5}
-        color={CREAM}
-        helperSize={0}
-      />
-      <DirLightWithHelper
-        position={[-0.05, 0, -0.09]}
-        intensity={1.5}
-        color={CREAM}
-        helperSize={0}
-      />
-
-      {/* 메인 씬 */}
-      <Suspense fallback={null}>
-        <ShelfScene
-          albums={albums}
-          selectedAlbum={selectedAlbum}
-          isFlipped={isFlipped}
-          onAlbumClick={onAlbumClick}
-          onFlipAlbum={onFlipAlbum}
-          onCloseAlbum={onCloseAlbum}
-          onHoverLabelPos={onHoverLabelPos}
-        />
-      </Suspense>
-
-      {/* 모바일 세로 드래그 스크롤: 카메라 Y 오프셋 부드럽게 반영 */}
-      <CameraYController yOffsetRef={cameraYOffsetRef} />
-
-      {/* Post-processing: N8AO + Bloom + Vignette */}
-      <EffectComposer>
-        <N8AO
-          aoRadius={1}
-          intensity={3}
-          aoSamples={10}
-          denoiseSamples={10}
-          denoiseRadius={20}
-          color="#34221D"
-        />
-        <Bloom
+      <Canvas
+        shadows={false}
+        camera={{
+          position: [0, 1.5, 3.8],
+          fov: 52,
+          near: 0.1,
+          far: 100,
+        }}
+        gl={{
+          antialias: true,
+          alpha: false,
+          powerPreference: "high-performance",
+          toneMapping: THREE.ACESFilmicToneMapping,
+          toneMappingExposure: 0.85,
+        }}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+        onCreated={({ camera }) => {
+          cameraRef.current = camera;
+          // 하이앵글: 선반 중심을 내려다봄
+          camera.lookAt(0, 1.5, 0);
+        }}
+      >
+        {/* 라이팅: 따뜻한 앰버/골드 무드 */}
+        <ambientLight intensity={2} color="#957A57" />
+        <DirLightWithHelper
+          position={[0, 0.1, 0.2]}
           intensity={2}
-          luminanceThreshold={0.3}
-          luminanceSmoothing={0.1}
-          radius={0.85}
+          color="#D8BB95"
         />
-        {/* <Vignette offset={0.1} darkness={0.1} eskil={false} /> */}
-      </EffectComposer>
-      {/* <OrbitControls /> */}
-    </Canvas>
+        <DirLightWithHelper
+          position={[0, 2.4, 0.2]}
+          intensity={2}
+          color="#D8BB95"
+        />
+        <DirLightWithHelper
+          position={[0.05, 0, 0.09]}
+          intensity={0.8}
+          color="#CB9B65"
+        />
+        <DirLightWithHelper
+          position={[-0.05, 0, 0.09]}
+          intensity={0.8}
+          color="#CB9B65"
+        />
+
+        {/* 메인 씬 */}
+        <Suspense fallback={null}>
+          <ShelfScene
+            albums={albums}
+            selectedAlbum={selectedAlbum}
+            isFlipped={isFlipped}
+            onAlbumClick={onAlbumClick}
+            onFlipAlbum={onFlipAlbum}
+            onCloseAlbum={onCloseAlbum}
+            onHoverLabelPos={onHoverLabelPos}
+            windowWidth={windowWidth}
+          />
+        </Suspense>
+
+        {/* 모바일 세로 드래그 스크롤: 카메라 Y 오프셋 부드럽게 반영 */}
+        <CameraYController yOffsetRef={cameraYOffsetRef} />
+
+        {/* <OrbitControls /> */}
+      </Canvas>
     </div>
   );
 }

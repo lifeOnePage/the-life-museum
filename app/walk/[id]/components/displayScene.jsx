@@ -25,7 +25,7 @@ function PlaybackControls({
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
       <button
         onClick={onExit}
-        className="flex h-10 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm text-white transition-colors hover:bg-white/30"
+        className="flex h-10 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm whitespace-nowrap text-white transition-colors hover:bg-white/30"
       >
         <LogOut className="h-4 w-4" />
         나가기
@@ -62,7 +62,7 @@ function PlaybackControls({
       <input
         type="range"
         min={5}
-        max={100}
+        max={300}
         value={cameraSpeed}
         onChange={(e) => onCameraSpeedChange(Number(e.target.value))}
         className="w-24 accent-white"
@@ -149,6 +149,10 @@ export default function DisplayScene({ recordId }) {
 
   const handleTogglePlay = useCallback(() => {
     setIsPlaying((prev) => !prev);
+  }, []);
+
+  const handleAutoPlay = useCallback(() => {
+    setIsPlaying(true);
   }, []);
 
   if (loading) {
@@ -238,6 +242,7 @@ export default function DisplayScene({ recordId }) {
             isPlaying={isPlaying}
             cameraSpeed={cameraSpeed}
             textureConfig={textureConfig}
+            onAutoPlay={handleAutoPlay}
           />
         </Suspense>
       </Canvas>

@@ -19,6 +19,7 @@ import {
   HelpCircle,
   MoreVertical,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -45,20 +46,43 @@ import TitleOverlayEditor from "./components/TitleOverlayEditor";
 import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
-import BgmEditor from "./components/BgmEditor";
+import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
-// Convert stroke color to a DB-safe hex string.
-// Opacity is not persisted (backend only accepts #rrggbb).
-function strokeToDbColor(stroke) {
-  if (!stroke || stroke === "none") return null;
-  return stroke;
+// Convert a 6-digit hex to 8-digit (#RRGGBB → #RRGGBBff) for API.
+function toApiColor(hex) {
+  if (!hex) return hex;
+  if (hex.startsWith("#") && hex.length === 9) return hex;
+  return `${hex}ff`;
 }
 
-// Parse a DB color string back into { stroke, strokeOpacity }.
+// Strip alpha from 8-digit hex for use in color pickers (#RRGGBBaa → #RRGGBB).
+function fromApiColor(hex) {
+  if (!hex) return hex;
+  if (hex.startsWith("#") && hex.length === 9) return hex.slice(0, 7);
+  return hex;
+}
+
+// Convert stroke color + opacity to an 8-digit hex string for API.
+function strokeToDbColor(stroke, opacity = 100) {
+  if (!stroke || stroke === "none") return null;
+  let hex = stroke;
+  if (stroke === "black") hex = "#000000";
+  else if (stroke === "white") hex = "#ffffff";
+  const alpha = Math.round((opacity / 100) * 255);
+  return `${hex}${alpha.toString(16).padStart(2, "0")}`;
+}
+
+// Parse an 8-digit hex back into { stroke, strokeOpacity }.
 function dbColorToStroke(raw) {
   if (!raw) return { stroke: "none", strokeOpacity: 100 };
+  if (raw.startsWith("#") && raw.length === 9) {
+    const color = raw.slice(0, 7);
+    const alpha = parseInt(raw.slice(7, 9), 16);
+    const strokeOpacity = Math.round((alpha / 255) * 100);
+    return { stroke: color, strokeOpacity };
+  }
   if (raw === "black" || raw === "white" || raw.startsWith("#"))
     return { stroke: raw, strokeOpacity: 100 };
   return { stroke: "none", strokeOpacity: 100 };
@@ -176,6 +200,13 @@ const Index = ({ params }) => {
 
   // BGM
   const [bgmUrl, setBgmUrl] = useState(null);
+  const [bgmId, setBgmId] = useState(null);
+
+  const handleBgmChange = (url) => {
+    setBgmUrl(url);
+    const found = BGM_LIST.find((b) => b.url === url);
+    setBgmId(found ? found.id : null);
+  };
 
   // Record edit dialog
   const [showRecordEditDialog, setShowRecordEditDialog] = useState(false);
@@ -219,7 +250,10 @@ const Index = ({ params }) => {
     titlePosition: "bottom-center",
     titleFont: "Pretendard Variable",
     titleColor: "#ffffff",
+    titleStroke: "none",
     titleStrokeOpacity: 100,
+    bgmUrl: null,
+    bgmId: null,
   });
 
   useEffect(() => {
@@ -256,7 +290,7 @@ const Index = ({ params }) => {
           const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
-          const savedTitleColor = data.coverTitleColor || "#ffffff";
+          const savedTitleColor = fromApiColor(data.coverTitleColor) || "#ffffff";
           const { stroke: savedTitleStroke, strokeOpacity: savedTitleStrokeOpacity } =
             dbColorToStroke(data.coverTitleBgColor);
 
@@ -284,6 +318,7 @@ const Index = ({ params }) => {
             setStoryGenCount(data.storyGenCount);
           }
           setBgmUrl(data.bgmUrl || null);
+          setBgmId(data.bgmId ? `bgm${data.bgmId}` : null);
 
           // Initialize photo drive data for CoverImageEditor
           const images = (data.mediaList ?? []).filter(
@@ -304,6 +339,8 @@ const Index = ({ params }) => {
             titleColor: savedTitleColor,
             titleStroke: savedTitleStroke,
             titleStrokeOpacity: savedTitleStrokeOpacity,
+            bgmUrl: data.bgmUrl || null,
+            bgmId: data.bgmId ? `bgm${data.bgmId}` : null,
           };
         }
       } catch (error) {
@@ -335,17 +372,18 @@ const Index = ({ params }) => {
           Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
-          color: theme.text,
-          bgColor: theme.bg,
-          keyColor: theme.accent,
+          color: toApiColor(theme.text),
+          bgColor: toApiColor(theme.bg),
+          keyColor: toApiColor(theme.accent),
           theme: selectedTheme,
           title: albumTitle,
           subTitle: albumSubtitle,
           coverTitleVisible: titleOverlayEnabled,
           coverTitlePosition: titlePosition,
           coverTitleFont: titleFont,
-          coverTitleColor: titleColor,
-          coverTitleBgColor: strokeToDbColor(titleStroke),
+          coverTitleColor: toApiColor(titleColor),
+          coverTitleBgColor: strokeToDbColor(titleStroke, titleStrokeOpacity),
+          bgmId: bgmId ? parseInt(bgmId.replace("bgm", ""), 10) : null,
           bgmUrl: bgmUrl || null,
         }),
       },
@@ -427,7 +465,10 @@ const Index = ({ params }) => {
       titleOverlayEnabled !== initialState.current.titleOverlayEnabled ||
       titlePosition !== initialState.current.titlePosition ||
       titleFont !== initialState.current.titleFont ||
-      titleColor !== initialState.current.titleColor;
+      titleColor !== initialState.current.titleColor ||
+      titleStroke !== initialState.current.titleStroke ||
+      titleStrokeOpacity !== initialState.current.titleStrokeOpacity ||
+      bgmUrl !== initialState.current.bgmUrl;
 
     if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isThemeDirty)
       return;
@@ -487,7 +528,10 @@ const Index = ({ params }) => {
           initialState.current.titlePosition = titlePosition;
           initialState.current.titleFont = titleFont;
           initialState.current.titleColor = titleColor;
+          initialState.current.titleStroke = titleStroke;
           initialState.current.titleStrokeOpacity = titleStrokeOpacity;
+          initialState.current.bgmUrl = bgmUrl;
+          initialState.current.bgmId = bgmId;
         }
       }
     }
@@ -513,7 +557,8 @@ const Index = ({ params }) => {
     titleFont !== initialState.current.titleFont ||
     titleColor !== initialState.current.titleColor ||
     titleStroke !== initialState.current.titleStroke ||
-    titleStrokeOpacity !== initialState.current.titleStrokeOpacity;
+    titleStrokeOpacity !== initialState.current.titleStrokeOpacity ||
+    bgmUrl !== initialState.current.bgmUrl;
 
   const handleExit = () => {
     router.push("/library");
@@ -1245,7 +1290,7 @@ const Index = ({ params }) => {
                             <div className="border-t border-white/8 px-4 pt-3 pb-4">
                               <BgmEditor
                                 selectedBgmUrl={bgmUrl}
-                                onBgmChange={setBgmUrl}
+                                onBgmChange={handleBgmChange}
                               />
                             </div>
                           </motion.div>
@@ -1620,8 +1665,13 @@ const Index = ({ params }) => {
                     >
                       나가기
                     </Button>
-                    <Button onClick={handleSaveAndExit} className="flex-1">
-                      <Save className="mr-2 h-4 w-4" /> 저장하고 나가기
+                    <Button onClick={handleSaveAndExit} disabled={isSaving} className="flex-1">
+                      {isSaving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      {isSaving ? "저장 중..." : "저장하고 나가기"}
                     </Button>
                   </>
                 ) : (

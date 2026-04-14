@@ -105,8 +105,7 @@ export default function DisplayScene({ recordId }) {
   const bgmRef = useRef(null);
   const textureConfig = useMemo(() => getTextureConfig(), []);
 
-  const BGM1_URL = "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/01.mp3";
-  const bgmUrl = recordData?.bgmUrl || BGM1_URL;
+  const bgmUrl = recordData?.bgmUrl || null;
 
   // BGM 초기화
   useEffect(() => {

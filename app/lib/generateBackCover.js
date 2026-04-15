@@ -766,7 +766,7 @@ export function generateBackCoverDataUrl(
   themeBgImg,
   themeStickerImg,
 ) {
-  const size = 2048;
+  const size = 1024;
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;

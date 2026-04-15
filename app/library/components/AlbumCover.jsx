@@ -53,6 +53,8 @@ function useGifTexture(imageUrl, isPlayable) {
 
       const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
       textureRef.current = texture;
 
       drawFrame(ctx, frames[0], width, height);
@@ -129,6 +131,7 @@ function useStaticTexture(imageUrl) {
   const [texture, setTexture] = useState(() =>
     imageUrl ? (staticTextureCache.get(imageUrl) ?? null) : null,
   );
+  const { gl } = useThree();
 
   useEffect(() => {
     if (!imageUrl) {
@@ -149,6 +152,9 @@ function useStaticTexture(imageUrl) {
       imageUrl,
       (loadedTexture) => {
         loadedTexture.colorSpace = THREE.SRGBColorSpace;
+        loadedTexture.minFilter = THREE.LinearFilter;
+        loadedTexture.magFilter = THREE.LinearFilter;
+        loadedTexture.anisotropy = gl.capabilities.getMaxAnisotropy();
         loadedTexture.needsUpdate = true;
         staticTextureCache.set(imageUrl, loadedTexture);
         setTexture(loadedTexture);
@@ -157,7 +163,7 @@ function useStaticTexture(imageUrl) {
       () => setTexture(null),
     );
     // cleanup에서 dispose 하지 않음 — 캐시가 수명 관리
-  }, [imageUrl]);
+  }, [imageUrl, gl]);
 
   return texture;
 }

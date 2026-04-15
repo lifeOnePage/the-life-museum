@@ -2,7 +2,7 @@
 
 import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 
 // 카메라 앞 고정 위치 (카메라 위치 [0, 0, 6] 기준)
 const CAMERA_FRONT_POSITION = {
@@ -27,6 +27,7 @@ function getMediaType(url) {
 // 정적 이미지 텍스처 훅
 function useStaticTexture(imageUrl) {
   const [texture, setTexture] = useState(null);
+  const { gl } = useThree();
 
   useEffect(() => {
     if (!imageUrl) {
@@ -40,6 +41,9 @@ function useStaticTexture(imageUrl) {
       imageUrl,
       (loadedTexture) => {
         loadedTexture.colorSpace = THREE.SRGBColorSpace;
+        loadedTexture.minFilter = THREE.LinearFilter;
+        loadedTexture.magFilter = THREE.LinearFilter;
+        loadedTexture.anisotropy = gl.capabilities.getMaxAnisotropy();
         loadedTexture.needsUpdate = true;
         setTexture(loadedTexture);
       },
@@ -50,7 +54,7 @@ function useStaticTexture(imageUrl) {
     return () => {
       texture?.dispose();
     };
-  }, [imageUrl]);
+  }, [imageUrl, gl]);
 
   return texture;
 }
@@ -164,6 +168,8 @@ function createPlaceholderTexture(index, isFront = true) {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   return texture;
 }
 

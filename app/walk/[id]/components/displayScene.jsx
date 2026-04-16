@@ -2,7 +2,14 @@
 
 import { useRouter } from "next/navigation";
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useMemo, useState, useCallback, useEffect, useRef } from "react";
+import {
+  Suspense,
+  useMemo,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import * as THREE from "three";
 import { LogOut } from "lucide-react";
 import Scene from "./scene/Scene";
@@ -62,7 +69,7 @@ function PlaybackControls({
       <input
         type="range"
         min={5}
-        max={300}
+        max={240}
         value={cameraSpeed}
         onChange={(e) => onCameraSpeedChange(Number(e.target.value))}
         className="w-24 accent-white"
@@ -77,13 +84,31 @@ function PlaybackControls({
             title={isMuted ? "음악 켜기" : "음악 끄기"}
           >
             {isMuted ? (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                 <line x1="23" y1="9" x2="17" y2="15" />
                 <line x1="17" y1="9" x2="23" y2="15" />
               </svg>
             ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="white"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-5 w-5"
+              >
                 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                 <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
                 <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />

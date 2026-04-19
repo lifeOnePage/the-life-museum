@@ -171,7 +171,7 @@ const Index = ({ params }) => {
   const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
   const [titlePosition, setTitlePosition] = useState("bottom-center");
   const [titleFont, setTitleFont] = useState("Pretendard Variable");
-  const [titleColor, setTitleColor] = useState("#ffffff");
+  const [titleColor, setTitleColor] = useState("#000000");
   const [titleStroke, setTitleStroke] = useState("none");
   const [titleStrokeOpacity, setTitleStrokeOpacity] = useState(100);
 
@@ -249,7 +249,7 @@ const Index = ({ params }) => {
     titleOverlayEnabled: false,
     titlePosition: "bottom-center",
     titleFont: "Pretendard Variable",
-    titleColor: "#ffffff",
+    titleColor: "#000000",
     titleStroke: "none",
     titleStrokeOpacity: 100,
     bgmUrl: null,
@@ -290,7 +290,7 @@ const Index = ({ params }) => {
           const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
-          const savedTitleColor = fromApiColor(data.coverTitleColor) || "#ffffff";
+          const savedTitleColor = fromApiColor(data.coverTitleColor) || "#000000";
           const { stroke: savedTitleStroke, strokeOpacity: savedTitleStrokeOpacity } =
             dbColorToStroke(data.coverTitleBgColor);
 

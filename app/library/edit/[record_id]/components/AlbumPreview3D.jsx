@@ -198,7 +198,8 @@ export default function AlbumPreview3D({
 
   const frontCoverDataUrl = useMemo(() => {
     if (typeof document === "undefined") return null;
-    if (!frontCoverImg) return null;
+    // Skip if no image and no title to overlay
+    if (!frontCoverImg && !(titleOverlayEnabled && albumTitle)) return null;
     return generateFrontCoverDataUrl(frontCoverImg, {
       title: titleOverlayEnabled ? albumTitle || "" : "",
       subtitle: "",

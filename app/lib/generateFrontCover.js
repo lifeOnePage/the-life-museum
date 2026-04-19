@@ -114,8 +114,8 @@ function getTextLayout(position, size) {
 export function generateFrontCoverDataUrl(frontCoverImg, config) {
   const { title, subtitle, position, font, color, stroke, strokeOpacity = 100 } = config;
 
-  // No image to composite onto
-  if (!frontCoverImg) return null;
+  // Need either an image or a title to render anything
+  if (!frontCoverImg && !title) return null;
 
   const size = 1024;
   const canvas = document.createElement("canvas");
@@ -123,22 +123,31 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
   canvas.height = size;
   const ctx = canvas.getContext("2d");
 
-  // Draw cover image with cover-fit
-  const imgRatio = frontCoverImg.width / frontCoverImg.height;
-  const boxRatio = 1; // square
-  let sx, sy, sw, sh;
-  if (imgRatio > boxRatio) {
-    sh = frontCoverImg.height;
-    sw = sh * boxRatio;
-    sx = (frontCoverImg.width - sw) / 2;
-    sy = 0;
+  if (frontCoverImg) {
+    // Draw cover image with cover-fit
+    const imgRatio = frontCoverImg.width / frontCoverImg.height;
+    const boxRatio = 1; // square
+    let sx, sy, sw, sh;
+    if (imgRatio > boxRatio) {
+      sh = frontCoverImg.height;
+      sw = sh * boxRatio;
+      sx = (frontCoverImg.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = frontCoverImg.width;
+      sh = sw / boxRatio;
+      sx = 0;
+      sy = (frontCoverImg.height - sh) / 2;
+    }
+    ctx.drawImage(frontCoverImg, sx, sy, sw, sh, 0, 0, size, size);
   } else {
-    sw = frontCoverImg.width;
-    sh = sw / boxRatio;
-    sx = 0;
-    sy = (frontCoverImg.height - sh) / 2;
+    // No cover image — draw placeholder background
+    const gradient = ctx.createLinearGradient(0, 0, size, size);
+    gradient.addColorStop(0, "#dedede");
+    gradient.addColorStop(1, "#efefef");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, size, size);
   }
-  ctx.drawImage(frontCoverImg, sx, sy, sw, sh, 0, 0, size, size);
 
   // Text overlay
   const layout = getTextLayout(position || "bottom-center", size);

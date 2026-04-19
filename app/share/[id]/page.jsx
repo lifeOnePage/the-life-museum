@@ -44,22 +44,26 @@ export default function SharePage({ params }) {
   const [flipProgress, setFlipProgress] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const [expandedTilt, setExpandedTilt] = useState({ x: 0, y: 0 });
-  const [idleTilt, setIdleTilt] = useState({ x: 0, y: 0 });
   const albumRef = useRef(null);
   const expandedAlbumRef = useRef(null);
   const idleRafRef = useRef(null);
+  // Library와 동일: 전체 윈도우 기준 정규화, 0.5rad max, 0.08 smoothing
+  const targetTiltRef = useRef({ x: 0, y: 0 });
+  const currentTiltRef = useRef({ x: 0, y: 0 });
 
-  // Idle floating animation
+  // rAF lerp loop — library AlbumCover.jsx의 smoothing 방식과 동일
   useEffect(() => {
+    const SMOOTH = 0.08;
     let running = true;
-    function loop(timestamp) {
+    function loop() {
       if (!running) return;
-      const t = timestamp / 1000;
-      const x = Math.sin(t * 1.4) * 8 + Math.sin(t * 0.7 + 1.0) * 4;
-      const y = Math.sin(t * 1.0 + 1.2) * 12 + Math.sin(t * 1.8 + 0.4) * 4;
-      setIdleTilt({ x, y });
+      const cur = currentTiltRef.current;
+      const tgt = targetTiltRef.current;
+      cur.x += (tgt.x - cur.x) * SMOOTH;
+      cur.y += (tgt.y - cur.y) * SMOOTH;
+      const transform = `perspective(1000px) rotateX(${cur.x}deg) rotateY(${cur.y}deg)`;
+      if (albumRef.current) albumRef.current.style.transform = transform;
+      if (expandedAlbumRef.current) expandedAlbumRef.current.style.transform = transform;
       idleRafRef.current = requestAnimationFrame(loop);
     }
     idleRafRef.current = requestAnimationFrame(loop);
@@ -69,59 +73,31 @@ export default function SharePage({ params }) {
     };
   }, []);
 
-  const calcTilt = (clientX, clientY, el) => {
-    const rect = el.getBoundingClientRect();
-    const nx = (clientX - rect.left) / rect.width - 0.5;
-    const ny = (clientY - rect.top) / rect.height - 0.5;
-    return { x: ny * -14, y: nx * 14 };
-  };
-
-  // 메인 앨범 — 마우스
-  const handleAlbumMouseMove = useCallback((e) => {
-    if (!albumRef.current) return;
-    setTilt(calcTilt(e.clientX, e.clientY, albumRef.current));
-  }, []);
-
-  const handleAlbumMouseEnter = useCallback(() => {}, []);
-
-  const handleAlbumMouseLeave = useCallback(() => {
-    setTilt({ x: 0, y: 0 });
-  }, []);
-
-  // 메인 앨범 — 터치
-  const handleAlbumTouchStart = useCallback(() => {}, []);
-
-  const handleAlbumTouchMove = useCallback((e) => {
-    if (!albumRef.current) return;
-    const touch = e.touches[0];
-    setTilt(calcTilt(touch.clientX, touch.clientY, albumRef.current));
-  }, []);
-
-  const handleAlbumTouchEnd = useCallback(() => {
-    setTilt({ x: 0, y: 0 });
-  }, []);
-
-  // Expanded 오버레이 — 마우스
-  const handleExpandedMouseMove = useCallback((e) => {
-    if (!expandedAlbumRef.current) return;
-    setExpandedTilt(calcTilt(e.clientX, e.clientY, expandedAlbumRef.current));
-  }, []);
-
-  const handleExpandedMouseLeave = useCallback(() => {
-    setExpandedTilt({ x: 0, y: 0 });
-  }, []);
-
-  // Expanded 오버레이 — 터치
-  const handleExpandedTouchMove = useCallback((e) => {
-    if (!expandedAlbumRef.current) return;
-    const touch = e.touches[0];
-    setExpandedTilt(
-      calcTilt(touch.clientX, touch.clientY, expandedAlbumRef.current),
-    );
-  }, []);
-
-  const handleExpandedTouchEnd = useCallback(() => {
-    setExpandedTilt({ x: 0, y: 0 });
+  // 마우스/터치: 전체 윈도우 기준 정규화 (library와 동일)
+  useEffect(() => {
+    const MAX_DEG = 28.6; // 0.5 rad
+    const onMouseMove = (e) => {
+      const x = (e.clientX / window.innerWidth) * 2 - 1;
+      const y = (e.clientY / window.innerHeight) * 2 - 1;
+      targetTiltRef.current = { x: -y * MAX_DEG, y: x * MAX_DEG };
+    };
+    const onTouchMove = (e) => {
+      const t = e.touches[0];
+      const x = (t.clientX / window.innerWidth) * 2 - 1;
+      const y = (t.clientY / window.innerHeight) * 2 - 1;
+      targetTiltRef.current = { x: -y * MAX_DEG, y: x * MAX_DEG };
+    };
+    const onTouchEnd = () => {
+      targetTiltRef.current = { x: 0, y: 0 };
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("touchmove", onTouchMove);
+    window.addEventListener("touchend", onTouchEnd);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+    };
   }, []);
 
   const handleAlbumClick = useCallback(() => {
@@ -148,7 +124,7 @@ export default function SharePage({ params }) {
   const titleOverlayEnabled = recordData?.coverTitleVisible ?? false;
   const titlePosition = recordData?.coverTitlePosition || "bottom-center";
   const titleFont = recordData?.coverTitleFont || "Pretendard Variable";
-  const titleColor = recordData?.coverTitleColor || "#ffffff";
+  const titleColor = recordData?.coverTitleColor || "#000000";
   const titleStroke = recordData?.coverTitleBgColor ?? false;
 
   const timeline = useMemo(() => {
@@ -320,42 +296,27 @@ export default function SharePage({ params }) {
           }`}
           style={{ visibility: isExpanded ? "hidden" : "visible" }}
         >
-          <div
-            ref={albumRef}
-            className="h-full w-full"
-            onMouseMove={handleAlbumMouseMove}
-            onMouseEnter={handleAlbumMouseEnter}
-            onMouseLeave={handleAlbumMouseLeave}
-            onTouchStart={handleAlbumTouchStart}
-            onTouchMove={handleAlbumTouchMove}
-            onTouchEnd={handleAlbumTouchEnd}
-            style={{
-              transform: `perspective(1000px) rotateX(${tilt.x + idleTilt.x}deg) rotateY(${tilt.y + idleTilt.y}deg)`,
-              transition:
-                tilt.x === 0 && tilt.y === 0
-                  ? "transform 1.2s ease-out"
-                  : "transform 0.08s ease-out",
-              touchAction: "pinch-zoom",
-            }}
-          >
-            <AlbumPreview3D
-              frontCover={frontCover}
-              bio={bio}
-              timeline={timeline}
-              selectedTheme={selectedTheme}
-              albumTitle={albumTitle}
-              albumSubTitle={subtitle}
-              titleOverlayEnabled={titleOverlayEnabled}
-              titlePosition={titlePosition}
-              titleFont={titleFont}
-              titleColor={titleColor}
-              titleStroke={titleStroke}
-              rotationY={flipProgress * 2 * Math.PI}
-              hideControls
-              cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
-              onExpand={handleAlbumClick}
-            />
-          </div>
+          {!isExpanded && (
+            <div ref={albumRef} className="h-full w-full" style={{ touchAction: "pinch-zoom" }}>
+              <AlbumPreview3D
+                frontCover={frontCover}
+                bio={bio}
+                timeline={timeline}
+                selectedTheme={selectedTheme}
+                albumTitle={albumTitle}
+                albumSubTitle={subtitle}
+                titleOverlayEnabled={titleOverlayEnabled}
+                titlePosition={titlePosition}
+                titleFont={titleFont}
+                titleColor={titleColor}
+                titleStroke={titleStroke}
+                rotationY={flipProgress * 2 * Math.PI}
+                hideControls
+                cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
+                onExpand={handleAlbumClick}
+              />
+            </div>
+          )}
         </div>
 
         {/* Flip Slider + CTA */}
@@ -397,22 +358,7 @@ export default function SharePage({ params }) {
       {isExpanded && (
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95">
           <div className="h-[85vh] w-[90vw] max-w-[900px]">
-            <div
-              ref={expandedAlbumRef}
-              className="h-full w-full"
-              onMouseMove={handleExpandedMouseMove}
-              onMouseLeave={handleExpandedMouseLeave}
-              onTouchMove={handleExpandedTouchMove}
-              onTouchEnd={handleExpandedTouchEnd}
-              style={{
-                transform: `perspective(1000px) rotateX(${expandedTilt.x + idleTilt.x}deg) rotateY(${expandedTilt.y + idleTilt.y}deg)`,
-                transition:
-                  expandedTilt.x === 0 && expandedTilt.y === 0
-                    ? "transform 1.2s ease-out"
-                    : "transform 0.08s ease-out",
-                touchAction: "pinch-zoom",
-              }}
-            >
+            <div ref={expandedAlbumRef} className="h-full w-full" style={{ touchAction: "pinch-zoom" }}>
               <AlbumPreview3D
                 frontCover={frontCover}
                 bio={bio}

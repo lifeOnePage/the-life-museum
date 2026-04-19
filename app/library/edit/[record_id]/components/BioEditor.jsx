@@ -166,10 +166,11 @@ const BioEditor = forwardRef(
           <Textarea
             value={bio}
             onChange={(e) => onBioChange(e.target.value)}
+            maxLength={250}
             placeholder="생애문을 직접 작성하거나 AI로 생성하세요..."
             className="min-h-[200px] resize-none border border-white/10 bg-[#2e2720] leading-relaxed text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
           />
-          <p className="mt-2 text-xs text-[#9b8b7a]">{bio.length}자</p>
+          <p className="mt-2 text-xs text-[#9b8b7a]">{bio.length} / 250자</p>
         </div>
 
         {isSaving && (

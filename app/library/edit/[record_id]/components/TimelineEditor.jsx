@@ -105,13 +105,18 @@ const TimelineEditor = forwardRef(
                   placeholder="연도"
                   className="w-24 border border-white/10 bg-[#2e2720] text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
                 />
-                <Input
-                  value={item.event}
-                  onChange={(e) => updateItem(index, "event", e.target.value)}
-                  maxLength={20}
-                  placeholder="내용을 입력하세요..."
-                  className="flex-1 border border-white/10 bg-[#2e2720] text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
-                />
+                <div className="flex flex-1 flex-col gap-0.5">
+                  <Input
+                    value={item.event}
+                    onChange={(e) => updateItem(index, "event", e.target.value)}
+                    maxLength={20}
+                    placeholder="내용을 입력하세요..."
+                    className="border border-white/10 bg-[#2e2720] text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
+                  />
+                  <p className="text-right text-xs text-[#9b8b7a]/60">
+                    {item.event.length} / 20
+                  </p>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"

@@ -129,14 +129,14 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
         <Input
           value={item.event}
           onChange={(e) =>
-            onUpdate(index, "event", e.target.value.slice(0, 10))
+            onUpdate(index, "event", e.target.value.slice(0, 20))
           }
           placeholder="내용을 입력하세요..."
-          maxLength={10}
+          maxLength={20}
           className="h-9 w-full rounded-[5px] border-white/10 bg-[#2e2720] pr-8 text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
         />
         <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[9px] text-[#9b8b7a]">
-          {item.event.length}/10
+          {item.event.length}/20
         </span>
       </div>
       <button
@@ -1447,7 +1447,7 @@ const Index = ({ params }) => {
                                 <Textarea
                                   value={bio}
                                   onChange={(e) =>
-                                    setBio(e.target.value.slice(0, 190))
+                                    setBio(e.target.value.slice(0, 250))
                                   }
                                   placeholder={
                                     usedChips.size > 0
@@ -1461,9 +1461,9 @@ const Index = ({ params }) => {
                               {/* Character count */}
                               <div className="flex items-center justify-between">
                                 <p
-                                  className={`text-[11px] ${getFullBioText().length >= 190 ? "text-red-400" : "text-[#9b8b7a]/60"}`}
+                                  className={`text-[11px] ${getFullBioText().length >= 250 ? "text-red-400" : "text-[#9b8b7a]/60"}`}
                                 >
-                                  {getFullBioText().length}/190자
+                                  {getFullBioText().length}/250자
                                 </p>
                                 {bioError && (
                                   <p className="text-xs text-red-500">

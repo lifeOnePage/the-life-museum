@@ -247,28 +247,30 @@ export default function MyShelfPage() {
       onMouseMove={(e) => setCursorPos({ x: e.clientX, y: e.clientY })}
     >
       {/* 커서팁: 선택된 앨범 호버 시 */}
-      {hoverLabel && selectedAlbum && hoverLabel.album?.id === selectedAlbum?.data?.id && (
-        <div
-          className="pointer-events-none fixed z-50"
-          style={{ left: cursorPos.x + 14, top: cursorPos.y - 10 }}
-        >
-          <div className="rounded-full bg-white/15 p-2 backdrop-blur-sm">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="h-4 w-4 text-white/70"
-            >
-              <path d="M17 15.328c2.414 -.718 4 -1.94 4 -3.328c0 -2.21 -4.03 -4 -9 -4s-9 1.79 -9 4s4.03 4 9 4" />
-              <path d="M9 13l3 3l-3 3" />
-            </svg>
+      {hoverLabel &&
+        selectedAlbum &&
+        hoverLabel.album?.id === selectedAlbum?.data?.id && (
+          <div
+            className="pointer-events-none fixed z-50"
+            style={{ left: cursorPos.x + 14, top: cursorPos.y - 10 }}
+          >
+            <div className="rounded-full bg-white/15 p-2 backdrop-blur-sm">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4 text-white/70"
+              >
+                <path d="M17 15.328c2.414 -.718 4 -1.94 4 -3.328c0 -2.21 -4.03 -4 -9 -4s-9 1.79 -9 4s4.03 4 9 4" />
+                <path d="M9 13l3 3l-3 3" />
+              </svg>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* 3D 캔버스 */}
       <ShelfCanvas
@@ -359,7 +361,10 @@ export default function MyShelfPage() {
 
         {/* 선택된 앨범: 아래에 버튼 (role에 따라 분기) */}
         {selectedAlbum && (
-          <div className="pointer-events-auto absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-2.5 pb-6 whitespace-nowrap will-change-transform sm:pb-8 md:pb-[10vh]">
+          <div
+            className="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap will-change-transform"
+            style={{ top: "calc(50% + min(32.5vw, 32.5vh) + 16px)" }}
+          >
             {selectedRole === "owner" && (
               <button
                 onClick={() => {

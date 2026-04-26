@@ -82,7 +82,7 @@ async function generateAlbumCovers(item) {
 }
 
 export default function MyShelfPage() {
-  const { token } = useAuth();
+  const { token, loading } = useAuth();
   const router = useRouter();
 
   // API에서 받아온 전체 앨범 목록 (재방문 시 캐시에서 즉시 복원)
@@ -107,6 +107,13 @@ export default function MyShelfPage() {
   // 호버 라벨 상태 (앨범 top-left 화면 좌표 + 앨범 데이터)
   const [hoverLabel, setHoverLabel] = useState(null);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
+
+  // 비로그인 → 로그인 페이지로
+  useEffect(() => {
+    if (!loading && !token) {
+      router.replace("/login");
+    }
+  }, [loading, token, router]);
 
   // API fetch
   useEffect(() => {

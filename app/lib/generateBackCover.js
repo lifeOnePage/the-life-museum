@@ -306,14 +306,14 @@ function drawKitschLayout(
       ctx.font = `36px ${bookkFont}`;
       ctx.fillStyle = theme.text + "cc";
       ctx.textAlign = "left";
-      const maxLen = 14;
-      const eventText =
-        item.event.length > maxLen
-          ? item.event.slice(0, maxLen) + "..."
-          : item.event;
-      ctx.fillText(eventText, size / 2 - 120, cursorY);
+      const eventX = size / 2 - 120;
+      const eventMaxW = (frontCoverImg ? contentRight : size - margin) - eventX;
+      const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
+      for (let li = 0; li < eventLines.length; li++) {
+        ctx.fillText(eventLines[li], eventX, cursorY + li * 42);
+      }
 
-      cursorY += 92;
+      cursorY += 92 + (eventLines.length - 1) * 42;
     }
     ctx.textAlign = "left";
   }
@@ -460,14 +460,14 @@ function drawIllustrationLayout(
       // Event below
       ctx.font = `17px ${bookkFont}`;
       ctx.textAlign = "center";
-      const maxLen = 12;
-      const eventText =
-        item.event.length > maxLen
-          ? item.event.slice(0, maxLen) + "..."
-          : item.event;
+      const itemSpacing = maxItems > 1 ? tlWidth / (maxItems - 1) : tlWidth;
+      const eventMaxW = Math.max(itemSpacing * 0.85, 100);
+      const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
       ctx.fill();
       ctx.fillStyle = "#406E78";
-      ctx.fillText(eventText, x, tlY + 30);
+      for (let li = 0; li < eventLines.length; li++) {
+        ctx.fillText(eventLines[li], x, tlY + 30 + li * 22);
+      }
     }
     ctx.textAlign = "left";
   }
@@ -687,12 +687,12 @@ function drawMinimalistLayout(
       ctx.font = `18px ${escoredreamFont}`;
       ctx.letterSpacing = "-0.7px";
       ctx.fillStyle = theme.text;
-      const maxLen = 12;
-      const eventText =
-        item.event.length > maxLen
-          ? item.event.slice(0, maxLen) + "..."
-          : item.event;
-      ctx.fillText(eventText, x, tlY + 28);
+      const itemSpacing = maxItems > 1 ? tlWidth / (maxItems - 1) : tlWidth;
+      const eventMaxW = Math.max(itemSpacing * 0.85, 100);
+      const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
+      for (let li = 0; li < eventLines.length; li++) {
+        ctx.fillText(eventLines[li], x, tlY + 28 + li * 24);
+      }
     }
     ctx.textAlign = "left";
     cursorY = tlY + 50;

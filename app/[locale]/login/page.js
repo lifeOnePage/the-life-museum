@@ -1,27 +1,23 @@
-// app/login/page.js
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "@/app/contexts/AuthContext";
 
-import Header from "./components/Header";
-import FieldBlock from "./components/FieldBlock";
-import { PrimaryButton } from "./components/Buttons";
-import SlideScreen from "./components/SlideScreen";
-import ErrorToast from "./components/ErrorToast";
-import CountryCodeSelect from "./components/CountryCodeSelect";
+import Header from "@/app/login/components/Header";
+import FieldBlock from "@/app/login/components/FieldBlock";
+import { PrimaryButton } from "@/app/login/components/Buttons";
+import SlideScreen from "@/app/login/components/SlideScreen";
+import ErrorToast from "@/app/login/components/ErrorToast";
 
 import {
-  sendPhoneCode,
-  verifyPhoneCode,
   sendEmailCode,
   verifyEmailCode,
   completeSignup,
-} from "./services/loginApi";
+} from "@/app/login/services/loginApi";
 
-const LANG = {
+const T = {
   ko: {
     chooseLanguage: "언어를 선택해주세요",
     enterEmail: "이메일을 입력해주세요",
@@ -37,7 +33,6 @@ const LANG = {
     saving: "저장 중...",
     complete: "완료",
     back: "이전으로",
-    errorPhone: "전화번호를 입력해주세요",
     errorEmail: "이메일을 입력해주세요",
     errorOtp: "인증번호를 입력해주세요",
     errorName: "이름을 입력해주세요",
@@ -60,7 +55,6 @@ const LANG = {
     saving: "Saving...",
     complete: "Done",
     back: "Back",
-    errorPhone: "Please enter your phone number",
     errorEmail: "Please enter your email",
     errorOtp: "Please enter the verification code",
     errorName: "Please enter your name",
@@ -75,23 +69,17 @@ function setLocaleCookie(locale) {
   localStorage.setItem("NEXT_LOCALE", locale);
 }
 
-export default function LoginPage() {
+export default function LocaleLoginPage() {
   const router = useRouter();
-  const { token, signinWithToken } = useAuth();
+  const { locale: routeLocale } = useParams();
+  const { signinWithToken } = useAuth();
 
   // "contact" | "otp" | "language" | "signup"
   const [stage, setStage] = useState("contact");
-  const [selectedLocale, setSelectedLocale] = useState(
-    () => (typeof window !== "undefined" ? localStorage.getItem("NEXT_LOCALE") || "ko" : "ko"),
-  );
+  const [selectedLocale, setSelectedLocale] = useState(routeLocale || "ko");
 
-  const t = LANG[selectedLocale] || LANG.ko;
+  const t = T[selectedLocale] || T.ko;
 
-  // "phone" | "email"
-  const [contactTab, setContactTab] = useState("email");
-
-  const [phone, setPhone] = useState("");
-  const [countryCode, setCountryCode] = useState("+82");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [name, setName] = useState("");
@@ -99,7 +87,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // Stored after OTP verify, used for complete-signup
   const [authToken, setAuthToken] = useState(null);
   const [authUser, setAuthUser] = useState(null);
   const [authRefreshToken, setAuthRefreshToken] = useState(null);
@@ -119,41 +106,26 @@ export default function LoginPage() {
     setStage("signup");
   };
 
-  // 1) Send OTP
   const onSendCode = async () => {
     setError("");
+    if (!email.trim()) return setError(t.errorEmail);
     try {
       setLoading(true);
-      if (contactTab === "phone") {
-        const normalized = phone.replace(/\D/g, "");
-        if (!normalized) return setError(LANG[selectedLocale]?.errorPhone || "전화번호를 입력해주세요");
-        await sendPhoneCode(normalized, countryCode);
-      } else {
-        if (!email.trim()) return setError(LANG[selectedLocale]?.errorEmail || "이메일을 입력해주세요");
-        await sendEmailCode(email.trim());
-      }
+      await sendEmailCode(email.trim());
       setStage("otp");
     } catch (e) {
-      setError(e.message || (LANG[selectedLocale]?.errorSendCode || "인증번호 전송에 실패했어요."));
+      setError(e.message || t.errorSendCode);
     } finally {
       setLoading(false);
     }
   };
 
-  // 2) Verify OTP → get tokens
   const onVerifyOtp = async () => {
     setError("");
-    if (!otp.trim()) return setError(LANG[selectedLocale]?.errorOtp || "인증번호를 입력해주세요");
+    if (!otp.trim()) return setError(t.errorOtp);
     try {
       setLoading(true);
-      let result;
-      if (contactTab === "phone") {
-        const normalized = phone.replace(/\D/g, "");
-        result = await verifyPhoneCode(normalized, countryCode, otp.trim());
-      } else {
-        result = await verifyEmailCode(email.trim(), otp.trim());
-      }
-      // result: { accessToken, refreshToken, isNewUser, user }
+      const result = await verifyEmailCode(email.trim(), otp.trim());
       if (result.isNewUser) {
         setAuthToken(result.accessToken);
         setAuthUser(result.user);
@@ -161,26 +133,25 @@ export default function LoginPage() {
         setStage("language");
       } else {
         await signinWithToken(result.accessToken, result.user, result.refreshToken);
-        router.push("/library");
+        router.push(`/${selectedLocale}/library`);
       }
     } catch (e) {
-      setError(e.message || (LANG[selectedLocale]?.errorVerify || "인증에 실패했어요."));
+      setError(e.message || t.errorVerify);
     } finally {
       setLoading(false);
     }
   };
 
-  // 3) Complete signup
   const onCompleteSignup = async () => {
     setError("");
-    if (!name.trim()) return setError(LANG[selectedLocale]?.errorName || "이름을 입력해주세요");
+    if (!name.trim()) return setError(t.errorName);
     try {
       setLoading(true);
       const updatedUser = await completeSignup(authToken, name.trim());
       await signinWithToken(authToken, updatedUser, authRefreshToken);
-      router.push("/library");
+      router.push(`/${selectedLocale}/library`);
     } catch (e) {
-      setError(e.message || "회원가입에 실패했어요.");
+      setError(e.message || t.errorSignup);
     } finally {
       setLoading(false);
     }
@@ -244,109 +215,14 @@ export default function LoginPage() {
           <AnimatePresence mode="wait" initial={false}>
             {stage === "contact" && (
               <SlideScreen key="stage-contact">
-                {/* Tab toggle — 전화번호 비활성화, 이메일만 사용 */}
-                {/* <div
-                  style={{
-                    display: "flex",
-                    gap: 8,
-                    margin: "20px 0 16px",
-                    background: "rgba(255,255,255,0.08)",
-                    borderRadius: 10,
-                    padding: 4,
-                  }}
-                >
-                  {["phone", "email"].map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => {
-                        setContactTab(tab);
-                        setError("");
-                      }}
-                      style={{
-                        flex: 1,
-                        height: 36,
-                        border: "none",
-                        borderRadius: 8,
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        background:
-                          contactTab === tab
-                            ? "rgba(255,255,255,0.18)"
-                            : "transparent",
-                        color: contactTab === tab ? "#fff" : "#aaa",
-                        transition: "all 0.18s",
-                      }}
-                    >
-                      {tab === "phone" ? "전화번호" : "이메일"}
-                    </button>
-                  ))}
-                </div> */}
-
-                {/* 전화번호 입력 — 비활성화 */}
-                {/* {contactTab === "phone" && (
-                  <>
-                    <Header>전화번호를 입력해주세요</Header>
-                    <div style={{ marginBottom: 20 }}>
-                      <label
-                        style={{
-                          display: "block",
-                          fontSize: 14,
-                          fontWeight: 500,
-                          marginBottom: 8,
-                          color: "#fff",
-                        }}
-                      >
-                        전화번호
-                      </label>
-                      <div style={{ display: "flex", gap: 8 }}>
-                        <CountryCodeSelect
-                          value={countryCode}
-                          onChange={setCountryCode}
-                        />
-                        <div style={{ flex: 1 }}>
-                          <input
-                            type="tel"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            placeholder={
-                              countryCode === "+82"
-                                ? "01012345678"
-                                : "Phone number"
-                            }
-                            autoFocus
-                            style={{
-                              width: "100%",
-                              height: 48,
-                              padding: "0 16px",
-                              background: "rgba(255,255,255,0.1)",
-                              border: "1px solid rgba(255,255,255,0.2)",
-                              borderRadius: 8,
-                              color: "#fff",
-                              fontSize: 15,
-                              outline: "none",
-                              boxSizing: "border-box",
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                )} */}
-
-                {contactTab === "email" && (
-                  <>
-                    <Header>{t.enterEmail}</Header>
-                    <FieldBlock
-                      value={email}
-                      onChange={setEmail}
-                      placeholder={t.emailPlaceholder}
-                      type="email"
-                      autoFocus
-                    />
-                  </>
-                )}
-
+                <Header>{t.enterEmail}</Header>
+                <FieldBlock
+                  value={email}
+                  onChange={setEmail}
+                  placeholder={t.emailPlaceholder}
+                  type="email"
+                  autoFocus
+                />
                 <PrimaryButton disabled={loading} onClick={onSendCode}>
                   {loading ? t.sending : t.sendCode}
                 </PrimaryButton>

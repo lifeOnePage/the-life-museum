@@ -13,7 +13,7 @@ export default function Header() {
   const handleLogout = () => {
     if (window.confirm("로그아웃 하시겠습니까?")) {
       signout();
-      router.push("/");
+      router.push("/login");
     }
   };
 

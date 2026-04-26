@@ -265,10 +265,9 @@ export default function AlbumPreview3D({
           </button>
           <button
             onClick={toggleFlip}
-            className="text-xs text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
+            className="rounded-md p-1 text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7]"
           >
-            {/* {isFlipped ? "앞면" : "뒷면"} 보기 */}
-            앨범 뒤집기
+            <img src="/view-360-arrow.svg" alt="앨범 뒤집기" className="h-4 w-4 opacity-70 transition-opacity hover:opacity-100" />
           </button>
         </div>
       )}

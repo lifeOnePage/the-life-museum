@@ -43,6 +43,8 @@ export default function Scene({
   cameraSpeed,
   textureConfig,
   onAutoPlay,
+  onTogglePlay,
+  onToggleFullscreen,
 }) {
   const { camera } = useThree();
   const controlsRef = useRef();
@@ -61,6 +63,12 @@ export default function Scene({
   const [focusRender, setFocusRender] = useState({
     mode: "idle",
     targetId: null,
+  });
+
+  // Previous focus clone: keeps one prior focused image visible after transition
+  const [prevFocusRender, setPrevFocusRender] = useState({
+    targetId: null,
+    cloneZ: 0,
   });
 
   // Camera & focus state (all in one ref to avoid re-renders)
@@ -216,6 +224,13 @@ export default function Scene({
     const onKeyDown = (e) => {
       if (["ArrowUp", "w", "W"].includes(e.key)) keysRef.current.fwd = true;
       if (["ArrowDown", "s", "S"].includes(e.key)) keysRef.current.back = true;
+      if (e.key === " " || e.code === "Space") {
+        e.preventDefault();
+        onTogglePlay?.();
+      }
+      if (e.key === "f" || e.key === "F") {
+        onToggleFullscreen?.();
+      }
     };
     const onKeyUp = (e) => {
       if (["ArrowUp", "w", "W"].includes(e.key)) keysRef.current.fwd = false;
@@ -251,7 +266,7 @@ export default function Scene({
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
     };
-  }, []);
+  }, [onTogglePlay, onToggleFullscreen]);
 
   // OrbitControls always disabled — play/pause only controls camera movement
   if (controlsRef.current) {
@@ -353,6 +368,14 @@ export default function Scene({
       const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
 
       if (distToClone < FOCUS_DISMISS_DISTANCE) {
+        // Save current focus as previous (only for auto mode with valid target)
+        if (s.focusMode === "auto" && s.targetPlaneId != null) {
+          setPrevFocusRender({
+            targetId: s.targetPlaneId,
+            cloneZ: s.focusCloneZ,
+          });
+        }
+
         // Dismiss
         s.focusMode = "idle";
         s.targetPlaneId = null;
@@ -399,6 +422,16 @@ export default function Scene({
         wrapZ(focusPlane.position[2], camZ),
       ]
     : null;
+
+  // Previous focus clone data
+  const prevFocusPlane =
+    prevFocusRender.targetId !== null
+      ? planes.find((p) => p.id === prevFocusRender.targetId)
+      : null;
+  const prevFocusTexInfo =
+    prevFocusRender.targetId !== null
+      ? textureMap.current.get(prevFocusRender.targetId)
+      : null;
 
   return (
     <>
@@ -497,6 +530,19 @@ export default function Scene({
             stateRef={state}
           /> */}
         </>
+      )}
+
+      {/* Previous focus clone (stays at its original position, distance-based opacity handles visibility) */}
+      {prevFocusRender.targetId != null && prevFocusTexInfo && prevFocusPlane && (
+        <FocusClone
+          texture={prevFocusTexInfo.texture}
+          aspectRatio={prevFocusTexInfo.aspectRatio}
+          baseHeight={prevFocusPlane.baseHeight}
+          cameraY={camera.position.y}
+          stateRef={state}
+          displayScale={DISPLAY_SCALE}
+          cloneZ={prevFocusRender.cloneZ}
+        />
       )}
 
       {/* Manual Focus: WallPlane itself flies to camera (no FocusClone needed) */}

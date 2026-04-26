@@ -20,7 +20,6 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim()) return;
 
     setSubmitting(true);
     try {
@@ -28,7 +27,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title: title.trim(),
+          title: title.trim() || null,
           subTitle: subtitle.trim(),
           googlePhotoUrl: googlePhotoUrl.trim() || null,
         }),
@@ -120,9 +119,8 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="앨범 제목을 입력하세요"
+                placeholder="비워두면 구글 포토 앨범명 사용"
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
-                required
               />
             </div>
 
@@ -191,7 +189,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
               </button>
               <button
                 type="submit"
-                disabled={submitting || !title.trim()}
+                disabled={submitting}
                 className="flex-1 rounded-lg bg-[#c4b49a] py-2 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
               >
                 {submitting ? "생성 중..." : "만들기"}

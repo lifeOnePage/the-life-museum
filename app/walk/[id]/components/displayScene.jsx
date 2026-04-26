@@ -11,11 +11,22 @@ import {
   useRef,
 } from "react";
 import * as THREE from "three";
-import { LogOut } from "lucide-react";
+import { X, Maximize2, Minimize2, Gauge } from "lucide-react";
 import Scene from "./scene/Scene";
 import { SEED, CAMERA_SPEED, getTextureConfig } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
 import { useRecordData } from "@/app/lib/useRecordData";
+
+function Tooltip({ label, children }) {
+  return (
+    <div className="group relative flex items-center">
+      {children}
+      <span className="pointer-events-none absolute top-full left-1/2 mt-2 -translate-x-1/2 rounded bg-black/80 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 // Playback Controls UI
 function PlaybackControls({
@@ -27,96 +38,120 @@ function PlaybackControls({
   isMuted,
   onToggleMute,
   hasBgm,
+  isFullscreen,
+  onToggleFullscreen,
 }) {
   return (
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
-      <button
-        onClick={onExit}
-        className="flex h-10 items-center gap-1 rounded-full bg-white/20 px-3 py-1.5 text-sm whitespace-nowrap text-white transition-colors hover:bg-white/30"
-      >
-        <LogOut className="h-4 w-4" />
-        나가기
-      </button>
+      <Tooltip label="나가기">
+        <button
+          onClick={onExit}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+        >
+          <X className="h-4 w-4 text-white" />
+        </button>
+      </Tooltip>
 
       <div className="h-6 w-px bg-white/20" />
 
-      <button
-        onClick={onTogglePlay}
-        className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
-      >
-        {isPlaying ? (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="white"
-            className="h-5 w-5"
-          >
-            <rect x="6" y="4" width="4" height="16" />
-            <rect x="14" y="4" width="4" height="16" />
-          </svg>
-        ) : (
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="white"
-            className="h-5 w-5"
-          >
-            <polygon points="5,3 19,12 5,21" />
-          </svg>
-        )}
-      </button>
+      <Tooltip label={isPlaying ? "일시정지" : "재생"}>
+        <button
+          onClick={onTogglePlay}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+        >
+          {isPlaying ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="white"
+              className="h-5 w-5"
+            >
+              <rect x="6" y="4" width="4" height="16" />
+              <rect x="14" y="4" width="4" height="16" />
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="white"
+              className="h-5 w-5"
+            >
+              <polygon points="5,3 19,12 5,21" />
+            </svg>
+          )}
+        </button>
+      </Tooltip>
 
-      <input
-        type="range"
-        min={5}
-        max={240}
-        value={cameraSpeed}
-        onChange={(e) => onCameraSpeedChange(Number(e.target.value))}
-        className="w-24 accent-white"
-      />
+      <Tooltip label="재생 속도">
+        <Gauge className="mr-1.5 h-6 w-6 shrink-0 text-white/70" />
+        <input
+          type="range"
+          min={5}
+          max={240}
+          value={cameraSpeed}
+          onChange={(e) => onCameraSpeedChange(Number(e.target.value))}
+          className="w-24 accent-white"
+        />
+      </Tooltip>
 
       {hasBgm && (
         <>
           <div className="h-6 w-px bg-white/20" />
-          <button
-            onClick={onToggleMute}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
-            title={isMuted ? "음악 켜기" : "음악 끄기"}
-          >
-            {isMuted ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5"
-              >
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <line x1="23" y1="9" x2="17" y2="15" />
-                <line x1="17" y1="9" x2="23" y2="15" />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-5 w-5"
-              >
-                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-              </svg>
-            )}
-          </button>
+          <Tooltip label={isMuted ? "음악 켜기" : "음악 끄기"}>
+            <button
+              onClick={onToggleMute}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+            >
+              {isMuted ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5"
+                >
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <line x1="23" y1="9" x2="17" y2="15" />
+                  <line x1="17" y1="9" x2="23" y2="15" />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-5 w-5"
+                >
+                  <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                  <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                </svg>
+              )}
+            </button>
+          </Tooltip>
         </>
       )}
+
+      <div className="h-6 w-px bg-white/20" />
+
+      <Tooltip label={isFullscreen ? "전체화면 해제" : "전체화면"}>
+        <button
+          onClick={onToggleFullscreen}
+          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+        >
+          {isFullscreen ? (
+            <Minimize2 className="h-5 w-5 text-white" />
+          ) : (
+            <Maximize2 className="h-5 w-5 text-white" />
+          )}
+        </button>
+      </Tooltip>
     </div>
   );
 }
@@ -127,6 +162,7 @@ export default function DisplayScene({ recordId }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
   const [isMuted, setIsMuted] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const bgmRef = useRef(null);
   const textureConfig = useMemo(() => getTextureConfig(), []);
 
@@ -178,6 +214,23 @@ export default function DisplayScene({ recordId }) {
 
   const handleAutoPlay = useCallback(() => {
     setIsPlaying(true);
+  }, []);
+
+  const handleToggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  }, []);
+
+  // Sync isFullscreen state with browser fullscreen changes (e.g. ESC key)
+  useEffect(() => {
+    const onChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
   if (loading) {
@@ -242,6 +295,8 @@ export default function DisplayScene({ recordId }) {
         hasBgm={true}
         isMuted={isMuted}
         onToggleMute={() => setIsMuted((m) => !m)}
+        isFullscreen={isFullscreen}
+        onToggleFullscreen={handleToggleFullscreen}
       />
 
       <Canvas
@@ -268,6 +323,8 @@ export default function DisplayScene({ recordId }) {
             cameraSpeed={cameraSpeed}
             textureConfig={textureConfig}
             onAutoPlay={handleAutoPlay}
+            onTogglePlay={handleTogglePlay}
+            onToggleFullscreen={handleToggleFullscreen}
           />
         </Suspense>
       </Canvas>

@@ -2,7 +2,7 @@
 
 import * as THREE from "three";
 import { useRef, useMemo, useState, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 
 // 카메라 앞 고정 위치 (카메라 위치 [0, 0, 6] 기준)
 const CAMERA_FRONT_POSITION = {
@@ -27,6 +27,7 @@ function getMediaType(url) {
 // 정적 이미지 텍스처 훅
 function useStaticTexture(imageUrl) {
   const [texture, setTexture] = useState(null);
+  const { gl } = useThree();
 
   useEffect(() => {
     if (!imageUrl) {
@@ -40,6 +41,9 @@ function useStaticTexture(imageUrl) {
       imageUrl,
       (loadedTexture) => {
         loadedTexture.colorSpace = THREE.SRGBColorSpace;
+        loadedTexture.minFilter = THREE.LinearFilter;
+        loadedTexture.magFilter = THREE.LinearFilter;
+        loadedTexture.anisotropy = gl.capabilities.getMaxAnisotropy();
         loadedTexture.needsUpdate = true;
         setTexture(loadedTexture);
       },
@@ -50,7 +54,7 @@ function useStaticTexture(imageUrl) {
     return () => {
       texture?.dispose();
     };
-  }, [imageUrl]);
+  }, [imageUrl, gl]);
 
   return texture;
 }
@@ -164,6 +168,8 @@ function createPlaceholderTexture(index, isFront = true) {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
   return texture;
 }
 
@@ -212,6 +218,7 @@ export default function AlbumCover3D({
     targetRotY: 0,
     // original은 위에서 별도 관리
     initialized: false,
+    rotationSnapped: false,
   });
 
   // 초기화
@@ -256,12 +263,19 @@ export default function AlbumCover3D({
       state.targetRotX = 0; // 기울기 제거 (정면으로)
 
       // 플립 상태에 따라 Y축 회전
-      state.targetRotY =
+      const targetRot =
         typeof rotationY === "number"
           ? rotationY
           : isFlipped
             ? Math.PI
             : 0;
+
+      // 첫 마운트 시 현재 회전값을 target으로 snap (lerp 없이 즉시 배치)
+      if (!state.rotationSnapped) {
+        state.currentRotY = targetRot;
+        state.rotationSnapped = true;
+      }
+      state.targetRotY = targetRot;
     } else {
       // original 위치로 복귀
       state.targetX = originalPosition.x;
@@ -286,7 +300,10 @@ export default function AlbumCover3D({
 
     // 회전 보간
     state.currentRotX += (state.targetRotX - state.currentRotX) * lerpFactor;
-    state.currentRotY += (state.targetRotY - state.currentRotY) * lerpFactor;
+    // Y축은 최단 경로로 보간 (모듈러 연산으로 반 바퀴 이상 돌지 않게)
+    let rotDiff = state.targetRotY - state.currentRotY;
+    rotDiff = rotDiff - Math.round(rotDiff / (2 * Math.PI)) * (2 * Math.PI);
+    state.currentRotY += rotDiff * lerpFactor;
 
     // 적용 (outerGroupRef에 절대 위치 적용)
     outerGroupRef.current.position.x = state.currentX;

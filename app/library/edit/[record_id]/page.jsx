@@ -222,6 +222,10 @@ const Index = ({ params }) => {
   const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
   const [icloudUrl, setIcloudUrl] = useState("");
   const [myboxUrl, setMyboxUrl] = useState("");
+  const [externalLinkTitle, setExternalLinkTitle] = useState("");
+  const [externalLinkUrl, setExternalLinkUrl] = useState("");
+  const [editExternalLinkTitle, setEditExternalLinkTitle] = useState("");
+  const [editExternalLinkUrl, setEditExternalLinkUrl] = useState("");
 
   // Stable ID counter for timeline items
   const nextIdRef = useRef(1);
@@ -313,6 +317,8 @@ const Index = ({ params }) => {
           setGooglePhotoUrl(data.googlePhotoUrl || "");
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
+          setExternalLinkTitle(data.externalLinkTitle || "");
+          setExternalLinkUrl(data.externalLinkUrl || "");
           console.log("storyGenCount from GET:", data.storyGenCount);
           if (data.storyGenCount != null) {
             setStoryGenCount(data.storyGenCount);
@@ -735,6 +741,8 @@ const Index = ({ params }) => {
       setSelectedUrlType("google");
       setEditUrlValue(googlePhotoUrl);
     }
+    setEditExternalLinkTitle(externalLinkTitle);
+    setEditExternalLinkUrl(externalLinkUrl);
     setRecordError("");
     setShowDeleteConfirm(false);
     setShowRecordEditDialog(true);
@@ -761,6 +769,8 @@ const Index = ({ params }) => {
             googlePhotoUrl: finalGoogleUrl,
             icloudUrl: finalIcloudUrl,
             myboxUrl: finalMyboxUrl,
+            externalLinkTitle: editExternalLinkTitle,
+            externalLinkUrl: editExternalLinkUrl,
           }),
         },
       );
@@ -773,6 +783,8 @@ const Index = ({ params }) => {
       setGooglePhotoUrl(finalGoogleUrl);
       setIcloudUrl(finalIcloudUrl);
       setMyboxUrl(finalMyboxUrl);
+      setExternalLinkTitle(editExternalLinkTitle);
+      setExternalLinkUrl(editExternalLinkUrl);
       setShowRecordEditDialog(false);
     } catch (err) {
       setRecordError(err.message);
@@ -1715,6 +1727,25 @@ const Index = ({ params }) => {
               </div>
 
               <div className="space-y-4">
+                <div>
+                  <label className="mb-2 block text-xs font-medium text-[#9b8b7a]">
+                    외부 링크
+                  </label>
+                  <input
+                    type="text"
+                    value={editExternalLinkTitle}
+                    onChange={(e) => setEditExternalLinkTitle(e.target.value)}
+                    placeholder="버튼에 표시할 이름 (예: 유튜브 채널)"
+                    className="mb-2 w-full rounded-md border border-white/15 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30"
+                  />
+                  <input
+                    type="url"
+                    value={editExternalLinkUrl}
+                    onChange={(e) => setEditExternalLinkUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="w-full rounded-md border border-white/15 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30"
+                  />
+                </div>
                 <div>
                   <label className="mb-2 block text-xs font-medium text-[#9b8b7a]">
                     사진 저장소

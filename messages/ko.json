@@ -1,0 +1,43 @@
+{
+  "login": {
+    "chooseLanguage": "언어를 선택해주세요",
+    "languageKo": "한국어",
+    "languageEn": "English",
+    "enterEmail": "이메일을 입력해주세요",
+    "emailPlaceholder": "name@example.com",
+    "sendCode": "인증번호 받기",
+    "sending": "전송 중...",
+    "enterOtp": "인증번호를 입력해주세요",
+    "otpPlaceholder": "6자리",
+    "verifying": "확인 중...",
+    "next": "다음",
+    "newUser": "처음이시군요! 이름을 알려주세요.",
+    "namePlaceholder": "홍길동",
+    "saving": "저장 중...",
+    "complete": "완료",
+    "back": "이전으로",
+    "errorPhone": "전화번호를 입력해주세요",
+    "errorEmail": "이메일을 입력해주세요",
+    "errorOtp": "인증번호를 입력해주세요",
+    "errorName": "이름을 입력해주세요",
+    "errorSendCode": "인증번호 전송에 실패했어요.",
+    "errorVerify": "인증에 실패했어요.",
+    "errorSignup": "회원가입에 실패했어요."
+  },
+  "profile": {
+    "title": "프로필",
+    "name": "이름",
+    "phone": "전화번호",
+    "email": "Email",
+    "language": "언어",
+    "languageKo": "한국어",
+    "languageEn": "English",
+    "edit": "편집",
+    "cancel": "취소",
+    "save": "저장",
+    "saving": "저장 중...",
+    "close": "닫기",
+    "planTab": "Plan",
+    "planComing": "지원 예정입니다."
+  }
+}

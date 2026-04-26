@@ -1,0 +1,43 @@
+{
+  "login": {
+    "chooseLanguage": "Choose your language",
+    "languageKo": "한국어",
+    "languageEn": "English",
+    "enterEmail": "Enter your email",
+    "emailPlaceholder": "name@example.com",
+    "sendCode": "Send verification code",
+    "sending": "Sending...",
+    "enterOtp": "Enter verification code",
+    "otpPlaceholder": "6 digits",
+    "verifying": "Verifying...",
+    "next": "Next",
+    "newUser": "Welcome! Please tell us your name.",
+    "namePlaceholder": "John Doe",
+    "saving": "Saving...",
+    "complete": "Done",
+    "back": "Back",
+    "errorPhone": "Please enter your phone number",
+    "errorEmail": "Please enter your email",
+    "errorOtp": "Please enter the verification code",
+    "errorName": "Please enter your name",
+    "errorSendCode": "Failed to send verification code.",
+    "errorVerify": "Verification failed.",
+    "errorSignup": "Sign up failed."
+  },
+  "profile": {
+    "title": "Profile",
+    "name": "Name",
+    "phone": "Phone",
+    "email": "Email",
+    "language": "Language",
+    "languageKo": "한국어",
+    "languageEn": "English",
+    "edit": "Edit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "saving": "Saving...",
+    "close": "Close",
+    "planTab": "Plan",
+    "planComing": "Coming soon."
+  }
+}

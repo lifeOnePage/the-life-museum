@@ -107,6 +107,13 @@ export default function DisplayScene({ recordId }) {
 
   const bgmUrl = recordData?.bgmUrl || null;
 
+  // BGM 없으면 기본 음소거
+  useEffect(() => {
+    if (!loading && !bgmUrl) {
+      setIsMuted(true);
+    }
+  }, [loading, bgmUrl]);
+
   // BGM 초기화
   useEffect(() => {
     if (!bgmUrl) return;

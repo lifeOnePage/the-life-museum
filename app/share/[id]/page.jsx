@@ -7,6 +7,7 @@ import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
 import { X, Maximize2, Minimize2, Info } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
+import { useAuth } from "@/app/contexts/AuthContext";
 
 function Icon360({ className }) {
   return (
@@ -40,6 +41,8 @@ export default function SharePage({ params }) {
   const router = useRouter();
 
   const { data: recordData, loading, error } = useRecordData(id);
+  const { token } = useAuth();
+  const isLoggedIn = !!token;
   const [ready, setReady] = useState(false);
   const [flipProgress, setFlipProgress] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -119,6 +122,8 @@ export default function SharePage({ params }) {
   const frontCover = recordData?.coverImage?.url || null;
   const albumTitle = recordData?.title || "";
   const subtitle = recordData?.subtitle || "";
+  const externalLinkTitle = recordData?.externalLinkTitle || "";
+  const externalLinkUrl = recordData?.externalLinkUrl || "";
   const bio = recordData?.lifestory?.content || "";
   const selectedTheme = recordData?.theme || DEFAULT_THEME;
   const titleOverlayEnabled = recordData?.coverTitleVisible ?? false;
@@ -310,7 +315,7 @@ export default function SharePage({ params }) {
                 titleFont={titleFont}
                 titleColor={titleColor}
                 titleStroke={titleStroke}
-                rotationY={flipProgress * 2 * Math.PI}
+                rotationY={(flipProgress % 1) * 2 * Math.PI}
                 hideControls
                 cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
                 onExpand={handleAlbumClick}
@@ -345,12 +350,24 @@ export default function SharePage({ params }) {
               <Maximize2 className="h-4 w-4" />
             </button>
           </div>
-          <button
-            onClick={() => router.push(`/walk/${id}`)}
-            className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
-          >
-            갤러리 보러가기
-          </button>
+          <div className="flex flex-col items-center gap-3">
+            <button
+              onClick={() => router.push(`/walk/${id}`)}
+              className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
+            >
+              갤러리 보러가기
+            </button>
+            {externalLinkUrl && (
+              <a
+                href={externalLinkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-light tracking-[0.15em] text-white/40 underline underline-offset-4 transition-colors hover:text-white/70"
+              >
+                {externalLinkTitle || "외부 링크"}
+              </a>
+            )}
+          </div>
         </div>
       </div>
 
@@ -370,7 +387,7 @@ export default function SharePage({ params }) {
                 titleFont={titleFont}
                 titleColor={titleColor}
                 titleStroke={titleStroke}
-                rotationY={flipProgress * 2 * Math.PI}
+                rotationY={(flipProgress % 1) * 2 * Math.PI}
                 hideControls
                 expanded
                 cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
@@ -473,6 +490,21 @@ export default function SharePage({ params }) {
                   <p className="text-[11px] leading-relaxed whitespace-pre-wrap text-white/60">
                     {bio}
                   </p>
+                </div>
+              )}
+
+              {/* 비로그인 회원가입 유도 */}
+              {!isLoggedIn && (
+                <div className="mt-6 border-t border-white/10 pt-5 text-center">
+                  <p className="mb-3 text-[11px] text-white/40">
+                    나만의 앨범을 만들고 싶으신가요?
+                  </p>
+                  <button
+                    onClick={() => { setIsInfoOpen(false); router.push("/login"); }}
+                    className="text-xs font-medium tracking-wide text-white/70 underline underline-offset-4 transition-colors hover:text-white"
+                  >
+                    회원가입하고 편집하기
+                  </button>
                 </div>
               )}
             </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
+import { Fragment, useState, useEffect } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 
@@ -18,6 +18,16 @@ const FIELDS = [
   { key: "email", label: "Email" },
 ];
 
+function getStoredLocale() {
+  if (typeof window === "undefined") return "ko";
+  return localStorage.getItem("NEXT_LOCALE") || "ko";
+}
+
+function setLocaleCookie(locale) {
+  document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; samesite=lax`;
+  localStorage.setItem("NEXT_LOCALE", locale);
+}
+
 export default function ProfileModal({ onClose }) {
   const { user, setUser } = useAuth();
   const [tab, setTab] = useState("profile");
@@ -28,6 +38,16 @@ export default function ProfileModal({ onClose }) {
     email: user?.email || "",
   });
   const [saving, setSaving] = useState(false);
+  const [currentLocale, setCurrentLocale] = useState("ko");
+
+  useEffect(() => {
+    setCurrentLocale(getStoredLocale());
+  }, []);
+
+  const handleLocaleChange = (locale) => {
+    setLocaleCookie(locale);
+    setCurrentLocale(locale);
+  };
 
   const isEdit = mode === "edit";
 
@@ -141,6 +161,24 @@ export default function ProfileModal({ onClose }) {
                     )}
                   </Fragment>
                 ))}
+              </div>
+
+              {/* 언어 선택 */}
+              <div className="mt-5 border-t border-white/10 pt-5">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-[#9b8b7a]">
+                    {currentLocale === "en" ? "Language" : "언어"}
+                  </span>
+                  <select
+                    value={currentLocale}
+                    onChange={(e) => handleLocaleChange(e.target.value)}
+                    className="rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-sm text-[#e8d5b7] outline-none focus:border-[#c4b49a]"
+                    style={{ background: "#1e1a14" }}
+                  >
+                    <option value="ko" style={{ background: "#1e1a14" }}>한국어</option>
+                    <option value="en" style={{ background: "#1e1a14" }}>English</option>
+                  </select>
+                </div>
               </div>
 
               {/* 버튼 */}

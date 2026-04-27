@@ -7,6 +7,23 @@ import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 import ShelfScene from "./ShelfScene";
 // import { OrbitControls, useHelper } from "@react-three/drei";
 
+function FPSLimiter({ fps }) {
+  const { invalidate } = useThree();
+
+  useEffect(() => {
+    let id;
+    const interval = 1000 / fps;
+    const loop = () => {
+      invalidate();
+      id = setTimeout(loop, interval);
+    };
+    loop();
+    return () => clearTimeout(id);
+  }, [fps, invalidate]);
+
+  return null;
+}
+
 // Canvas 내부 서브컴포넌트: 드래그 yOffset을 카메라 Y에 부드럽게 반영
 function CameraYController({ yOffsetRef }) {
   const { camera } = useThree();
@@ -186,7 +203,9 @@ export default function ShelfCanvas({
           // 하이앵글: 선반 중심을 내려다봄
           camera.lookAt(0, 1.5, 0);
         }}
+        frameloop="demand"
       >
+        <FPSLimiter fps={30} />
         {/* 라이팅: 따뜻한 앰버/골드 무드 */}
         <ambientLight intensity={2} color="#957A57" />
         <DirLightWithHelper

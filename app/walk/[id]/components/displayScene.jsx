@@ -166,6 +166,9 @@ export default function DisplayScene({ recordId }) {
   const bgmRef = useRef(null);
   const textureConfig = useMemo(() => getTextureConfig(), []);
 
+  const [showControls, setShowControls] = useState(true);
+  const idleTimerRef = useRef(null);
+
   const bgmUrl = recordData?.bgmUrl || null;
 
   // BGM 없으면 기본 음소거
@@ -240,6 +243,25 @@ export default function DisplayScene({ recordId }) {
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
+  // UI auto-hide: show on interaction, hide after 3s idle
+  useEffect(() => {
+    const handleInteraction = () => {
+      setShowControls(true);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => setShowControls(false), 3000);
+    };
+
+    window.addEventListener("mousemove", handleInteraction);
+    window.addEventListener("touchstart", handleInteraction);
+    handleInteraction();
+
+    return () => {
+      window.removeEventListener("mousemove", handleInteraction);
+      window.removeEventListener("touchstart", handleInteraction);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-black text-white">
@@ -293,18 +315,22 @@ export default function DisplayScene({ recordId }) {
 
   return (
     <div className="relative h-full w-full">
-      <PlaybackControls
-        isPlaying={isPlaying}
-        onTogglePlay={handleTogglePlay}
-        cameraSpeed={cameraSpeed}
-        onCameraSpeedChange={setCameraSpeed}
-        onExit={() => router.back()}
-        hasBgm={true}
-        isMuted={isMuted}
-        onToggleMute={() => setIsMuted((m) => !m)}
-        isFullscreen={isFullscreen}
-        onToggleFullscreen={handleToggleFullscreen}
-      />
+      <div
+        className={`transition-opacity duration-500 ${!isFullscreen || showControls ? "opacity-100" : "pointer-events-none opacity-0"}`}
+      >
+        <PlaybackControls
+          isPlaying={isPlaying}
+          onTogglePlay={handleTogglePlay}
+          cameraSpeed={cameraSpeed}
+          onCameraSpeedChange={setCameraSpeed}
+          onExit={() => router.back()}
+          hasBgm={true}
+          isMuted={isMuted}
+          onToggleMute={() => setIsMuted((m) => !m)}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={handleToggleFullscreen}
+        />
+      </div>
 
       <Canvas
         dpr={[1, 1.5]}

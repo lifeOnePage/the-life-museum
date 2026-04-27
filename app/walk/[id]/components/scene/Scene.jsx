@@ -216,9 +216,35 @@ export default function Scene({
   const keysRef = useRef({ fwd: false, back: false });
   const touchRef = useRef({ active: false, lastY: 0 });
 
+  // Pinch zoom refs
+  const pinchRef = useRef({ active: false, initialDist: 0, initialFov: 80 });
+  const targetFovRef = useRef(80);
+  const fovRecoveryTimerRef = useRef(null);
+
   // Event listeners for manual movement (always active — works both playing and paused)
   useEffect(() => {
+    const getTouchDistance = (t1, t2) => {
+      const dx = t1.clientX - t2.clientX;
+      const dy = t1.clientY - t2.clientY;
+      return Math.sqrt(dx * dx + dy * dy);
+    };
+
+    const clampFov = (v) => Math.max(30, Math.min(120, v));
+
     const onWheel = (e) => {
+      // Desktop trackpad pinch: ctrlKey + wheel
+      if (e.ctrlKey) {
+        e.preventDefault();
+        pinchRef.current.active = true;
+        targetFovRef.current = clampFov(camera.fov + e.deltaY * 1.2);
+        // Recovery: after 500ms of no pinch input, restore FOV + resume camera
+        if (fovRecoveryTimerRef.current) clearTimeout(fovRecoveryTimerRef.current);
+        fovRecoveryTimerRef.current = setTimeout(() => {
+          targetFovRef.current = 80;
+          pinchRef.current.active = false;
+        }, 500);
+        return;
+      }
       manualVelocityRef.current += e.deltaY * 0.8;
     };
     const onKeyDown = (e) => {
@@ -231,28 +257,50 @@ export default function Scene({
       if (e.key === "f" || e.key === "F") {
         onToggleFullscreen?.();
       }
+      // Any key press recovers FOV if not pinching
+      if (!pinchRef.current.active && targetFovRef.current !== 80) {
+        targetFovRef.current = 80;
+      }
     };
     const onKeyUp = (e) => {
       if (["ArrowUp", "w", "W"].includes(e.key)) keysRef.current.fwd = false;
       if (["ArrowDown", "s", "S"].includes(e.key)) keysRef.current.back = false;
     };
     const onTouchStart = (e) => {
-      if (e.touches.length === 1) {
+      if (e.touches.length === 2) {
+        pinchRef.current = {
+          active: true,
+          initialDist: getTouchDistance(e.touches[0], e.touches[1]),
+          initialFov: camera.fov,
+        };
+        touchRef.current.active = false;
+      } else if (e.touches.length === 1) {
         touchRef.current = { active: true, lastY: e.touches[0].clientY };
       }
     };
     const onTouchMove = (e) => {
+      if (pinchRef.current.active && e.touches.length === 2) {
+        const currentDist = getTouchDistance(e.touches[0], e.touches[1]);
+        const scale = currentDist / pinchRef.current.initialDist;
+        targetFovRef.current = clampFov(pinchRef.current.initialFov / scale);
+        return;
+      }
       if (!touchRef.current.active || e.touches.length !== 1) return;
       const currentY = e.touches[0].clientY;
       const deltaY = touchRef.current.lastY - currentY;
-      // 위로 스와이프(deltaY>0) → 앞으로 이동, 아래로 스와이프 → 뒤로 이동
       manualVelocityRef.current += deltaY * 3;
       touchRef.current.lastY = currentY;
     };
-    const onTouchEnd = () => {
-      touchRef.current.active = false;
+    const onTouchEnd = (e) => {
+      if (e.touches.length < 2) {
+        pinchRef.current.active = false;
+        targetFovRef.current = 80;
+      }
+      if (e.touches.length === 0) {
+        touchRef.current.active = false;
+      }
     };
-    window.addEventListener("wheel", onWheel, { passive: true });
+    window.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("touchstart", onTouchStart, { passive: true });
@@ -265,8 +313,9 @@ export default function Scene({
       window.removeEventListener("touchstart", onTouchStart);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
+      if (fovRecoveryTimerRef.current) clearTimeout(fovRecoveryTimerRef.current);
     };
-  }, [onTogglePlay, onToggleFullscreen]);
+  }, [onTogglePlay, onToggleFullscreen, camera]);
 
   // OrbitControls always disabled — play/pause only controls camera movement
   if (controlsRef.current) {
@@ -275,6 +324,12 @@ export default function Scene({
 
   useFrame((_, delta) => {
     const s = state.current;
+
+    // FOV animation (pinch zoom smooth interpolation)
+    if (Math.abs(camera.fov - targetFovRef.current) > 0.1) {
+      camera.fov = THREE.MathUtils.lerp(camera.fov, targetFovRef.current, 0.1);
+      camera.updateProjectionMatrix();
+    }
 
     if (!isPlaying) {
       // Manual movement while paused
@@ -308,26 +363,28 @@ export default function Scene({
     }
 
     // 1. Camera always advances (decelerate during focus cycles)
-    let targetEffectiveSpeed = cameraSpeed;
-    if (s.focusMode === "auto" || s.focusMode === "manual") {
-      const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
-      const focusRange = DISPLAY_OFFSET_Z - FOCUS_DISMISS_DISTANCE;
-      // t=0 at cycle start (far from clone), t=1 at dismiss threshold (close to clone)
-      const t =
-        1 -
-        Math.max(
-          0,
-          Math.min(1, (distToClone - FOCUS_DISMISS_DISTANCE) / focusRange),
-        );
-      targetEffectiveSpeed =
-        cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
+    // Pause auto-advance during pinch zoom
+    if (!pinchRef.current.active) {
+      let targetEffectiveSpeed = cameraSpeed;
+      if (s.focusMode === "auto" || s.focusMode === "manual") {
+        const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
+        const focusRange = DISPLAY_OFFSET_Z - FOCUS_DISMISS_DISTANCE;
+        const t =
+          1 -
+          Math.max(
+            0,
+            Math.min(1, (distToClone - FOCUS_DISMISS_DISTANCE) / focusRange),
+          );
+        targetEffectiveSpeed =
+          cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
+      }
+      // 비대칭 스무딩: 감속은 빠르게(k=6), 가속은 천천히(k=2)
+      const k = targetEffectiveSpeed < s.smoothSpeed ? 6 : 2;
+      s.smoothSpeed +=
+        (targetEffectiveSpeed - s.smoothSpeed) *
+        (1 - Math.pow(0.01, delta * k));
+      s.cameraZ -= s.smoothSpeed * delta;
     }
-    // 비대칭 스무딩: 감속은 빠르게(k=6), 가속은 천천히(k=2)
-    // → 브레이킹 느낌 유지 + 전환 후 급가속 제거
-    const k = targetEffectiveSpeed < s.smoothSpeed ? 6 : 2;
-    s.smoothSpeed +=
-      (targetEffectiveSpeed - s.smoothSpeed) * (1 - Math.pow(0.01, delta * k));
-    s.cameraZ -= s.smoothSpeed * delta;
 
     // Manual input while playing (additive to auto-advance)
     if (keysRef.current.fwd) s.cameraZ -= 150 * delta;

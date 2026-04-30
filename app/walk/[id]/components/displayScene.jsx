@@ -195,16 +195,20 @@ export default function DisplayScene({ recordId }) {
   useEffect(() => {
     if (!bgmRef.current) return;
     if (isPlaying) {
-      bgmRef.current.play().catch(() => {});
+      bgmRef.current.play().catch(() => {
+        // autoplay 정책 등으로 재생 실패 시 음소거 상태로 폴백
+        bgmRef.current.muted = true;
+        setIsMuted(true);
+      });
     } else {
       bgmRef.current.pause();
     }
   }, [isPlaying]);
 
-  // isMuted 변화에 따라 볼륨 조절
+  // isMuted 변화에 따라 음소거 처리 (iOS는 volume read-only라 muted 속성 사용)
   useEffect(() => {
     if (!bgmRef.current) return;
-    bgmRef.current.volume = isMuted ? 0 : 0.4;
+    bgmRef.current.muted = isMuted;
   }, [isMuted]);
 
   const mediaList = useMemo(
@@ -324,7 +328,7 @@ export default function DisplayScene({ recordId }) {
           cameraSpeed={cameraSpeed}
           onCameraSpeedChange={setCameraSpeed}
           onExit={() => router.back()}
-          hasBgm={true}
+          hasBgm={!!bgmUrl}
           isMuted={isMuted}
           onToggleMute={() => setIsMuted((m) => !m)}
           isFullscreen={isFullscreen}

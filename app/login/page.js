@@ -343,6 +343,7 @@ export default function LoginPage() {
                       placeholder={t.emailPlaceholder}
                       type="email"
                       autoFocus
+                      onEnter={onSendCode}
                     />
                   </>
                 )}
@@ -362,6 +363,7 @@ export default function LoginPage() {
                   placeholder={t.otpPlaceholder}
                   type="text"
                   autoFocus
+                  onEnter={onVerifyOtp}
                 />
                 <PrimaryButton disabled={loading} onClick={onVerifyOtp}>
                   {loading ? t.verifying : t.next}
@@ -426,6 +428,7 @@ export default function LoginPage() {
                   placeholder={t.namePlaceholder}
                   type="text"
                   autoFocus
+                  onEnter={onCompleteSignup}
                 />
                 <PrimaryButton disabled={loading} onClick={onCompleteSignup}>
                   {loading ? t.saving : t.complete}

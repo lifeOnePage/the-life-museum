@@ -222,6 +222,7 @@ export default function LocaleLoginPage() {
                   placeholder={t.emailPlaceholder}
                   type="email"
                   autoFocus
+                  onEnter={onSendCode}
                 />
                 <PrimaryButton disabled={loading} onClick={onSendCode}>
                   {loading ? t.sending : t.sendCode}
@@ -238,6 +239,7 @@ export default function LocaleLoginPage() {
                   placeholder={t.otpPlaceholder}
                   type="text"
                   autoFocus
+                  onEnter={onVerifyOtp}
                 />
                 <PrimaryButton disabled={loading} onClick={onVerifyOtp}>
                   {loading ? t.verifying : t.next}
@@ -302,6 +304,7 @@ export default function LocaleLoginPage() {
                   placeholder={t.namePlaceholder}
                   type="text"
                   autoFocus
+                  onEnter={onCompleteSignup}
                 />
                 <PrimaryButton disabled={loading} onClick={onCompleteSignup}>
                   {loading ? t.saving : t.complete}

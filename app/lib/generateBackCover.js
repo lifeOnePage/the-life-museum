@@ -172,7 +172,7 @@ function drawKitschLayout(
 
   const margin = 70;
   const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
-  const rightPhotoW = size * 0.32;
+  const rightPhotoW = size * 0.28;
   const contentRight = size - margin - rightPhotoW - 30; // left content area limit
   let cursorY = margin;
 
@@ -314,30 +314,30 @@ function drawKitschLayout(
   if (timeline.length > 0) {
     const maxItems = 6;
     const items = timeline.slice(0, maxItems);
-    cursorY += 130;
+    cursorY += 60;
 
     for (const item of items) {
       if (cursorY > size - 200) break;
       ctx.letterSpacing = "-0.5px";
 
       // Year
-      ctx.font = `bold 28px ${bookkFont}`;
+      ctx.font = `bold 24px ${bookkFont}`;
       ctx.fillStyle = theme.text;
       ctx.textAlign = "center";
-      ctx.fillText(item.year, size / 2 - 200, cursorY);
+      ctx.fillText(item.year, size / 2 - 270, cursorY);
 
       // Event
-      ctx.font = `36px ${bookkFont}`;
+      ctx.font = `32px ${bookkFont}`;
       ctx.fillStyle = theme.text + "cc";
       ctx.textAlign = "left";
-      const eventX = size / 2 - 120;
+      const eventX = size / 2 - 200;
       const eventMaxW = (backCoverImg ? contentRight : size - margin) - eventX;
       const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
       for (let li = 0; li < eventLines.length; li++) {
         ctx.fillText(eventLines[li], eventX, cursorY + li * 42);
       }
 
-      cursorY += 92 + (eventLines.length - 1) * 42;
+      cursorY += 72 + (eventLines.length - 1) * 42;
     }
     ctx.textAlign = "left";
   }
@@ -347,21 +347,21 @@ function drawKitschLayout(
 
   // "Album story" label + bio text — bottom-right
   if (bio) {
-    const bioBottom = size - margin - 10;
+    const bioBottom = size - margin - 60;
     const escoredreamFont = escoredreamFontLoaded ? '"Escoredream"' : bookkFont;
     ctx.font = `bold 14px ${bookkFont}`;
     ctx.fillStyle = theme.text + "80";
     ctx.textAlign = "center";
     ctx.letterSpacing = "3px";
-    ctx.fillText("ALBUM STORY", size / 2, bioBottom - 70);
+    ctx.fillText("ALBUM STORY", size / 2, bioBottom - 80);
     ctx.letterSpacing = "0px";
 
-    ctx.font = `500 16px ${escoredreamFont}`;
+    ctx.font = `500 21px ${escoredreamFont}`;
     ctx.fillStyle = theme.text + "aa";
-    const bioLines = wrapText(ctx, bio, rightPhotoW + 300);
-    const maxBioLines = 4;
+    const bioLines = wrapText(ctx, bio, rightPhotoW + 330);
+    const maxBioLines = 6;
     for (let i = 0; i < Math.min(bioLines.length, maxBioLines); i++) {
-      ctx.fillText(bioLines[i], size / 2, bioBottom - 42 + i * 22);
+      ctx.fillText(bioLines[i], size / 2, bioBottom - 42 + i * 24);
     }
     ctx.textAlign = "left";
   }
@@ -479,25 +479,25 @@ function drawIllustrationLayout(
       ctx.font = `bold 24px ${bookkFont}`;
       ctx.fillStyle = "#406E78";
       ctx.textAlign = "center";
-      ctx.fillText(item.year, x, tlY - 18);
+      ctx.fillText(item.year, x, tlY - 25);
 
       // Event below
-      ctx.font = `17px ${bookkFont}`;
+      ctx.font = `600 19px ${bookkFont}`;
       ctx.textAlign = "center";
       const itemSpacing = maxItems > 1 ? tlWidth / (maxItems - 1) : tlWidth;
-      const eventMaxW = Math.max(itemSpacing * 0.85, 100);
+      const eventMaxW = Math.max(itemSpacing * 0.95, 100);
       const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
       ctx.fill();
       ctx.fillStyle = "#406E78";
       for (let li = 0; li < eventLines.length; li++) {
-        ctx.fillText(eventLines[li], x, tlY + 30 + li * 22);
+        ctx.fillText(eventLines[li], x, tlY + 40 + li * 22);
       }
     }
     ctx.textAlign = "left";
   }
 
   // Bottom — semi-transparent dark overlay band with bio text
-  const bandH = 180;
+  const bandH = 220;
   const bandY = size - bandH;
   ctx.fillStyle = "rgba(0,0,0,0.45)";
 
@@ -511,24 +511,40 @@ function drawIllustrationLayout(
     const textBlockH = lineCount * 26 + 20;
 
     // Semi-transparent semicircle backdrop behind bio text
-    const scR = size * 0.62;
-    const scCx = size / 2;
-    const scCy = size * 1.3; // flat edge at very bottom
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(scCx, scCy, scR, Math.PI, 0); // upper half-circle
-    ctx.closePath();
-    ctx.fillStyle = "rgba(110, 156, 193, 0.3)";
-    ctx.fill();
-    ctx.restore();
+    // const scR = size * 0.62;
+    // const scCx = size / 2;
+    // const scCy = size * 1.3; // flat edge at very bottom
+    // ctx.save();
+    // ctx.beginPath();
+    // ctx.arc(scCx, scCy, scR, Math.PI, 0); // upper half-circle
+    // ctx.closePath();
+    // ctx.fillStyle = "rgba(110, 156, 193, 0.3)";
+    // ctx.fill();
+    // ctx.restore();
 
-    ctx.fillStyle = "#406E78";
+    ctx.font = `500 21px ${escoredreamFont}`;
     ctx.textAlign = "center";
     ctx.letterSpacing = "-1px";
-    let bioY = bandY + 40;
+    let bioY = bandY + 20;
+    const padX = 14;
+    const padY = 5;
+    const lineH = 20;
     for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
+      const lineW = ctx.measureText(bioLines[i]).width;
+      const rectX = size / 2 - lineW / 2 - padX;
+      const rectY = bioY - lineH - padY + 4;
+      // Highlight rect
+      ctx.save();
+      ctx.globalAlpha = 0.92;
+      ctx.fillStyle = "#cfca8f";
+      ctx.beginPath();
+      ctx.roundRect(rectX, rectY, lineW + padX * 2, lineH + padY * 1.5, 4);
+      ctx.fill();
+      ctx.restore();
+      // Text
+      ctx.fillStyle = "#406E78";
       ctx.fillText(bioLines[i], size / 2, bioY);
-      bioY += 26;
+      bioY += 38;
     }
     if (bioLines.length > maxLines) {
       ctx.fillStyle = "rgba(255,255,255,0.5)";
@@ -642,17 +658,7 @@ function drawMinimalistLayout(
       sx = 0;
       sy = (backCoverImg.height - sh) / 2;
     }
-    ctx.drawImage(
-      backCoverImg,
-      sx,
-      sy,
-      sw,
-      sh,
-      photoX,
-      photoY,
-      photoW,
-      photoH,
-    );
+    ctx.drawImage(backCoverImg, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
     ctx.restore();
   } else {
     // Photo placeholder
@@ -708,12 +714,12 @@ function drawMinimalistLayout(
       ctx.fillText(item.year, x, tlY - 16);
 
       // Event below
-      ctx.font = `18px ${escoredreamFont}`;
+      ctx.font = `600 17px ${escoredreamFont}`;
       ctx.letterSpacing = "-0.7px";
       ctx.fillStyle = theme.text;
       const itemSpacing = maxItems > 1 ? tlWidth / (maxItems - 1) : tlWidth;
       const eventMaxW = Math.max(itemSpacing * 0.85, 100);
-      const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
+      const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 3);
       for (let li = 0; li < eventLines.length; li++) {
         ctx.fillText(eventLines[li], x, tlY + 28 + li * 24);
       }
@@ -743,14 +749,14 @@ function drawMinimalistLayout(
     // ctx.lineTo(lineRight, storyY);
     // ctx.stroke();
 
-    ctx.font = `500 16px ${escoredreamFont}`;
+    ctx.font = `400 20px ${escoredreamFont}`;
     ctx.fillStyle = theme.text;
-    const bioLines = wrapText(ctx, bio, size - margin * 2 - 100);
-    const maxLines = 4;
+    const bioLines = wrapText(ctx, bio, size - margin * 2 - 50);
+    const maxLines = 5;
     let bioY = storyY + 24;
     for (let i = 0; i < Math.min(bioLines.length, maxLines); i++) {
       ctx.fillText(bioLines[i], size / 2, bioY);
-      bioY += 22;
+      bioY += 25;
     }
     if (bioLines.length > maxLines) {
       ctx.fillStyle = theme.text + "60";

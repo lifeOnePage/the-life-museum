@@ -142,10 +142,7 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
     ctx.drawImage(frontCoverImg, sx, sy, sw, sh, 0, 0, size, size);
   } else {
     // No cover image — draw placeholder background
-    const gradient = ctx.createLinearGradient(0, 0, size, size);
-    gradient.addColorStop(0, "#dedede");
-    gradient.addColorStop(1, "#efefef");
-    ctx.fillStyle = gradient;
+    ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, size, size);
   }
 
@@ -154,7 +151,7 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
   const fontFamily = resolveFont(font || "Pretendard Variable");
 
   ctx.textAlign = layout.textAlign;
-  ctx.fillStyle = color || "#ffffff";
+  ctx.fillStyle = color || "#000000";
 
   // Title only (subtitle is not rendered on front cover)
   if (title) {

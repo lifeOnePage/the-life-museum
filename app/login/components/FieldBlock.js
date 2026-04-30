@@ -12,6 +12,7 @@ export default function FieldBlock({
   autoFocus,
   disabled,
   inputRef,
+  onEnter,
 }) {
   return (
     <div
@@ -56,6 +57,7 @@ export default function FieldBlock({
           background: disabled ? "#333" : "none",
           transition: "box-shadow 0.2s ease",
         }}
+        onKeyDown={(e) => e.key === "Enter" && !disabled && onEnter?.()}
         onFocus={(e) =>
           (e.currentTarget.style.boxShadow = "0 0 0 3px rgba(109,172,255,0.25)")
         }

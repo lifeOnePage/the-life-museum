@@ -251,7 +251,7 @@ export default function AlbumPreview3D({
       subtitle: "",
       position: titlePosition || "bottom-center",
       font: titleFont || "Pretendard Variable",
-      color: titleColor || "#ffffff",
+      color: titleColor || "#000000",
       stroke: titleStroke ?? false,
       strokeOpacity: titleStrokeOpacity ?? 100,
     });

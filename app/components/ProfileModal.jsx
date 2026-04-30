@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 
@@ -29,6 +30,7 @@ function setLocaleCookie(locale) {
 }
 
 export default function ProfileModal({ onClose }) {
+  const router = useRouter();
   const { user, setUser } = useAuth();
   const [tab, setTab] = useState("profile");
   const [mode, setMode] = useState("view");
@@ -47,6 +49,7 @@ export default function ProfileModal({ onClose }) {
   const handleLocaleChange = (locale) => {
     setLocaleCookie(locale);
     setCurrentLocale(locale);
+    router.push(`/${locale}`);
   };
 
   const isEdit = mode === "edit";

@@ -1,4 +1,12 @@
 export const UNIFIED_THEMES = {
+  fullimage: {
+    key: "fullimage",
+    name: "Full Image",
+    description: "뒷면 이미지를 전면에 꽉 채워 표시",
+    bg: "#000000",
+    accent: "#ffffff",
+    text: "#ffffff",
+  },
   kitsch: {
     key: "kitsch",
     name: "Kitsch",

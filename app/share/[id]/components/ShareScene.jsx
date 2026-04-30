@@ -319,7 +319,12 @@ export default function ShareScene({
           dragStartX.current = null;
         }}
       >
-        <Canvas camera={{ position: [0, -0.15, 5.5], fov: 32 }} shadows>
+        <Canvas
+          dpr={[1, 2]}
+          gl={{ antialias: true, powerPreference: "high-performance" }}
+          camera={{ position: [0, -0.15, 5.5], fov: 32 }}
+          shadows
+        >
           <color attach="background" args={["#0a0a0a"]} />
 
           {/* Museum lighting */}
@@ -334,8 +339,8 @@ export default function ShareScene({
             decay={2}
             distance={12}
             castShadow
-            shadow-mapSize-width={1024}
-            shadow-mapSize-height={1024}
+            shadow-mapSize-width={2048}
+            shadow-mapSize-height={2048}
           />
           <pointLight
             position={[0, 2.5, 1.5]}

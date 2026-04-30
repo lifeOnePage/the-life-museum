@@ -25,7 +25,8 @@ function getMediaType(url) {
 }
 
 // 정적 이미지 텍스처 훅
-function useStaticTexture(imageUrl) {
+// cover=true 이면 정사각형 면에 object-fit:cover 방식으로 UV를 조정합니다.
+function useStaticTexture(imageUrl, cover = false) {
   const [texture, setTexture] = useState(null);
   const { gl } = useThree();
 
@@ -41,9 +42,27 @@ function useStaticTexture(imageUrl) {
       imageUrl,
       (loadedTexture) => {
         loadedTexture.colorSpace = THREE.SRGBColorSpace;
-        loadedTexture.minFilter = THREE.LinearFilter;
+        loadedTexture.minFilter = THREE.LinearMipmapLinearFilter;
         loadedTexture.magFilter = THREE.LinearFilter;
+        loadedTexture.generateMipmaps = true;
         loadedTexture.anisotropy = gl.capabilities.getMaxAnisotropy();
+
+        if (cover) {
+          const img = loadedTexture.image;
+          if (img && img.width && img.height) {
+            const aspect = img.width / img.height;
+            if (aspect > 1) {
+              // 가로가 긴 이미지: 높이 맞추고 좌우 크롭
+              loadedTexture.repeat.set(1 / aspect, 1);
+              loadedTexture.offset.set((1 - 1 / aspect) / 2, 0);
+            } else {
+              // 세로가 긴 이미지: 너비 맞추고 상하 크롭
+              loadedTexture.repeat.set(1, aspect);
+              loadedTexture.offset.set(0, (1 - aspect) / 2);
+            }
+          }
+        }
+
         loadedTexture.needsUpdate = true;
         setTexture(loadedTexture);
       },
@@ -54,7 +73,7 @@ function useStaticTexture(imageUrl) {
     return () => {
       texture?.dispose();
     };
-  }, [imageUrl, gl]);
+  }, [imageUrl, gl, cover]);
 
   return texture;
 }
@@ -116,11 +135,11 @@ function useVideoTexture(videoUrl) {
 }
 
 // 이미지 URL에 따라 video/정적 텍스처를 자동 선택하는 훅
-function useAlbumTexture(imageUrl) {
+function useAlbumTexture(imageUrl, cover = false) {
   const type = getMediaType(imageUrl);
   // 훅 조건부 호출 금지 → null 전달로 비활성화
   const videoTexture = useVideoTexture(type === "video" ? imageUrl : null);
-  const staticTexture = useStaticTexture(type !== "video" ? imageUrl : null);
+  const staticTexture = useStaticTexture(type !== "video" ? imageUrl : null, cover);
   return type === "video" ? videoTexture : staticTexture;
 }
 
@@ -239,7 +258,7 @@ export default function AlbumCover3D({
 
   // 텍스처
   const frontTexture = useAlbumTexture(frontImage);
-  const backTexture = useAlbumTexture(backImage);
+  const backTexture = useAlbumTexture(backImage, true);
 
   // 플레이스홀더 텍스처 (이미지가 없을 때)
   const placeholderFront = useMemo(

@@ -124,6 +124,30 @@ function drawBarcode(ctx, x, y, width, height) {
   ctx.textAlign = "left";
 }
 
+// ─── Full Image layout ───
+// backCoverImg을 전면 꽉 채워 표시
+function drawFullImageLayout(ctx, size, backCoverImg) {
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, size, size);
+  if (!backCoverImg) return;
+
+  const imgRatio = backCoverImg.width / backCoverImg.height;
+  // cover-fit (1:1 square canvas)
+  let sx, sy, sw, sh;
+  if (imgRatio > 1) {
+    sh = backCoverImg.height;
+    sw = sh;
+    sx = (backCoverImg.width - sw) / 2;
+    sy = 0;
+  } else {
+    sw = backCoverImg.width;
+    sh = sw;
+    sx = 0;
+    sy = (backCoverImg.height - sh) / 2;
+  }
+  ctx.drawImage(backCoverImg, sx, sy, sw, sh, 0, 0, size, size);
+}
+
 // ─── Kitsch layout ───
 // Paper texture background with sticker decorations, vertical timeline, barcode
 function drawKitschLayout(
@@ -135,7 +159,7 @@ function drawKitschLayout(
   albumTitle,
   albumSubTitle,
   themeBgImg,
-  frontCoverImg,
+  backCoverImg,
   themeStickerImg,
 ) {
   // Background
@@ -153,7 +177,7 @@ function drawKitschLayout(
   let cursorY = margin;
 
   // Right side — front cover photo
-  if (frontCoverImg) {
+  if (backCoverImg) {
     const photoX = size - margin - rightPhotoW;
     const photoY = margin + 140;
     const photoH = size * 0.45;
@@ -190,22 +214,22 @@ function drawKitschLayout(
     ctx.clip();
 
     // Cover-fit
-    const imgRatio = frontCoverImg.width / frontCoverImg.height;
+    const imgRatio = backCoverImg.width / backCoverImg.height;
     const boxRatio = rightPhotoW / photoH;
     let sx, sy, sw, sh;
     if (imgRatio > boxRatio) {
-      sh = frontCoverImg.height;
+      sh = backCoverImg.height;
       sw = sh * boxRatio;
-      sx = (frontCoverImg.width - sw) / 2;
+      sx = (backCoverImg.width - sw) / 2;
       sy = 0;
     } else {
-      sw = frontCoverImg.width;
+      sw = backCoverImg.width;
       sh = sw / boxRatio;
       sx = 0;
-      sy = (frontCoverImg.height - sh) / 2;
+      sy = (backCoverImg.height - sh) / 2;
     }
     ctx.drawImage(
-      frontCoverImg,
+      backCoverImg,
       sx,
       sy,
       sw,
@@ -307,7 +331,7 @@ function drawKitschLayout(
       ctx.fillStyle = theme.text + "cc";
       ctx.textAlign = "left";
       const eventX = size / 2 - 120;
-      const eventMaxW = (frontCoverImg ? contentRight : size - margin) - eventX;
+      const eventMaxW = (backCoverImg ? contentRight : size - margin) - eventX;
       const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
       for (let li = 0; li < eventLines.length; li++) {
         ctx.fillText(eventLines[li], eventX, cursorY + li * 42);
@@ -343,7 +367,7 @@ function drawKitschLayout(
   }
 
   // Empty state
-  if (!bio && timeline.length === 0 && !frontCoverImg) {
+  if (!bio && timeline.length === 0 && !backCoverImg) {
     ctx.font = "24px sans-serif";
     ctx.fillStyle = theme.text + "40";
     ctx.textAlign = "center";
@@ -532,7 +556,7 @@ function drawMinimalistLayout(
   theme,
   bio,
   timeline,
-  frontCoverImg,
+  backCoverImg,
   albumTitle,
   albumSubTitle,
 ) {
@@ -581,7 +605,7 @@ function drawMinimalistLayout(
   const photoX = (size - photoW) / 2;
   const photoY = cursorY + 10;
 
-  if (frontCoverImg) {
+  if (backCoverImg) {
     ctx.save();
     // Rounded rect clip
     const r = 6;
@@ -604,22 +628,22 @@ function drawMinimalistLayout(
     ctx.clip();
 
     // Cover-fit the image
-    const imgRatio = frontCoverImg.width / frontCoverImg.height;
+    const imgRatio = backCoverImg.width / backCoverImg.height;
     const boxRatio = photoW / photoH;
     let sx, sy, sw, sh;
     if (imgRatio > boxRatio) {
-      sh = frontCoverImg.height;
+      sh = backCoverImg.height;
       sw = sh * boxRatio;
-      sx = (frontCoverImg.width - sw) / 2;
+      sx = (backCoverImg.width - sw) / 2;
       sy = 0;
     } else {
-      sw = frontCoverImg.width;
+      sw = backCoverImg.width;
       sh = sw / boxRatio;
       sx = 0;
-      sy = (frontCoverImg.height - sh) / 2;
+      sy = (backCoverImg.height - sh) / 2;
     }
     ctx.drawImage(
-      frontCoverImg,
+      backCoverImg,
       sx,
       sy,
       sw,
@@ -746,7 +770,7 @@ function drawMinimalistLayout(
   }
 
   // Empty state
-  if (!bio && timeline.length === 0 && !frontCoverImg) {
+  if (!bio && timeline.length === 0 && !backCoverImg) {
     ctx.font = "24px sans-serif";
     ctx.fillStyle = theme.text + "40";
     ctx.textAlign = "center";
@@ -759,7 +783,7 @@ export function generateBackCoverDataUrl(
   themeKey,
   bio,
   timeline,
-  frontCoverImg,
+  backCoverImg,
   albumTitle,
   albumSubTitle,
   extractedColors,
@@ -775,6 +799,9 @@ export function generateBackCoverDataUrl(
   const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 
   switch (themeKey) {
+    case "fullimage":
+      drawFullImageLayout(ctx, size, backCoverImg);
+      break;
     case "kitsch":
       drawKitschLayout(
         ctx,
@@ -785,7 +812,7 @@ export function generateBackCoverDataUrl(
         albumTitle,
         albumSubTitle,
         themeBgImg,
-        frontCoverImg,
+        backCoverImg,
         themeStickerImg,
       );
       break;
@@ -809,7 +836,7 @@ export function generateBackCoverDataUrl(
         theme,
         bio,
         timeline,
-        frontCoverImg,
+        backCoverImg,
         albumTitle,
         albumSubTitle,
       );

@@ -44,6 +44,23 @@ export default function SharePage({ params }) {
   const { token } = useAuth();
   const isLoggedIn = !!token;
   const [ready, setReady] = useState(false);
+
+  // 모바일 브라우저 크롬(주소창/탭바)으로 인한 body 스크롤 및 pull-to-refresh 방지
+  useEffect(() => {
+    const body = document.body;
+    const html = document.documentElement;
+    const prevBodyOverflow = body.style.overflow;
+    const prevBodyOverscroll = body.style.overscrollBehavior;
+    const prevHtmlOverscroll = html.style.overscrollBehavior;
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    html.style.overscrollBehavior = "none";
+    return () => {
+      body.style.overflow = prevBodyOverflow;
+      body.style.overscrollBehavior = prevBodyOverscroll;
+      html.style.overscrollBehavior = prevHtmlOverscroll;
+    };
+  }, []);
   const [flipProgress, setFlipProgress] = useState(0);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
@@ -120,6 +137,7 @@ export default function SharePage({ params }) {
   }, [loading, error]);
 
   const frontCover = recordData?.coverImage?.url || null;
+  const backCoverImage = recordData?.backCoverImageUrl || frontCover;
   const albumTitle = recordData?.title || "";
   const subtitle = recordData?.subtitle || "";
   const externalLinkTitle = recordData?.externalLinkTitle || "";
@@ -145,17 +163,21 @@ export default function SharePage({ params }) {
     [recordData],
   );
 
-  // Build cylindrical column strips — viewport-responsive (desktop only)
-  const ROWS_PER_COL = 8;
+  // Build cylindrical column strips — viewport-responsive
   const RADIUS = 700;
 
-  const { GRID_COLS, ARC_SPREAD } = useMemo(() => {
+  const { GRID_COLS, ARC_SPREAD, ROWS_PER_COL } = useMemo(() => {
     if (typeof window === "undefined")
-      return { GRID_COLS: 16, ARC_SPREAD: 200 };
+      return { GRID_COLS: 16, ARC_SPREAD: 200, ROWS_PER_COL: 8 };
+    const isMobile = window.innerWidth < 768;
+    if (isMobile) {
+      // 모바일: 컬럼/행 수를 줄여 GPU 부하 최소화 (9 × 5 = 45개 이미지)
+      return { GRID_COLS: 9, ARC_SPREAD: 200, ROWS_PER_COL: 5 };
+    }
     const aspect = window.innerWidth / window.innerHeight;
     const spread = Math.min(Math.round(aspect * 130), 280);
     const cols = Math.max(14, Math.round(spread / 12));
-    return { GRID_COLS: cols, ARC_SPREAD: spread };
+    return { GRID_COLS: cols, ARC_SPREAD: spread, ROWS_PER_COL: 8 };
   }, []);
 
   const angleStep = ARC_SPREAD / (GRID_COLS - 1);
@@ -176,7 +198,7 @@ export default function SharePage({ params }) {
       const angle = (colIdx / (GRID_COLS - 1) - 0.5) * ARC_SPREAD;
       return { colIdx, angle, images: colImages };
     });
-  }, [images, GRID_COLS, ARC_SPREAD]);
+  }, [images, GRID_COLS, ARC_SPREAD, ROWS_PER_COL]);
 
   // Loading
   if (loading) {
@@ -217,10 +239,10 @@ export default function SharePage({ params }) {
   }
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* Background: Concave cylindrical photo grid (desktop only) */}
+    <div className="relative w-screen overflow-hidden bg-black" style={{ height: "100dvh" }}>
+      {/* Background: Concave cylindrical photo grid */}
       {images.length > 0 && (
-        <div className="pointer-events-none absolute inset-0 hidden overflow-hidden md:block">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
           {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />
@@ -248,7 +270,7 @@ export default function SharePage({ params }) {
                   className="absolute top-1/2 left-1/2"
                   style={{
                     width: cellWidth,
-                    transformStyle: "preserve-3d",
+                    // preserve-3d는 자식 이미지들이 3D 변환 없으므로 제거 — GPU 합성 부하 대폭 감소
                     transform: `rotateY(${angle}deg) translateZ(-${RADIUS}px) translateX(-50%) translateY(-50%)`,
                   }}
                 >
@@ -258,6 +280,8 @@ export default function SharePage({ params }) {
                         key={i}
                         src={url}
                         alt=""
+                        loading="lazy"
+                        decoding="async"
                         className="w-full rounded-sm object-cover opacity-0 transition-opacity duration-[1200ms] ease-out"
                         style={{ aspectRatio: "1" }}
                         draggable={false}
@@ -296,15 +320,16 @@ export default function SharePage({ params }) {
 
         {/* 3D Album Preview */}
         <div
-          className={`h-[50vh] w-[80vw] max-w-[400px] transition-all delay-200 duration-1000 ease-out lg:max-w-[520px] xl:max-w-[640px] ${
+          className={`w-[80vw] max-w-[400px] transition-all delay-200 duration-1000 ease-out lg:max-w-[520px] xl:max-w-[640px] ${
             ready ? "scale-100 opacity-100" : "scale-[0.95] opacity-0"
           }`}
-          style={{ visibility: isExpanded ? "hidden" : "visible" }}
+          style={{ height: "45dvh", visibility: isExpanded ? "hidden" : "visible" }}
         >
           {!isExpanded && (
             <div ref={albumRef} className="h-full w-full" style={{ touchAction: "pinch-zoom" }}>
               <AlbumPreview3D
                 frontCover={frontCover}
+                backCoverImageUrl={backCoverImage}
                 bio={bio}
                 timeline={timeline}
                 selectedTheme={selectedTheme}
@@ -373,11 +398,15 @@ export default function SharePage({ params }) {
 
       {/* Expanded Album Overlay */}
       {isExpanded && (
-        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95">
-          <div className="h-[85vh] w-[90vw] max-w-[900px]">
+        <div
+          className="fixed inset-x-0 top-0 z-50 flex flex-col items-center justify-center bg-black/95"
+          style={{ height: "100dvh" }}
+        >
+          <div className="w-[90vw] max-w-[900px]" style={{ height: "70dvh" }}>
             <div ref={expandedAlbumRef} className="h-full w-full" style={{ touchAction: "pinch-zoom" }}>
               <AlbumPreview3D
                 frontCover={frontCover}
+                backCoverImageUrl={backCoverImage}
                 bio={bio}
                 timeline={timeline}
                 selectedTheme={selectedTheme}
@@ -395,7 +424,10 @@ export default function SharePage({ params }) {
               />
             </div>
           </div>
-          <div className="mt-0 flex flex-col items-center gap-3">
+          <div
+            className="mt-0 flex flex-col items-center gap-3"
+            style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}
+          >
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsInfoOpen(true)}
@@ -435,23 +467,28 @@ export default function SharePage({ params }) {
           className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
           onClick={() => setIsInfoOpen(false)}
         >
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
           <div
-            className="relative z-10 w-full max-w-sm overflow-hidden rounded-t-2xl border border-white/10 bg-black/80 sm:rounded-2xl"
+            className="relative z-10 w-full max-w-sm overflow-hidden rounded-t-3xl border border-white/20 bg-[#181818] shadow-2xl sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="max-h-[85vh] overflow-y-auto px-7 py-7">
+            {/* 모바일 드래그 핸들 */}
+            <div className="flex justify-center pt-3 pb-1 sm:hidden">
+              <div className="h-1 w-10 rounded-full bg-white/20" />
+            </div>
+
+            <div className="max-h-[70dvh] overflow-y-auto px-6 pb-6 pt-4">
               {/* Title */}
               {albumTitle && (
                 <div className="mb-5">
-                  <p className="mb-1 text-[9px] tracking-[0.2em] text-white/30 uppercase">
+                  <p className="mb-2 text-[10px] tracking-[0.25em] text-white/30 uppercase">
                     Title
                   </p>
-                  <p className="text-3xl leading-tight font-light tracking-wide text-white">
+                  <p className="text-2xl leading-tight font-light tracking-wide text-white">
                     {albumTitle}
                   </p>
                   {subtitle && (
-                    <p className="mt-1.5 text-[11px] tracking-wide text-white/50">
+                    <p className="mt-2 text-[15px] leading-snug tracking-wide text-white/50">
                       {subtitle}
                     </p>
                   )}
@@ -461,17 +498,17 @@ export default function SharePage({ params }) {
               {/* Timeline */}
               {timeline.length > 0 && (
                 <div className="mb-5">
-                  <div className="mb-4 border-t border-white/10" />
-                  <p className="mb-3 text-[9px] tracking-[0.2em] text-white/30 uppercase">
+                  <div className="mb-3 border-t border-white/10" />
+                  <p className="mb-3 text-[10px] tracking-[0.25em] text-white/30 uppercase">
                     Timeline
                   </p>
                   <div className="space-y-2">
                     {timeline.map((t, i) => (
-                      <div key={i} className="flex gap-5">
-                        <span className="w-10 shrink-0 text-[11px] font-medium text-white/50">
+                      <div key={i} className="flex gap-4">
+                        <span className="w-12 shrink-0 text-[15px] font-medium text-white/40">
                           {t.year}
                         </span>
-                        <span className="text-[11px] text-white/60">
+                        <span className="text-[15px] leading-snug text-white/70">
                           {t.event}
                         </span>
                       </div>
@@ -483,11 +520,11 @@ export default function SharePage({ params }) {
               {/* Story */}
               {bio && (
                 <div>
-                  <div className="mb-4 border-t border-white/10" />
-                  <p className="mb-3 text-[9px] tracking-[0.2em] text-white/30 uppercase">
+                  <div className="mb-3 border-t border-white/10" />
+                  <p className="mb-3 text-[10px] tracking-[0.25em] text-white/30 uppercase">
                     Story
                   </p>
-                  <p className="text-[11px] leading-relaxed whitespace-pre-wrap text-white/60">
+                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-white/70">
                     {bio}
                   </p>
                 </div>
@@ -495,13 +532,13 @@ export default function SharePage({ params }) {
 
               {/* 비로그인 회원가입 유도 */}
               {!isLoggedIn && (
-                <div className="mt-6 border-t border-white/10 pt-5 text-center">
-                  <p className="mb-3 text-[11px] text-white/40">
+                <div className="mt-5 border-t border-white/10 pt-5 text-center">
+                  <p className="mb-3 text-[14px] text-white/40">
                     나만의 앨범을 만들고 싶으신가요?
                   </p>
                   <button
                     onClick={() => { setIsInfoOpen(false); router.push("/login"); }}
-                    className="text-xs font-medium tracking-wide text-white/70 underline underline-offset-4 transition-colors hover:text-white"
+                    className="text-[15px] font-medium tracking-wide text-white/70 underline underline-offset-4 transition-colors hover:text-white"
                   >
                     회원가입하고 편집하기
                   </button>
@@ -511,9 +548,9 @@ export default function SharePage({ params }) {
 
             <button
               onClick={() => setIsInfoOpen(false)}
-              className="absolute top-4 right-4 text-white/30 transition-colors hover:text-white/70"
+              className="absolute top-4 right-4 text-white/25 transition-colors hover:text-white/60"
             >
-              <X className="h-3.5 w-3.5" />
+              <X className="h-4 w-4" />
             </button>
           </div>
         </div>

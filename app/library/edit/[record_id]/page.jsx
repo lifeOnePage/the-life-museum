@@ -47,6 +47,7 @@ import AlbumPreview3D from "./components/AlbumPreview3D";
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
+import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
@@ -175,12 +176,17 @@ const Index = ({ params }) => {
   const [titleStroke, setTitleStroke] = useState("none");
   const [titleStrokeOpacity, setTitleStrokeOpacity] = useState(100);
 
+  // Back cover image URL (defaults to front cover URL from API)
+  const [backCoverImageUrl, setBackCoverImageUrl] = useState(null);
+
   // Collapsible sections
-  const [titleOpen, setTitleOpen] = useState(true);
-  const [coverOpen, setCoverOpen] = useState(true);
+  const [titleOpen, setTitleOpen] = useState(false);
+  const [coverOpen, setCoverOpen] = useState(false);
   const [bgmOpen, setBgmOpen] = useState(false);
-  const [storyOpen, setStoryOpen] = useState(true);
-  const [timelineOpen, setTimelineOpen] = useState(true);
+  const [themeOpen, setThemeOpen] = useState(false);
+  const [backCoverImageOpen, setBackCoverImageOpen] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(false);
+  const [timelineOpen, setTimelineOpen] = useState(false);
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
@@ -240,6 +246,7 @@ const Index = ({ params }) => {
   );
 
   const coverRef = useRef(null);
+  const backCoverRef = useRef(null);
   const initialState = useRef({
     frontCover: null,
     albumTitle: "",
@@ -258,6 +265,7 @@ const Index = ({ params }) => {
     titleStrokeOpacity: 100,
     bgmUrl: null,
     bgmId: null,
+    backCoverImageUrl: null,
   });
 
   useEffect(() => {
@@ -278,27 +286,37 @@ const Index = ({ params }) => {
           const data = result.data;
 
           const coverUrl = data.coverImage?.url || null;
-          const title = data.title || "";
-          const subtitle = data.subtitle || "";
-          const bioContent = data.lifestory?.content || "";
+          const title = (data.title || "").slice(0, 14);
+          const subtitle = (data.subtitle || "").slice(0, 25);
+          const bioContent = (data.lifestory?.content || "").slice(0, 250);
 
           let timelineData = [];
           if (data.timeline?.events) {
-            timelineData = data.timeline.events.map((event) => ({
-              year: event.timestamp ? event.timestamp : "",
-              event: `${event.title}${event.description ? ` - ${event.description}` : ""}`,
+            timelineData = data.timeline.events.slice(0, 6).map((event) => ({
+              year: (event.timestamp ? event.timestamp : "").slice(0, 8),
+              event:
+                `${event.title}${event.description ? ` - ${event.description}` : ""}`.slice(
+                  0,
+                  20,
+                ),
             }));
           }
 
-          const savedTheme = UNIFIED_THEMES[data.theme] ? data.theme : DEFAULT_THEME;
+          const savedTheme = UNIFIED_THEMES[data.theme]
+            ? data.theme
+            : DEFAULT_THEME;
           const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
-          const savedTitleColor = fromApiColor(data.coverTitleColor) || "#000000";
-          const { stroke: savedTitleStroke, strokeOpacity: savedTitleStrokeOpacity } =
-            dbColorToStroke(data.coverTitleBgColor);
+          const savedTitleColor =
+            fromApiColor(data.coverTitleColor) || "#000000";
+          const {
+            stroke: savedTitleStroke,
+            strokeOpacity: savedTitleStrokeOpacity,
+          } = dbColorToStroke(data.coverTitleBgColor);
 
           setFrontCover(coverUrl);
+          setBackCoverImageUrl(data.backCoverImageUrl || coverUrl);
           setAlbumTitle(title);
           setAlbumSubtitle(subtitle);
           setBio(bioContent);
@@ -347,6 +365,7 @@ const Index = ({ params }) => {
             titleStrokeOpacity: savedTitleStrokeOpacity,
             bgmUrl: data.bgmUrl || null,
             bgmId: data.bgmId ? `bgm${data.bgmId}` : null,
+            backCoverImageUrl: data.backCoverImageUrl || coverUrl,
           };
         }
       } catch (error) {
@@ -458,8 +477,28 @@ const Index = ({ params }) => {
     return data;
   };
 
+  const saveBackCoverImage = async (url) => {
+    const response = await fetch(
+      `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+        },
+        body: JSON.stringify({ backCoverImageUrl: url }),
+      },
+    );
+    const data = await response.json();
+    if (!response.ok)
+      throw new Error(data.error || "뒷면 이미지 저장에 실패했습니다");
+    return data;
+  };
+
   const handleSaveAll = async () => {
     const isCoverDirty = frontCover !== initialState.current.frontCover;
+    const isBackCoverDirty =
+      backCoverImageUrl !== initialState.current.backCoverImageUrl;
     const isBioDirty = bio !== initialState.current.bio;
     const isTimelineDirty =
       JSON.stringify(timeline) !==
@@ -476,7 +515,13 @@ const Index = ({ params }) => {
       titleStrokeOpacity !== initialState.current.titleStrokeOpacity ||
       bgmUrl !== initialState.current.bgmUrl;
 
-    if (!isCoverDirty && !isBioDirty && !isTimelineDirty && !isThemeDirty)
+    if (
+      !isCoverDirty &&
+      !isBioDirty &&
+      !isTimelineDirty &&
+      !isThemeDirty &&
+      !isBackCoverDirty
+    )
       return;
 
     setIsSaving(true);
@@ -489,6 +534,25 @@ const Index = ({ params }) => {
           .save()
           .then(() => ({ editor: "cover", success: true }))
           .catch((err) => ({ editor: "cover", success: false, error: err })),
+      );
+    }
+
+    if (isBackCoverDirty) {
+      const doSaveBackCover = async () => {
+        let finalUrl = backCoverImageUrl;
+        if (backCoverRef.current) {
+          const uploadedUrl = await backCoverRef.current.save();
+          if (uploadedUrl !== null) finalUrl = uploadedUrl;
+        }
+        await saveBackCoverImage(finalUrl);
+        return { editor: "backCover", success: true, url: finalUrl };
+      };
+      promises.push(
+        doSaveBackCover().catch((err) => ({
+          editor: "backCover",
+          success: false,
+          error: err,
+        })),
       );
     }
 
@@ -522,6 +586,10 @@ const Index = ({ params }) => {
       if (r.status === "fulfilled" && r.value.success) {
         if (r.value.editor === "cover") {
           initialState.current.frontCover = frontCover;
+        } else if (r.value.editor === "backCover") {
+          const savedUrl = r.value.url;
+          initialState.current.backCoverImageUrl = savedUrl;
+          setBackCoverImageUrl(savedUrl);
         } else if (r.value.editor === "bio") {
           initialState.current.bio = bio;
         } else if (r.value.editor === "timeline") {
@@ -545,12 +613,15 @@ const Index = ({ params }) => {
     const anySuccess = results.some(
       (r) => r.status === "fulfilled" && r.value.success,
     );
-    if (anySuccess) setLastSavedAt(new Date());
+    if (anySuccess) {
+      setLastSavedAt(new Date());
+    }
 
     setIsSaving(false);
   };
 
   const isDirty =
+    backCoverImageUrl !== initialState.current.backCoverImageUrl ||
     frontCover !== initialState.current.frontCover ||
     albumTitle !== initialState.current.albumTitle ||
     albumSubtitle !== initialState.current.albumSubtitle ||
@@ -807,6 +878,7 @@ const Index = ({ params }) => {
     setTitleFont(s.titleFont);
     setTitleColor(s.titleColor);
     setTitleStrokeOpacity(s.titleStrokeOpacity ?? 100);
+    setBackCoverImageUrl(s.backCoverImageUrl);
     setUsedChips(new Set());
   };
 
@@ -905,7 +977,7 @@ const Index = ({ params }) => {
                         setShowHeaderMenu(false);
                       }}
                       disabled={isSaving || !isDirty}
-                      className="text-[#e8d5b7 ] flex w-full items-center gap-3 px-4 py-2.5 text-[13px] active:bg-white/5 disabled:opacity-40"
+                      className="text-[#e8d5b7 ] flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#e8d5b7] active:bg-white/5 disabled:opacity-40"
                     >
                       {isSaving ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
@@ -953,7 +1025,7 @@ const Index = ({ params }) => {
               >
                 <ArrowLeft className="h-5 w-5" />
               </button>
-              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
                 나가기
               </span>
             </div>
@@ -975,7 +1047,7 @@ const Index = ({ params }) => {
                 >
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
                   앨범 정보 수정
                 </span>
               </div>
@@ -991,7 +1063,7 @@ const Index = ({ params }) => {
                 >
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
                   변경사항 초기화
                 </span>
               </div>
@@ -1012,7 +1084,7 @@ const Index = ({ params }) => {
                     <Save className="h-3.5 w-3.5" />
                   )}
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
                   저장하기
                 </span>
               </div>
@@ -1023,7 +1095,7 @@ const Index = ({ params }) => {
                 >
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
-                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] ring-1 ring-white/10 px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 transition-opacity group-hover:opacity-100">
+                <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
                   튜토리얼
                 </span>
               </div>
@@ -1051,6 +1123,7 @@ const Index = ({ params }) => {
         >
           <AlbumPreview3D
             frontCover={frontCover}
+            backCoverImageUrl={backCoverImageUrl}
             bio={bio}
             timeline={timeline}
             selectedTheme={selectedTheme}
@@ -1081,13 +1154,13 @@ const Index = ({ params }) => {
               <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-white/10 bg-transparent p-0">
                 <TabsTrigger
                   value="front"
-                  className="data-[state=active]:border-[#c4b49a] relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
+                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
                   앞면
                 </TabsTrigger>
                 <TabsTrigger
                   value="back"
-                  className="data-[state=active]:border-[#c4b49a] relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
+                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
                   뒷면
                 </TabsTrigger>
@@ -1281,7 +1354,9 @@ const Index = ({ params }) => {
                             배경음악
                           </span>
                           {bgmUrl && (
-                            <span className="text-[11px] text-[#c4b49a]">선택됨</span>
+                            <span className="text-[11px] text-[#c4b49a]">
+                              선택됨
+                            </span>
                           )}
                         </div>
                         {bgmOpen ? (
@@ -1312,9 +1387,91 @@ const Index = ({ params }) => {
                   </div>
                 </TabsContent>
 
-                {/* Back tab - Redesigned */}
+                {/* Back tab */}
                 <TabsContent className="px-4 pt-5 sm:px-5" value="back">
                   <div className="space-y-5 pb-10">
+                    {/* Theme Section - collapsible */}
+                    <div
+                      data-tutorial="theme"
+                      className="rounded-lg border border-white/10"
+                    >
+                      <button
+                        onClick={() => setThemeOpen(!themeOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <span className="text-sm font-semibold text-[#e8d5b7]">
+                          테마
+                        </span>
+                        {themeOpen ? (
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {themeOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                              <ThemeSelector
+                                selectedTheme={selectedTheme}
+                                onThemeChange={handleThemeChange}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Back Cover Image Section - collapsible */}
+                    <div className="rounded-lg border border-white/10">
+                      <button
+                        onClick={() =>
+                          setBackCoverImageOpen(!backCoverImageOpen)
+                        }
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <span className="text-sm font-semibold text-[#e8d5b7]">
+                          뒷면 이미지 설정하기
+                        </span>
+                        {backCoverImageOpen ? (
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {backCoverImageOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                              <BackCoverUpload
+                                ref={backCoverRef}
+                                record_id={record_id}
+                                backCoverImageUrl={backCoverImageUrl}
+                                onUrlChange={setBackCoverImageUrl}
+                                photoMedia={photoDrive.photoMedia}
+                                photoBlobUrls={photoDrive.photoBlobUrls}
+                                onRefreshPhotos={photoDrive.refresh}
+                                isRefreshing={photoDrive.isRefreshing}
+                                preloadBlobs={photoDrive.preloadBlobs}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
                     {/* Guide text */}
                     <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#2a2318] px-4 py-3.5">
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c4b49a]/10">
@@ -1486,22 +1643,32 @@ const Index = ({ params }) => {
 
                               {/* Generation count */}
                               <div className="flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
-                                <span className="text-xs text-[#c4b49a]">사용한 생성 횟수</span>
-                                <span className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}>
+                                <span className="text-xs text-[#c4b49a]">
+                                  사용한 생성 횟수
+                                </span>
+                                <span
+                                  className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
+                                >
                                   {storyGenCount}/3
                                 </span>
                               </div>
 
                               {storyRemainingGens <= 0 && (
                                 <div className="rounded-lg bg-red-500/10 px-3 py-2">
-                                  <p className="text-xs text-red-500">생성 횟수를 모두 사용했습니다.</p>
+                                  <p className="text-xs text-red-500">
+                                    생성 횟수를 모두 사용했습니다.
+                                  </p>
                                 </div>
                               )}
 
                               {/* Generate button */}
                               <Button
                                 onClick={handleGenerate}
-                                disabled={isGenerating || !getFullBioText() || storyRemainingGens <= 0}
+                                disabled={
+                                  isGenerating ||
+                                  !getFullBioText() ||
+                                  storyRemainingGens <= 0
+                                }
                                 size="sm"
                                 className="h-8 w-full bg-[#c4b49a] text-xs text-[#1a1510] hover:bg-[#e8d5b7]"
                               >
@@ -1620,17 +1787,6 @@ const Index = ({ params }) => {
                         )}
                       </AnimatePresence>
                     </div>
-
-                    {/* Theme Section */}
-                    <div data-tutorial="theme">
-                      <h3 className="mb-3 text-sm font-semibold text-[#e8d5b7]">
-                        테마
-                      </h3>
-                      <ThemeSelector
-                        selectedTheme={selectedTheme}
-                        onThemeChange={handleThemeChange}
-                      />
-                    </div>
                   </div>
                 </TabsContent>
               </div>
@@ -1677,7 +1833,11 @@ const Index = ({ params }) => {
                     >
                       나가기
                     </Button>
-                    <Button onClick={handleSaveAndExit} disabled={isSaving} className="flex-1">
+                    <Button
+                      onClick={handleSaveAndExit}
+                      disabled={isSaving}
+                      className="flex-1"
+                    >
                       {isSaving ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       ) : (

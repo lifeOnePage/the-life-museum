@@ -1,16 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useParams } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
+import Home from "@/app/page.js";
 
 export default function LocaleRootPage() {
   const router = useRouter();
   const { locale } = useParams();
+  const { token, loading } = useAuth();
 
   useEffect(() => {
-    router.replace(`/${locale}/library`);
-  }, [locale, router]);
+    if (!loading && token) {
+      router.replace(`/${locale}/library`);
+    }
+  }, [loading, token, locale, router]);
 
-  return null;
+  if (loading) return null;
+  if (token) return null;
+
+  return <Home />;
 }

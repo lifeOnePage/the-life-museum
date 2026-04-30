@@ -9,6 +9,24 @@ import { extractColors } from "extract-colors";
 import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 
+function Icon360({ className }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+    >
+      <path d="M17 15.328c2.414 -.718 4 -1.94 4 -3.328c0 -2.21 -4.03 -4 -9 -4s-9 1.79 -9 4s4.03 4 9 4" />
+      <path d="M9 13l3 3l-3 3" />
+    </svg>
+  );
+}
+
 const ALBUM_CONFIG = {
   size: 1.8,
   thickness: 0.03,
@@ -29,11 +47,12 @@ function CameraZoom({ zoom }) {
   const { camera, size } = useThree();
 
   useEffect(() => {
+    if (!size.width || !size.height) return;
     const aspect = size.width / size.height;
     // Ensure the album (width 1.8) fits horizontally with margin
     const fovRad = (30 * Math.PI) / 180;
     const minZ =
-      (ALBUM_CONFIG.size * 1.15) / (2 * Math.tan(fovRad / 2) * aspect);
+      (ALBUM_CONFIG.size * 1.4) / (2 * Math.tan(fovRad / 2) * aspect);
     camera.position.z = Math.max(zoom, minZ);
     camera.updateProjectionMatrix();
   }, [zoom, camera, size]);
@@ -43,6 +62,8 @@ function CameraZoom({ zoom }) {
 
 export default function AlbumPreview3D({
   frontCover,
+  backCoverOverride,
+  backCoverImageUrl,
   bio,
   timeline,
   selectedTheme,
@@ -74,6 +95,7 @@ export default function AlbumPreview3D({
   const [zoomCfg, setZoomCfg] = useState(getZoomConfig);
   const [zoom, setZoom] = useState(() => getZoomConfig().default);
   const [frontCoverImg, setFrontCoverImg] = useState(null);
+  const [backCoverImg, setBackCoverImg] = useState(null);
   const [extractedColors, setExtractedColors] = useState(null);
   const [themeBgImg, setThemeBgImg] = useState(null);
   const [themeStickerImg, setThemeStickerImg] = useState(null);
@@ -92,15 +114,13 @@ export default function AlbumPreview3D({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Load front cover as HTMLImageElement for canvas drawing
-  // Video URLs (mp4/webm/mov) cannot be drawn to canvas synchronously — skip loading
+  // Load front cover as HTMLImageElement (for color extraction only)
   useEffect(() => {
     if (!frontCover || typeof document === "undefined") {
       setFrontCoverImg(null);
       setExtractedColors(null);
       return;
     }
-
     const lower = frontCover.toLowerCase().split("?")[0];
     const isVideo =
       lower.endsWith(".mp4") ||
@@ -110,13 +130,39 @@ export default function AlbumPreview3D({
       setFrontCoverImg(null);
       return;
     }
-
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => setFrontCoverImg(img);
     img.onerror = () => setFrontCoverImg(null);
     img.src = frontCover;
   }, [frontCover]);
+
+  // Load backCoverImageUrl as HTMLImageElement (for back cover rendering)
+  // Falls back to frontCoverImg when not provided or same URL
+  useEffect(() => {
+    if (
+      !backCoverImageUrl ||
+      backCoverImageUrl === frontCover ||
+      typeof document === "undefined"
+    ) {
+      setBackCoverImg(null); // will use frontCoverImg as fallback in useMemo
+      return;
+    }
+    const lower = backCoverImageUrl.toLowerCase().split("?")[0];
+    const isVideo =
+      lower.endsWith(".mp4") ||
+      lower.endsWith(".webm") ||
+      lower.endsWith(".mov");
+    if (isVideo) {
+      setBackCoverImg(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => setBackCoverImg(img);
+    img.onerror = () => setBackCoverImg(null);
+    img.src = backCoverImageUrl;
+  }, [backCoverImageUrl, frontCover]);
 
   // Extract dominant colors from front cover
   useEffect(() => {
@@ -222,11 +268,13 @@ export default function AlbumPreview3D({
 
   const backCoverDataUrl = useMemo(() => {
     if (typeof document === "undefined") return null;
+    // backCoverImg이 없으면 frontCoverImg로 폴백 (기본값 = 앞면)
+    const imgForBack = backCoverImg || frontCoverImg;
     return generateBackCoverDataUrl(
       themeKey,
       bio || "",
       timeline || [],
-      frontCoverImg,
+      imgForBack,
       albumTitle || "",
       albumSubTitle || "",
       extractedColors,
@@ -237,6 +285,7 @@ export default function AlbumPreview3D({
     themeKey,
     bio,
     timeline,
+    backCoverImg,
     frontCoverImg,
     albumTitle,
     albumSubTitle,
@@ -267,7 +316,7 @@ export default function AlbumPreview3D({
             onClick={toggleFlip}
             className="rounded-md p-1 text-[#9b8b7a] transition-colors hover:bg-white/8 hover:text-[#e8d5b7]"
           >
-            <img src="/view-360-arrow.svg" alt="앨범 뒤집기" className="h-4 w-4 opacity-70 transition-opacity hover:opacity-100" />
+            <Icon360 className="h-4 w-4" />
           </button>
         </div>
       )}
@@ -298,15 +347,16 @@ export default function AlbumPreview3D({
               className="pointer-events-none absolute z-10 rounded-full bg-white/15 p-2 backdrop-blur-sm"
               style={{ left: cursorPos.x + 14, top: cursorPos.y - 10 }}
             >
-              {cursorTipIcon ?? (expanded ? (
-                <Minimize2 className="h-4 w-4 text-white/70" />
-              ) : (
-                <Maximize2 className="h-4 w-4 text-white/70" />
-              ))}
+              {cursorTipIcon ??
+                (expanded ? (
+                  <Minimize2 className="h-4 w-4 text-white/70" />
+                ) : (
+                  <Maximize2 className="h-4 w-4 text-white/70" />
+                ))}
             </div>
           )}
           <Canvas
-            camera={{ position: [0, 0, 6], fov: 30 }}
+            camera={{ position: [0, 0, 10], fov: 30 }}
             dpr={[1, 2]}
             gl={{ antialias: true }}
             resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
@@ -324,7 +374,7 @@ export default function AlbumPreview3D({
               thickness={ALBUM_CONFIG.thickness}
               tiltAngle={ALBUM_CONFIG.tiltAngle}
               frontImage={frontCoverDataUrl || frontCover}
-              backImage={backCoverDataUrl}
+              backImage={backCoverOverride || backCoverDataUrl}
               edgeColor={theme.bg}
               isSelected={true}
               isFlipped={isFlipped}

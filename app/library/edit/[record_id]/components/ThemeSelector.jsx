@@ -357,7 +357,30 @@ function MinimalistPreview({ theme }) {
   );
 }
 
+function FullImagePreview() {
+  return (
+    <svg viewBox="0 0 44 56" className="h-full w-full">
+      {/* Full bleed photo placeholder */}
+      <defs>
+        <linearGradient id="fullImgGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#3a3a4a" />
+          <stop offset="100%" stopColor="#1a1a2a" />
+        </linearGradient>
+      </defs>
+      <rect width="44" height="56" rx="2" fill="url(#fullImgGrad)" />
+      {/* Photo icon hint */}
+      <rect x="14" y="18" width="16" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+      <circle cx="18" cy="22" r="2" fill="rgba(255,255,255,0.3)" />
+      <path d="M14 28 l5-4 4 3 4-5 3 6" stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none" />
+      {/* Label */}
+      <rect x="10" y="36" width="24" height="1.5" rx="0.75" fill="rgba(255,255,255,0.2)" />
+      <rect x="14" y="40" width="16" height="1" rx="0.5" fill="rgba(255,255,255,0.15)" />
+    </svg>
+  );
+}
+
 const PREVIEW_MAP = {
+  fullimage: FullImagePreview,
   kitsch: KitschPreview,
   illustration: IllustrationPreview,
   minimalist: MinimalistPreview,

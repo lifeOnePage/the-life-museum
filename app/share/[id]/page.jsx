@@ -171,8 +171,8 @@ export default function SharePage({ params }) {
       return { GRID_COLS: 16, ARC_SPREAD: 200, ROWS_PER_COL: 8 };
     const isMobile = window.innerWidth < 768;
     if (isMobile) {
-      // 모바일: 컬럼/행 수를 줄여 GPU 부하 최소화 (9 × 5 = 45개 이미지)
-      return { GRID_COLS: 9, ARC_SPREAD: 200, ROWS_PER_COL: 5 };
+      // 모바일: 컬럼 수를 늘려 극단 각도 foreshortening 줄임 (16 × 3 = 48개 이미지)
+      return { GRID_COLS: 16, ARC_SPREAD: 140, ROWS_PER_COL: 3 };
     }
     const aspect = window.innerWidth / window.innerHeight;
     const spread = Math.min(Math.round(aspect * 130), 280);
@@ -182,7 +182,7 @@ export default function SharePage({ params }) {
 
   const angleStep = ARC_SPREAD / (GRID_COLS - 1);
   const cellWidth = Math.ceil(
-    2 * RADIUS * Math.tan(((angleStep / 2) * Math.PI) / 180),
+    2 * RADIUS * Math.tan(((angleStep / 2) * Math.PI) / 180) * 1.06,
   );
 
   const gridColumns = useMemo(() => {
@@ -270,6 +270,7 @@ export default function SharePage({ params }) {
                   className="absolute top-1/2 left-1/2"
                   style={{
                     width: cellWidth,
+                    backfaceVisibility: "hidden",
                     // preserve-3d는 자식 이미지들이 3D 변환 없으므로 제거 — GPU 합성 부하 대폭 감소
                     transform: `rotateY(${angle}deg) translateZ(-${RADIUS}px) translateX(-50%) translateY(-50%)`,
                   }}
@@ -402,7 +403,7 @@ export default function SharePage({ params }) {
           className="fixed inset-x-0 top-0 z-50 flex flex-col items-center justify-center bg-black/95"
           style={{ height: "100dvh" }}
         >
-          <div className="w-[90vw] max-w-[900px]" style={{ height: "70dvh" }}>
+          <div className="w-[96vw] max-w-[1100px]" style={{ height: "82dvh" }}>
             <div ref={expandedAlbumRef} className="h-full w-full" style={{ touchAction: "pinch-zoom" }}>
               <AlbumPreview3D
                 frontCover={frontCover}

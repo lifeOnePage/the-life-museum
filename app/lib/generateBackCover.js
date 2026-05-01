@@ -796,11 +796,13 @@ export function generateBackCoverDataUrl(
   themeBgImg,
   themeStickerImg,
 ) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
   const size = 1024;
   const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
   const ctx = canvas.getContext("2d");
+  ctx.scale(dpr, dpr);
 
   const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 

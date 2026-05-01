@@ -171,8 +171,8 @@ export default function SharePage({ params }) {
       return { GRID_COLS: 16, ARC_SPREAD: 200, ROWS_PER_COL: 8 };
     const isMobile = window.innerWidth < 768;
     if (isMobile) {
-      // 모바일: 컬럼 수를 늘려 극단 각도 foreshortening 줄임 (16 × 3 = 48개 이미지)
-      return { GRID_COLS: 16, ARC_SPREAD: 140, ROWS_PER_COL: 3 };
+      // 모바일: 컬럼 수 늘려 seam 감소, 행 수 유지해 커버리지 확보 (12 × 5 = 60)
+      return { GRID_COLS: 12, ARC_SPREAD: 140, ROWS_PER_COL: 5 };
     }
     const aspect = window.innerWidth / window.innerHeight;
     const spread = Math.min(Math.round(aspect * 130), 280);
@@ -465,19 +465,14 @@ export default function SharePage({ params }) {
       {/* Info Popup */}
       {isInfoOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center sm:items-center"
+          className="fixed inset-0 z-50 flex items-center justify-center"
           onClick={() => setIsInfoOpen(false)}
         >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
           <div
-            className="relative z-10 w-full max-w-sm overflow-hidden rounded-t-3xl border border-white/20 bg-[#181818] shadow-2xl sm:rounded-2xl"
+            className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* 모바일 드래그 핸들 */}
-            <div className="flex justify-center pt-3 pb-1 sm:hidden">
-              <div className="h-1 w-10 rounded-full bg-white/20" />
-            </div>
-
             <div className="max-h-[70dvh] overflow-y-auto px-6 pb-6 pt-4">
               {/* Title */}
               {albumTitle && (

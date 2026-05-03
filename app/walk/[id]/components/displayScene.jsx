@@ -164,6 +164,7 @@ export default function DisplayScene({ recordId }) {
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const bgmRef = useRef(null);
+  const bgmMutedByVideoRef = useRef(false);
   const textureConfig = useMemo(() => getTextureConfig(), []);
 
   const [showControls, setShowControls] = useState(true);
@@ -204,11 +205,24 @@ export default function DisplayScene({ recordId }) {
   // isMuted 변화에 따라 볼륨 조절
   useEffect(() => {
     if (!bgmRef.current) return;
+    if (bgmMutedByVideoRef.current) return; // 비디오 재생 중이면 무시
     bgmRef.current.volume = isMuted ? 0 : 0.4;
   }, [isMuted]);
 
+  // 비디오 재생 시 BGM 뮤트/복원 콜백
+  const handleVideoBgmControl = useCallback((videoIsPlaying) => {
+    if (!bgmRef.current) return;
+    if (videoIsPlaying) {
+      bgmMutedByVideoRef.current = true;
+      bgmRef.current.volume = 0;
+    } else {
+      bgmMutedByVideoRef.current = false;
+      bgmRef.current.volume = isMuted ? 0 : 0.4;
+    }
+  }, [isMuted]);
+
   const mediaList = useMemo(
-    () => (recordData?.mediaList ?? []).filter((m) => m.type === "image"),
+    () => (recordData?.mediaList ?? []).filter((m) => m.type === "image" || m.type === "video"),
     [recordData],
   );
 
@@ -352,12 +366,14 @@ export default function DisplayScene({ recordId }) {
         <Suspense fallback={null}>
           <Scene
             planes={planes}
+            mediaListLength={mediaList.length}
             isPlaying={isPlaying}
             cameraSpeed={cameraSpeed}
             textureConfig={textureConfig}
             onAutoPlay={handleAutoPlay}
             onTogglePlay={handleTogglePlay}
             onToggleFullscreen={handleToggleFullscreen}
+            onVideoBgmControl={handleVideoBgmControl}
           />
         </Suspense>
       </Canvas>

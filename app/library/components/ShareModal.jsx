@@ -7,7 +7,23 @@ import { authedFetch } from "@/app/utils/authedFetch";
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
 
-export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, onClose }) {
+const T = {
+  ko: {
+    title: "공개 범위 설정",
+    copied: "복사됨",
+    copy: "복사",
+    close: "닫기",
+  },
+  en: {
+    title: "Visibility Settings",
+    copied: "Copied",
+    copy: "Copy",
+    close: "Close",
+  },
+};
+
+export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, onClose, locale }) {
+  const t = T[locale] || T.ko;
   const [isShared, setIsShared] = useState(initialIsPublic);
   const [copied, setCopied] = useState(false);
 
@@ -52,7 +68,7 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
         className="w-full max-w-md rounded-2xl bg-[#1e1a14] p-6 shadow-xl ring-1 ring-white/10"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="mb-1 text-lg font-semibold text-[#e8d5b7]">공개 범위 설정</h2>
+        <h2 className="mb-1 text-lg font-semibold text-[#e8d5b7]">{t.title}</h2>
         <p className="mb-5 text-sm text-[#9b8b7a]">{albumTitle}</p>
 
         {/* Public / Private 버튼 */}
@@ -92,7 +108,7 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
               onClick={handleCopy}
               className="shrink-0 rounded-lg bg-[#c4b49a] px-4 py-2 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7]"
             >
-              {copied ? "복사됨" : "복사"}
+              {copied ? t.copied : t.copy}
             </button>
           </div>
         )}
@@ -102,7 +118,7 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
           onClick={onClose}
           className="mt-5 w-full rounded-lg border border-white/10 py-2 font-medium text-[#c4b49a] transition hover:bg-white/5"
         >
-          닫기
+          {t.close}
         </button>
       </div>
     </div>

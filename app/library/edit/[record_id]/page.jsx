@@ -51,6 +51,138 @@ import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 
+// ─── i18n ────────────────────────────────────────────────────────────────────
+const T = {
+  ko: {
+    loading: "불러오는 중...",
+    albumEdit: "앨범 편집",
+    editInfo: "앨범 정보 수정",
+    save: "저장하기",
+    saveAction: "저장",
+    reset: "변경사항 초기화",
+    tutorial: "튜토리얼",
+    exit: "나가기",
+    lastSaved: "마지막 저장",
+    tabFront: "앞면",
+    tabBack: "뒷면",
+    titleLabel: "제목",
+    subtitleLabel: "부제목",
+    titlePlaceholder: "앨범 제목을 입력하세요",
+    subtitlePlaceholder: "부제목을 입력하세요",
+    showTitle: "표지에 제목 표시하기",
+    coverDesign: "표지 디자인",
+    coverDesignSub: "AI 생성 또는 직접 업로드",
+    bgm: "배경음악",
+    bgmSelected: "선택됨",
+    backCoverImage: "뒷면 이미지 설정하기",
+    theme: "테마",
+    backCoverGuide: "앨범 뒷면을 꾸미기 위해 앨범에 맞는 스토리와 타임라인을 적어주세요",
+    story: "스토리",
+    keywordSelect: "키워드 선택",
+    keywordSelected: (n) => `${n}개 선택됨`,
+    keywordHelp: "💡 글감이 떠오르지 않을 때 키워드를 선택해보세요. 선택한 키워드가 스토리에 주제로 추가되어, AI가 이를 바탕으로 더 풍부한 이야기를 만들어 줄 수 있어요.",
+    placeholderWithChips: "추가로 작성하세요...",
+    placeholderNoChips: "자유롭게 작성하세요...",
+    charCount: (n) => `${n}/250자`,
+    genCount: "사용한 생성 횟수",
+    genExhausted: "생성 횟수를 모두 사용했습니다.",
+    generating: "생성 중...",
+    generateStory: "글 생성",
+    timeline: "타임라인",
+    addItem: (n) => `항목 추가 (${n}/6)`,
+    emptyTimeline: "타임라인 항목을 추가해보세요",
+    yearPlaceholder: "연도",
+    eventPlaceholder: "내용을 입력하세요...",
+    keywordsMore: (n) => `+${n}개 더보기`,
+    keywordsLess: "접기",
+    exitConfirmDirty: "변경사항이 있습니다. 저장하시겠습니까?",
+    exitConfirm: "나가시겠습니까?",
+    saveAndExit: "저장하고 나가기",
+    saving: "저장 중...",
+    editInfoTitle: "앨범 정보 수정",
+    externalLink: "외부 링크",
+    externalLinkPlaceholder: "버튼에 표시할 이름 (예: 유튜브 채널)",
+    photoStorage: "사진 저장소",
+    serviceComingSoon: "서비스 준비중입니다",
+    cancel: "취소",
+    delete: "앨범 삭제하기",
+    deleteConfirm: "정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    deleting: "삭제 중...",
+    deleteAction: "삭제",
+    errorSaveColors: "컬러 저장에 실패했습니다",
+    errorSave: "저장에 실패했습니다",
+    errorSaveBackCover: "뒷면 이미지 저장에 실패했습니다",
+    errorGenerate: "생성에 실패했습니다",
+    errorDelete: "삭제에 실패했습니다",
+  },
+  en: {
+    loading: "Loading...",
+    albumEdit: "Edit Album",
+    editInfo: "Edit Album Info",
+    save: "Save",
+    saveAction: "Save",
+    reset: "Reset Changes",
+    tutorial: "Tutorial",
+    exit: "Exit",
+    lastSaved: "Last saved",
+    tabFront: "Front",
+    tabBack: "Back",
+    titleLabel: "Title",
+    subtitleLabel: "Subtitle",
+    titlePlaceholder: "Enter album title",
+    subtitlePlaceholder: "Enter subtitle",
+    showTitle: "Show title on cover",
+    coverDesign: "Cover Design",
+    coverDesignSub: "AI generate or upload",
+    bgm: "Background Music",
+    bgmSelected: "Selected",
+    backCoverImage: "Set Back Cover Image",
+    theme: "Theme",
+    backCoverGuide: "Add a story and timeline to decorate the back of your album",
+    story: "Story",
+    keywordSelect: "Select keywords",
+    keywordSelected: (n) => `${n} selected`,
+    keywordHelp: "💡 Select keywords when you're not sure what to write. They'll be added as topics to help AI generate richer stories.",
+    placeholderWithChips: "Write more...",
+    placeholderNoChips: "Write freely...",
+    charCount: (n) => `${n}/250`,
+    genCount: "Generations used",
+    genExhausted: "You've used all your generations.",
+    generating: "Generating...",
+    generateStory: "Generate",
+    timeline: "Timeline",
+    addItem: (n) => `Add item (${n}/6)`,
+    emptyTimeline: "Add your first timeline item",
+    yearPlaceholder: "Year",
+    eventPlaceholder: "Enter description...",
+    keywordsMore: (n) => `+${n} more`,
+    keywordsLess: "Less",
+    exitConfirmDirty: "You have unsaved changes. Save before leaving?",
+    exitConfirm: "Are you sure you want to exit?",
+    saveAndExit: "Save & Exit",
+    saving: "Saving...",
+    editInfoTitle: "Edit Album Info",
+    externalLink: "External Link",
+    externalLinkPlaceholder: "Button label (e.g. YouTube Channel)",
+    photoStorage: "Photo Storage",
+    serviceComingSoon: "Coming soon",
+    cancel: "Cancel",
+    delete: "Delete Album",
+    deleteConfirm: "Are you sure? This action cannot be undone.",
+    deleting: "Deleting...",
+    deleteAction: "Delete",
+    errorSaveColors: "Failed to save colors",
+    errorSave: "Failed to save",
+    errorSaveBackCover: "Failed to save back cover image",
+    errorGenerate: "Generation failed",
+    errorDelete: "Failed to delete",
+  },
+};
+
+const KEYWORD_CHIPS_KO = ["가족","여행","추억","사랑","우정","성장","도전","감사","일상","꿈","고향","음악","첫만남","계절","약속","이별"];
+const KEYWORD_CHIPS_EN = ["Family","Travel","Memories","Love","Friendship","Growth","Challenge","Gratitude","Daily Life","Dreams","Hometown","Music","First Meeting","Seasons","Promise","Farewell"];
+// ─────────────────────────────────────────────────────────────────────────────
+
 // Convert a 6-digit hex to 8-digit (#RRGGBB → #RRGGBBff) for API.
 function toApiColor(hex) {
   if (!hex) return hex;
@@ -90,7 +222,7 @@ function dbColorToStroke(raw) {
 }
 
 // Sortable timeline item component
-function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
+function SortableTimelineItem({ id, item, index, onUpdate, onRemove, t }) {
   const {
     attributes,
     listeners,
@@ -122,7 +254,7 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
       <Input
         value={item.year}
         onChange={(e) => onUpdate(index, "year", e.target.value.slice(0, 8))}
-        placeholder="연도"
+        placeholder={t.yearPlaceholder}
         maxLength={8}
         className="h-9 w-[70px] rounded-[5px] border-white/10 bg-[#2e2720] text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
       />
@@ -132,7 +264,7 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
           onChange={(e) =>
             onUpdate(index, "event", e.target.value.slice(0, 20))
           }
-          placeholder="내용을 입력하세요..."
+          placeholder={t.eventPlaceholder}
           maxLength={20}
           className="h-9 w-full rounded-[5px] border-white/10 bg-[#2e2720] pr-8 text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
         />
@@ -151,7 +283,10 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove }) {
 }
 
 const Index = ({ params }) => {
-  const { record_id } = use(params);
+  const { record_id, locale } = use(params);
+  const t = T[locale] || T.ko;
+  const KEYWORD_CHIPS = locale === "en" ? KEYWORD_CHIPS_EN : KEYWORD_CHIPS_KO;
+
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const photoDrive = usePhotoDrive(record_id);
@@ -417,7 +552,7 @@ const Index = ({ params }) => {
     const data = await response.json();
     if (!response.ok) {
       console.error("saveRecordColors 422 detail:", JSON.stringify(data));
-      throw new Error(data.error || data.detail || "컬러 저장에 실패했습니다");
+      throw new Error(data.error || data.detail || t.errorSaveColors);
     }
     return data;
   };
@@ -442,7 +577,7 @@ const Index = ({ params }) => {
     );
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || "저장에 실패했습니다");
+      throw new Error(data.error || t.errorSave);
     }
     return data;
   };
@@ -472,7 +607,7 @@ const Index = ({ params }) => {
     );
     const data = await response.json();
     if (!response.ok) {
-      throw new Error(data.error || "저장에 실패했습니다");
+      throw new Error(data.error || t.errorSave);
     }
     return data;
   };
@@ -491,7 +626,7 @@ const Index = ({ params }) => {
     );
     const data = await response.json();
     if (!response.ok)
-      throw new Error(data.error || "뒷면 이미지 저장에 실패했습니다");
+      throw new Error(data.error || t.errorSaveBackCover);
     return data;
   };
 
@@ -675,7 +810,7 @@ const Index = ({ params }) => {
       const data = await response.json();
       if (!response.ok) {
         setStoryGenCount(optimisticCount - 1); // rollback
-        throw new Error(data.error || "생성에 실패했습니다");
+        throw new Error(data.error || t.errorGenerate);
       }
       setBio(data.data?.result || "");
       // Sync with server value if provided
@@ -706,25 +841,6 @@ const Index = ({ params }) => {
       setIsGenerating(false);
     }
   };
-
-  const KEYWORD_CHIPS = [
-    "가족",
-    "여행",
-    "추억",
-    "사랑",
-    "우정",
-    "성장",
-    "도전",
-    "감사",
-    "일상",
-    "꿈",
-    "고향",
-    "음악",
-    "첫만남",
-    "계절",
-    "약속",
-    "이별",
-  ];
 
   const handleChipClick = (chip) => {
     if (usedChips.has(chip)) return;
@@ -848,7 +964,7 @@ const Index = ({ params }) => {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "저장에 실패했습니다");
+        throw new Error(data.error || t.errorSave);
       }
 
       setGooglePhotoUrl(finalGoogleUrl);
@@ -900,7 +1016,7 @@ const Index = ({ params }) => {
       );
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.error || "삭제에 실패했습니다");
+        throw new Error(data.error || t.errorDelete);
       }
       router.push("/library");
     } catch (err) {
@@ -913,7 +1029,7 @@ const Index = ({ params }) => {
   if (isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#1e1a14]">
-        <p className="text-[#9b8b7a]">불러오는 중...</p>
+        <p className="text-[#9b8b7a]">{t.loading}</p>
       </div>
     );
   }
@@ -932,7 +1048,7 @@ const Index = ({ params }) => {
           </button>
           <div className="absolute left-1/2 -translate-x-1/2 text-center">
             <h1 className="text-sm font-semibold text-[#e8d5b7]">
-              {albumTitle || "앨범 편집"}
+              {albumTitle || t.albumEdit}
             </h1>
             {albumSubtitle && (
               <p className="text-[11px] leading-tight text-[#9b8b7a]">
@@ -969,7 +1085,7 @@ const Index = ({ params }) => {
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#e8d5b7] active:bg-white/5"
                     >
                       <Pencil className="h-4 w-4 text-[#9b8b7a]" />
-                      앨범 정보 수정
+                      {t.editInfo}
                     </button>
                     <button
                       onClick={() => {
@@ -984,7 +1100,7 @@ const Index = ({ params }) => {
                       ) : (
                         <Save className="h-4 w-4" />
                       )}
-                      저장하기
+                      {t.save}
                     </button>
                     <button
                       onClick={() => {
@@ -995,7 +1111,7 @@ const Index = ({ params }) => {
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#e8d5b7] active:bg-white/5 disabled:opacity-40"
                     >
                       <Undo2 className="h-4 w-4 text-[#9b8b7a]" />
-                      변경사항 초기화
+                      {t.reset}
                     </button>
                     <button
                       onClick={() => {
@@ -1005,7 +1121,7 @@ const Index = ({ params }) => {
                       className="flex w-full items-center gap-3 px-4 py-2.5 text-[13px] text-[#e8d5b7] active:bg-white/5"
                     >
                       <HelpCircle className="h-4 w-4 text-[#9b8b7a]" />
-                      튜토리얼
+                      {t.tutorial}
                     </button>
                   </motion.div>
                 </>
@@ -1026,12 +1142,12 @@ const Index = ({ params }) => {
                 <ArrowLeft className="h-5 w-5" />
               </button>
               <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
-                나가기
+                {t.exit}
               </span>
             </div>
             <div>
               <h1 className="text-sm leading-tight font-semibold text-[#e8d5b7]">
-                {albumTitle || "앨범 편집"}
+                {albumTitle || t.albumEdit}
               </h1>
               {albumSubtitle && (
                 <p className="text-[11px] leading-tight text-[#9b8b7a]">
@@ -1048,7 +1164,7 @@ const Index = ({ params }) => {
                   <Pencil className="h-3.5 w-3.5" />
                 </button>
                 <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
-                  앨범 정보 수정
+                  {t.editInfo}
                 </span>
               </div>
               <div className="group relative">
@@ -1064,7 +1180,7 @@ const Index = ({ params }) => {
                   <Undo2 className="h-3.5 w-3.5" />
                 </button>
                 <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
-                  변경사항 초기화
+                  {t.reset}
                 </span>
               </div>
               <div className="group relative">
@@ -1085,7 +1201,7 @@ const Index = ({ params }) => {
                   )}
                 </button>
                 <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
-                  저장하기
+                  {t.save}
                 </span>
               </div>
               <div className="group relative">
@@ -1096,7 +1212,7 @@ const Index = ({ params }) => {
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
                 <span className="pointer-events-none absolute top-full left-1/2 z-50 mt-1.5 -translate-x-1/2 rounded bg-[#2a2318] px-2 py-1 text-[10px] whitespace-nowrap text-[#e8d5b7] opacity-0 ring-1 ring-white/10 transition-opacity group-hover:opacity-100">
-                  튜토리얼
+                  {t.tutorial}
                 </span>
               </div>
             </div>
@@ -1104,8 +1220,8 @@ const Index = ({ params }) => {
           <div className="flex shrink-0 items-center gap-2">
             {lastSavedAt && (
               <p className="text-[10px] text-[#9b8b7a]/60">
-                마지막 저장{" "}
-                {lastSavedAt.toLocaleTimeString("ko-KR", {
+                {t.lastSaved}{" "}
+                {lastSavedAt.toLocaleTimeString(locale === "en" ? "en-US" : "ko-KR", {
                   hour: "2-digit",
                   minute: "2-digit",
                 })}
@@ -1156,13 +1272,13 @@ const Index = ({ params }) => {
                   value="front"
                   className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
-                  앞면
+                  {t.tabFront}
                 </TabsTrigger>
                 <TabsTrigger
                   value="back"
                   className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
-                  뒷면
+                  {t.tabBack}
                 </TabsTrigger>
               </TabsList>
 
@@ -1179,7 +1295,7 @@ const Index = ({ params }) => {
                       <div>
                         <div className="mb-1.5 flex items-center justify-between">
                           <label className="block text-xs font-medium text-[#9b8b7a]">
-                            제목
+                            {t.titleLabel}
                           </label>
                           <span className="text-[10px] text-[#9b8b7a]">
                             {albumTitle.length}/14
@@ -1192,14 +1308,14 @@ const Index = ({ params }) => {
                             setAlbumTitle(e.target.value.slice(0, 14))
                           }
                           maxLength={14}
-                          placeholder="앨범 제목을 입력하세요"
+                          placeholder={t.titlePlaceholder}
                           className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
                         />
                       </div>
                       <div>
                         <div className="mb-1.5 flex items-center justify-between">
                           <label className="block text-xs font-medium text-[#9b8b7a]">
-                            부제목
+                            {t.subtitleLabel}
                           </label>
                           <span className="text-[10px] text-[#9b8b7a]">
                             {albumSubtitle.length}/25
@@ -1212,7 +1328,7 @@ const Index = ({ params }) => {
                             setAlbumSubtitle(e.target.value.slice(0, 25))
                           }
                           maxLength={25}
-                          placeholder="부제목을 입력하세요"
+                          placeholder={t.subtitlePlaceholder}
                           className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
                         />
                       </div>
@@ -1228,7 +1344,7 @@ const Index = ({ params }) => {
                           className="flex items-center gap-2"
                         >
                           <span className="text-sm font-semibold text-[#e8d5b7]">
-                            표지에 제목 표시하기
+                            {t.showTitle}
                           </span>
                           {titleOverlayEnabled &&
                             (titleOpen ? (
@@ -1283,6 +1399,7 @@ const Index = ({ params }) => {
                                 onColorChange={setTitleColor}
                                 onStrokeChange={setTitleStroke}
                                 onStrokeOpacityChange={setTitleStrokeOpacity}
+                                locale={locale}
                               />
                             </div>
                           </motion.div>
@@ -1301,10 +1418,10 @@ const Index = ({ params }) => {
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-[#e8d5b7]">
-                            표지 디자인
+                            {t.coverDesign}
                           </span>
                           <span className="text-[11px] text-[#9b8b7a]">
-                            AI 생성 또는 직접 업로드
+                            {t.coverDesignSub}
                           </span>
                         </div>
                         {coverOpen ? (
@@ -1337,6 +1454,7 @@ const Index = ({ params }) => {
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 preloadBlobs={photoDrive.preloadBlobs}
+                                locale={locale}
                               />
                             </div>
                           </motion.div>
@@ -1351,11 +1469,11 @@ const Index = ({ params }) => {
                       >
                         <div className="flex items-center gap-2">
                           <span className="text-sm font-semibold text-[#e8d5b7]">
-                            배경음악
+                            {t.bgm}
                           </span>
                           {bgmUrl && (
                             <span className="text-[11px] text-[#c4b49a]">
-                              선택됨
+                              {t.bgmSelected}
                             </span>
                           )}
                         </div>
@@ -1378,6 +1496,7 @@ const Index = ({ params }) => {
                               <BgmEditor
                                 selectedBgmUrl={bgmUrl}
                                 onBgmChange={handleBgmChange}
+                                locale={locale}
                               />
                             </div>
                           </motion.div>
@@ -1399,7 +1518,7 @@ const Index = ({ params }) => {
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
                         <span className="text-sm font-semibold text-[#e8d5b7]">
-                          뒷면 이미지 설정하기
+                          {t.backCoverImage}
                         </span>
                         {backCoverImageOpen ? (
                           <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
@@ -1427,6 +1546,7 @@ const Index = ({ params }) => {
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 preloadBlobs={photoDrive.preloadBlobs}
+                                locale={locale}
                               />
                             </div>
                           </motion.div>
@@ -1444,7 +1564,7 @@ const Index = ({ params }) => {
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
                         <span className="text-sm font-semibold text-[#e8d5b7]">
-                          테마
+                          {t.theme}
                         </span>
                         {themeOpen ? (
                           <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
@@ -1465,6 +1585,7 @@ const Index = ({ params }) => {
                               <ThemeSelector
                                 selectedTheme={selectedTheme}
                                 onThemeChange={handleThemeChange}
+                                locale={locale}
                               />
                             </div>
                           </motion.div>
@@ -1478,8 +1599,7 @@ const Index = ({ params }) => {
                         <BookOpen className="h-3.5 w-3.5 text-[#c4b49a]" />
                       </div>
                       <p className="pt-0.5 text-xs leading-relaxed text-[#9b8b7a]">
-                        앨범 뒷면을 꾸미기 위해 앨범에 맞는 스토리와 타임라인을
-                        적어주세요
+                        {t.backCoverGuide}
                       </p>
                     </div>
 
@@ -1493,7 +1613,7 @@ const Index = ({ params }) => {
                         className="flex w-full items-center justify-between px-4 py-3"
                       >
                         <span className="text-sm font-semibold text-[#e8d5b7]">
-                          스토리
+                          {t.story}
                         </span>
                         {storyOpen ? (
                           <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
@@ -1516,7 +1636,7 @@ const Index = ({ params }) => {
                               <div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-xs font-medium text-[#9b8b7a]">
-                                    키워드 선택
+                                    {t.keywordSelect}
                                   </span>
                                   <span
                                     onClick={() =>
@@ -1528,7 +1648,7 @@ const Index = ({ params }) => {
                                   </span>
                                   {usedChips.size > 0 && (
                                     <span className="text-[11px] text-[#9b8b7a]">
-                                      {usedChips.size}개 선택됨
+                                      {t.keywordSelected(usedChips.size)}
                                     </span>
                                   )}
                                 </div>
@@ -1543,10 +1663,7 @@ const Index = ({ params }) => {
                                     >
                                       <div className="mt-1.5 rounded-lg border border-white/10 bg-[#2a2318] px-3 py-2.5 shadow-sm">
                                         <p className="text-[11px] leading-relaxed text-[#9b8b7a]">
-                                          💡 글감이 떠오르지 않을 때 키워드를
-                                          선택해보세요. 선택한 키워드가 스토리에
-                                          주제로 추가되어, AI가 이를 바탕으로 더
-                                          풍부한 이야기를 만들어 줄 수 있어요.
+                                          {t.keywordHelp}
                                         </p>
                                       </div>
                                     </motion.div>
@@ -1586,8 +1703,8 @@ const Index = ({ params }) => {
                                     className="rounded-full border border-dashed border-white/15 px-3 py-1 text-[11px] font-medium text-[#9b8b7a] transition-colors hover:border-[#c4b49a] hover:text-[#c4b49a]"
                                   >
                                     {keywordsExpanded
-                                      ? "접기"
-                                      : `+${KEYWORD_CHIPS.length - 3}개 더보기`}
+                                      ? t.keywordsLess
+                                      : t.keywordsMore(KEYWORD_CHIPS.length - 3)}
                                   </button>
                                 </div>
                               </div>
@@ -1620,8 +1737,8 @@ const Index = ({ params }) => {
                                   }
                                   placeholder={
                                     usedChips.size > 0
-                                      ? "추가로 작성하세요..."
-                                      : "자유롭게 작성하세요..."
+                                      ? t.placeholderWithChips
+                                      : t.placeholderNoChips
                                   }
                                   className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:ring-0 focus:outline-none"
                                 />
@@ -1632,7 +1749,7 @@ const Index = ({ params }) => {
                                 <p
                                   className={`text-[11px] ${getFullBioText().length >= 250 ? "text-red-400" : "text-[#9b8b7a]/60"}`}
                                 >
-                                  {getFullBioText().length}/250자
+                                  {t.charCount(getFullBioText().length)}
                                 </p>
                                 {bioError && (
                                   <p className="text-xs text-red-500">
@@ -1644,7 +1761,7 @@ const Index = ({ params }) => {
                               {/* Generation count */}
                               <div className="flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
                                 <span className="text-xs text-[#c4b49a]">
-                                  사용한 생성 횟수
+                                  {t.genCount}
                                 </span>
                                 <span
                                   className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
@@ -1656,7 +1773,7 @@ const Index = ({ params }) => {
                               {storyRemainingGens <= 0 && (
                                 <div className="rounded-lg bg-red-500/10 px-3 py-2">
                                   <p className="text-xs text-red-500">
-                                    생성 횟수를 모두 사용했습니다.
+                                    {t.genExhausted}
                                   </p>
                                 </div>
                               )}
@@ -1675,12 +1792,12 @@ const Index = ({ params }) => {
                                 {isGenerating ? (
                                   <>
                                     <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
-                                    생성 중...
+                                    {t.generating}
                                   </>
                                 ) : (
                                   <>
-                                    <Sparkles className="mr-1.5 h-3 w-3" />글
-                                    생성
+                                    <Sparkles className="mr-1.5 h-3 w-3" />
+                                    {t.generateStory}
                                   </>
                                 )}
                               </Button>
@@ -1701,17 +1818,8 @@ const Index = ({ params }) => {
                       >
                         <div className="flex items-center gap-1.5">
                           <span className="text-sm font-semibold text-[#e8d5b7]">
-                            타임라인
+                            {t.timeline}
                           </span>
-                          {/* <span
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setTimelineHelpOpen(!timelineHelpOpen);
-                            }}
-                            className={`flex h-5 w-5 items-center justify-center rounded-full transition-colors hover:text-gray-600 ${timelineHelpOpen ? "text-[#e8d5b7 ]" : "text-gray-400"}`}
-                          >
-                            <HelpCircle className="h-3.5 w-3.5" />
-                          </span> */}
                         </div>
                         {timelineOpen ? (
                           <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
@@ -1730,13 +1838,6 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="space-y-2 border-t border-white/8 px-4 pt-3 pb-4">
-                              {/* {timelineHelpOpen && (
-                                <p className="text-[11px] leading-relaxed text-[#e8d5b7 ]">
-                                  기억에 남는 순간들을 시간 순서대로
-                                  기록해보세요. 연도와 간단한 내용을 입력하면
-                                  됩니다.
-                                </p>
-                              )} */}
                               <DndContext
                                 sensors={sensors}
                                 collisionDetection={closestCenter}
@@ -1755,6 +1856,7 @@ const Index = ({ params }) => {
                                       index={index}
                                       onUpdate={updateTimelineItem}
                                       onRemove={removeTimelineItem}
+                                      t={t}
                                     />
                                   ))}
                                 </SortableContext>
@@ -1765,14 +1867,13 @@ const Index = ({ params }) => {
                                 disabled={timeline.length >= 6}
                                 className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
                               >
-                                <Plus className="h-3 w-3" /> 항목 추가 (
-                                {timeline.length}/6)
+                                <Plus className="h-3 w-3" /> {t.addItem(timeline.length)}
                               </button>
 
                               {timeline.length === 0 && (
                                 <div className="py-4 text-center">
                                   <p className="text-xs text-[#9b8b7a]">
-                                    타임라인 항목을 추가해보세요
+                                    {t.emptyTimeline}
                                   </p>
                                 </div>
                               )}
@@ -1819,9 +1920,7 @@ const Index = ({ params }) => {
                 <X className="h-5 w-5" />
               </button>
               <p className="text-center text-lg font-semibold text-[#e8d5b7]">
-                {isDirty
-                  ? "변경사항이 있습니다. 저장하시겠습니까?"
-                  : "나가시겠습니까?"}
+                {isDirty ? t.exitConfirmDirty : t.exitConfirm}
               </p>
               <div className="mt-6 flex gap-3">
                 {isDirty ? (
@@ -1831,7 +1930,7 @@ const Index = ({ params }) => {
                       onClick={handleExit}
                       className="flex-1 border-white/15 text-[#9b8b7a] hover:border-white/30 hover:text-[#e8d5b7]"
                     >
-                      나가기
+                      {t.exit}
                     </Button>
                     <Button
                       onClick={handleSaveAndExit}
@@ -1843,12 +1942,12 @@ const Index = ({ params }) => {
                       ) : (
                         <Save className="mr-2 h-4 w-4" />
                       )}
-                      {isSaving ? "저장 중..." : "저장하고 나가기"}
+                      {isSaving ? t.saving : t.saveAndExit}
                     </Button>
                   </>
                 ) : (
                   <Button onClick={handleExit} className="w-full">
-                    나가기
+                    {t.exit}
                   </Button>
                 )}
               </div>
@@ -1876,7 +1975,7 @@ const Index = ({ params }) => {
             >
               <div className="mb-5 flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-[#e8d5b7]">
-                  앨범 정보 수정
+                  {t.editInfoTitle}
                 </h2>
                 <button
                   onClick={() => setShowRecordEditDialog(false)}
@@ -1889,13 +1988,13 @@ const Index = ({ params }) => {
               <div className="space-y-4">
                 <div>
                   <label className="mb-2 block text-xs font-medium text-[#9b8b7a]">
-                    외부 링크
+                    {t.externalLink}
                   </label>
                   <input
                     type="text"
                     value={editExternalLinkTitle}
                     onChange={(e) => setEditExternalLinkTitle(e.target.value)}
-                    placeholder="버튼에 표시할 이름 (예: 유튜브 채널)"
+                    placeholder={t.externalLinkPlaceholder}
                     className="mb-2 w-full rounded-md border border-white/15 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30"
                   />
                   <input
@@ -1908,7 +2007,7 @@ const Index = ({ params }) => {
                 </div>
                 <div>
                   <label className="mb-2 block text-xs font-medium text-[#9b8b7a]">
-                    사진 저장소
+                    {t.photoStorage}
                   </label>
                   <div className="mb-3 flex gap-2">
                     {[
@@ -1947,7 +2046,7 @@ const Index = ({ params }) => {
                     placeholder={
                       selectedUrlType === "google"
                         ? "https://photos.google.com/..."
-                        : "서비스 준비중입니다"
+                        : t.serviceComingSoon
                     }
                     className={`w-full rounded-md border border-white/15 px-3 py-2 text-sm outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30 ${
                       selectedUrlType !== "google"
@@ -1968,7 +2067,7 @@ const Index = ({ params }) => {
                   onClick={() => setShowRecordEditDialog(false)}
                   className="flex-1 border-white/15 text-[#9b8b7a] hover:border-white/30 hover:text-[#e8d5b7]"
                 >
-                  취소
+                  {t.cancel}
                 </Button>
                 <Button
                   onClick={handleRecordEditSave}
@@ -1977,12 +2076,11 @@ const Index = ({ params }) => {
                 >
                   {isRecordSaving ? (
                     <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> 저장
-                      중...
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> {t.saving}
                     </>
                   ) : (
                     <>
-                      <Save className="mr-2 h-4 w-4" /> 저장
+                      <Save className="mr-2 h-4 w-4" /> {t.saveAction}
                     </>
                   )}
                 </Button>
@@ -1996,12 +2094,12 @@ const Index = ({ params }) => {
                     className="w-full rounded-lg py-2.5 text-center text-sm font-medium text-red-500 transition-colors hover:bg-red-500/10"
                   >
                     <Trash2 className="mr-1.5 inline h-3.5 w-3.5" />
-                    앨범 삭제하기
+                    {t.delete}
                   </button>
                 ) : (
                   <div className="space-y-2">
                     <p className="text-center text-xs text-red-500">
-                      정말 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.
+                      {t.deleteConfirm}
                     </p>
                     <div className="flex gap-2">
                       <Button
@@ -2010,7 +2108,7 @@ const Index = ({ params }) => {
                         className="flex-1 border-white/15 text-xs text-[#9b8b7a]"
                         size="sm"
                       >
-                        취소
+                        {t.cancel}
                       </Button>
                       <Button
                         onClick={handleDeleteRecord}
@@ -2023,7 +2121,7 @@ const Index = ({ params }) => {
                         ) : (
                           <Trash2 className="mr-1 h-3 w-3" />
                         )}
-                        {isDeleting ? "삭제 중..." : "삭제"}
+                        {isDeleting ? t.deleting : t.deleteAction}
                       </Button>
                     </div>
                   </div>
@@ -2040,6 +2138,7 @@ const Index = ({ params }) => {
         onClose={() => setShowTutorial(false)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        locale={locale}
       />
     </div>
   );

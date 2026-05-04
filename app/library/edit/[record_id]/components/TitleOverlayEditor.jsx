@@ -7,13 +7,18 @@ const POSITIONS = [
 ];
 
 const FONTS = [
-  { label: "프리텐다드", family: "Pretendard Variable" },
-  { label: "모노플렉스", family: "MonoplexKR" },
-  { label: "와이드스트릿", family: "Yde street" },
-  { label: "북크고딕", family: "Bookk Gothic" },
+  { labelKo: "프리텐다드", labelEn: "Pretendard", family: "Pretendard Variable" },
+  { labelKo: "모노플렉스", labelEn: "Monoplex", family: "MonoplexKR" },
+  { labelKo: "와이드스트릿", labelEn: "Wide Street", family: "Yde street" },
+  { labelKo: "북크고딕", labelEn: "Bookk Gothic", family: "Bookk Gothic" },
 ];
 
 const COLOR_PRESETS = ["#ffffff", "#000000", "#cccccc"];
+
+const T = {
+  ko: { position: "위치", font: "폰트", color: "색상", bg: "배경" },
+  en: { position: "Position", font: "Font", color: "Color", bg: "Background" },
+};
 
 export default function TitleOverlayEditor({
   position,
@@ -26,13 +31,15 @@ export default function TitleOverlayEditor({
   onColorChange,
   onStrokeChange,
   onStrokeOpacityChange,
+  locale,
 }) {
+  const t = T[locale] || T.ko;
   return (
     <div className="space-y-4">
       {/* Position grid */}
       <div>
         <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-          위치
+          {t.position}
         </label>
         <div className="inline-grid grid-cols-3 gap-1 rounded-lg border border-white/10 bg-[#2e2720] p-1.5">
           {POSITIONS.map((row) =>
@@ -61,7 +68,7 @@ export default function TitleOverlayEditor({
       {/* Font selection */}
       <div>
         <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-          폰트
+          {t.font}
         </label>
         <div className="flex flex-wrap gap-2">
           {FONTS.map((f) => (
@@ -75,7 +82,7 @@ export default function TitleOverlayEditor({
                   : "hover:border-[#c4b49a] hover:text-[#c4b49a] border-white/15 bg-white/5 text-[#9b8b7a]"
               }`}
             >
-              {f.label}
+              {locale === "en" ? f.labelEn : f.labelKo}
             </button>
           ))}
         </div>
@@ -84,7 +91,7 @@ export default function TitleOverlayEditor({
       {/* Color picker */}
       <div>
         <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-          색상
+          {t.color}
         </label>
         <div className="flex items-center gap-2">
           {COLOR_PRESETS.map((c) => (
@@ -118,7 +125,7 @@ export default function TitleOverlayEditor({
       {/* Background selector */}
       <div>
         <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-          배경
+          {t.bg}
         </label>
         <div className="flex items-center gap-2">
           {/* none */}

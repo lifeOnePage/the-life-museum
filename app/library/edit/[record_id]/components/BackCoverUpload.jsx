@@ -23,6 +23,21 @@ function LazyImage({ src, alt, className }) {
   );
 }
 
+const T = {
+  ko: {
+    deviceUpload: "디바이스 업로드",
+    photodrive: "포토드라이브",
+    selectPhoto: "사진을 선택하세요",
+    noPhotos: "사용 가능한 사진이 없습니다.",
+  },
+  en: {
+    deviceUpload: "Device Upload",
+    photodrive: "Photo Drive",
+    selectPhoto: "Select a photo",
+    noPhotos: "No photos available.",
+  },
+};
+
 function BackCoverUpload({
   record_id,
   backCoverImageUrl,
@@ -32,7 +47,9 @@ function BackCoverUpload({
   onRefreshPhotos,
   isRefreshing,
   preloadBlobs,
+  locale,
 }) {
+  const t = T[locale] || T.ko;
     const [showPhotodrive, setShowPhotodrive] = useState(false);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
     const [error, setError] = useState("");
@@ -82,7 +99,7 @@ function BackCoverUpload({
           <label className="hover:border-[#c4b49a] flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-white/15 py-5 transition-all hover:bg-white/5">
             <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
             <Upload className="h-4 w-4 text-[#9b8b7a]" />
-            <span className="text-xs font-medium text-[#e8d5b7]">디바이스 업로드</span>
+            <span className="text-xs font-medium text-[#e8d5b7]">{t.deviceUpload}</span>
           </label>
 
           <button
@@ -98,7 +115,7 @@ function BackCoverUpload({
             }`}
           >
             <FolderOpen className="h-4 w-4 text-[#9b8b7a]" />
-            <span className="text-xs font-medium text-[#e8d5b7]">포토드라이브</span>
+            <span className="text-xs font-medium text-[#e8d5b7]">{t.photodrive}</span>
           </button>
         </div>
 
@@ -114,7 +131,7 @@ function BackCoverUpload({
             >
               <div className="pt-1">
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs text-[#9b8b7a]">사진을 선택하세요</p>
+                  <p className="text-xs text-[#9b8b7a]">{t.selectPhoto}</p>
                   <button
                     onClick={onRefreshPhotos}
                     disabled={isRefreshing}
@@ -126,7 +143,7 @@ function BackCoverUpload({
                 {photoMedia.length === 0 ? (
                   <div className="flex flex-col items-center py-8 text-center">
                     <ImagePlus className="mb-2 h-7 w-7 text-[#9b8b7a]/40" />
-                    <p className="text-xs text-[#9b8b7a]">사용 가능한 사진이 없습니다.</p>
+                    <p className="text-xs text-[#9b8b7a]">{t.noPhotos}</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-3 gap-2">

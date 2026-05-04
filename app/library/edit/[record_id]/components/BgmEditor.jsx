@@ -4,17 +4,23 @@ import { useState, useRef, useEffect } from "react";
 import { Music, Play, Pause, Loader2, X } from "lucide-react";
 
 export const BGM_LIST = [
-  { id: "bgm1", name: "설레고 부드러운", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/01.mp3" },
-  { id: "bgm2", name: "그루브하고 차분한", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/02.mp3" },
-  { id: "bgm3", name: "애틋하고 따뜻한", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/03.mp3" },
-  { id: "bgm4", name: "활기차고 밝은", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/04.mp3" },
-  { id: "bgm5", name: "꿈결 같고 느릿한", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/05.mp3" },
-  { id: "bgm6", name: "몽환적이고 아련한", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/06.mp3" },
-  { id: "bgm7", name: "맑고 희망찬", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/07.mp3" },
-  { id: "bgm8", name: "도시적이고 쿨한", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/08.mp3" },
+  { id: "bgm1", nameKo: "설레고 부드러운", nameEn: "Exciting & Smooth", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/01.mp3" },
+  { id: "bgm2", nameKo: "그루브하고 차분한", nameEn: "Groovy & Calm", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/02.mp3" },
+  { id: "bgm3", nameKo: "애틋하고 따뜻한", nameEn: "Tender & Warm", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/03.mp3" },
+  { id: "bgm4", nameKo: "활기차고 밝은", nameEn: "Lively & Bright", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/04.mp3" },
+  { id: "bgm5", nameKo: "꿈결 같고 느릿한", nameEn: "Dreamy & Slow", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/05.mp3" },
+  { id: "bgm6", nameKo: "몽환적이고 아련한", nameEn: "Mystic & Nostalgic", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/06.mp3" },
+  { id: "bgm7", nameKo: "맑고 희망찬", nameEn: "Clear & Hopeful", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/07.mp3" },
+  { id: "bgm8", nameKo: "도시적이고 쿨한", nameEn: "Urban & Cool", url: "https://pub-d32dad1fbd3c41ce95fdd4f40e7efa44.r2.dev/records/bgm/08.mp3" },
 ];
 
-export default function BgmEditor({ selectedBgmUrl, onBgmChange }) {
+const T = {
+  ko: { select: "선택", selected: "선택됨" },
+  en: { select: "Select", selected: "Selected" },
+};
+
+export default function BgmEditor({ selectedBgmUrl, onBgmChange, locale }) {
+  const t = T[locale] || T.ko;
   const [playingId, setPlayingId] = useState(null);
   const [loadingId, setLoadingId] = useState(null);
   const audioRef = useRef(null);
@@ -107,7 +113,7 @@ export default function BgmEditor({ selectedBgmUrl, onBgmChange }) {
 
             {/* Name */}
             <span className={`flex-1 text-sm ${isSelected ? "text-[#c4b49a]" : "text-[#e8d5b7]"}`}>
-              {bgm.name}
+              {locale === "en" ? bgm.nameEn : bgm.nameKo}
             </span>
 
             {/* Select toggle */}
@@ -120,7 +126,7 @@ export default function BgmEditor({ selectedBgmUrl, onBgmChange }) {
                   : "bg-white/8 text-[#9b8b7a] hover:bg-white/15 hover:text-[#e8d5b7]"
               }`}
             >
-              {isSelected ? "선택됨" : "선택"}
+              {isSelected ? t.selected : t.select}
             </button>
           </div>
         );

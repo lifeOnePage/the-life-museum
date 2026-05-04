@@ -1,11 +1,11 @@
 export const UNIFIED_THEMES = {
-  fullimage: {
-    key: "fullimage",
-    name: "Full Image",
-    description: "뒷면 이미지를 전면에 꽉 채워 표시",
-    bg: "#000000",
-    accent: "#ffffff",
-    text: "#ffffff",
+  minimalist: {
+    key: "minimalist",
+    name: "Minimalist",
+    description: "깔끔한 화이트 미니멀 레이아웃",
+    bg: "#ffffff",
+    accent: "#222222",
+    text: "#555555",
   },
   kitsch: {
     key: "kitsch",
@@ -23,13 +23,13 @@ export const UNIFIED_THEMES = {
     accent: "#ffffff",
     text: "#ffffff",
   },
-  minimalist: {
-    key: "minimalist",
-    name: "Minimalist",
-    description: "깔끔한 화이트 미니멀 레이아웃",
-    bg: "#ffffff",
-    accent: "#222222",
-    text: "#555555",
+  fullimage: {
+    key: "fullimage",
+    name: "Full Image",
+    description: "뒷면 이미지를 전면에 꽉 채워 표시",
+    bg: "#000000",
+    accent: "#ffffff",
+    text: "#ffffff",
   },
 };
 

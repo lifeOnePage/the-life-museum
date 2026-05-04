@@ -167,8 +167,8 @@ export default function SharePage({ params }) {
       // 1손가락 패닝
       const dx = e.touches[0].clientX - lastPanPosRef.current.x;
       const dy = e.touches[0].clientY - lastPanPosRef.current.y;
-      const sensitivity = pinchZoomRef.current * 0.003;
-      const MAX_PAN = 3;
+      const sensitivity = pinchZoomRef.current * 0.0005;
+      const MAX_PAN = 0.8;
       const newX = Math.max(-MAX_PAN, Math.min(MAX_PAN, panOffsetRef.current.x - dx * sensitivity));
       const newY = Math.max(-MAX_PAN, Math.min(MAX_PAN, panOffsetRef.current.y + dy * sensitivity));
       panOffsetRef.current = { x: newX, y: newY };

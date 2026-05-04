@@ -51,9 +51,7 @@ function CameraZoom({ zoom }) {
     if (!size.width || !size.height) return;
     const aspect = size.width / size.height;
     const fovRad = (30 * Math.PI) / 180;
-    const halfTan = Math.tan(fovRad / 2);
-    const minZ = (ALBUM_CONFIG.size * 1.4) / (2 * halfTan * aspect);
-    camera.position.z = Math.max(zoom, minZ);
+    camera.position.z = zoom;
     camera.updateProjectionMatrix();
   }, [zoom, camera, size]);
 

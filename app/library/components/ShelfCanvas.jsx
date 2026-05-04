@@ -107,9 +107,8 @@ export default function ShelfCanvas({
     scrollRangeRef.current = (ROWS - 1) * 0.7;
   }, [ROWS]);
 
-  // 제스처 훅
-  const { onPointerDown, onPointerMove, onPointerUp, onWheel } =
-    useShelfGestures({
+  // 제스처 훅 (touch + wheel은 내부 addEventListener, pointer만 반환)
+  const { onPointerDown, onPointerMove, onPointerUp } = useShelfGestures({
       wrapperRef,
       scrollRangeRef,
       cameraYOffsetRef,
@@ -154,7 +153,6 @@ export default function ShelfCanvas({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerLeave={onPointerUp}
-      onWheel={onWheel}
     >
       <Canvas
         shadows={false}
@@ -181,7 +179,7 @@ export default function ShelfCanvas({
         }}
         frameloop="demand"
       >
-        <FPSLimiter fps={30} />
+        <FPSLimiter fps={60} />
         {/* 라이팅: 따뜻한 앰버/골드 무드 */}
         <ambientLight intensity={2} color="#957A57" />
         <DirLightWithHelper

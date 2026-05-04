@@ -796,13 +796,15 @@ export function generateBackCoverDataUrl(
   themeBgImg,
   themeStickerImg,
 ) {
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  const size = 1024;
+  const size = 1024;       // 드로잉 좌표계
+  const resolution = 2048; // 실제 캔버스 픽셀 (핀치줌 시 선명도 확보)
   const canvas = document.createElement("canvas");
-  canvas.width = size * dpr;
-  canvas.height = size * dpr;
+  canvas.width = resolution;
+  canvas.height = resolution;
   const ctx = canvas.getContext("2d");
-  ctx.scale(dpr, dpr);
+  ctx.scale(resolution / size, resolution / size);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
   const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 

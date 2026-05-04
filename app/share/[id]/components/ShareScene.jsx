@@ -320,7 +320,7 @@ export default function ShareScene({
         }}
       >
         <Canvas
-          dpr={[1, 2]}
+          dpr={[1, 3]}
           gl={{ antialias: true, powerPreference: "high-performance" }}
           camera={{ position: [0, -0.15, 5.5], fov: 32 }}
           shadows

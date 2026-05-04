@@ -172,7 +172,7 @@ export default function SharePage({ params }) {
     const isMobile = window.innerWidth < 768;
     if (isMobile) {
       // perspective를 크게 올려 원근 압축 완화, 행 수 늘려 세로 커버리지 확보
-      return { GRID_COLS: 12, ARC_SPREAD: 140, ROWS_PER_COL: 10, PERSPECTIVE: "1400px" };
+      return { GRID_COLS: 8, ARC_SPREAD: 140, ROWS_PER_COL: 5, PERSPECTIVE: "1400px" };
     }
     const aspect = window.innerWidth / window.innerHeight;
     const spread = Math.min(Math.round(aspect * 130), 280);
@@ -252,7 +252,7 @@ export default function SharePage({ params }) {
             className="absolute inset-0 flex items-center justify-center opacity-35"
             style={{
               perspective: PERSPECTIVE,
-              perspectiveOrigin: "50% 50%",
+              perspectiveOrigin: "50% 35%",
             }}
           >
             <div

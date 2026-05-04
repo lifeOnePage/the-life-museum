@@ -196,33 +196,42 @@ export default function DisplayScene({ recordId }) {
   useEffect(() => {
     if (!bgmRef.current) return;
     if (isPlaying) {
-      bgmRef.current.play().catch(() => {});
+      bgmRef.current.play().catch(() => {
+        // autoplay 정책 등으로 재생 실패 시 음소거 상태로 폴백
+        bgmRef.current.muted = true;
+        setIsMuted(true);
+      });
     } else {
       bgmRef.current.pause();
     }
   }, [isPlaying]);
 
-  // isMuted 변화에 따라 볼륨 조절
+  // isMuted 변화에 따라 음소거 처리 (iOS는 volume read-only라 muted 속성 사용)
   useEffect(() => {
     if (!bgmRef.current) return;
-    if (bgmMutedByVideoRef.current) return; // 비디오 재생 중이면 무시
-    bgmRef.current.volume = isMuted ? 0 : 0.4;
+    bgmRef.current.muted = isMuted;
   }, [isMuted]);
 
   // 비디오 재생 시 BGM 뮤트/복원 콜백
-  const handleVideoBgmControl = useCallback((videoIsPlaying) => {
-    if (!bgmRef.current) return;
-    if (videoIsPlaying) {
-      bgmMutedByVideoRef.current = true;
-      bgmRef.current.volume = 0;
-    } else {
-      bgmMutedByVideoRef.current = false;
-      bgmRef.current.volume = isMuted ? 0 : 0.4;
-    }
-  }, [isMuted]);
+  const handleVideoBgmControl = useCallback(
+    (videoIsPlaying) => {
+      if (!bgmRef.current) return;
+      if (videoIsPlaying) {
+        bgmMutedByVideoRef.current = true;
+        bgmRef.current.volume = 0;
+      } else {
+        bgmMutedByVideoRef.current = false;
+        bgmRef.current.volume = isMuted ? 0 : 0.4;
+      }
+    },
+    [isMuted],
+  );
 
   const mediaList = useMemo(
-    () => (recordData?.mediaList ?? []).filter((m) => m.type === "image" || m.type === "video"),
+    () =>
+      (recordData?.mediaList ?? []).filter(
+        (m) => m.type === "image" || m.type === "video",
+      ),
     [recordData],
   );
 
@@ -338,7 +347,7 @@ export default function DisplayScene({ recordId }) {
           cameraSpeed={cameraSpeed}
           onCameraSpeedChange={setCameraSpeed}
           onExit={() => router.back()}
-          hasBgm={true}
+          hasBgm={!!bgmUrl}
           isMuted={isMuted}
           onToggleMute={() => setIsMuted((m) => !m)}
           isFullscreen={isFullscreen}

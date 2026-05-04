@@ -57,12 +57,12 @@ export default function useShelfGestures({
 
       if (t.mode === "scroll" && e.touches.length === 1) {
         const delta = e.touches[0].clientY - t.startY;
-        const newOffset = t.startOffset + delta * 0.003;
+        const newOffset = t.startOffset + delta * 0.006;
         const range = scrollRangeRef.current;
         cameraYOffsetRef.current = clamp(newOffset, -range, range);
       } else if (t.mode === "pinch" && e.touches.length === 2) {
         e.preventDefault();
-        if (selectedAlbum !== null) return;
+        if (selectedAlbum === null) return;
 
         const dist = getTouchDist(e.touches);
         const ratio = t.startDist / dist;

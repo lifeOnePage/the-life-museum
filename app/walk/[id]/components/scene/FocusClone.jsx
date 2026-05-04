@@ -16,6 +16,11 @@ export default function FocusClone({
   stateRef,
   displayScale,
   cloneZ,
+  isVideo,
+  videoTexture,
+  videoPlayStateRef,
+  planeId,
+  onClick,
 }) {
   const meshRef = useRef();
 
@@ -54,12 +59,36 @@ export default function FocusClone({
       }
     }
     meshRef.current.material.opacity = opacity;
+
+    // Video: imperatively switch between poster and video texture based on play state
+    if (isVideo && videoTexture && videoPlayStateRef) {
+      const vps = videoPlayStateRef.current;
+      // Show video texture when this plane is the active video (even if paused)
+      // so the paused frame stays visible instead of switching to poster (black screen)
+      const shouldShowVideo = vps.activePlaneId === planeId;
+      const activeTexture = shouldShowVideo ? videoTexture : texture;
+
+      if (meshRef.current.material.map !== activeTexture) {
+        console.log(`[FocusClone] Texture switch: plane=${planeId} toVideo=${shouldShowVideo}`);
+        meshRef.current.material.map = activeTexture;
+        meshRef.current.material.needsUpdate = true;
+      }
+
+      // Only mark video texture needsUpdate each frame while actually playing
+      if (shouldShowVideo && vps.isPlaying && opacity > 0) {
+        videoTexture.needsUpdate = true;
+      }
+    }
   });
 
   if (!texture) return null;
 
   return (
-    <mesh ref={meshRef} scale={[w, h, 1]}>
+    <mesh
+      ref={meshRef}
+      scale={[w, h, 1]}
+      onClick={onClick ? (e) => { e.stopPropagation(); onClick(); } : undefined}
+    >
       <planeGeometry args={[1, 1]} />
       <meshBasicMaterial
         map={texture}

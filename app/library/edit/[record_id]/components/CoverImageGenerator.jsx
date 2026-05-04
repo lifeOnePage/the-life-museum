@@ -55,6 +55,9 @@ export default function CoverImageGenerator({
   const [generatedImages, setGeneratedImages] = useState([]);
   const [selectedImageIndex, setSelectedImageIndex] = useState(-1);
 
+  // API provider toggle: "gemini" | "mindlogic"
+  const [apiProvider, setApiProvider] = useState("gemini");
+
   // Generation count tracking
   const [genCount, setGenCount] = useState(0);
   const remainingGens = 3 - genCount;
@@ -99,13 +102,15 @@ export default function CoverImageGenerator({
       formData.append("style", selectedStyle);
       formData.append("reference_image", imageRefFiles[0]);
 
-      const response = await authedFetch(
-        `${API_URL}/api/v1/record/${record_id}/cover/generate`,
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const endpoint =
+        apiProvider === "mindlogic"
+          ? `${API_URL}/api/v1/record/${record_id}/cover/generate-ml`
+          : `${API_URL}/api/v1/record/${record_id}/cover/generate`;
+
+      const response = await authedFetch(endpoint, {
+        method: "POST",
+        body: formData,
+      });
 
       const data = await response.json();
       if (!response.ok) {
@@ -285,6 +290,40 @@ export default function CoverImageGenerator({
             </div>
           )}
 
+          {/* API Provider toggle */}
+          <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
+            생성 엔진
+          </label>
+          <div className="mb-4 flex gap-2">
+            {[
+              { key: "gemini", label: "Gemini", desc: "스타일 기반" },
+              { key: "mindlogic", label: "Imagen (ML)", desc: "프롬프트 기반" },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setApiProvider(opt.key)}
+                className={`flex flex-1 flex-col items-center rounded-lg border px-2 py-2 text-center transition-all ${
+                  apiProvider === opt.key
+                    ? "border-[#c4b49a] bg-[#c4b49a]/10"
+                    : "border-white/15 hover:border-[#c4b49a]"
+                }`}
+              >
+                <span
+                  className={`text-xs font-medium ${
+                    apiProvider === opt.key
+                      ? "text-[#c4b49a]"
+                      : "text-[#e8d5b7]"
+                  }`}
+                >
+                  {opt.label}
+                </span>
+                <span className="mt-0.5 text-[10px] text-[#9b8b7a]">
+                  {opt.desc}
+                </span>
+              </button>
+            ))}
+          </div>
+
           {/* 1. Reference image */}
           <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
             참고 이미지
@@ -355,41 +394,35 @@ export default function CoverImageGenerator({
                 desc: "따뜻한 애니 감성",
                 sample: "/images/styleSample/animation.png",
               },
-            ].map((opt) => {
-              const disabled = false;
-              return (
-                <button
-                  key={opt.key}
-                  onClick={() => !disabled && setSelectedStyle(opt.key)}
-                  disabled={disabled}
-                  className={`flex flex-1 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-center transition-all ${
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setSelectedStyle(opt.key)}
+                className={`flex flex-1 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-center transition-all ${
+                  selectedStyle === opt.key
+                    ? "border-[#c4b49a] bg-[#c4b49a]/10"
+                    : "hover:border-[#c4b49a] border-white/15"
+                }`}
+              >
+                <img
+                  src={opt.sample}
+                  alt={opt.label}
+                  className="mb-1.5 h-16 w-16 rounded object-cover"
+                />
+                <span
+                  className={`text-xs font-medium ${
                     selectedStyle === opt.key
-                      ? "border-[#c4b49a] bg-[#c4b49a]/10"
-                      : disabled
-                        ? "border-white/10 opacity-40"
-                        : "hover:border-[#c4b49a] border-white/15"
+                      ? "text-[#c4b49a]"
+                      : "text-[#e8d5b7]"
                   }`}
                 >
-                  <img
-                    src={opt.sample}
-                    alt={opt.label}
-                    className="mb-1.5 h-16 w-16 rounded object-cover"
-                  />
-                  <span
-                    className={`text-xs font-medium ${
-                      selectedStyle === opt.key
-                        ? "text-[#c4b49a]"
-                        : "text-[#e8d5b7]"
-                    }`}
-                  >
-                    {opt.label}
-                  </span>
-                  <span className="mt-0.5 text-[10px] text-[#9b8b7a]">
-                    {opt.desc}
-                  </span>
-                </button>
-              );
-            })}
+                  {opt.label}
+                </span>
+                <span className="mt-0.5 text-[10px] text-[#9b8b7a]">
+                  {opt.desc}
+                </span>
+              </button>
+            ))}
           </div>
 
           {/* Generate button */}

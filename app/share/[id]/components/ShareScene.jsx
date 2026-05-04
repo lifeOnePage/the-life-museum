@@ -284,7 +284,17 @@ export default function ShareScene({
       themeBgImg,
       themeStickerImg,
     );
-  }, [themeKey, bio, timeline, frontCoverImg, albumTitle, albumSubTitle, extractedColors, themeBgImg, themeStickerImg]);
+  }, [
+    themeKey,
+    bio,
+    timeline,
+    frontCoverImg,
+    albumTitle,
+    albumSubTitle,
+    extractedColors,
+    themeBgImg,
+    themeStickerImg,
+  ]);
 
   // Drag-to-flip
   const dragStartX = useRef(null);
@@ -320,8 +330,8 @@ export default function ShareScene({
         }}
       >
         <Canvas
-          dpr={[1, 3]}
-          gl={{ antialias: true, powerPreference: "high-performance" }}
+          dpr={[1, 2]}
+          gl={{ antialias: true, powerPreference: "high-performance", toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.85 }}
           camera={{ position: [0, -0.15, 5.5], fov: 32 }}
           shadows
         >

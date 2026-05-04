@@ -184,7 +184,7 @@ const Index = ({ params }) => {
   const [coverOpen, setCoverOpen] = useState(false);
   const [bgmOpen, setBgmOpen] = useState(false);
   const [themeOpen, setThemeOpen] = useState(false);
-  const [backCoverImageOpen, setBackCoverImageOpen] = useState(false);
+  const [backCoverImageOpen, setBackCoverImageOpen] = useState(true);
   const [storyOpen, setStoryOpen] = useState(false);
   const [timelineOpen, setTimelineOpen] = useState(false);
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
@@ -1390,44 +1390,6 @@ const Index = ({ params }) => {
                 {/* Back tab */}
                 <TabsContent className="px-4 pt-5 sm:px-5" value="back">
                   <div className="space-y-5 pb-10">
-                    {/* Theme Section - collapsible */}
-                    <div
-                      data-tutorial="theme"
-                      className="rounded-lg border border-white/10"
-                    >
-                      <button
-                        onClick={() => setThemeOpen(!themeOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <span className="text-sm font-semibold text-[#e8d5b7]">
-                          테마
-                        </span>
-                        {themeOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {themeOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <ThemeSelector
-                                selectedTheme={selectedTheme}
-                                onThemeChange={handleThemeChange}
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
                     {/* Back Cover Image Section - collapsible */}
                     <div className="rounded-lg border border-white/10">
                       <button
@@ -1465,6 +1427,44 @@ const Index = ({ params }) => {
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 preloadBlobs={photoDrive.preloadBlobs}
+                              />
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
+                    {/* Theme Section - collapsible */}
+                    <div
+                      data-tutorial="theme"
+                      className="rounded-lg border border-white/10"
+                    >
+                      <button
+                        onClick={() => setThemeOpen(!themeOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <span className="text-sm font-semibold text-[#e8d5b7]">
+                          테마
+                        </span>
+                        {themeOpen ? (
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {themeOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                              <ThemeSelector
+                                selectedTheme={selectedTheme}
+                                onThemeChange={handleThemeChange}
                               />
                             </div>
                           </motion.div>

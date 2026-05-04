@@ -2,8 +2,6 @@ import { useEffect, useRef, useCallback } from "react";
 
 const ZOOM_MIN = 2.5;
 const ZOOM_MAX = 5.5;
-const TAP_MAX_DIST = 8;
-const TAP_MAX_TIME = 250;
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -23,14 +21,12 @@ export default function useShelfGestures({
     startOffset: 0,
     startDist: 0,
     startZoom: 0,
-    startX: 0, // for tap detection
-    startTime: 0,
   });
 
   // Mouse drag state
   const dragRef = useRef({ dragging: false, startY: 0, startOffset: 0 });
 
-  // Touch handlers — attached via addEventListener for passive:false
+  // Touch + wheel handlers — all via addEventListener with passive:false
   useEffect(() => {
     const el = wrapperRef.current;
     if (!el) return;
@@ -46,13 +42,13 @@ export default function useShelfGestures({
       if (e.touches.length === 1) {
         t.mode = "scroll";
         t.startY = e.touches[0].clientY;
-        t.startX = e.touches[0].clientX;
         t.startOffset = cameraYOffsetRef.current;
-        t.startTime = performance.now();
+        // Do NOT preventDefault for 1-finger — R3F click/hover must work
       } else if (e.touches.length === 2) {
         t.mode = "pinch";
         t.startDist = getTouchDist(e.touches);
         t.startZoom = cameraZRef.current;
+        e.preventDefault(); // prevent native pinch zoom from starting
       }
     }
 
@@ -65,12 +61,11 @@ export default function useShelfGestures({
         const range = scrollRangeRef.current;
         cameraYOffsetRef.current = clamp(newOffset, -range, range);
       } else if (t.mode === "pinch" && e.touches.length === 2) {
-        // Prevent native pinch zoom
         e.preventDefault();
         if (selectedAlbum !== null) return;
 
         const dist = getTouchDist(e.touches);
-        const ratio = t.startDist / dist; // pinch in → ratio > 1 → zoom out (Z increases)
+        const ratio = t.startDist / dist;
         cameraZRef.current = clamp(t.startZoom * ratio, ZOOM_MIN, ZOOM_MAX);
       }
     }
@@ -79,7 +74,6 @@ export default function useShelfGestures({
       const t = touchRef.current;
 
       if (e.touches.length === 0) {
-        // Transition from pinch → nothing: just reset
         t.mode = null;
       } else if (e.touches.length === 1 && t.mode === "pinch") {
         // Pinch → single finger: seamlessly switch to scroll
@@ -89,18 +83,37 @@ export default function useShelfGestures({
       }
     }
 
-    el.addEventListener("touchstart", onTouchStart, { passive: true });
+    function onWheel(e) {
+      if (e.ctrlKey || e.metaKey) {
+        e.preventDefault(); // works because passive:false
+        cameraZRef.current = clamp(
+          cameraZRef.current + e.deltaY * 0.005,
+          ZOOM_MIN,
+          ZOOM_MAX,
+        );
+      } else {
+        const range = scrollRangeRef.current;
+        const newOffset = cameraYOffsetRef.current + e.deltaY * 0.001;
+        cameraYOffsetRef.current = clamp(newOffset, -range, range);
+      }
+    }
+
+    // passive:false on touchstart so we can preventDefault on 2-finger (pinch)
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
     el.addEventListener("touchmove", onTouchMove, { passive: false });
     el.addEventListener("touchend", onTouchEnd, { passive: true });
+    // passive:false on wheel so Ctrl+wheel preventDefault works
+    el.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
       el.removeEventListener("touchstart", onTouchStart);
       el.removeEventListener("touchmove", onTouchMove);
       el.removeEventListener("touchend", onTouchEnd);
+      el.removeEventListener("wheel", onWheel);
     };
   }, [wrapperRef, scrollRangeRef, cameraYOffsetRef, cameraZRef, selectedAlbum]);
 
-  // Mouse pointer handlers (returned for JSX props)
+  // Mouse pointer handlers (returned for JSX props — touch skipped)
   const onPointerDown = useCallback(
     (e) => {
       if (e.pointerType === "touch") return;
@@ -130,24 +143,5 @@ export default function useShelfGestures({
     dragRef.current.dragging = false;
   }, []);
 
-  // Wheel handler with Ctrl/Cmd zoom
-  const onWheel = useCallback(
-    (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        e.preventDefault();
-        cameraZRef.current = clamp(
-          cameraZRef.current + e.deltaY * 0.005,
-          ZOOM_MIN,
-          ZOOM_MAX,
-        );
-      } else {
-        const range = scrollRangeRef.current;
-        const newOffset = cameraYOffsetRef.current + e.deltaY * 0.001;
-        cameraYOffsetRef.current = clamp(newOffset, -range, range);
-      }
-    },
-    [scrollRangeRef, cameraYOffsetRef, cameraZRef],
-  );
-
-  return { onPointerDown, onPointerMove, onPointerUp, onWheel };
+  return { onPointerDown, onPointerMove, onPointerUp };
 }

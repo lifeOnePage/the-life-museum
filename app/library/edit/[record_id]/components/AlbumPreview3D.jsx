@@ -50,10 +50,9 @@ function CameraZoom({ zoom }) {
   useEffect(() => {
     if (!size.width || !size.height) return;
     const aspect = size.width / size.height;
-    // Ensure the album (width 1.8) fits horizontally with margin
     const fovRad = (30 * Math.PI) / 180;
-    const minZ =
-      (ALBUM_CONFIG.size * 1.4) / (2 * Math.tan(fovRad / 2) * aspect);
+    const halfTan = Math.tan(fovRad / 2);
+    const minZ = (ALBUM_CONFIG.size * 1.4) / (2 * halfTan * aspect);
     camera.position.z = Math.max(zoom, minZ);
     camera.updateProjectionMatrix();
   }, [zoom, camera, size]);

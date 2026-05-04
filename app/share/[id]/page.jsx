@@ -71,6 +71,11 @@ export default function SharePage({ params }) {
   const targetTiltRef = useRef({ x: 0, y: 0 });
   const currentTiltRef = useRef({ x: 0, y: 0 });
 
+  // 핀치줌 — 브라우저 확대 대신 Three.js 카메라 이동
+  const [externalZoom, setExternalZoom] = useState(7.5);
+  const pinchZoomRef = useRef(7.5);
+  const lastPinchDistRef = useRef(null);
+
   // rAF lerp loop — library AlbumCover.jsx의 smoothing 방식과 동일
   useEffect(() => {
     const SMOOTH = 0.08;
@@ -93,6 +98,15 @@ export default function SharePage({ params }) {
     };
   }, []);
 
+  // 브라우저 핀치줌 전체 차단
+  useEffect(() => {
+    const preventZoom = (e) => {
+      if (e.touches.length >= 2) e.preventDefault();
+    };
+    document.addEventListener("touchmove", preventZoom, { passive: false });
+    return () => document.removeEventListener("touchmove", preventZoom);
+  }, []);
+
   // 마우스/터치: 전체 윈도우 기준 정규화 (library와 동일)
   useEffect(() => {
     const MAX_DEG = 28.6; // 0.5 rad
@@ -102,6 +116,8 @@ export default function SharePage({ params }) {
       targetTiltRef.current = { x: -y * MAX_DEG, y: x * MAX_DEG };
     };
     const onTouchMove = (e) => {
+      // 두 손가락은 핀치줌 처리 — 틸트 건너뜀
+      if (e.touches.length >= 2) return;
       const t = e.touches[0];
       const x = (t.clientX / window.innerWidth) * 2 - 1;
       const y = (t.clientY / window.innerHeight) * 2 - 1;
@@ -118,6 +134,32 @@ export default function SharePage({ params }) {
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
     };
+  }, []);
+
+  // 핀치 핸들러
+  const handlePinchStart = useCallback((e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      lastPinchDistRef.current = Math.sqrt(dx * dx + dy * dy);
+    }
+  }, []);
+
+  const handlePinchMove = useCallback((e) => {
+    if (e.touches.length === 2 && lastPinchDistRef.current !== null) {
+      const dx = e.touches[0].clientX - e.touches[1].clientX;
+      const dy = e.touches[0].clientY - e.touches[1].clientY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      const delta = lastPinchDistRef.current - dist; // 양수 = 핀치인 = 줌아웃
+      const next = Math.max(3.5, Math.min(12, pinchZoomRef.current + delta * 0.03));
+      pinchZoomRef.current = next;
+      setExternalZoom(next);
+      lastPinchDistRef.current = dist;
+    }
+  }, []);
+
+  const handlePinchEnd = useCallback(() => {
+    lastPinchDistRef.current = null;
   }, []);
 
   const handleAlbumClick = useCallback(() => {
@@ -327,7 +369,14 @@ export default function SharePage({ params }) {
           style={{ height: "45dvh", visibility: isExpanded ? "hidden" : "visible" }}
         >
           {!isExpanded && (
-            <div ref={albumRef} className="h-full w-full" style={{ touchAction: "pinch-zoom" }}>
+            <div
+              ref={albumRef}
+              className="h-full w-full"
+              style={{ touchAction: "none" }}
+              onTouchStart={handlePinchStart}
+              onTouchMove={handlePinchMove}
+              onTouchEnd={handlePinchEnd}
+            >
               <AlbumPreview3D
                 frontCover={frontCover}
                 backCoverImageUrl={backCoverImage}
@@ -343,6 +392,7 @@ export default function SharePage({ params }) {
                 titleStroke={titleStroke}
                 rotationY={(flipProgress % 1) * 2 * Math.PI}
                 hideControls
+                externalZoom={externalZoom}
                 cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
                 onExpand={handleAlbumClick}
               />
@@ -404,7 +454,14 @@ export default function SharePage({ params }) {
           style={{ height: "100dvh" }}
         >
           <div className="w-[96vw] max-w-[1100px]" style={{ height: "82dvh" }}>
-            <div ref={expandedAlbumRef} className="h-full w-full" style={{ touchAction: "pinch-zoom" }}>
+            <div
+              ref={expandedAlbumRef}
+              className="h-full w-full"
+              style={{ touchAction: "none" }}
+              onTouchStart={handlePinchStart}
+              onTouchMove={handlePinchMove}
+              onTouchEnd={handlePinchEnd}
+            >
               <AlbumPreview3D
                 frontCover={frontCover}
                 backCoverImageUrl={backCoverImage}
@@ -420,6 +477,7 @@ export default function SharePage({ params }) {
                 rotationY={(flipProgress % 1) * 2 * Math.PI}
                 hideControls
                 expanded
+                externalZoom={externalZoom}
                 cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
                 onExpand={handleAlbumClick}
               />

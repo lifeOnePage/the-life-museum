@@ -4,7 +4,45 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authedFetch } from "@/app/utils/authedFetch";
 
-export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
+const T = {
+  ko: {
+    tabNew: "새 앨범 만들기",
+    tabShare: "공유 앨범 추가",
+    titleLabel: "앨범 제목",
+    titlePlaceholder: "비워두면 구글 포토 앨범명 사용",
+    subtitleLabel: "설명",
+    subtitlePlaceholder: "앨범 설명을 입력하세요",
+    comingSoon: "추후 지원 예정",
+    cancel: "취소",
+    creating: "생성 중...",
+    create: "만들기",
+    shareDesc: "공유받은 전시 링크를 붙여넣으면 내 라이브러리에 앨범이 추가됩니다.",
+    shareLabel: "공유 링크",
+    adding: "추가 중...",
+    add: "추가하기",
+    errorAdd: "공유 앨범 추가에 실패했습니다.",
+  },
+  en: {
+    tabNew: "New Album",
+    tabShare: "Add Shared Album",
+    titleLabel: "Album Title",
+    titlePlaceholder: "Leave blank to use Google Photos album name",
+    subtitleLabel: "Description",
+    subtitlePlaceholder: "Enter album description",
+    comingSoon: "Coming soon",
+    cancel: "Cancel",
+    creating: "Creating...",
+    create: "Create",
+    shareDesc: "Paste a shared exhibition link to add the album to your library.",
+    shareLabel: "Share Link",
+    adding: "Adding...",
+    add: "Add",
+    errorAdd: "Failed to add shared album.",
+  },
+};
+
+export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }) {
+  const t = T[locale] || T.ko;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("new"); // 'new' | 'share'
 
@@ -65,7 +103,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
         onClose();
       } else {
         console.error("Failed to add shared album:", json.message || json.detail);
-        alert(json.detail || json.message || "공유 앨범 추가에 실패했습니다.");
+        alert(json.detail || json.message || t.errorAdd);
       }
     } catch (err) {
       console.error("Failed to add shared album:", err);
@@ -93,7 +131,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
             }`}
             onClick={() => setActiveTab("new")}
           >
-            새 앨범 만들기
+            {t.tabNew}
           </button>
           <button
             className={`flex-1 rounded-lg py-2 text-sm font-medium transition ${
@@ -103,7 +141,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
             }`}
             onClick={() => setActiveTab("share")}
           >
-            공유 앨범 추가
+            {t.tabShare}
           </button>
         </div>
 
@@ -113,13 +151,13 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
             {/* 제목 */}
             <div>
               <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
-                앨범 제목
+                {t.titleLabel}
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="비워두면 구글 포토 앨범명 사용"
+                placeholder={t.titlePlaceholder}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>
@@ -127,13 +165,13 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
             {/* 설명 */}
             <div>
               <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
-                설명
+                {t.subtitleLabel}
               </label>
               <input
                 type="text"
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
-                placeholder="앨범 설명을 입력하세요"
+                placeholder={t.subtitlePlaceholder}
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>
@@ -160,7 +198,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
               <input
                 type="url"
                 disabled
-                placeholder="추후 지원 예정"
+                placeholder={t.comingSoon}
                 className="w-full cursor-not-allowed rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-white/20 placeholder-white/15"
               />
             </div>
@@ -173,7 +211,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
               <input
                 type="url"
                 disabled
-                placeholder="추후 지원 예정"
+                placeholder={t.comingSoon}
                 className="w-full cursor-not-allowed rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-white/20 placeholder-white/15"
               />
             </div>
@@ -185,14 +223,14 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
                 onClick={onClose}
                 className="flex-1 rounded-lg border border-white/10 py-2 font-medium text-[#c4b49a] transition hover:bg-white/5"
               >
-                취소
+                {t.cancel}
               </button>
               <button
                 type="submit"
                 disabled={submitting}
                 className="flex-1 rounded-lg bg-[#c4b49a] py-2 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
               >
-                {submitting ? "생성 중..." : "만들기"}
+                {submitting ? t.creating : t.create}
               </button>
             </div>
           </form>
@@ -202,11 +240,11 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
         {activeTab === "share" && (
           <div className="flex flex-col gap-4">
             <p className="text-sm text-[#9b8b7a]">
-              공유받은 전시 링크를 붙여넣으면 내 라이브러리에 앨범이 추가됩니다.
+              {t.shareDesc}
             </p>
             <div>
               <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
-                공유 링크
+                {t.shareLabel}
               </label>
               <input
                 type="text"
@@ -223,14 +261,14 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl }) {
                 onClick={onClose}
                 className="flex-1 rounded-lg border border-white/10 py-2 font-medium text-[#c4b49a] transition hover:bg-white/5"
               >
-                취소
+                {t.cancel}
               </button>
               <button
                 onClick={handleAddShared}
                 disabled={sharing || !shareUrl.trim()}
                 className="flex-1 rounded-lg bg-[#c4b49a] py-2 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
               >
-                {sharing ? "추가 중..." : "추가하기"}
+                {sharing ? t.adding : t.add}
               </button>
             </div>
           </div>

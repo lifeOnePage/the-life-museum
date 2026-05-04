@@ -5,19 +5,35 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 
+const T = {
+  ko: {
+    profile: "프로필",
+    name: "이름",
+    phone: "전화번호",
+    email: "Email",
+    exit: "닫기",
+    edit: "편집",
+    cancel: "취소",
+    save: "저장",
+    saving: "저장 중...",
+    planSupport: "지원 예정입니다.",
+  },
+  en: {
+    profile: "Profile",
+    name: "Name",
+    phone: "Phone",
+    email: "Email",
+    exit: "close",
+    edit: "edit",
+    cancel: "cancel",
+    save: "save",
+    saving: "saving...",
+    planSupport: "Coming soon.",
+  },
+};
+
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
-
-const TABS = [
-  { key: "profile", label: "프로필" },
-  { key: "plan", label: "Plan" },
-];
-
-const FIELDS = [
-  { key: "name", label: "이름" },
-  { key: "phone", label: "전화번호" },
-  { key: "email", label: "Email" },
-];
 
 function getStoredLocale() {
   if (typeof window === "undefined") return "ko";
@@ -30,6 +46,21 @@ function setLocaleCookie(locale) {
 }
 
 export default function ProfileModal({ onClose }) {
+  const [currentLocale, setCurrentLocale] = useState("ko");
+
+  const t = T[currentLocale] || T.ko;
+
+  const TABS = [
+    { key: "profile", label: t.profile },
+    { key: "plan", label: "Plan" },
+  ];
+
+  const FIELDS = [
+    { key: "name", label: t.name },
+    { key: "phone", label: t.phone },
+    { key: "email", label: t.email },
+  ];
+
   const router = useRouter();
   const { user, setUser } = useAuth();
   const [tab, setTab] = useState("profile");
@@ -40,7 +71,6 @@ export default function ProfileModal({ onClose }) {
     email: user?.email || "",
   });
   const [saving, setSaving] = useState(false);
-  const [currentLocale, setCurrentLocale] = useState("ko");
 
   useEffect(() => {
     setCurrentLocale(getStoredLocale());
@@ -104,11 +134,11 @@ export default function ProfileModal({ onClose }) {
       >
         {/* 모달 헤더 */}
         <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
-          <h2 className="text-lg font-semibold text-[#e8d5b7]">프로필</h2>
+          <h2 className="text-lg font-semibold text-[#e8d5b7]">{t.profile}</h2>
           <button
             onClick={onClose}
             className="flex h-8 w-8 items-center justify-center rounded-full text-white/40 transition hover:bg-white/10 hover:text-[#e8d5b7]"
-            aria-label="닫기"
+            aria-label={t.exit}
           >
             ✕
           </button>
@@ -178,8 +208,12 @@ export default function ProfileModal({ onClose }) {
                     className="rounded-lg border border-white/10 bg-transparent px-3 py-1.5 text-sm text-[#e8d5b7] outline-none focus:border-[#c4b49a]"
                     style={{ background: "#1e1a14" }}
                   >
-                    <option value="ko" style={{ background: "#1e1a14" }}>한국어</option>
-                    <option value="en" style={{ background: "#1e1a14" }}>English</option>
+                    <option value="ko" style={{ background: "#1e1a14" }}>
+                      한국어
+                    </option>
+                    <option value="en" style={{ background: "#1e1a14" }}>
+                      English
+                    </option>
                   </select>
                 </div>
               </div>
@@ -192,14 +226,14 @@ export default function ProfileModal({ onClose }) {
                       onClick={handleCancel}
                       className="rounded-lg border border-white/10 px-4 py-2 text-sm text-[#c4b49a] transition hover:bg-white/5"
                     >
-                      취소
+                      {t.cancel}
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={saving}
                       className="rounded-lg bg-[#c4b49a] px-4 py-2 text-sm text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
                     >
-                      {saving ? "저장 중..." : "저장"}
+                      {saving ? t.saving : t.save}
                     </button>
                   </>
                 ) : (
@@ -208,13 +242,13 @@ export default function ProfileModal({ onClose }) {
                       onClick={onClose}
                       className="rounded-lg border border-white/10 px-4 py-2 text-sm text-[#c4b49a] transition hover:bg-white/5"
                     >
-                      닫기
+                      {t.exit}
                     </button>
                     <button
                       onClick={handleEdit}
                       className="rounded-lg border border-white/10 px-4 py-2 text-sm text-[#c4b49a] transition hover:bg-white/5"
                     >
-                      편집
+                      {t.edit}
                     </button>
                   </>
                 )}
@@ -232,7 +266,7 @@ export default function ProfileModal({ onClose }) {
                 <div className="mt-4 h-10 w-full animate-pulse rounded-lg bg-white/5" />
               </div>
               <p className="mt-6 text-center text-sm text-white/30">
-                지원 예정입니다.
+                {t.planSupport}
               </p>
             </div>
           )}

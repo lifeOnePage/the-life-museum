@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { use, useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../contexts/AuthContext";
 import ShelfCanvas from "./components/ShelfCanvas";
@@ -81,7 +81,22 @@ async function generateAlbumCovers(item) {
   return { frontImage, backImage };
 }
 
-export default function MyShelfPage() {
+const T = {
+  ko: {
+    edit: "편집하기",
+    view: "보러가기",
+    share: "공유하기",
+  },
+  en: {
+    edit: "Edit",
+    view: "View",
+    share: "Share",
+  },
+};
+
+export default function MyShelfPage({ params }) {
+  const { locale } = use(params);
+  const t = T[locale] || T.ko;
   const { token, loading } = useAuth();
   const router = useRouter();
 
@@ -339,6 +354,7 @@ export default function MyShelfPage() {
           onCloseAlbum={selectedAlbum ? handleCloseAlbum : undefined}
           filterType={filterType}
           setFilterType={setFilterType}
+          locale={locale}
         />
         {/* 상단 헤더 */}
         <div className="pointer-events-none absolute top-0 right-0 left-0 flex items-center justify-between p-4">
@@ -382,7 +398,7 @@ export default function MyShelfPage() {
                 className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
               >
                 <Pencil size={14} />
-                편집하기
+                {t.edit}
               </button>
             )}
             <button
@@ -394,13 +410,13 @@ export default function MyShelfPage() {
               className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
             >
               <ArrowRight size={14} />
-              보러가기
+              {t.view}
             </button>
             {selectedRole === "owner" && (
               <button
                 onClick={() => setShowShareModal(true)}
                 className="flex shrink-0 items-center justify-center rounded-full bg-neutral-800/80 p-2.5 text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
-                title="공유하기"
+                title={t.share}
               >
                 <Share2 size={16} />
               </button>
@@ -415,6 +431,7 @@ export default function MyShelfPage() {
           baseUrl={BASE_URL}
           onClose={() => setShowCreateModal(false)}
           onCreated={handleAlbumCreated}
+          locale={locale}
         />
       )}
 
@@ -425,6 +442,7 @@ export default function MyShelfPage() {
           albumTitle={selectedAlbum.data.title || ""}
           initialIsPublic={selectedAlbum.data.isPublic ?? false}
           onClose={() => setShowShareModal(false)}
+          locale={locale}
         />
       )}
     </div>

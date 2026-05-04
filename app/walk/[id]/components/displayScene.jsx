@@ -17,6 +17,29 @@ import { SEED, CAMERA_SPEED, getTextureConfig } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
 import { useRecordData } from "@/app/lib/useRecordData";
 
+const T = {
+  ko: {
+    exit: "나가기",
+    pause: "일시정지",
+    play: "재생",
+    speed: "재생 속도",
+    musicOn: "음악 켜기",
+    musicOff: "음악 끄기",
+    fullscreenOff: "전체화면 해제",
+    fullscreen: "전체화면",
+  },
+  en: {
+    exit: "Exit",
+    pause: "Pause",
+    play: "Play",
+    speed: "Playback Speed",
+    musicOn: "Unmute",
+    musicOff: "Mute",
+    fullscreenOff: "Exit Fullscreen",
+    fullscreen: "Fullscreen",
+  },
+};
+
 function Tooltip({ label, children }) {
   return (
     <div className="group relative flex items-center">
@@ -40,10 +63,11 @@ function PlaybackControls({
   hasBgm,
   isFullscreen,
   onToggleFullscreen,
+  t,
 }) {
   return (
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
-      <Tooltip label="나가기">
+      <Tooltip label={t.exit}>
         <button
           onClick={onExit}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
@@ -54,7 +78,7 @@ function PlaybackControls({
 
       <div className="h-6 w-px bg-white/20" />
 
-      <Tooltip label={isPlaying ? "일시정지" : "재생"}>
+      <Tooltip label={isPlaying ? t.pause : t.play}>
         <button
           onClick={onTogglePlay}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
@@ -82,7 +106,7 @@ function PlaybackControls({
         </button>
       </Tooltip>
 
-      <Tooltip label="재생 속도">
+      <Tooltip label={t.speed}>
         <Gauge className="mr-1.5 h-6 w-6 shrink-0 text-white/70" />
         <input
           type="range"
@@ -97,7 +121,7 @@ function PlaybackControls({
       {hasBgm && (
         <>
           <div className="h-6 w-px bg-white/20" />
-          <Tooltip label={isMuted ? "음악 켜기" : "음악 끄기"}>
+          <Tooltip label={isMuted ? t.musicOn : t.musicOff}>
             <button
               onClick={onToggleMute}
               className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
@@ -140,7 +164,7 @@ function PlaybackControls({
 
       <div className="h-6 w-px bg-white/20" />
 
-      <Tooltip label={isFullscreen ? "전체화면 해제" : "전체화면"}>
+      <Tooltip label={isFullscreen ? t.fullscreenOff : t.fullscreen}>
         <button
           onClick={onToggleFullscreen}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
@@ -156,7 +180,8 @@ function PlaybackControls({
   );
 }
 
-export default function DisplayScene({ recordId }) {
+export default function DisplayScene({ recordId, locale }) {
+  const t = T[locale] || T.ko;
   const router = useRouter();
   const { data: recordData, loading, error } = useRecordData(recordId);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -333,6 +358,7 @@ export default function DisplayScene({ recordId }) {
           onToggleMute={() => setIsMuted((m) => !m)}
           isFullscreen={isFullscreen}
           onToggleFullscreen={handleToggleFullscreen}
+          t={t}
         />
       </div>
 

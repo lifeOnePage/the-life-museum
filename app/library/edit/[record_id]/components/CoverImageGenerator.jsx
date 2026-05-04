@@ -34,6 +34,65 @@ function LazyImage({ src, alt, className }) {
   );
 }
 
+const T = {
+  ko: {
+    refPhotoHeader: "참고 이미지 선택",
+    refPhotoDesc: "사진을 탭하면 바로 참고 이미지로 추가됩니다.",
+    noPhotos: "사용 가능한 사진이 없습니다.",
+    coverHeader: "표지 디자인",
+    coverDesc: "참고 이미지와 스타일을 선택하면 AI가 표지를 생성합니다.",
+    genCount: "사용한 생성 횟수",
+    genExhausted: "생성 횟수를 모두 사용했습니다.",
+    refImage: "참고 이미지",
+    device: "디바이스",
+    photodrive: "포토드라이브",
+    style: "스타일",
+    generating: "생성 중...",
+    generateMore: "추가 생성하기",
+    generate: "생성하기",
+    maxReached: "최대 3개까지 생성할 수 있습니다.",
+    results: "생성 결과",
+    revert: "기존 커버로 되돌리기",
+    animationTitle: "애니메이션 만들기",
+    animationBadge: "추후 제공 예정",
+    animationDesc: "선택한 이미지를 기반으로 짧은 애니메이션 영상을 생성합니다.",
+  },
+  en: {
+    refPhotoHeader: "Select Reference Image",
+    refPhotoDesc: "Tap a photo to add it as a reference image.",
+    noPhotos: "No photos available.",
+    coverHeader: "Cover Design",
+    coverDesc: "Select a reference image and style, then AI will generate your cover.",
+    genCount: "Generations used",
+    genExhausted: "You've used all your generations.",
+    refImage: "Reference Image",
+    device: "Device",
+    photodrive: "Photo Drive",
+    style: "Style",
+    generating: "Generating...",
+    generateMore: "Generate More",
+    generate: "Generate",
+    maxReached: "Maximum 3 images can be generated.",
+    results: "Results",
+    revert: "Revert to Original Cover",
+    animationTitle: "Create Animation",
+    animationBadge: "Coming soon",
+    animationDesc: "Generate a short animation based on the selected image.",
+  },
+};
+
+const STYLES_KO = [
+  { key: "minimal", label: "잉크 드로잉", desc: "흑백 손그림 느낌", sample: "/images/styleSample/minimal.png" },
+  { key: "abstract", label: "팝 아트", desc: "화려한 컬러 패턴", sample: "/images/styleSample/abstract.png" },
+  { key: "animation", label: "수채 일러스트", desc: "따뜻한 애니 감성", sample: "/images/styleSample/animation.png" },
+];
+
+const STYLES_EN = [
+  { key: "minimal", label: "Ink Drawing", desc: "B&W hand-drawn style", sample: "/images/styleSample/minimal.png" },
+  { key: "abstract", label: "Pop Art", desc: "Vivid color pattern", sample: "/images/styleSample/abstract.png" },
+  { key: "animation", label: "Watercolor", desc: "Warm animation style", sample: "/images/styleSample/animation.png" },
+];
+
 export default function CoverImageGenerator({
   record_id,
   onApply,
@@ -44,7 +103,10 @@ export default function CoverImageGenerator({
   onRefreshPhotos,
   isRefreshing,
   preloadBlobs,
+  locale,
 }) {
+  const t = T[locale] || T.ko;
+  const STYLES = locale === "en" ? STYLES_EN : STYLES_KO;
   const [view, setView] = useState("generate"); // "generate" | "ref-photodrive"
   const [selectedStyle, setSelectedStyle] = useState("minimal");
   const [imageRefPreviews, setImageRefPreviews] = useState([]);
@@ -195,7 +257,7 @@ export default function CoverImageGenerator({
                 className="flex items-center gap-2 text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
               >
                 <ChevronLeft className="h-[18px] w-[20px]" />
-                <span className="text-base font-bold">참고 이미지 선택</span>
+                <span className="text-base font-bold">{t.refPhotoHeader}</span>
               </button>
               <button
                 onClick={onRefreshPhotos}
@@ -208,7 +270,7 @@ export default function CoverImageGenerator({
               </button>
             </div>
             <p className="text-xs text-[#9b8b7a]">
-              사진을 탭하면 바로 참고 이미지로 추가됩니다.
+              {t.refPhotoDesc}
             </p>
           </div>
 
@@ -216,7 +278,7 @@ export default function CoverImageGenerator({
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <ImagePlus className="mb-2 h-8 w-8 text-[#9b8b7a]/40" />
               <p className="text-sm text-[#9b8b7a]">
-                사용 가능한 사진이 없습니다.
+                {t.noPhotos}
               </p>
             </div>
           ) : (
@@ -260,16 +322,16 @@ export default function CoverImageGenerator({
               className="mb-2 flex items-center gap-2 text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
             >
               <ChevronLeft className="h-[18px] w-5" />
-              <span className="text-base font-bold">표지 디자인</span>
+              <span className="text-base font-bold">{t.coverHeader}</span>
             </button>
             <p className="text-xs text-[#9b8b7a]">
-              참고 이미지와 스타일을 선택하면 AI가 표지를 생성합니다.
+              {t.coverDesc}
             </p>
           </div>
 
           {/* Remaining generations indicator */}
           <div className="mb-4 flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
-            <span className="text-xs text-[#c4b49a]">사용한 생성 횟수</span>
+            <span className="text-xs text-[#c4b49a]">{t.genCount}</span>
             <span
               className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
             >
@@ -280,14 +342,14 @@ export default function CoverImageGenerator({
           {remainingGens <= 0 && (
             <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2">
               <p className="text-xs text-red-500">
-                생성 횟수를 모두 사용했습니다.
+                {t.genExhausted}
               </p>
             </div>
           )}
 
           {/* 1. Reference image */}
           <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-            참고 이미지
+            {t.refImage}
           </label>
 
           {imageRefPreviews.length > 0 ? (
@@ -316,7 +378,7 @@ export default function CoverImageGenerator({
                   onChange={handleImageRef}
                 />
                 <Upload className="mb-1 h-4 w-4 text-[#9b8b7a]" />
-                <span className="text-[11px] text-[#9b8b7a]">디바이스</span>
+                <span className="text-[11px] text-[#9b8b7a]">{t.device}</span>
               </label>
               <button
                 onClick={() => {
@@ -326,36 +388,17 @@ export default function CoverImageGenerator({
                 className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors"
               >
                 <FolderOpen className="mb-1 h-4 w-4 text-[#9b8b7a]" />
-                <span className="text-[11px] text-[#9b8b7a]">포토드라이브</span>
+                <span className="text-[11px] text-[#9b8b7a]">{t.photodrive}</span>
               </button>
             </div>
           )}
 
           {/* 2. Style selector */}
           <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-            스타일
+            {t.style}
           </label>
           <div className="mb-4 flex gap-2">
-            {[
-              {
-                key: "minimal",
-                label: "잉크 드로잉",
-                desc: "흑백 손그림 느낌",
-                sample: "/images/styleSample/minimal.png",
-              },
-              {
-                key: "abstract",
-                label: "팝 아트",
-                desc: "화려한 컬러 패턴",
-                sample: "/images/styleSample/abstract.png",
-              },
-              {
-                key: "animation",
-                label: "수채 일러스트",
-                desc: "따뜻한 애니 감성",
-                sample: "/images/styleSample/animation.png",
-              },
-            ].map((opt) => {
+            {STYLES.map((opt) => {
               const disabled = false;
               return (
                 <button
@@ -403,23 +446,23 @@ export default function CoverImageGenerator({
             {isGenerating ? (
               <>
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                생성 중...
+                {t.generating}
               </>
             ) : generatedImages.length > 0 ? (
               <>
                 <Sparkles className="h-4 w-4" />
-                추가 생성하기
+                {t.generateMore}
               </>
             ) : (
               <>
                 <Sparkles className="h-4 w-4" />
-                생성하기
+                {t.generate}
               </>
             )}
           </button>
           {generatedImages.length >= 3 && (
             <p className="mt-2 text-center text-xs text-[#9b8b7a]">
-              최대 3개까지 생성할 수 있습니다.
+              {t.maxReached}
             </p>
           )}
 
@@ -431,7 +474,7 @@ export default function CoverImageGenerator({
               className="mt-6"
             >
               <p className="mb-2 text-xs font-medium text-[#9b8b7a]">
-                생성 결과
+                {t.results}
               </p>
               <div className="grid grid-cols-3 gap-3">
                 {generatedImages.map((imageUrl, i) => (
@@ -459,7 +502,7 @@ export default function CoverImageGenerator({
                   onClick={handleRevertCover}
                   className="mt-4 flex w-full items-center justify-center rounded-lg border border-white/15 bg-white/5 py-[10px] text-sm font-medium text-[#9b8b7a] transition-colors hover:bg-white/10"
                 >
-                  기존 커버로 되돌리기
+                  {t.revert}
                 </button>
               )}
 
@@ -469,14 +512,14 @@ export default function CoverImageGenerator({
                   <div className="flex items-center gap-2">
                     <Film className="h-4 w-4 text-[#9b8b7a]" />
                     <span className="text-sm font-medium text-[#9b8b7a]">
-                      애니메이션 만들기
+                      {t.animationTitle}
                     </span>
                     <span className="rounded-full bg-white/10 px-2 py-0.5 text-[10px] text-[#9b8b7a]">
-                      추후 제공 예정
+                      {t.animationBadge}
                     </span>
                   </div>
                   <p className="mt-1 text-xs text-[#9b8b7a]">
-                    선택한 이미지를 기반으로 짧은 애니메이션 영상을 생성합니다.
+                    {t.animationDesc}
                   </p>
                 </div>
               )}

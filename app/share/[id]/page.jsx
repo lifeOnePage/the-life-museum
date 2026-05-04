@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
-import { X, Maximize2, Minimize2, Info } from "lucide-react";
+import { X, Info } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useAuth } from "@/app/contexts/AuthContext";
 
@@ -36,8 +36,30 @@ const AlbumPreview3D = dynamic(
 
 const API_BASE = "https://the-life-museum-backend-production.up.railway.app";
 
+const T = {
+  ko: {
+    linkError: "링크가 올바른지 확인해 주세요",
+    privateAlbum: "비공개 앨범입니다",
+    privateDesc: "앨범 소유자만 열람할 수 있어요",
+    gallery: "갤러리 보러가기",
+    externalLink: "외부 링크",
+    signupPrompt: "나만의 앨범을 만들고 싶으신가요?",
+    signupCta: "회원가입하고 편집하기",
+  },
+  en: {
+    linkError: "Please check if the link is correct",
+    privateAlbum: "This album is private",
+    privateDesc: "Only the album owner can view it",
+    gallery: "View Gallery",
+    externalLink: "External Link",
+    signupPrompt: "Want to create your own album?",
+    signupCta: "Sign up and start editing",
+  },
+};
+
 export default function SharePage({ params }) {
-  const { id } = use(params);
+  const { id, locale } = use(params);
+  const t = T[locale] || T.ko;
   const router = useRouter();
 
   const { data: recordData, loading, error } = useRecordData(id);
@@ -62,10 +84,8 @@ export default function SharePage({ params }) {
     };
   }, []);
   const [flipProgress, setFlipProgress] = useState(0);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const albumRef = useRef(null);
-  const expandedAlbumRef = useRef(null);
   const idleRafRef = useRef(null);
   // Library와 동일: 전체 윈도우 기준 정규화, 0.5rad max, 0.08 smoothing
   const targetTiltRef = useRef({ x: 0, y: 0 });
@@ -91,7 +111,6 @@ export default function SharePage({ params }) {
       cur.y += (tgt.y - cur.y) * SMOOTH;
       const transform = `perspective(1000px) rotateX(${cur.x}deg) rotateY(${cur.y}deg)`;
       if (albumRef.current) albumRef.current.style.transform = transform;
-      if (expandedAlbumRef.current) expandedAlbumRef.current.style.transform = transform;
       idleRafRef.current = requestAnimationFrame(loop);
     }
     idleRafRef.current = requestAnimationFrame(loop);
@@ -279,7 +298,7 @@ export default function SharePage({ params }) {
           {error}
         </p>
         <p className="text-xs tracking-wider text-white/30">
-          링크가 올바른지 확인해 주세요
+          {t.linkError}
         </p>
       </div>
     );
@@ -291,10 +310,10 @@ export default function SharePage({ params }) {
       <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-black px-6 text-center">
         <p className="text-2xl">🔒</p>
         <p className="text-sm font-light tracking-wide text-white/60">
-          비공개 앨범입니다
+          {t.privateAlbum}
         </p>
         <p className="text-xs tracking-wider text-white/30">
-          앨범 소유자만 열람할 수 있어요
+          {t.privateDesc}
         </p>
       </div>
     );
@@ -305,26 +324,16 @@ export default function SharePage({ params }) {
       {/* Background: Concave cylindrical photo grid */}
       {images.length > 0 && (
         <div className="pointer-events-none absolute inset-0">
-          {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />
           <div className="absolute inset-0 z-[1] bg-[radial-gradient(ellipse_at_center,transparent_30%,black_80%)]" />
-
           <div
             className="absolute inset-0 flex items-center justify-center opacity-35"
-            style={{
-              perspective: PERSPECTIVE,
-              perspectiveOrigin: "50% 35%",
-            }}
+            style={{ perspective: PERSPECTIVE, perspectiveOrigin: "50% 35%" }}
           >
             <div
               className="relative"
-              style={{
-                transformStyle: "preserve-3d",
-                transform: "rotateX(8deg)",
-                width: "100vw",
-                height: "100vh",
-              }}
+              style={{ transformStyle: "preserve-3d", transform: "rotateX(8deg)", width: "100vw", height: "100vh" }}
             >
               {gridColumns.map(({ colIdx, angle, images: colImages }) => (
                 <div
@@ -333,7 +342,6 @@ export default function SharePage({ params }) {
                   style={{
                     width: cellWidth,
                     backfaceVisibility: "hidden",
-                    // preserve-3d는 자식 이미지들이 3D 변환 없으므로 제거 — GPU 합성 부하 대폭 감소
                     transform: `rotateY(${angle}deg) translateZ(-${RADIUS}px) translateX(-50%) translateY(-50%)`,
                   }}
                 >
@@ -348,9 +356,7 @@ export default function SharePage({ params }) {
                         className="w-full rounded-sm object-cover opacity-0 transition-opacity duration-[1200ms] ease-out"
                         style={{ aspectRatio: "1" }}
                         draggable={false}
-                        onLoad={(e) => {
-                          e.currentTarget.style.opacity = "1";
-                        }}
+                        onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
                       />
                     ))}
                   </div>
@@ -361,179 +367,96 @@ export default function SharePage({ params }) {
         </div>
       )}
 
-      {/* Center Content */}
-      <div className="relative z-10 flex h-full flex-col items-center justify-center px-6">
-        {/* Title / Subtitle */}
-        <div
-          className={`text-center transition-all duration-1000 ease-out ${
-            ready ? "opacity-100" : "translate-y-2 opacity-0"
-          }`}
-        >
-          {albumTitle && (
-            <h1 className="text-lg font-medium tracking-[0.2em] text-white sm:text-xl">
-              {albumTitle}
-            </h1>
-          )}
-          {subtitle && (
-            <p className="mt-2 text-xs font-light tracking-[0.25em] text-white/50 sm:text-sm">
-              {subtitle}
-            </p>
-          )}
-        </div>
-
-        {/* 3D Album Preview */}
-        <div
-          className={`w-[80vw] max-w-[400px] transition-all delay-200 duration-1000 ease-out lg:max-w-[520px] xl:max-w-[640px] ${
-            ready ? "scale-100 opacity-100" : "scale-[0.95] opacity-0"
-          }`}
-          style={{ height: "45dvh", visibility: isExpanded ? "hidden" : "visible" }}
-        >
-          {!isExpanded && (
-            <div ref={albumRef} className="h-full w-full" style={{ touchAction: "pan-y" }}>
-              <AlbumPreview3D
-                frontCover={frontCover}
-                backCoverImageUrl={backCoverImage}
-                bio={bio}
-                timeline={timeline}
-                selectedTheme={selectedTheme}
-                albumTitle={albumTitle}
-                albumSubTitle={subtitle}
-                titleOverlayEnabled={titleOverlayEnabled}
-                titlePosition={titlePosition}
-                titleFont={titleFont}
-                titleColor={titleColor}
-                titleStroke={titleStroke}
-                rotationY={(flipProgress % 1) * 2 * Math.PI}
-                hideControls
-                cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
-                onExpand={handleAlbumClick}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Flip Slider + CTA */}
-        <div
-          className={`flex flex-col items-center gap-4 transition-all delay-500 duration-1000 ease-out ${
-            ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
-          }`}
-        >
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setIsInfoOpen(true)}
-              className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-            >
-              <Info className="h-4 w-4" />
-            </button>
-            <button
-              onClick={handleAlbumClick}
-              className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-            >
-              <Icon360 className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setIsExpanded(true)}
-              className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-            >
-              <Maximize2 className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="flex flex-col items-center gap-3">
-            <button
-              onClick={() => router.push(`/walk/${id}`)}
-              className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
-            >
-              갤러리 보러가기
-            </button>
-            {externalLinkUrl && (
-              <a
-                href={externalLinkUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs font-light tracking-[0.15em] text-white/40 underline underline-offset-4 transition-colors hover:text-white/70"
-              >
-                {externalLinkTitle || "외부 링크"}
-              </a>
-            )}
-          </div>
-        </div>
+      {/* 전체화면 3D 캔버스 */}
+      <div
+        ref={albumRef}
+        className={`absolute inset-0 z-10 transition-opacity duration-1000 ${ready ? "opacity-100" : "opacity-0"}`}
+        style={{ touchAction: "none" }}
+        onTouchStart={handlePinchStart}
+        onTouchMove={handlePinchMove}
+        onTouchEnd={handlePinchEnd}
+      >
+        <AlbumPreview3D
+          frontCover={frontCover}
+          backCoverImageUrl={backCoverImage}
+          bio={bio}
+          timeline={timeline}
+          selectedTheme={selectedTheme}
+          albumTitle={albumTitle}
+          albumSubTitle={subtitle}
+          titleOverlayEnabled={titleOverlayEnabled}
+          titlePosition={titlePosition}
+          titleFont={titleFont}
+          titleColor={titleColor}
+          titleStroke={titleStroke}
+          rotationY={(flipProgress % 1) * 2 * Math.PI}
+          hideControls
+          externalZoom={externalZoom}
+          cameraOffset={panOffset}
+          cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
+          onExpand={handleAlbumClick}
+        />
       </div>
 
-      {/* Expanded Album Overlay */}
-      {isExpanded && (
-        <div className="fixed inset-0 z-50 bg-black">
-          {/* 전체화면 캔버스 */}
-          <div
-            ref={expandedAlbumRef}
-            className="absolute inset-0"
-            style={{ touchAction: "none" }}
-            onTouchStart={handlePinchStart}
-            onTouchMove={handlePinchMove}
-            onTouchEnd={handlePinchEnd}
-          >
-            <AlbumPreview3D
-              frontCover={frontCover}
-              backCoverImageUrl={backCoverImage}
-              bio={bio}
-              timeline={timeline}
-              selectedTheme={selectedTheme}
-              albumTitle={albumTitle}
-              titleOverlayEnabled={titleOverlayEnabled}
-              titlePosition={titlePosition}
-              titleFont={titleFont}
-              titleColor={titleColor}
-              titleStroke={titleStroke}
-              rotationY={(flipProgress % 1) * 2 * Math.PI}
-              hideControls
-              expanded
-              externalZoom={externalZoom}
-              cameraOffset={panOffset}
-              cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
-              onExpand={handleAlbumClick}
-            />
-          </div>
+      {/* 타이틀 오버레이 — 상단 */}
+      <div
+        className={`pointer-events-none absolute inset-x-0 top-0 z-20 pt-10 text-center transition-all duration-1000 ease-out ${
+          ready ? "opacity-100" : "translate-y-2 opacity-0"
+        }`}
+        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%)" }}
+      >
+        {albumTitle && (
+          <h1 className="text-lg font-medium tracking-[0.2em] text-white sm:text-xl">
+            {albumTitle}
+          </h1>
+        )}
+        {subtitle && (
+          <p className="mt-2 text-xs font-light tracking-[0.25em] text-white/50 sm:text-sm">
+            {subtitle}
+          </p>
+        )}
+      </div>
 
-          {/* 버튼 오버레이 */}
-          <div
-            className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-4"
-            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)" }}
+      {/* 버튼 오버레이 — 하단 */}
+      <div
+        className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-3 pb-[max(env(safe-area-inset-bottom),16px)] pt-6 transition-all delay-300 duration-1000 ease-out ${
+          ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+        }`}
+        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)" }}
+      >
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setIsInfoOpen(true)}
+            className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
           >
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsInfoOpen(true)}
-                className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-              >
-                <Info className="h-4 w-4" />
-              </button>
-              <button
-                onClick={handleAlbumClick}
-                className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-              >
-                <Icon360 className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => {
-                  setIsExpanded(false);
-                  panOffsetRef.current = { x: 0, y: 0 };
-                  setPanOffset({ x: 0, y: 0 });
-                }}
-                className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-              >
-                <Minimize2 className="h-4 w-4" />
-              </button>
-            </div>
-            <button
-              onClick={() => {
-                setIsExpanded(false);
-                router.push(`/walk/${id}`);
-              }}
-              className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
-            >
-              갤러리 보러가기
-            </button>
-          </div>
+            <Info className="h-4 w-4" />
+          </button>
+          <button
+            onClick={handleAlbumClick}
+            className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+          >
+            <Icon360 className="h-4 w-4" />
+          </button>
         </div>
-      )}
+        <div className="flex flex-col items-center gap-3">
+          <button
+            onClick={() => router.push(`/walk/${id}`)}
+            className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
+          >
+            {t.gallery}
+          </button>
+          {externalLinkUrl && (
+            <a
+              href={externalLinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xs font-light tracking-[0.15em] text-white/40 underline underline-offset-4 transition-colors hover:text-white/70"
+            >
+              {externalLinkTitle || t.externalLink}
+            </a>
+          )}
+        </div>
+      </div>
 
       {/* Info Popup */}
       {isInfoOpen && (
@@ -603,13 +526,13 @@ export default function SharePage({ params }) {
               {!isLoggedIn && (
                 <div className="mt-5 border-t border-white/10 pt-5 text-center">
                   <p className="mb-3 text-[14px] text-white/40">
-                    나만의 앨범을 만들고 싶으신가요?
+                    {t.signupPrompt}
                   </p>
                   <button
                     onClick={() => { setIsInfoOpen(false); router.push("/login"); }}
                     className="text-[15px] font-medium tracking-wide text-white/70 underline underline-offset-4 transition-colors hover:text-white"
                   >
-                    회원가입하고 편집하기
+                    {t.signupCta}
                   </button>
                 </div>
               )}

@@ -386,12 +386,13 @@ const PREVIEW_MAP = {
   minimalist: MinimalistPreview,
 };
 
-const ThemeSelector = ({ selectedTheme, onThemeChange }) => {
+const ThemeSelector = ({ selectedTheme, onThemeChange, locale }) => {
   return (
     <div className="space-y-3">
       {THEME_LIST.map((option) => {
         const isSelected = selectedTheme === option.key;
         const PreviewComponent = PREVIEW_MAP[option.key];
+        const description = locale === "en" ? option.descriptionEn : option.description;
         return (
           <button
             key={option.key}
@@ -412,7 +413,7 @@ const ThemeSelector = ({ selectedTheme, onThemeChange }) => {
               <p className="text-sm font-medium text-[#e8d5b7]">
                 {option.name}
               </p>
-              <p className="text-xs text-[#9b8b7a]">{option.description}</p>
+              <p className="text-xs text-[#9b8b7a]">{description}</p>
             </div>
 
             {/* Radio indicator */}

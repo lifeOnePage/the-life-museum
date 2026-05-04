@@ -33,6 +33,39 @@ function LazyImage({ src, alt, className }) {
   );
 }
 
+const T = {
+  ko: {
+    generate: "이미지 생성하기",
+    upload: "직접 업로드",
+    uploadHeader: "직접 업로드",
+    uploadDesc:
+      "디바이스에서 직접 업로드하거나, 포토드라이브에서 선택할 수 있습니다.",
+    deviceUpload: "디바이스 업로드",
+    photodrive: "포토드라이브",
+    photodriveDesc: "레코드 사진에서 선택",
+    photodriveHeader: "포토드라이브",
+    photodriveSelectDesc: "레코드의 사진 중 표지로 사용할 이미지를 선택하세요.",
+    noPhotos: "사용 가능한 사진이 없습니다.",
+    saving: "저장 중...",
+    imageLimit: "JPG, PNG 최대 10MB",
+  },
+  en: {
+    generate: "Generate Image",
+    upload: "Upload",
+    uploadHeader: "Upload",
+    uploadDesc: "Upload from your device or choose from Photo Drive.",
+    deviceUpload: "Device Upload",
+    photodrive: "Photo Drive",
+    photodriveDesc: "Choose from record photos",
+    photodriveHeader: "Photo Drive",
+    photodriveSelectDesc:
+      "Select an image from your record photos to use as the cover.",
+    noPhotos: "No photos available.",
+    saving: "Saving...",
+    imageLimit: "JPG, PNG up to 10MB",
+  },
+};
+
 const CoverImageEditor = forwardRef(
   (
     {
@@ -45,9 +78,11 @@ const CoverImageEditor = forwardRef(
       onRefreshPhotos,
       isRefreshing,
       preloadBlobs,
+      locale,
     },
     ref,
   ) => {
+    const t = T[locale] || T.ko;
     const [view, setView] = useState("menu");
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
@@ -169,13 +204,13 @@ const CoverImageEditor = forwardRef(
                 {/* AI Generate card */}
                 <button
                   onClick={() => setView("generate")}
-                  className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <Sparkles className="h-4 w-4 text-[#9b8b7a]" />
                   </div>
                   <span className="text-sm font-medium text-[#e8d5b7]">
-                    이미지 생성하기
+                    {t.generate}
                   </span>
                   <div className="h-5" />
                 </button>
@@ -183,17 +218,15 @@ const CoverImageEditor = forwardRef(
                 {/* Upload card */}
                 <button
                   onClick={() => setView("upload")}
-                  className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <ImagePlus className="h-[18px] w-[18px] text-[#9b8b7a]" />
                   </div>
                   <span className="text-sm font-medium text-[#e8d5b7]">
-                    직접 업로드
+                    {t.upload}
                   </span>
-                  <p className="mt-1 text-xs text-[#9b8b7a]">
-                    JPG, PNG 최대 10MB
-                  </p>
+                  <p className="mt-1 text-xs text-[#9b8b7a]">{t.imageLimit}</p>
                 </button>
               </div>
 
@@ -216,18 +249,15 @@ const CoverImageEditor = forwardRef(
                   className="mb-2 flex items-center gap-2 text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
                 >
                   <ChevronLeft className="h-[18px] w-[20px]" />
-                  <span className="text-base font-bold">직접 업로드</span>
+                  <span className="text-base font-bold">{t.uploadHeader}</span>
                 </button>
-                <p className="text-xs text-[#9b8b7a]">
-                  디바이스에서 직접 업로드하거나, 포토드라이브에서 선택할 수
-                  있습니다.
-                </p>
+                <p className="text-xs text-[#9b8b7a]">{t.uploadDesc}</p>
               </div>
 
               {/* Two option cards */}
               <div className="flex gap-4">
                 {/* Device upload card */}
-                <label className="hover:border-[#c4b49a] flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-white/15 bg-transparent px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
+                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-white/15 bg-transparent px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
                   <input
                     type="file"
                     accept="image/*"
@@ -238,11 +268,9 @@ const CoverImageEditor = forwardRef(
                     <Upload className="h-[18px] w-[18px] text-[#9b8b7a]" />
                   </div>
                   <span className="text-sm font-medium text-[#e8d5b7]">
-                    디바이스 업로드
+                    {t.deviceUpload}
                   </span>
-                  <p className="mt-1 text-xs text-[#9b8b7a]">
-                    JPG, PNG 최대 10MB
-                  </p>
+                  <p className="mt-1 text-xs text-[#9b8b7a]">{t.imageLimit}</p>
                 </label>
 
                 {/* Photo drive card */}
@@ -252,16 +280,16 @@ const CoverImageEditor = forwardRef(
                     setSelectedPhotoIndex(-1);
                     preloadBlobs();
                   }}
-                  className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
+                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
                   <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
                     <FolderOpen className="h-[18px] w-[18px] text-[#9b8b7a]" />
                   </div>
                   <span className="text-sm font-medium text-[#e8d5b7]">
-                    포토드라이브
+                    {t.photodrive}
                   </span>
                   <p className="mt-1 text-xs text-[#9b8b7a]">
-                    레코드 사진에서 선택
+                    {t.photodriveDesc}
                   </p>
                 </button>
               </div>
@@ -284,7 +312,9 @@ const CoverImageEditor = forwardRef(
                     className="flex items-center gap-2 text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
                   >
                     <ChevronLeft className="h-[18px] w-[20px]" />
-                    <span className="text-base font-bold">포토드라이브</span>
+                    <span className="text-base font-bold">
+                      {t.photodriveHeader}
+                    </span>
                   </button>
                   <button
                     onClick={onRefreshPhotos}
@@ -297,16 +327,14 @@ const CoverImageEditor = forwardRef(
                   </button>
                 </div>
                 <p className="text-xs text-[#9b8b7a]">
-                  레코드의 사진 중 표지로 사용할 이미지를 선택하세요.
+                  {t.photodriveSelectDesc}
                 </p>
               </div>
 
               {photoMedia.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <ImagePlus className="mb-2 h-8 w-8 text-[#9b8b7a]/40" />
-                  <p className="text-sm text-[#9b8b7a]">
-                    사용 가능한 사진이 없습니다.
-                  </p>
+                  <p className="text-sm text-[#9b8b7a]">{t.noPhotos}</p>
                 </div>
               ) : (
                 <motion.div
@@ -355,6 +383,7 @@ const CoverImageEditor = forwardRef(
                 onRefreshPhotos={onRefreshPhotos}
                 isRefreshing={isRefreshing}
                 preloadBlobs={preloadBlobs}
+                locale={locale}
               />
             </motion.div>
           )}
@@ -362,7 +391,7 @@ const CoverImageEditor = forwardRef(
 
         {isSaving && (
           <div className="flex items-center gap-2 text-sm text-[#9b8b7a]">
-            <RefreshCw className="h-4 w-4 animate-spin" /> 저장 중...
+            <RefreshCw className="h-4 w-4 animate-spin" /> {t.saving}
           </div>
         )}
       </div>

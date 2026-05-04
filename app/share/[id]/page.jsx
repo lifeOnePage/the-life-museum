@@ -71,10 +71,13 @@ export default function SharePage({ params }) {
   const targetTiltRef = useRef({ x: 0, y: 0 });
   const currentTiltRef = useRef({ x: 0, y: 0 });
 
-  // 핀치줌 — 브라우저 확대 대신 Three.js 카메라 이동
+  // 핀치줌 + 패닝 — 브라우저 확대 대신 Three.js 카메라 이동
   const [externalZoom, setExternalZoom] = useState(7.5);
   const pinchZoomRef = useRef(7.5);
   const lastPinchDistRef = useRef(null);
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const panOffsetRef = useRef({ x: 0, y: 0 });
+  const lastPanPosRef = useRef(null);
 
   // rAF lerp loop — library AlbumCover.jsx의 smoothing 방식과 동일
   useEffect(() => {
@@ -136,30 +139,47 @@ export default function SharePage({ params }) {
     };
   }, []);
 
-  // 핀치 핸들러
+  // 핀치줌 + 1손가락 패닝 핸들러
   const handlePinchStart = useCallback((e) => {
     if (e.touches.length === 2) {
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       lastPinchDistRef.current = Math.sqrt(dx * dx + dy * dy);
+      lastPanPosRef.current = null;
+    } else if (e.touches.length === 1) {
+      lastPanPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   }, []);
 
   const handlePinchMove = useCallback((e) => {
     if (e.touches.length === 2 && lastPinchDistRef.current !== null) {
+      // 핀치줌
       const dx = e.touches[0].clientX - e.touches[1].clientX;
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
-      const delta = lastPinchDistRef.current - dist; // 양수 = 핀치인 = 줌아웃
-      const next = Math.max(2, Math.min(18, pinchZoomRef.current + delta * 0.03));
+      const delta = lastPinchDistRef.current - dist;
+      const next = Math.max(2, Math.min(10, pinchZoomRef.current + delta * 0.03));
       pinchZoomRef.current = next;
       setExternalZoom(next);
       lastPinchDistRef.current = dist;
+      lastPanPosRef.current = null;
+    } else if (e.touches.length === 1 && lastPanPosRef.current !== null) {
+      // 1손가락 패닝
+      const dx = e.touches[0].clientX - lastPanPosRef.current.x;
+      const dy = e.touches[0].clientY - lastPanPosRef.current.y;
+      const sensitivity = pinchZoomRef.current * 0.003;
+      const MAX_PAN = 3;
+      const newX = Math.max(-MAX_PAN, Math.min(MAX_PAN, panOffsetRef.current.x - dx * sensitivity));
+      const newY = Math.max(-MAX_PAN, Math.min(MAX_PAN, panOffsetRef.current.y + dy * sensitivity));
+      panOffsetRef.current = { x: newX, y: newY };
+      setPanOffset({ x: newX, y: newY });
+      lastPanPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
     }
   }, []);
 
   const handlePinchEnd = useCallback(() => {
     lastPinchDistRef.current = null;
+    lastPanPosRef.current = null;
   }, []);
 
   const handleAlbumClick = useCallback(() => {
@@ -441,43 +461,42 @@ export default function SharePage({ params }) {
 
       {/* Expanded Album Overlay */}
       {isExpanded && (
-        <div
-          className="fixed inset-x-0 top-0 z-50 flex flex-col items-center justify-center bg-black/95"
-          style={{ height: "100dvh" }}
-        >
-          <div className="w-[96vw] max-w-[1100px]" style={{ height: "82dvh" }}>
-            <div
-              ref={expandedAlbumRef}
-              className="h-full w-full"
-              style={{ touchAction: "none" }}
-              onTouchStart={handlePinchStart}
-              onTouchMove={handlePinchMove}
-              onTouchEnd={handlePinchEnd}
-            >
-              <AlbumPreview3D
-                frontCover={frontCover}
-                backCoverImageUrl={backCoverImage}
-                bio={bio}
-                timeline={timeline}
-                selectedTheme={selectedTheme}
-                albumTitle={albumTitle}
-                titleOverlayEnabled={titleOverlayEnabled}
-                titlePosition={titlePosition}
-                titleFont={titleFont}
-                titleColor={titleColor}
-                titleStroke={titleStroke}
-                rotationY={(flipProgress % 1) * 2 * Math.PI}
-                hideControls
-                expanded
-                externalZoom={externalZoom}
-                cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
-                onExpand={handleAlbumClick}
-              />
-            </div>
-          </div>
+        <div className="fixed inset-0 z-50 bg-black">
+          {/* 전체화면 캔버스 */}
           <div
-            className="mt-0 flex flex-col items-center gap-3"
-            style={{ paddingBottom: "max(env(safe-area-inset-bottom), 12px)" }}
+            ref={expandedAlbumRef}
+            className="absolute inset-0"
+            style={{ touchAction: "none" }}
+            onTouchStart={handlePinchStart}
+            onTouchMove={handlePinchMove}
+            onTouchEnd={handlePinchEnd}
+          >
+            <AlbumPreview3D
+              frontCover={frontCover}
+              backCoverImageUrl={backCoverImage}
+              bio={bio}
+              timeline={timeline}
+              selectedTheme={selectedTheme}
+              albumTitle={albumTitle}
+              titleOverlayEnabled={titleOverlayEnabled}
+              titlePosition={titlePosition}
+              titleFont={titleFont}
+              titleColor={titleColor}
+              titleStroke={titleStroke}
+              rotationY={(flipProgress % 1) * 2 * Math.PI}
+              hideControls
+              expanded
+              externalZoom={externalZoom}
+              cameraOffset={panOffset}
+              cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
+              onExpand={handleAlbumClick}
+            />
+          </div>
+
+          {/* 버튼 오버레이 */}
+          <div
+            className="absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-3 pb-[max(env(safe-area-inset-bottom),12px)] pt-4"
+            style={{ background: "linear-gradient(to top, rgba(0,0,0,0.5) 0%, transparent 100%)" }}
           >
             <div className="flex items-center gap-2">
               <button
@@ -493,7 +512,11 @@ export default function SharePage({ params }) {
                 <Icon360 className="h-4 w-4" />
               </button>
               <button
-                onClick={() => setIsExpanded(false)}
+                onClick={() => {
+                  setIsExpanded(false);
+                  panOffsetRef.current = { x: 0, y: 0 };
+                  setPanOffset({ x: 0, y: 0 });
+                }}
                 className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
               >
                 <Minimize2 className="h-4 w-4" />

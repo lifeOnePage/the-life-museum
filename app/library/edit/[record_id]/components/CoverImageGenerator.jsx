@@ -57,8 +57,6 @@ export default function CoverImageGenerator({
 
   // API provider toggle: "gemini" | "mindlogic"
   const [apiProvider, setApiProvider] = useState("gemini");
-  const [mlPrompt, setMlPrompt] = useState("");
-  const [mlRefType, setMlRefType] = useState("REFERENCE_TYPE_STYLE");
 
   // Generation count tracking
   const [genCount, setGenCount] = useState(0);
@@ -95,24 +93,19 @@ export default function CoverImageGenerator({
 
   const handleGenerate = async () => {
     if (imageRefFiles.length === 0 || remainingGens <= 0) return;
-    if (apiProvider === "mindlogic" && !mlPrompt.trim()) return;
     setIsGenerating(true);
     setSelectedImageIndex(-1);
     setError("");
 
     try {
       const formData = new FormData();
+      formData.append("style", selectedStyle);
       formData.append("reference_image", imageRefFiles[0]);
 
-      let endpoint;
-      if (apiProvider === "mindlogic") {
-        endpoint = `${API_URL}/api/v1/record/${record_id}/cover/generate-ml`;
-        formData.append("prompt", mlPrompt.trim());
-        formData.append("reference_type", mlRefType);
-      } else {
-        endpoint = `${API_URL}/api/v1/record/${record_id}/cover/generate`;
-        formData.append("style", selectedStyle);
-      }
+      const endpoint =
+        apiProvider === "mindlogic"
+          ? `${API_URL}/api/v1/record/${record_id}/cover/generate-ml`
+          : `${API_URL}/api/v1/record/${record_id}/cover/generate`;
 
       const response = await authedFetch(endpoint, {
         method: "POST",
@@ -377,114 +370,66 @@ export default function CoverImageGenerator({
             </div>
           )}
 
-          {/* 2. Style selector (Gemini) / Prompt input (MindLogic) */}
-          {apiProvider === "gemini" ? (
-            <>
-              <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-                스타일
-              </label>
-              <div className="mb-4 flex gap-2">
-                {[
-                  {
-                    key: "minimal",
-                    label: "잉크 드로잉",
-                    desc: "흑백 손그림 느낌",
-                    sample: "/images/styleSample/minimal.png",
-                  },
-                  {
-                    key: "abstract",
-                    label: "팝 아트",
-                    desc: "화려한 컬러 패턴",
-                    sample: "/images/styleSample/abstract.png",
-                  },
-                  {
-                    key: "animation",
-                    label: "수채 일러스트",
-                    desc: "따뜻한 애니 감성",
-                    sample: "/images/styleSample/animation.png",
-                  },
-                ].map((opt) => {
-                  const disabled = false;
-                  return (
-                    <button
-                      key={opt.key}
-                      onClick={() => !disabled && setSelectedStyle(opt.key)}
-                      disabled={disabled}
-                      className={`flex flex-1 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-center transition-all ${
-                        selectedStyle === opt.key
-                          ? "border-[#c4b49a] bg-[#c4b49a]/10"
-                          : disabled
-                            ? "border-white/10 opacity-40"
-                            : "hover:border-[#c4b49a] border-white/15"
-                      }`}
-                    >
-                      <img
-                        src={opt.sample}
-                        alt={opt.label}
-                        className="mb-1.5 h-16 w-16 rounded object-cover"
-                      />
-                      <span
-                        className={`text-xs font-medium ${
-                          selectedStyle === opt.key
-                            ? "text-[#c4b49a]"
-                            : "text-[#e8d5b7]"
-                        }`}
-                      >
-                        {opt.label}
-                      </span>
-                      <span className="mt-0.5 text-[10px] text-[#9b8b7a]">
-                        {opt.desc}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </>
-          ) : (
-            <>
-              <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-                프롬프트
-              </label>
-              <textarea
-                value={mlPrompt}
-                onChange={(e) => setMlPrompt(e.target.value)}
-                placeholder="생성할 이미지를 설명해주세요..."
-                rows={3}
-                className="mb-3 w-full resize-none rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs text-[#e8d5b7] placeholder-[#9b8b7a]/50 outline-none transition-colors focus:border-[#c4b49a]"
-              />
-              <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
-                참고 이미지 타입
-              </label>
-              <div className="mb-4 flex gap-2">
-                {[
-                  { key: "REFERENCE_TYPE_STYLE", label: "Style" },
-                  { key: "REFERENCE_TYPE_SUBJECT", label: "Subject" },
-                  { key: "REFERENCE_TYPE_RAW", label: "Raw" },
-                ].map((opt) => (
-                  <button
-                    key={opt.key}
-                    onClick={() => setMlRefType(opt.key)}
-                    className={`flex-1 rounded-lg border px-2 py-1.5 text-center text-xs font-medium transition-all ${
-                      mlRefType === opt.key
-                        ? "border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
-                        : "border-white/15 text-[#e8d5b7] hover:border-[#c4b49a]"
-                    }`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
+          {/* 2. Style selector */}
+          <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
+            스타일
+          </label>
+          <div className="mb-4 flex gap-2">
+            {[
+              {
+                key: "minimal",
+                label: "잉크 드로잉",
+                desc: "흑백 손그림 느낌",
+                sample: "/images/styleSample/minimal.png",
+              },
+              {
+                key: "abstract",
+                label: "팝 아트",
+                desc: "화려한 컬러 패턴",
+                sample: "/images/styleSample/abstract.png",
+              },
+              {
+                key: "animation",
+                label: "수채 일러스트",
+                desc: "따뜻한 애니 감성",
+                sample: "/images/styleSample/animation.png",
+              },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setSelectedStyle(opt.key)}
+                className={`flex flex-1 flex-col items-center overflow-hidden rounded-lg border px-2 py-2 text-center transition-all ${
+                  selectedStyle === opt.key
+                    ? "border-[#c4b49a] bg-[#c4b49a]/10"
+                    : "hover:border-[#c4b49a] border-white/15"
+                }`}
+              >
+                <img
+                  src={opt.sample}
+                  alt={opt.label}
+                  className="mb-1.5 h-16 w-16 rounded object-cover"
+                />
+                <span
+                  className={`text-xs font-medium ${
+                    selectedStyle === opt.key
+                      ? "text-[#c4b49a]"
+                      : "text-[#e8d5b7]"
+                  }`}
+                >
+                  {opt.label}
+                </span>
+                <span className="mt-0.5 text-[10px] text-[#9b8b7a]">
+                  {opt.desc}
+                </span>
+              </button>
+            ))}
+          </div>
 
           {/* Generate button */}
           <button
             onClick={handleGenerate}
             disabled={
-              isGenerating ||
-              imageRefFiles.length === 0 ||
-              remainingGens <= 0 ||
-              (apiProvider === "mindlogic" && !mlPrompt.trim())
+              isGenerating || imageRefFiles.length === 0 || remainingGens <= 0
             }
             className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#c4b49a] py-2.5 text-sm font-medium text-[#1a1510] transition-opacity hover:bg-[#e8d5b7] disabled:opacity-50"
           >

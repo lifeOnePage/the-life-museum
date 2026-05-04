@@ -242,7 +242,7 @@ export default function SharePage({ params }) {
     <div className="relative w-screen overflow-hidden bg-black" style={{ height: "100dvh" }}>
       {/* Background: Concave cylindrical photo grid */}
       {images.length > 0 && (
-        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="pointer-events-none absolute inset-0">
           {/* Dark gradient overlays (vignette) */}
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />

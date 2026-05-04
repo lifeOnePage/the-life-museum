@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Canvas, useThree } from "@react-three/fiber";
+import * as THREE from "three";
 import { ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
 import AlbumCover3D from "./AlbumCover3D";
 import { UNIFIED_THEMES } from "../themeConfig";
@@ -358,7 +359,7 @@ export default function AlbumPreview3D({
           <Canvas
             camera={{ position: [0, 0, 10], fov: 30 }}
             dpr={[1, 2]}
-            gl={{ antialias: true }}
+            gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.85 }}
             resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
           >
             <ambientLight intensity={0.6} />

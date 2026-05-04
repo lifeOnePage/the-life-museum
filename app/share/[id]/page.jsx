@@ -166,18 +166,18 @@ export default function SharePage({ params }) {
   // Build cylindrical column strips — viewport-responsive
   const RADIUS = 700;
 
-  const { GRID_COLS, ARC_SPREAD, ROWS_PER_COL } = useMemo(() => {
+  const { GRID_COLS, ARC_SPREAD, ROWS_PER_COL, PERSPECTIVE } = useMemo(() => {
     if (typeof window === "undefined")
-      return { GRID_COLS: 16, ARC_SPREAD: 200, ROWS_PER_COL: 8 };
+      return { GRID_COLS: 16, ARC_SPREAD: 200, ROWS_PER_COL: 8, PERSPECTIVE: "clamp(600px, 60vw, 1200px)" };
     const isMobile = window.innerWidth < 768;
     if (isMobile) {
-      // 모바일: 컬럼 수 늘려 seam 감소, 행 수 유지해 커버리지 확보 (12 × 5 = 60)
-      return { GRID_COLS: 12, ARC_SPREAD: 140, ROWS_PER_COL: 5 };
+      // perspective를 크게 올려 원근 압축 완화, 행 수 늘려 세로 커버리지 확보
+      return { GRID_COLS: 12, ARC_SPREAD: 140, ROWS_PER_COL: 10, PERSPECTIVE: "1400px" };
     }
     const aspect = window.innerWidth / window.innerHeight;
     const spread = Math.min(Math.round(aspect * 130), 280);
     const cols = Math.max(14, Math.round(spread / 12));
-    return { GRID_COLS: cols, ARC_SPREAD: spread, ROWS_PER_COL: 8 };
+    return { GRID_COLS: cols, ARC_SPREAD: spread, ROWS_PER_COL: 8, PERSPECTIVE: "clamp(600px, 60vw, 1200px)" };
   }, []);
 
   const angleStep = ARC_SPREAD / (GRID_COLS - 1);
@@ -251,7 +251,7 @@ export default function SharePage({ params }) {
           <div
             className="absolute inset-0 flex items-center justify-center opacity-35"
             style={{
-              perspective: "clamp(600px, 60vw, 1200px)",
+              perspective: PERSPECTIVE,
               perspectiveOrigin: "50% 50%",
             }}
           >
@@ -275,7 +275,7 @@ export default function SharePage({ params }) {
                     transform: `rotateY(${angle}deg) translateZ(-${RADIUS}px) translateX(-50%) translateY(-50%)`,
                   }}
                 >
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-col gap-0">
                     {colImages.map((url, i) => (
                       <img
                         key={i}

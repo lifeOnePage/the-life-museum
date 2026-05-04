@@ -44,16 +44,15 @@ function getZoomConfig() {
     : { min: 5, max: 7, default: 6 };
 }
 
-function CameraZoom({ zoom }) {
-  const { camera, size } = useThree();
+function CameraZoom({ zoom, panOffset }) {
+  const { camera } = useThree();
 
   useEffect(() => {
-    if (!size.width || !size.height) return;
-    const aspect = size.width / size.height;
-    const fovRad = (30 * Math.PI) / 180;
     camera.position.z = zoom;
+    camera.position.x = panOffset?.x ?? 0;
+    camera.position.y = panOffset?.y ?? 0;
     camera.updateProjectionMatrix();
-  }, [zoom, camera, size]);
+  }, [zoom, panOffset, camera]);
 
   return null;
 }
@@ -76,6 +75,7 @@ export default function AlbumPreview3D({
   flipped,
   rotationY,
   externalZoom,
+  cameraOffset,
   hideControls,
   cursorTipIcon,
   onExpand,
@@ -364,6 +364,7 @@ export default function AlbumPreview3D({
             <directionalLight position={[-2, 1, 2]} intensity={3} />
             <CameraZoom
               zoom={typeof externalZoom === "number" ? externalZoom : zoom}
+              panOffset={cameraOffset}
             />
             <AlbumCover3D
               index={0}

@@ -151,7 +151,7 @@ export default function SharePage({ params }) {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const delta = lastPinchDistRef.current - dist; // 양수 = 핀치인 = 줌아웃
-      const next = Math.max(3.5, Math.min(12, pinchZoomRef.current + delta * 0.03));
+      const next = Math.max(2, Math.min(18, pinchZoomRef.current + delta * 0.03));
       pinchZoomRef.current = next;
       setExternalZoom(next);
       lastPinchDistRef.current = dist;
@@ -369,14 +369,7 @@ export default function SharePage({ params }) {
           style={{ height: "45dvh", visibility: isExpanded ? "hidden" : "visible" }}
         >
           {!isExpanded && (
-            <div
-              ref={albumRef}
-              className="h-full w-full"
-              style={{ touchAction: "none" }}
-              onTouchStart={handlePinchStart}
-              onTouchMove={handlePinchMove}
-              onTouchEnd={handlePinchEnd}
-            >
+            <div ref={albumRef} className="h-full w-full" style={{ touchAction: "pan-y" }}>
               <AlbumPreview3D
                 frontCover={frontCover}
                 backCoverImageUrl={backCoverImage}
@@ -392,7 +385,6 @@ export default function SharePage({ params }) {
                 titleStroke={titleStroke}
                 rotationY={(flipProgress % 1) * 2 * Math.PI}
                 hideControls
-                externalZoom={externalZoom}
                 cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
                 onExpand={handleAlbumClick}
               />

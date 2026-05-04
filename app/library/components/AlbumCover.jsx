@@ -364,6 +364,9 @@ export default function AlbumCover({
   // 호버 상태
   const [hovered, setHovered] = useState(false);
 
+  // useFrame 조기 탈출: 모든 애니메이션이 수렴하면 true
+  const settledRef = useRef(false);
+
   // 마우스 tilt 효과용 상태
   const mouseState = useRef({
     // 마우스 위치 (정규화: -1 ~ 1)
@@ -411,6 +414,7 @@ export default function AlbumCover({
 
   // 선택/플립 상태에 따른 target 위치 업데이트
   useEffect(() => {
+    settledRef.current = false;
     const state = animationState.current;
 
     if (isSelected) {
@@ -444,6 +448,7 @@ export default function AlbumCover({
 
   // 호버 시 위로 리프트
   useEffect(() => {
+    settledRef.current = false;
     if (!isSelected && hovered) {
       animationState.current.targetZ = originalPosition.z + 0.3;
     } else if (!isSelected) {
@@ -451,8 +456,9 @@ export default function AlbumCover({
     }
   }, [hovered, isSelected, originalPosition.y]);
 
-  // 프레임 루프 - 부드러운 애니메이션 (수렴 시 연산 중단)
+  // 프레임 루프 - 위치 애니메이션 + tilt + 그림자 (병합, settledRef 조기 탈출)
   useFrame((_, delta) => {
+    if (settledRef.current) return;
     if (!outerGroupRef.current || !groupRef.current) return;
 
     const state = animationState.current;
@@ -466,20 +472,19 @@ export default function AlbumCover({
       Math.abs(state.targetRotX - state.currentRotX) +
       Math.abs(state.targetRotY - state.currentRotY);
 
+    let posSettled = true;
     if (posDiff > EPSILON) {
+      posSettled = false;
       const lerpFactor = 1 - Math.pow(0.001, delta);
 
-      // 위치 보간
       state.currentX += (state.targetX - state.currentX) * lerpFactor;
       state.currentY += (state.targetY - state.currentY) * lerpFactor;
       state.currentZ += (state.targetZ - state.currentZ) * lerpFactor;
 
-      // 회전 보간
       state.currentRotX += (state.targetRotX - state.currentRotX) * lerpFactor;
       state.currentRotY += (state.targetRotY - state.currentRotY) * lerpFactor;
     }
 
-    // 항상 적용 (초기화 직후 target===current일 때도 위치 반영 보장)
     outerGroupRef.current.position.x = state.currentX;
     outerGroupRef.current.position.y = state.currentY;
     outerGroupRef.current.position.z = state.currentZ;
@@ -488,6 +493,7 @@ export default function AlbumCover({
 
     // 마우스 tilt 효과 (선택된 상태에서만)
     const mouse = mouseState.current;
+    let tiltSettled = true;
     if (isSelected) {
       const targetTiltY = mouse.mouseX * TILT_CONFIG.maxAngle;
       const targetTiltX = -mouse.mouseY * TILT_CONFIG.maxAngle;
@@ -499,14 +505,33 @@ export default function AlbumCover({
 
       groupRef.current.rotation.x = mouse.currentTiltX;
       groupRef.current.rotation.y = mouse.currentTiltY;
+      tiltSettled = false; // always animate while selected (mouse tracking)
     } else if (
       Math.abs(mouse.currentTiltX) > 0.001 ||
       Math.abs(mouse.currentTiltY) > 0.001
     ) {
+      tiltSettled = false;
       mouse.currentTiltX += (0 - mouse.currentTiltX) * TILT_CONFIG.smoothing;
       mouse.currentTiltY += (0 - mouse.currentTiltY) * TILT_CONFIG.smoothing;
       groupRef.current.rotation.x = mouse.currentTiltX;
       groupRef.current.rotation.y = mouse.currentTiltY;
+    }
+
+    // 그림자 opacity 보간 (병합)
+    let shadowSettled = true;
+    if (shadowRef.current) {
+      const shadowTarget = isSelected ? 0 : 1;
+      shadowOpacityRef.current +=
+        (shadowTarget - shadowOpacityRef.current) * 0.1;
+      shadowRef.current.material.opacity = shadowOpacityRef.current;
+      if (Math.abs(shadowTarget - shadowOpacityRef.current) > 0.005) {
+        shadowSettled = false;
+      }
+    }
+
+    // 모든 애니메이션 수렴 시 settled
+    if (posSettled && tiltSettled && shadowSettled) {
+      settledRef.current = true;
     }
   });
 
@@ -601,14 +626,6 @@ export default function AlbumCover({
   // Fake shadow: 앨범 아래 타원형 그림자
   const shadowRef = useRef();
   const shadowOpacityRef = useRef(1);
-
-  // 선택 시 그림자 페이드아웃
-  useFrame(() => {
-    if (!shadowRef.current) return;
-    const target = isSelected ? 0 : 1;
-    shadowOpacityRef.current += (target - shadowOpacityRef.current) * 0.1;
-    shadowRef.current.material.opacity = shadowOpacityRef.current;
-  });
 
   // 선택 상태에 따라 layer 변경 (블러 렌더링에서 제외하기 위함)
   return (

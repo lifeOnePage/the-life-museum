@@ -36,6 +36,7 @@ export const OPACITY_HOLD_DIST = 30; // 이 거리에서 hold 종료, fade-out �
 // clone에 가장 가까워지는 시점에 speed = cameraSpeed * FOCUS_MIN_SPEED_RATIO (x/2)
 // 포커싱 전환 시 즉시 cameraSpeed로 복귀 후 다시 감속
 export const FOCUS_MIN_SPEED_RATIO = 0.2;
+export const VIDEO_FOCUS_MIN_SPEED_RATIO = 0; // 비디오 auto-focus 시 카메라 완전 정지
 
 export const AUTO_RESPAWN_OFFSET = 205;
 // auto→auto 전환 시 클론 스폰 거리.
@@ -47,7 +48,7 @@ export const FLOOR_Y = -0;
 export const FLOOR_COLOR = "#000000";
 
 // Fog
-export const FOG_COLOR = "#000000";
+export const FOG_COLOR = "#ffffff";
 export const FOG_NEAR = 300;
 export const FOG_FAR = 2000;
 

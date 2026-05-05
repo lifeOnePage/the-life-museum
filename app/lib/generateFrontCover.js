@@ -189,5 +189,5 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
     ctx.fillText(title, layout.x, layout.anchorY + 8);
   }
 
-  return canvas.toDataURL("image/png");
+  return canvas.toDataURL("image/jpeg", 0.92);
 }

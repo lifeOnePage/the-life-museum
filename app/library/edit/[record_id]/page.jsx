@@ -76,11 +76,13 @@ const T = {
     bgmSelected: "선택됨",
     backCoverImage: "뒷면 이미지 설정하기",
     theme: "테마",
-    backCoverGuide: "앨범 뒷면을 꾸미기 위해 앨범에 맞는 스토리와 타임라인을 적어주세요",
+    backCoverGuide:
+      "앨범 뒷면을 꾸미기 위해 앨범에 맞는 스토리와 타임라인을 적어주세요",
     story: "스토리",
     keywordSelect: "키워드 선택",
     keywordSelected: (n) => `${n}개 선택됨`,
-    keywordHelp: "💡 글감이 떠오르지 않을 때 키워드를 선택해보세요. 선택한 키워드가 스토리에 주제로 추가되어, AI가 이를 바탕으로 더 풍부한 이야기를 만들어 줄 수 있어요.",
+    keywordHelp:
+      "💡 글감이 떠오르지 않을 때 키워드를 선택해보세요. 선택한 키워드가 스토리에 주제로 추가되어, AI가 이를 바탕으로 더 풍부한 이야기를 만들어 줄 수 있어요.",
     placeholderWithChips: "추가로 작성하세요...",
     placeholderNoChips: "자유롭게 작성하세요...",
     charCount: (n) => `${n}/250자`,
@@ -138,11 +140,13 @@ const T = {
     bgmSelected: "Selected",
     backCoverImage: "Set Back Cover Image",
     theme: "Theme",
-    backCoverGuide: "Add a story and timeline to decorate the back of your album",
+    backCoverGuide:
+      "Add a story and timeline to decorate the back of your album",
     story: "Story",
     keywordSelect: "Select keywords",
     keywordSelected: (n) => `${n} selected`,
-    keywordHelp: "💡 Select keywords when you're not sure what to write. They'll be added as topics to help AI generate richer stories.",
+    keywordHelp:
+      "💡 Select keywords when you're not sure what to write. They'll be added as topics to help AI generate richer stories.",
     placeholderWithChips: "Write more...",
     placeholderNoChips: "Write freely...",
     charCount: (n) => `${n}/250`,
@@ -157,7 +161,7 @@ const T = {
     eventPlaceholder: "Enter description...",
     keywordsMore: (n) => `+${n} more`,
     keywordsLess: "Less",
-    exitConfirmDirty: "You have unsaved changes. Save before leaving?",
+    exitConfirmDirty: "Save before leaving?",
     exitConfirm: "Are you sure you want to exit?",
     saveAndExit: "Save & Exit",
     saving: "Saving...",
@@ -179,8 +183,42 @@ const T = {
   },
 };
 
-const KEYWORD_CHIPS_KO = ["가족","여행","추억","사랑","우정","성장","도전","감사","일상","꿈","고향","음악","첫만남","계절","약속","이별"];
-const KEYWORD_CHIPS_EN = ["Family","Travel","Memories","Love","Friendship","Growth","Challenge","Gratitude","Daily Life","Dreams","Hometown","Music","First Meeting","Seasons","Promise","Farewell"];
+const KEYWORD_CHIPS_KO = [
+  "가족",
+  "여행",
+  "추억",
+  "사랑",
+  "우정",
+  "성장",
+  "도전",
+  "감사",
+  "일상",
+  "꿈",
+  "고향",
+  "음악",
+  "첫만남",
+  "계절",
+  "약속",
+  "이별",
+];
+const KEYWORD_CHIPS_EN = [
+  "Family",
+  "Travel",
+  "Memories",
+  "Love",
+  "Friendship",
+  "Growth",
+  "Challenge",
+  "Gratitude",
+  "Daily Life",
+  "Dreams",
+  "Hometown",
+  "Music",
+  "First Meeting",
+  "Seasons",
+  "Promise",
+  "Farewell",
+];
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Convert a 6-digit hex to 8-digit (#RRGGBB → #RRGGBBff) for API.
@@ -625,8 +663,7 @@ const Index = ({ params }) => {
       },
     );
     const data = await response.json();
-    if (!response.ok)
-      throw new Error(data.error || t.errorSaveBackCover);
+    if (!response.ok) throw new Error(data.error || t.errorSaveBackCover);
     return data;
   };
 
@@ -1221,10 +1258,13 @@ const Index = ({ params }) => {
             {lastSavedAt && (
               <p className="text-[10px] text-[#9b8b7a]/60">
                 {t.lastSaved}{" "}
-                {lastSavedAt.toLocaleTimeString(locale === "en" ? "en-US" : "ko-KR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                {lastSavedAt.toLocaleTimeString(
+                  locale === "en" ? "en-US" : "ko-KR",
+                  {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  },
+                )}
               </p>
             )}
           </div>
@@ -1704,7 +1744,9 @@ const Index = ({ params }) => {
                                   >
                                     {keywordsExpanded
                                       ? t.keywordsLess
-                                      : t.keywordsMore(KEYWORD_CHIPS.length - 3)}
+                                      : t.keywordsMore(
+                                          KEYWORD_CHIPS.length - 3,
+                                        )}
                                   </button>
                                 </div>
                               </div>
@@ -1867,7 +1909,8 @@ const Index = ({ params }) => {
                                 disabled={timeline.length >= 6}
                                 className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
                               >
-                                <Plus className="h-3 w-3" /> {t.addItem(timeline.length)}
+                                <Plus className="h-3 w-3" />{" "}
+                                {t.addItem(timeline.length)}
                               </button>
 
                               {timeline.length === 0 && (
@@ -2076,7 +2119,8 @@ const Index = ({ params }) => {
                 >
                   {isRecordSaving ? (
                     <>
-                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> {t.saving}
+                      <RefreshCw className="mr-2 h-4 w-4 animate-spin" />{" "}
+                      {t.saving}
                     </>
                   ) : (
                     <>

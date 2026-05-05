@@ -9,7 +9,6 @@ import { X, Info } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useAuth } from "@/app/contexts/AuthContext";
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
-import scrollMouse from "@/public/lottie/scroll-mouse.json";
 
 function Icon360({ className }) {
   return (
@@ -102,6 +101,7 @@ export default function SharePage({ params }) {
   const lastPanPosRef = useRef(null);
   const mouseDragRef = useRef(null); // 데스크탑 마우스 드래그 패닝
   const [showDesktopHint, setShowDesktopHint] = useState(true);
+  const [lottieData, setLottieData] = useState(null);
 
   // rAF lerp loop — library AlbumCover.jsx의 smoothing 방식과 동일
   useEffect(() => {
@@ -227,10 +227,19 @@ export default function SharePage({ params }) {
     };
   }, []);
 
-  // 데스크탑 힌트 — 첫 진입 시 4초간 표시
+  // 데스크탑 힌트 — 첫 진입 시 30초간 표시
   useEffect(() => {
     const t = setTimeout(() => setShowDesktopHint(false), 30000);
     return () => clearTimeout(t);
+  }, []);
+
+  // 데스크탑 전용: Lottie JSON 지연 로드 (모바일에서는 스킵)
+  useEffect(() => {
+    if (typeof window === "undefined" || window.innerWidth < 1024) return;
+    fetch("/lottie/scroll-mouse.json")
+      .then((r) => r.json())
+      .then(setLottieData)
+      .catch(() => {});
   }, []);
 
   // 핀치줌 + 1손가락 패닝 핸들러
@@ -544,18 +553,20 @@ export default function SharePage({ params }) {
         )}
       </div>
 
-      {/* 데스크탑 마우스 휠 힌트 — 앨범 오른쪽 중앙 */}
+      {/* 데스크탑 마우스 휠 힌트 — 앨범 오른쪽 중앙 (모바일 숨김) */}
       <div
-        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] flex -translate-y-[50%] flex-col transition-opacity duration-1000 ${
+        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] hidden lg:flex -translate-y-[50%] flex-col transition-opacity duration-1000 ${
           showDesktopHint ? "opacity-100" : "opacity-0"
         }`}
       >
-        <Lottie
-          animationData={scrollMouse}
-          loop
-          autoplay
-          style={{ width: 200, height: 200 }}
-        />
+        {lottieData && (
+          <Lottie
+            animationData={lottieData}
+            loop
+            autoplay
+            style={{ width: 200, height: 200 }}
+          />
+        )}
         <span className="text-white-100 flex w-full translate-x-2 justify-center rounded-md text-[14px] whitespace-nowrap">
           Scroll to Zoom
         </span>

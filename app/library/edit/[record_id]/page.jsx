@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { use, useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,7 +44,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import CoverImageEditor from "./components/CoverImageEditor";
 import TitleOverlayEditor from "./components/TitleOverlayEditor";
-import AlbumPreview3D from "./components/AlbumPreview3D";
+const AlbumPreview3D = dynamic(() => import("./components/AlbumPreview3D"), { ssr: false });
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";

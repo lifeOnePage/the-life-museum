@@ -52,7 +52,9 @@ export function generatePlanes(rng, mediaList) {
 
   let expandedMedia = [];
   for (let r = 0; r < repeats; r++) {
-    expandedMedia.push(...mediaList);
+    for (let mi = 0; mi < mediaList.length; mi++) {
+      expandedMedia.push({ media: mediaList[mi], mediaIndex: mi });
+    }
   }
 
   // Cap total planes to protect mobile devices
@@ -77,7 +79,7 @@ export function generatePlanes(rng, mediaList) {
       let gap = 50 + rand(rng, -10, 10);
       z -= gap;
 
-      const media = sideMedia[i];
+      const { media, mediaIndex } = sideMedia[i];
       const estimatedHeight = BASE_HEIGHT + rand(rng, -10, 10);
       const estimatedWidth = estimatedHeight * 1.2;
 
@@ -119,9 +121,11 @@ export function generatePlanes(rng, mediaList) {
 
       const planeData = {
         id: allPlanes.length,
+        mediaIndex,
         position: [x, y, z],
         rotation: [rotX, rotY],
         imageUrl: media.original_url || media.thumbnail_url,
+        thumbnailUrl: media.thumbnail_url,
         mediaType: media.type,
         baseHeight: estimatedHeight,
         estimatedHeight,

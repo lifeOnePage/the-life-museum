@@ -52,9 +52,33 @@ function flickerBrightness(t) {
   return 0.7 + 0.3 * Math.min(1, settle);
 }
 
+function drawPlayIcon(ctx, mediaX, mediaY, mediaW, mediaH) {
+  const cx = mediaX + mediaW / 2;
+  const cy = mediaY + mediaH / 2;
+  const r = Math.min(mediaW, mediaH) * 0.15;
+
+  // 반투명 원
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(255, 255, 255, 0.6)";
+  ctx.fill();
+
+  // 삼각형 (오른쪽 재생 화살표, 시각적 중심 보정)
+  const s = r * 0.55;
+  const ox = s * 0.15;
+  ctx.beginPath();
+  ctx.moveTo(cx - s * 0.5 + ox, cy - s);
+  ctx.lineTo(cx - s * 0.5 + ox, cy + s);
+  ctx.lineTo(cx + s + ox, cy);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(255, 255, 255, 1.0)";
+  ctx.fill();
+}
+
 function WallPlane({
   id,
   imageUrl,
+  thumbnailUrl,
   position,
   rotation,
   baseHeight,
@@ -69,6 +93,8 @@ function WallPlane({
   maxConcurrentLoads,
   maxTextureSize,
   anisotropy,
+  mediaType,
+  videoElementMap,
 }) {
   const meshRef = useRef();
   const frontMatRef = useRef();
@@ -110,6 +136,12 @@ function WallPlane({
   const loadStateRef = useRef("idle");
   const disposedRef = useRef(false);
 
+  // Video refs
+  const videoRef = useRef(null);
+  const videoTextureRef = useRef(null);
+  const posterTextureRef = useRef(null);
+  const isVideoType = mediaType === 'video';
+
   // Manual focus fly state
   const manualActiveRef = useRef(false);
   const returningRef = useRef(false);
@@ -124,8 +156,10 @@ function WallPlane({
   }, [rotation, sign]);
 
   // Load texture imperatively — triggered by useFrame proximity check (lazy loading)
-  const startLoad = useCallback(() => {
-    if (!imageUrl || loadStateRef.current !== "idle") return;
+  // urlOverride: optional URL to load instead of imageUrl (used for video→image fallback)
+  const startLoad = useCallback((urlOverride) => {
+    const url = urlOverride || imageUrl;
+    if (!url || loadStateRef.current !== "idle") return;
 
     // Concurrency gate: skip if too many loads active (will retry next frame)
     if (activeLoadsRef && activeLoadsRef.current >= maxConcurrentLoads) return;
@@ -176,6 +210,26 @@ function WallPlane({
         ctx.fillRect(0, 0, cW, cH);
         ctx.drawImage(img, paddingPx, paddingPx, drawW, drawH);
 
+        // ── 어두운 이미지 필터 ──
+        const DARK_THRESHOLD = 15;
+        const SAMPLE_GRID = 10;
+        const imageData = ctx.getImageData(paddingPx, paddingPx, drawW, drawH);
+        const px = imageData.data;
+        let total = 0, count = 0;
+        const stepX = Math.max(1, Math.floor(drawW / SAMPLE_GRID));
+        const stepY = Math.max(1, Math.floor(drawH / SAMPLE_GRID));
+        for (let y = 0; y < drawH; y += stepY)
+          for (let x = 0; x < drawW; x += stepX) {
+            const i = (y * drawW + x) * 4;
+            total += (px[i] + px[i + 1] + px[i + 2]) / 3;
+            count++;
+          }
+        if (count > 0 && total / count < DARK_THRESHOLD) {
+          loadStateRef.current = "loaded"; // 재시도 방지
+          return; // 텍스처 미생성 → 벽면 어두운 상태 유지
+        }
+        // ────────────────────────
+
         const tex = new THREE.CanvasTexture(canvas);
         tex.colorSpace = THREE.SRGBColorSpace;
         tex.anisotropy = anisotropy;
@@ -200,11 +254,11 @@ function WallPlane({
 
     img.onerror = (err) => {
       if (activeLoadsRef) activeLoadsRef.current--;
-      console.error("Image load failed:", imageUrl.substring(0, 80), err);
+      console.error("Image load failed:", url.substring(0, 80), err);
       loadStateRef.current = "idle";
     };
 
-    img.src = getProxiedUrl(imageUrl);
+    img.src = getProxiedUrl(url);
   }, [
     imageUrl,
     baseHeight,
@@ -214,6 +268,254 @@ function WallPlane({
     maxConcurrentLoads,
     maxTextureSize,
     anisotropy,
+  ]);
+
+  // Load video imperatively — triggered by useFrame proximity check (lazy loading)
+  // Loads thumbnail image and video element in parallel:
+  //   - Thumbnail → canvas poster with play icon → shown on wall immediately
+  //   - Video → VideoTexture → finalized when both are ready
+  const startVideoLoad = useCallback(() => {
+    if (!imageUrl || loadStateRef.current !== "idle") return;
+    if (activeLoadsRef && activeLoadsRef.current >= maxConcurrentLoads) return;
+
+    loadStateRef.current = "loading";
+    if (activeLoadsRef) activeLoadsRef.current++;
+
+    let concurrencyReleased = false;
+    const releaseConcurrency = () => {
+      if (!concurrencyReleased) {
+        concurrencyReleased = true;
+        if (activeLoadsRef) activeLoadsRef.current--;
+      }
+    };
+
+    // Shared state between the two parallel paths
+    let posterTex = null;
+    let boxAspect = 1;
+    let videoTex = null;
+    let videoElement = null;
+    let posterCreated = false;
+    let videoLoaded = false;
+
+    // Called when both poster and video are ready
+    const finalize = () => {
+      if (!posterCreated || !videoLoaded) return;
+      if (disposedRef.current) return;
+
+      videoRef.current = videoElement;
+      videoTextureRef.current = videoTex;
+      posterTextureRef.current = posterTex;
+
+      // Register video element for Scene-level play/pause control
+      if (videoElementMap) {
+        videoElementMap.current.set(id, videoElement);
+      }
+
+      flickerState.current = { active: false, elapsed: 0, done: true };
+      loadStateRef.current = "loaded";
+
+      onTextureLoaded?.(id, posterTex, boxAspect, {
+        isVideo: true,
+        videoTexture: videoTex,
+        videoElement: videoElement,
+      });
+    };
+
+    // Helper: create poster canvas from an image source (img or video element)
+    const createPoster = (source, srcW, srcH) => {
+      const mediaAspect = srcW / srcH;
+      const mediaH = baseHeight;
+      const mediaW = mediaH * mediaAspect;
+
+      const boxH = mediaH + 2 * MEDIA_PADDING;
+      const boxW = mediaW + 2 * MEDIA_PADDING;
+      boxAspect = boxW / boxH;
+
+      aspectRef.current = boxAspect;
+      wallScaleRef.current = [boxW, boxH, 1];
+      animState.current.currentScale = [boxW, boxH, 1];
+      animState.current.targetScale = [boxW, boxH, 1];
+
+      let drawW = srcW;
+      let drawH = srcH;
+      const maxDim = Math.max(drawW, drawH);
+      if (maxDim > maxTextureSize) {
+        const ratio = maxTextureSize / maxDim;
+        drawW = Math.round(drawW * ratio);
+        drawH = Math.round(drawH * ratio);
+      }
+
+      const paddingPx = Math.round(drawH * (MEDIA_PADDING / mediaH));
+      const cW = drawW + 2 * paddingPx;
+      const cH = drawH + 2 * paddingPx;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = cW;
+      canvas.height = cH;
+      const ctx = canvas.getContext("2d");
+
+      ctx.fillStyle = FRAME_COLOR;
+      ctx.fillRect(0, 0, cW, cH);
+      ctx.drawImage(source, 0, 0, srcW, srcH, paddingPx, paddingPx, drawW, drawH);
+      drawPlayIcon(ctx, paddingPx, paddingPx, drawW, drawH);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = anisotropy;
+      tex.needsUpdate = true;
+
+      return tex;
+    };
+
+    // Helper: show poster on wall material
+    const showPosterOnWall = (tex) => {
+      const mat = frontMatRef.current;
+      if (mat) {
+        mat.map = tex;
+        mat.color.setScalar(1);
+        mat.needsUpdate = true;
+      }
+    };
+
+    // ── Path 1: Thumbnail image ──
+    let thumbnailFailed = false;
+    const thumbUrl = thumbnailUrl;
+    if (thumbUrl) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        if (disposedRef.current) return;
+        try {
+          posterTex = createPoster(img, img.width, img.height);
+          showPosterOnWall(posterTex);
+          posterCreated = true;
+          releaseConcurrency();
+          if (videoLoaded) finalize();
+        } catch (err) {
+          console.error("[WallPlane] Thumbnail poster error:", err);
+          thumbnailFailed = true;
+          // If video already loaded, create poster from video first frame
+          if (videoLoaded && videoElement) {
+            try {
+              posterTex = createPoster(videoElement, videoElement.videoWidth, videoElement.videoHeight);
+              showPosterOnWall(posterTex);
+              posterCreated = true;
+              releaseConcurrency();
+              finalize();
+            } catch (err2) {
+              console.error("[WallPlane] Video fallback poster error:", err2);
+              releaseConcurrency();
+              loadStateRef.current = "idle";
+            }
+          }
+        }
+      };
+      img.onerror = () => {
+        console.warn("[WallPlane] Thumbnail load failed, will use video first frame:", thumbUrl.substring(0, 80));
+        thumbnailFailed = true;
+        // If video already loaded, create poster from video first frame
+        if (videoLoaded && videoElement) {
+          try {
+            posterTex = createPoster(videoElement, videoElement.videoWidth, videoElement.videoHeight);
+            showPosterOnWall(posterTex);
+            posterCreated = true;
+            releaseConcurrency();
+            finalize();
+          } catch (err) {
+            console.error("[WallPlane] Video fallback poster error:", err);
+            releaseConcurrency();
+            loadStateRef.current = "idle";
+          }
+        }
+      };
+      img.src = getProxiedUrl(thumbUrl);
+    } else {
+      // No thumbnail URL — will use video first frame
+      thumbnailFailed = true;
+    }
+
+    // ── Path 2: Video element ──
+    const video = document.createElement("video");
+    video.crossOrigin = "anonymous";
+    video.muted = true;
+    video.loop = false;
+    video.playsInline = true;
+    video.preload = "auto";
+
+    video.addEventListener("loadeddata", () => {
+      if (disposedRef.current) {
+        video.src = "";
+        releaseConcurrency();
+        return;
+      }
+      try {
+        const vw = video.videoWidth;
+        const vh = video.videoHeight;
+
+        // Create video texture for playback
+        videoTex = new THREE.VideoTexture(video);
+        videoTex.colorSpace = THREE.SRGBColorSpace;
+        videoTex.minFilter = THREE.LinearFilter;
+        videoTex.magFilter = THREE.LinearFilter;
+        videoTex.generateMipmaps = false;
+
+        videoElement = video;
+        videoLoaded = true;
+
+        console.log(`[WallPlane] Video loaded: id=${id} ${vw}x${vh}`, imageUrl.substring(0, 80));
+
+        // If thumbnail failed or wasn't available, create poster from video first frame
+        if (thumbnailFailed && !posterCreated) {
+          posterTex = createPoster(video, vw, vh);
+          showPosterOnWall(posterTex);
+          posterCreated = true;
+          releaseConcurrency();
+        }
+
+        if (posterCreated) finalize();
+      } catch (err) {
+        console.error("[WallPlane] Video texture creation error:", err);
+        releaseConcurrency();
+        loadStateRef.current = "idle";
+      }
+    }, { once: true });
+
+    video.addEventListener("error", () => {
+      const code = video.error?.code;
+      const msg = video.error?.message || "unknown";
+      // CORS fallback: if direct URL fails, retry through proxy
+      const currentSrc = video.src;
+      if (!currentSrc.includes("/proxy/image")) {
+        console.warn(`[WallPlane] Video direct load failed (code=${code} msg=${msg}), retrying via proxy:`, imageUrl.substring(0, 80));
+        video.src = getProxiedUrl(imageUrl);
+        video.load();
+        return;
+      }
+      // Both direct and proxy failed — fall back to image loading
+      console.error(`[WallPlane] Video load failed completely (code=${code} msg=${msg}), falling back to image:`, imageUrl.substring(0, 80));
+      video.src = "";
+      releaseConcurrency();
+      loadStateRef.current = "idle";
+      // Fall back to loading as image (using thumbnailUrl if available)
+      startLoad(thumbnailUrl || imageUrl);
+    });
+
+    // Use direct URL for video — the image proxy doesn't support HTTP Range
+    // requests which <video> elements require for playback. Falls back to proxy on error.
+    video.src = imageUrl;
+    video.load();
+  }, [
+    imageUrl,
+    thumbnailUrl,
+    baseHeight,
+    id,
+    onTextureLoaded,
+    activeLoadsRef,
+    maxConcurrentLoads,
+    maxTextureSize,
+    anisotropy,
+    videoElementMap,
+    startLoad,
   ]);
 
   // Cleanup on unmount or imageUrl change
@@ -228,9 +530,22 @@ function WallPlane({
         mat.map = null;
         mat.needsUpdate = true;
       }
+      // Video cleanup
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = "";
+        videoRef.current = null;
+      }
+      if (videoTextureRef.current) {
+        videoTextureRef.current.dispose();
+        videoTextureRef.current = null;
+      }
+      if (videoElementMap) {
+        videoElementMap.current.delete(id);
+      }
       loadStateRef.current = "idle";
     };
-  }, [imageUrl]);
+  }, [imageUrl, id, videoElementMap]);
 
   // Update targets based on focusMode
   useEffect(() => {
@@ -323,6 +638,22 @@ function WallPlane({
         }
         mat.opacity = opacity;
         mat.color.setScalar(1);
+
+        // Video texture switching for manual focus
+        // Show video texture whenever video has been played (even if paused)
+        // so the paused frame stays visible instead of switching to poster (black screen)
+        if (isVideoType && videoRef.current && videoTextureRef.current && posterTextureRef.current) {
+          const hasBeenPlayed = videoRef.current.currentTime > 0 || !videoRef.current.paused;
+          const targetMap = hasBeenPlayed ? videoTextureRef.current : posterTextureRef.current;
+          if (mat.map !== targetMap) {
+            mat.map = targetMap;
+            mat.needsUpdate = true;
+          }
+          // Only update video texture each frame while actually playing
+          if (!videoRef.current.paused) {
+            videoTextureRef.current.needsUpdate = true;
+          }
+        }
       }
       return;
     }
@@ -363,6 +694,11 @@ function WallPlane({
         mat.needsUpdate = true;
         mat.opacity = 1;
       }
+      // Restore poster texture when returning from manual focus
+      if (isVideoType && mat && posterTextureRef.current && mat.map !== posterTextureRef.current) {
+        mat.map = posterTextureRef.current;
+        mat.needsUpdate = true;
+      }
       return;
     }
 
@@ -371,8 +707,8 @@ function WallPlane({
     const distToCamera = Math.abs(cameraZ - wrappedZ);
 
     // Lazy load: start loading when camera approaches
-    if (loadStateRef.current === "idle" && distToCamera <= FOG_FAR + 800) {
-      startLoad();
+    if ((loadStateRef.current === "idle") && distToCamera <= FOG_FAR + 800) {
+      if (isVideoType) startVideoLoad(); else startLoad();
     }
 
     // Far-distance dispose: release texture to reclaim GPU memory (large corridors only)
@@ -384,6 +720,19 @@ function WallPlane({
         }
         mat.color.set(SCREEN_OFF_COLOR);
         mat.needsUpdate = true;
+      }
+      // Video far-distance cleanup
+      if (videoRef.current) {
+        videoRef.current.pause();
+        videoRef.current.src = "";
+        videoRef.current = null;
+      }
+      if (videoTextureRef.current) {
+        videoTextureRef.current.dispose();
+        videoTextureRef.current = null;
+      }
+      if (videoElementMap) {
+        videoElementMap.current.delete(id);
       }
       loadStateRef.current = "idle";
       flickerState.current = { active: false, elapsed: 0, done: false };
@@ -411,6 +760,11 @@ function WallPlane({
     meshRef.current.position.set(...state.currentPos);
     meshRef.current.rotation.set(...state.currentRot);
     meshRef.current.scale.set(...state.currentScale);
+
+    // Video texture update: mark needsUpdate each frame while playing
+    if (isVideoType && videoTextureRef.current && videoRef.current && !videoRef.current.paused) {
+      videoTextureRef.current.needsUpdate = true;
+    }
 
     // TV flicker animation on front material
     if (!mat) return;

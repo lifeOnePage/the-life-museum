@@ -5,38 +5,46 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 
 import ShelfScene from "./ShelfScene";
-// import { OrbitControls, useHelper } from "@react-three/drei";
+import useShelfGestures from "../hooks/useShelfGestures";
 
 function FPSLimiter({ fps }) {
   const { invalidate } = useThree();
 
   useEffect(() => {
-    let id;
+    let rafId;
+    let lastTime = 0;
     const interval = 1000 / fps;
-    const loop = () => {
-      invalidate();
-      id = setTimeout(loop, interval);
+    const loop = (time) => {
+      rafId = requestAnimationFrame(loop);
+      if (time - lastTime >= interval) {
+        lastTime = time - ((time - lastTime) % interval);
+        invalidate();
+      }
     };
-    loop();
-    return () => clearTimeout(id);
+    rafId = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafId);
   }, [fps, invalidate]);
 
   return null;
 }
 
-// Canvas 내부 서브컴포넌트: 드래그 yOffset을 카메라 Y에 부드럽게 반영
-function CameraYController({ yOffsetRef }) {
+// Canvas 내부 서브컴포넌트: 카메라 Y + Z를 부드럽게 반영
+function CameraController({ yOffsetRef, zRef }) {
   const { camera } = useThree();
   useFrame(() => {
-    const target = 1.5 + yOffsetRef.current;
-    camera.position.y += (target - camera.position.y) * 0.12;
-    camera.lookAt(0, camera.position.y, 0);
+    const targetY = 1.5 + yOffsetRef.current;
+    const targetZ = zRef.current;
+    const dy = targetY - camera.position.y;
+    const dz = targetZ - camera.position.z;
+    if (Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+      camera.position.y += dy * 0.12;
+      camera.position.z += dz * 0.1;
+      camera.lookAt(0, camera.position.y, 0);
+    }
   });
   return null;
 }
 
-// Canvas 내부에서만 호출 가능한 훅(useHelper)을 사용하는 서브컴포넌트
-// castShadow=true인 경우에만 고품질 shadowMap 설정 적용
 function DirLightWithHelper({ position, intensity, color }) {
   return (
     <directionalLight position={position} intensity={intensity} color={color} />
@@ -53,8 +61,8 @@ export default function ShelfCanvas({
   cameraControlRef,
   onHoverLabelPos,
 }) {
-  const controlsRef = useRef(null);
   const cameraRef = useRef(null);
+  const wrapperRef = useRef(null);
 
   // 모바일 세로 드래그 스크롤
   const [windowWidth, setWindowWidth] = useState(() =>
@@ -89,71 +97,38 @@ export default function ShelfCanvas({
     return Math.min(5, Math.max(2, Math.ceil(albums.length / COLS)));
   }, [windowWidth, albums.length, COLS]);
 
-  // 드래그 상태 (ref — setState 없이 처리)
-  const dragRef = useRef({ dragging: false, startY: 0, startOffset: 0 });
+  // Camera refs
   const cameraYOffsetRef = useRef(0);
+  const cameraZRef = useRef(3.8);
+  const scrollRangeRef = useRef((ROWS - 1) * 0.7);
 
-  const handlePointerDown = (e) => {
-    dragRef.current = {
-      dragging: true,
-      startY: e.clientY,
-      startOffset: cameraYOffsetRef.current,
-    };
-  };
+  // scrollRange 갱신
+  useEffect(() => {
+    scrollRangeRef.current = (ROWS - 1) * 0.7;
+  }, [ROWS]);
 
-  const handlePointerMove = (e) => {
-    if (!dragRef.current.dragging) return;
-    const delta = e.clientY - dragRef.current.startY;
-    // delta > 0 (드래그 아래) → 카메라 위로 → 위쪽 앨범 노출 (자연스러운 스크롤)
-    const newOffset = dragRef.current.startOffset + delta * 0.003;
-    // ROWS=2 데스크탑도 ±0.7 허용, 더 많은 행일수록 범위 확장
-    const scrollRange = (ROWS - 1) * 0.7;
-    cameraYOffsetRef.current = Math.max(
-      -scrollRange,
-      Math.min(scrollRange, newOffset),
-    );
-  };
-
-  const handlePointerUp = () => {
-    dragRef.current.dragging = false;
-  };
-
-  // 마우스 휠 스크롤 — 드래그 방향과 동일 (위로 스크롤 → 카메라 아래, 아래로 스크롤 → 카메라 위)
-  const handleWheel = (e) => {
-    const scrollRange = (ROWS - 1) * 0.7;
-    const newOffset = cameraYOffsetRef.current + e.deltaY * 0.001;
-    cameraYOffsetRef.current = Math.max(
-      -scrollRange,
-      Math.min(scrollRange, newOffset),
-    );
-  };
+  // 제스처 훅 (touch + wheel은 내부 addEventListener, pointer만 반환)
+  const { onPointerDown, onPointerMove, onPointerUp } = useShelfGestures({
+      wrapperRef,
+      scrollRangeRef,
+      cameraYOffsetRef,
+      cameraZRef,
+      selectedAlbum,
+    });
 
   // 카메라 제어 메서드를 부모에 노출
   useEffect(() => {
     if (cameraControlRef) {
       cameraControlRef.current = {
         reset: () => {
-          if (controlsRef.current) {
-            controlsRef.current.reset();
-          }
+          cameraYOffsetRef.current = 0;
+          cameraZRef.current = 3.8;
         },
         zoomIn: () => {
-          if (controlsRef.current) {
-            const camera = controlsRef.current.object;
-            const direction = new THREE.Vector3();
-            camera.getWorldDirection(direction);
-            camera.position.addScaledVector(direction, 1);
-            controlsRef.current.update();
-          }
+          cameraZRef.current = Math.max(2.5, cameraZRef.current - 0.5);
         },
         zoomOut: () => {
-          if (controlsRef.current) {
-            const camera = controlsRef.current.object;
-            const direction = new THREE.Vector3();
-            camera.getWorldDirection(direction);
-            camera.position.addScaledVector(direction, -1);
-            controlsRef.current.update();
-          }
+          cameraZRef.current = Math.min(5.5, cameraZRef.current + 0.5);
         },
       };
     }
@@ -172,12 +147,12 @@ export default function ShelfCanvas({
 
   return (
     <div
+      ref={wrapperRef}
       style={{ width: "100%", height: "100%", touchAction: "none" }}
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      onWheel={handleWheel}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
     >
       <Canvas
         shadows={false}
@@ -200,12 +175,11 @@ export default function ShelfCanvas({
         }}
         onCreated={({ camera }) => {
           cameraRef.current = camera;
-          // 하이앵글: 선반 중심을 내려다봄
           camera.lookAt(0, 1.5, 0);
         }}
         frameloop="demand"
       >
-        <FPSLimiter fps={30} />
+        <FPSLimiter fps={60} />
         {/* 라이팅: 따뜻한 앰버/골드 무드 */}
         <ambientLight intensity={2} color="#957A57" />
         <DirLightWithHelper
@@ -243,10 +217,7 @@ export default function ShelfCanvas({
           />
         </Suspense>
 
-        {/* 모바일 세로 드래그 스크롤: 카메라 Y 오프셋 부드럽게 반영 */}
-        <CameraYController yOffsetRef={cameraYOffsetRef} />
-
-        {/* <OrbitControls /> */}
+        <CameraController yOffsetRef={cameraYOffsetRef} zRef={cameraZRef} />
       </Canvas>
     </div>
   );

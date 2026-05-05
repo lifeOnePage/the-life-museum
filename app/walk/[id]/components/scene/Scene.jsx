@@ -17,10 +17,10 @@ import {
   CAMERA_START_Z,
   DISPLAY_OFFSET_Z,
   DISPLAY_SCALE,
-  FOCUS_SEARCH_RANGE,
   FOCUS_DISMISS_DISTANCE,
   FOCUS_FADE_SPEED,
   FOCUS_MIN_SPEED_RATIO,
+  VIDEO_FOCUS_MIN_SPEED_RATIO,
   AUTO_RESPAWN_OFFSET,
   OPACITY_PEAK_DIST,
   FLOOR_Y,
@@ -39,12 +39,14 @@ const MAX_CONCURRENT_LOADS = 30;
 
 export default function Scene({
   planes,
+  mediaListLength,
   isPlaying,
   cameraSpeed,
   textureConfig,
   onAutoPlay,
   onTogglePlay,
   onToggleFullscreen,
+  onVideoBgmControl,
 }) {
   const { camera } = useThree();
   const controlsRef = useRef();
@@ -58,6 +60,15 @@ export default function Scene({
 
   // Shared counter for concurrent texture loads (passed to all WallPlanes)
   const activeLoadsRef = useRef(0);
+
+  // Video element registry (populated by WallPlane, used for play/pause control)
+  const videoElementMap = useRef(new Map());
+  // Video playback state
+  const videoPlayState = useRef({
+    activePlaneId: null,
+    isPlaying: false,
+    endedHandler: null,
+  });
 
   // React state for focus mode - drives conditional rendering (mount/unmount)
   const [focusRender, setFocusRender] = useState({
@@ -84,13 +95,22 @@ export default function Scene({
     manualPlaneOriginalPos: null,
     // Display offset used for current manual focus (differs when paused vs playing)
     manualDisplayOffset: DISPLAY_OFFSET_Z,
-    // Seen planes for auto selection (avoid re-picking recently shown)
-    recentAutoIds: new Set(),
+    // Sequential auto-focus: next mediaIndex to show
+    nextAutoMediaIndex: 0,
     // Track if playing was just started
     initialized: false,
     // Asymmetric lerp speed to smooth out velocity jumps on focus transitions
     smoothSpeed: cameraSpeed,
+    // Video: prevent duplicate play triggers per focus cycle
+    videoTriggered: false,
   });
+
+  // Fast planeId → mediaType lookup (independent of texture load state)
+  const planeMediaTypeMap = useMemo(() => {
+    const map = new Map();
+    planes.forEach((p) => map.set(p.id, p.mediaType));
+    return map;
+  }, [planes]);
 
   // Corridor span for wrapping
   const deepestZ = useMemo(() => {
@@ -120,10 +140,16 @@ export default function Scene({
   // Auto-play trigger: fire once when enough textures are loaded
   const autoPlayFiredRef = useRef(false);
 
-  // Handle texture loaded from WallPlane
+  // Handle texture loaded from WallPlane (4th arg: videoMeta for video planes)
   const handleTextureLoaded = useCallback(
-    (planeId, texture, aspectRatio) => {
-      textureMap.current.set(planeId, { texture, aspectRatio });
+    (planeId, texture, aspectRatio, videoMeta) => {
+      textureMap.current.set(planeId, {
+        texture,
+        aspectRatio,
+        isVideo: videoMeta?.isVideo || false,
+        videoTexture: videoMeta?.videoTexture || null,
+        videoElement: videoMeta?.videoElement || null,
+      });
 
       // 전체 plane의 30% 이상 또는 최소 3개 로딩 완료 시 자동 재생
       if (!autoPlayFiredRef.current && planes.length > 0) {
@@ -138,6 +164,161 @@ export default function Scene({
     [planes.length, onAutoPlay],
   );
 
+  // ─── Video playback control ─────────────────────────────────────────────
+
+  const startVideoPlayback = useCallback((planeId) => {
+    console.log(`[Scene] startVideoPlayback called: plane=${planeId}`);
+    const texInfo = textureMap.current.get(planeId);
+    if (!texInfo?.isVideo || !texInfo.videoElement) {
+      console.warn(`[Scene] startVideoPlayback BAIL: no video for plane ${planeId}`, {
+        hasTexInfo: !!texInfo,
+        isVideo: texInfo?.isVideo,
+        hasElement: !!texInfo?.videoElement,
+      });
+      return;
+    }
+
+    const video = texInfo.videoElement;
+
+    // Guard: video element may have been disposed (far-distance cleanup)
+    if (!video.src || video.readyState === 0) {
+      console.warn(`[Scene] startVideoPlayback BAIL: disposed/unready plane=${planeId}`, {
+        src: video.src?.substring(0, 60),
+        readyState: video.readyState,
+      });
+      return;
+    }
+
+    console.log(`[Scene] startVideoPlayback: video OK plane=${planeId}`, {
+      src: video.src.substring(0, 80),
+      readyState: video.readyState,
+      duration: video.duration,
+      paused: video.paused,
+    });
+
+    const vps = videoPlayState.current;
+
+    // Stop any currently playing video first
+    if (vps.activePlaneId != null && vps.activePlaneId !== planeId) {
+      stopVideoPlayback(vps.activePlaneId);
+    }
+
+    video.currentTime = 0;
+    vps.activePlaneId = planeId;
+    vps.isPlaying = true;
+
+    // Default ended handler: cleans up vps state for manual/prev videos.
+    // Auto-focus code will replace this with its own dismiss+advance handler.
+    const defaultOnEnded = () => {
+      console.log(`[Scene] Video ended (defaultOnEnded): plane=${planeId}`);
+      video.removeEventListener("ended", defaultOnEnded);
+      if (vps.endedHandler === defaultOnEnded) {
+        vps.endedHandler = null;
+      }
+      vps.activePlaneId = null;
+      vps.isPlaying = false;
+      onVideoBgmControl?.(false);
+    };
+
+    // Remove any existing handler before registering new one
+    if (vps.endedHandler) {
+      video.removeEventListener("ended", vps.endedHandler);
+    }
+    video.addEventListener("ended", defaultOnEnded);
+    vps.endedHandler = defaultOnEnded;
+
+    // Try unmuted first; if browser blocks (autoplay policy), fall back to muted
+    video.muted = false;
+    const p = video.play();
+    if (p) {
+      p.then(() => {
+        console.log(`[Scene] ✓ Video playing (unmuted) plane=${planeId}`);
+        onVideoBgmControl?.(true);
+      }).catch((err) => {
+        console.warn(`[Scene] Unmuted play rejected (plane=${planeId}):`, err.message);
+        // Autoplay with audio rejected — retry muted (visual-only)
+        video.muted = true;
+        video.play().then(() => {
+          console.log(`[Scene] ✓ Video playing (muted) plane=${planeId}`);
+          onVideoBgmControl?.(true);
+        }).catch((err2) => {
+          console.error(`[Scene] ✗ Muted play ALSO failed (plane=${planeId}):`, err2.message);
+          // Both attempts failed — clean up
+          video.removeEventListener("ended", defaultOnEnded);
+          if (vps.endedHandler === defaultOnEnded) {
+            vps.endedHandler = null;
+          }
+          vps.activePlaneId = null;
+          vps.isPlaying = false;
+        });
+      });
+    }
+  }, [onVideoBgmControl]);
+
+  const stopVideoPlayback = useCallback((planeId) => {
+    const texInfo = textureMap.current.get(planeId);
+    if (!texInfo?.isVideo || !texInfo.videoElement) return;
+
+    const video = texInfo.videoElement;
+    video.pause();
+    video.muted = true;
+    onVideoBgmControl?.(false);
+
+    const vps = videoPlayState.current;
+    if (vps.activePlaneId === planeId) {
+      // Remove ended listener if any
+      if (vps.endedHandler) {
+        video.removeEventListener("ended", vps.endedHandler);
+        vps.endedHandler = null;
+      }
+      vps.activePlaneId = null;
+      vps.isPlaying = false;
+    }
+  }, [onVideoBgmControl]);
+
+  // Pause video but keep activePlaneId so texture still shows the paused frame
+  const pauseVideoPlayback = useCallback((planeId) => {
+    const texInfo = textureMap.current.get(planeId);
+    if (!texInfo?.isVideo || !texInfo.videoElement) return;
+
+    texInfo.videoElement.pause();
+    onVideoBgmControl?.(false);
+
+    const vps = videoPlayState.current;
+    if (vps.activePlaneId === planeId) {
+      vps.isPlaying = false;
+      // Keep activePlaneId and endedHandler intact so texture stays on video frame
+    }
+  }, [onVideoBgmControl]);
+
+  // Resume video from current position (no currentTime reset)
+  const resumeVideoPlayback = useCallback((planeId) => {
+    const texInfo = textureMap.current.get(planeId);
+    if (!texInfo?.isVideo || !texInfo.videoElement) return;
+
+    const video = texInfo.videoElement;
+    if (!video.src || video.readyState === 0) return;
+
+    const vps = videoPlayState.current;
+    vps.activePlaneId = planeId;
+    vps.isPlaying = true;
+
+    video.muted = false;
+    const p = video.play();
+    if (p) {
+      p.then(() => {
+        onVideoBgmControl?.(true);
+      }).catch(() => {
+        video.muted = true;
+        video.play().then(() => {
+          onVideoBgmControl?.(true);
+        }).catch(() => {
+          vps.isPlaying = false;
+        });
+      });
+    }
+  }, [onVideoBgmControl]);
+
   // Handle plane click for manual focus (works both playing and paused)
   const handlePlaneClick = useCallback(
     (planeId) => {
@@ -145,12 +326,43 @@ export default function Scene({
       const plane = planes.find((p) => p.id === planeId);
       if (!plane) return;
 
+      // Already focused on this plane — toggle video or do nothing (never re-focus)
+      if (s.focusMode === "manual" && s.targetPlaneId === planeId) {
+        const texInfo = textureMap.current.get(planeId);
+        console.log(`[Scene] Manual toggle click: plane=${planeId}`, {
+          isVideo: texInfo?.isVideo,
+          hasElement: !!texInfo?.videoElement,
+          paused: texInfo?.videoElement?.paused,
+          ended: texInfo?.videoElement?.ended,
+        });
+        if (texInfo?.isVideo && texInfo.videoElement) {
+          const vid = texInfo.videoElement;
+          if (!vid.paused) {
+            // Playing → pause (keep showing current frame)
+            pauseVideoPlayback(planeId);
+          } else if (vid.ended || vid.currentTime === 0) {
+            // Never played or ended → start from beginning
+            startVideoPlayback(planeId);
+          } else {
+            // Paused mid-play → resume from current position
+            resumeVideoPlayback(planeId);
+          }
+        }
+        // Always return — don't re-focus the same plane
+        return;
+      }
+
       // Only allow clicking planes ahead of camera (use wrapped position)
       const wrappedPZ = wrapZ(plane.position[2], s.cameraZ);
       if (wrappedPZ >= s.cameraZ) return;
 
       // Land at OPACITY_PEAK_DIST so the plane arrives fully visible (opacity=1.0)
       const offset = OPACITY_PEAK_DIST;
+
+      // Stop any playing video before switching focus
+      if (videoPlayState.current.isPlaying) {
+        stopVideoPlayback(videoPlayState.current.activePlaneId);
+      }
 
       // Switch to manual mode
       s.focusMode = "manual";
@@ -163,32 +375,41 @@ export default function Scene({
         plane.position[1],
         wrappedPZ,
       ];
+      s.videoTriggered = false;
       setFocusRender({ mode: "manual", targetId: planeId });
     },
-    [planes, corridorSpan],
+    [planes, corridorSpan, startVideoPlayback, stopVideoPlayback, pauseVideoPlayback, resumeVideoPlayback],
   );
 
-  // Pick a random plane ahead of camera for auto focus (uses wrapped positions)
+  // Pick the next plane in album order for auto focus (sequential, wraps around)
   function pickAutoTarget(s) {
-    const candidates = planes.filter((p) => {
-      const wrappedPZ = wrapZ(p.position[2], s.cameraZ);
-      const dz = s.cameraZ - wrappedPZ;
-      return dz > 0 && dz < FOCUS_SEARCH_RANGE && !s.recentAutoIds.has(p.id);
-    });
+    if (!mediaListLength) return null;
 
-    if (candidates.length === 0) {
-      // If all recent, clear the set and retry
-      s.recentAutoIds.clear();
-      const retry = planes.filter((p) => {
+    // Try each mediaIndex starting from nextAutoMediaIndex (full cycle)
+    for (let attempt = 0; attempt < mediaListLength; attempt++) {
+      const targetIdx = (s.nextAutoMediaIndex + attempt) % mediaListLength;
+
+      // Find the closest loaded plane ahead of camera with this mediaIndex
+      let best = null;
+      let bestDz = Infinity;
+      for (const p of planes) {
+        if (p.mediaIndex !== targetIdx) continue;
+        if (!textureMap.current.has(p.id)) continue;
         const wrappedPZ = wrapZ(p.position[2], s.cameraZ);
         const dz = s.cameraZ - wrappedPZ;
-        return dz > 0 && dz < FOCUS_SEARCH_RANGE;
-      });
-      if (retry.length === 0) return null;
-      return retry[Math.floor(Math.random() * retry.length)];
+        if (dz > 0 && dz < bestDz) {
+          best = p;
+          bestDz = dz;
+        }
+      }
+
+      if (best) {
+        s.nextAutoMediaIndex = (targetIdx + 1) % mediaListLength;
+        return best;
+      }
     }
 
-    return candidates[Math.floor(Math.random() * candidates.length)];
+    return null; // All textures still loading
   }
 
   // Reset when play starts
@@ -201,9 +422,10 @@ export default function Scene({
       focusCloneZ: 0,
       manualPlaneOriginalPos: null,
       manualDisplayOffset: DISPLAY_OFFSET_Z,
-      recentAutoIds: new Set(),
+      nextAutoMediaIndex: 0,
       initialized: true,
       smoothSpeed: cameraSpeed,
+      videoTriggered: false,
     };
     camera.position.set(0, 0, CAMERA_START_Z);
   }
@@ -214,7 +436,7 @@ export default function Scene({
   // Manual movement refs (used when paused and playing)
   const manualVelocityRef = useRef(0);
   const keysRef = useRef({ fwd: false, back: false });
-  const touchRef = useRef({ active: false, lastY: 0 });
+  const touchRef = useRef({ active: false, lastY: 0, startY: 0, scrolling: false });
 
   // Pinch zoom refs
   const pinchRef = useRef({ active: false, initialDist: 0, initialFov: 80 });
@@ -266,6 +488,7 @@ export default function Scene({
       if (["ArrowUp", "w", "W"].includes(e.key)) keysRef.current.fwd = false;
       if (["ArrowDown", "s", "S"].includes(e.key)) keysRef.current.back = false;
     };
+    const TOUCH_DEAD_ZONE = 8; // px — ignore movement below this threshold (prevents taps from scrolling)
     const onTouchStart = (e) => {
       if (e.touches.length === 2) {
         pinchRef.current = {
@@ -274,8 +497,10 @@ export default function Scene({
           initialFov: camera.fov,
         };
         touchRef.current.active = false;
+        touchRef.current.scrolling = false;
       } else if (e.touches.length === 1) {
-        touchRef.current = { active: true, lastY: e.touches[0].clientY };
+        const y = e.touches[0].clientY;
+        touchRef.current = { active: true, lastY: y, startY: y, scrolling: false };
       }
     };
     const onTouchMove = (e) => {
@@ -287,6 +512,12 @@ export default function Scene({
       }
       if (!touchRef.current.active || e.touches.length !== 1) return;
       const currentY = e.touches[0].clientY;
+      // Dead zone: only start scrolling after finger moves beyond threshold
+      if (!touchRef.current.scrolling) {
+        if (Math.abs(currentY - touchRef.current.startY) < TOUCH_DEAD_ZONE) return;
+        touchRef.current.scrolling = true;
+        touchRef.current.lastY = currentY; // reset baseline to current position
+      }
       const deltaY = touchRef.current.lastY - currentY;
       manualVelocityRef.current += deltaY * 3;
       touchRef.current.lastY = currentY;
@@ -298,6 +529,7 @@ export default function Scene({
       }
       if (e.touches.length === 0) {
         touchRef.current.active = false;
+        touchRef.current.scrolling = false;
       }
     };
     window.addEventListener("wheel", onWheel, { passive: false });
@@ -316,6 +548,16 @@ export default function Scene({
       if (fovRecoveryTimerRef.current) clearTimeout(fovRecoveryTimerRef.current);
     };
   }, [onTogglePlay, onToggleFullscreen, camera]);
+
+  // Stop video playback when paused or unmounted
+  useEffect(() => {
+    if (!isPlaying) {
+      const vps = videoPlayState.current;
+      if (vps.isPlaying && vps.activePlaneId != null) {
+        stopVideoPlayback(vps.activePlaneId);
+      }
+    }
+  }, [isPlaying, stopVideoPlayback]);
 
   // OrbitControls always disabled — play/pause only controls camera movement
   if (controlsRef.current) {
@@ -375,8 +617,23 @@ export default function Scene({
             0,
             Math.min(1, (distToClone - FOCUS_DISMISS_DISTANCE) / focusRange),
           );
-        targetEffectiveSpeed =
-          cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
+        // Only fully stop camera when a video is actively playing on the focused plane.
+        // If video finished, paused, or failed to load, use normal deceleration.
+        const vpsRef = videoPlayState.current;
+        const isActiveVideoPlaying =
+          s.focusMode === "auto"
+          && planeMediaTypeMap.get(s.targetPlaneId) === "video"
+          && vpsRef.isPlaying
+          && vpsRef.activePlaneId === s.targetPlaneId;
+        if (isActiveVideoPlaying) {
+          // Video playing → immediate full stop target (smooth decel via k=6)
+          // Camera stops near where video triggered (~OPACITY_PEAK_DIST from clone)
+          // After video ends, smooth acceleration via k=2
+          targetEffectiveSpeed = 0;
+        } else {
+          targetEffectiveSpeed =
+            cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
+        }
       }
       // 비대칭 스무딩: 감속은 빠르게(k=6), 가속은 천천히(k=2)
       const k = targetEffectiveSpeed < s.smoothSpeed ? 6 : 2;
@@ -405,6 +662,17 @@ export default function Scene({
     if (pLight2Ref.current)
       pLight2Ref.current.position.set(CORRIDOR_HALF, 50, s.cameraZ - 400);
 
+    // 2a. Auto-stop prev focus video when it's out of view range
+    if (prevFocusRender.targetId != null) {
+      const prevDist = Math.abs(s.cameraZ - prevFocusRender.cloneZ);
+      if (prevDist >= OPACITY_APPEAR_DIST) {
+        const vps = videoPlayState.current;
+        if (vps.isPlaying && vps.activePlaneId === prevFocusRender.targetId) {
+          stopVideoPlayback(prevFocusRender.targetId);
+        }
+      }
+    }
+
     // 2. Focus state machine
     if (s.focusMode === "idle") {
       // Pick new auto target
@@ -414,7 +682,7 @@ export default function Scene({
         s.targetPlaneId = target.id;
         s.fadeProgress = 0;
         s.focusCloneZ = s.cameraZ - DISPLAY_OFFSET_Z;
-        s.recentAutoIds.add(target.id);
+        s.videoTriggered = false;
         setFocusRender({ mode: "auto", targetId: target.id });
       }
     } else if (s.focusMode === "auto" || s.focusMode === "manual") {
@@ -424,7 +692,75 @@ export default function Scene({
       // Dismiss when camera approaches the clone's fixed position
       const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
 
-      if (distToClone < FOCUS_DISMISS_DISTANCE) {
+      // Video trigger: start playback when close enough (auto-focus only)
+      if (!s.videoTriggered && distToClone <= OPACITY_PEAK_DIST) {
+        const currentTexInfo = s.targetPlaneId != null ? textureMap.current.get(s.targetPlaneId) : null;
+        if (currentTexInfo?.isVideo) {
+          s.videoTriggered = true;
+          console.log(`[Scene] Video trigger: mode=${s.focusMode} plane=${s.targetPlaneId} dist=${distToClone.toFixed(1)}`);
+          if (s.focusMode === "auto") {
+            // Capture planeId at registration time (s.targetPlaneId may change later)
+            const capturedPlaneId = s.targetPlaneId;
+            const capturedCloneZ = s.focusCloneZ;
+            // Auto-focus video: start playback + register ended handler
+            startVideoPlayback(capturedPlaneId);
+            const video = currentTexInfo.videoElement;
+            if (video) {
+              // Replace the default ended handler (from startVideoPlayback)
+              // with auto-focus specific dismiss+advance handler
+              const vpsInner = videoPlayState.current;
+              if (vpsInner.endedHandler) {
+                video.removeEventListener("ended", vpsInner.endedHandler);
+              }
+              const onEnded = () => {
+                console.log(`[Scene] Auto-focus video ended: plane=${capturedPlaneId}`);
+                video.removeEventListener("ended", onEnded);
+                vpsInner.endedHandler = null;
+                stopVideoPlayback(capturedPlaneId);
+                // Only dismiss if still focused on this plane
+                if (s.targetPlaneId !== capturedPlaneId) return;
+                // Dismiss: save as prev and pick next
+                setPrevFocusRender({
+                  targetId: capturedPlaneId,
+                  cloneZ: capturedCloneZ,
+                });
+                s.focusMode = "idle";
+                s.targetPlaneId = null;
+                s.fadeProgress = 0;
+                s.focusCloneZ = 0;
+                s.manualPlaneOriginalPos = null;
+                s.videoTriggered = false;
+
+                const next = pickAutoTarget(s);
+                if (next) {
+                  s.focusMode = "auto";
+                  s.targetPlaneId = next.id;
+                  s.fadeProgress = 0;
+                  s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
+                  s.videoTriggered = false;
+                  setFocusRender({ mode: "auto", targetId: next.id });
+                } else {
+                  setFocusRender({ mode: "idle", targetId: null });
+                }
+              };
+              video.addEventListener("ended", onEnded);
+              vpsInner.endedHandler = onEnded;
+            }
+          }
+          // Manual focus: don't auto-play, wait for click toggle
+        }
+      }
+
+      // Guard: auto-focus video playing → skip distance-based dismiss (ended event handles it)
+      const vps = videoPlayState.current;
+      const isAutoVideoPlaying = s.focusMode === "auto" && vps.isPlaying && vps.activePlaneId === s.targetPlaneId;
+
+      if (!isAutoVideoPlaying && distToClone < FOCUS_DISMISS_DISTANCE) {
+        // Stop video if playing during dismiss
+        if (vps.isPlaying && vps.activePlaneId === s.targetPlaneId) {
+          stopVideoPlayback(s.targetPlaneId);
+        }
+
         // Save current focus as previous (only for auto mode with valid target)
         if (s.focusMode === "auto" && s.targetPlaneId != null) {
           setPrevFocusRender({
@@ -439,6 +775,7 @@ export default function Scene({
         s.fadeProgress = 0;
         s.focusCloneZ = 0;
         s.manualPlaneOriginalPos = null;
+        s.videoTriggered = false;
 
         // Immediately pick next auto
         const next = pickAutoTarget(s);
@@ -447,7 +784,7 @@ export default function Scene({
           s.targetPlaneId = next.id;
           s.fadeProgress = 0;
           s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
-          s.recentAutoIds.add(next.id);
+          s.videoTriggered = false;
           setFocusRender({ mode: "auto", targetId: next.id });
         } else {
           setFocusRender({ mode: "idle", targetId: null });
@@ -539,6 +876,7 @@ export default function Scene({
             <WallPlane
               id={p.id}
               imageUrl={p.imageUrl}
+              thumbnailUrl={p.thumbnailUrl}
               position={p.position}
               rotation={p.rotation}
               baseHeight={p.baseHeight}
@@ -553,6 +891,8 @@ export default function Scene({
               maxConcurrentLoads={MAX_CONCURRENT_LOADS}
               maxTextureSize={textureConfig.maxTextureSize}
               anisotropy={textureConfig.anisotropy}
+              mediaType={p.mediaType}
+              videoElementMap={videoElementMap}
             />
           </Suspense>
         );
@@ -569,6 +909,23 @@ export default function Scene({
             stateRef={state}
             displayScale={DISPLAY_SCALE}
             cloneZ={focusCloneZ}
+            isVideo={focusTexInfo.isVideo}
+            videoTexture={focusTexInfo.videoTexture}
+            videoPlayStateRef={videoPlayState}
+            planeId={focusRender.targetId}
+            onClick={focusTexInfo.isVideo ? () => {
+              const texInfo = textureMap.current.get(focusRender.targetId);
+              if (!texInfo?.isVideo || !texInfo.videoElement) return;
+              const vid = texInfo.videoElement;
+              const pid = focusRender.targetId;
+              if (!vid.paused) {
+                pauseVideoPlayback(pid);
+              } else if (vid.ended || vid.currentTime === 0) {
+                startVideoPlayback(pid);
+              } else {
+                resumeVideoPlayback(pid);
+              }
+            } : undefined}
           />
           <MirrorReflection
             texture={focusTexInfo.texture}
@@ -599,6 +956,19 @@ export default function Scene({
           stateRef={state}
           displayScale={DISPLAY_SCALE}
           cloneZ={prevFocusRender.cloneZ}
+          isVideo={prevFocusTexInfo.isVideo}
+          videoTexture={prevFocusTexInfo.videoTexture}
+          videoPlayStateRef={videoPlayState}
+          planeId={prevFocusRender.targetId}
+          onClick={prevFocusTexInfo.isVideo ? () => {
+            const texInfo = textureMap.current.get(prevFocusRender.targetId);
+            if (!texInfo?.isVideo || !texInfo.videoElement) return;
+            if (texInfo.videoElement.paused) {
+              startVideoPlayback(prevFocusRender.targetId);
+            } else {
+              stopVideoPlayback(prevFocusRender.targetId);
+            }
+          } : undefined}
         />
       )}
 

@@ -8,6 +8,8 @@ import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
 import { X, Info } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useAuth } from "@/app/contexts/AuthContext";
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+import scrollMouse from "@/public/lottie/scroll-mouse.json";
 
 function Icon360({ className }) {
   return (
@@ -98,6 +100,8 @@ export default function SharePage({ params }) {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const panOffsetRef = useRef({ x: 0, y: 0 });
   const lastPanPosRef = useRef(null);
+  const mouseDragRef = useRef(null); // 데스크탑 마우스 드래그 패닝
+  const [showDesktopHint, setShowDesktopHint] = useState(true);
 
   // rAF lerp loop — library AlbumCover.jsx의 smoothing 방식과 동일
   useEffect(() => {
@@ -109,7 +113,9 @@ export default function SharePage({ params }) {
       const tgt = targetTiltRef.current;
       cur.x += (tgt.x - cur.x) * SMOOTH;
       cur.y += (tgt.y - cur.y) * SMOOTH;
-      const transform = `perspective(1000px) rotateX(${cur.x}deg) rotateY(${cur.y}deg)`;
+      // 풀스크린 캔버스에 맞게 perspective를 뷰포트 크기에 비례하여 키워 왜곡 방지
+      const p = Math.max(window.innerWidth, window.innerHeight) * 2;
+      const transform = `perspective(${p}px) rotateX(${cur.x}deg) rotateY(${cur.y}deg)`;
       if (albumRef.current) albumRef.current.style.transform = transform;
       idleRafRef.current = requestAnimationFrame(loop);
     }
@@ -131,14 +137,20 @@ export default function SharePage({ params }) {
 
   // 마우스/터치: 전체 윈도우 기준 정규화 (library와 동일)
   useEffect(() => {
-    const MAX_DEG = 28.6; // 0.5 rad
+    // 데스크탑은 풀스크린 캔버스 전체가 기울어지므로 각도를 줄여 과도한 왜곡 방지
+    const isMobile = window.innerWidth < 1024;
+    const MAX_DEG = isMobile ? 28.6 : 10;
     const onMouseMove = (e) => {
+      // 드래그 중에는 틸트 건너뜀
+      if (e.buttons !== 0) return;
       const x = (e.clientX / window.innerWidth) * 2 - 1;
       const y = (e.clientY / window.innerHeight) * 2 - 1;
       targetTiltRef.current = { x: -y * MAX_DEG, y: x * MAX_DEG };
     };
+    const onMouseLeave = () => {
+      targetTiltRef.current = { x: 0, y: 0 };
+    };
     const onTouchMove = (e) => {
-      // 두 손가락은 핀치줌 처리 — 틸트 건너뜀
       if (e.touches.length >= 2) return;
       const t = e.touches[0];
       const x = (t.clientX / window.innerWidth) * 2 - 1;
@@ -149,13 +161,76 @@ export default function SharePage({ params }) {
       targetTiltRef.current = { x: 0, y: 0 };
     };
     window.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseleave", onMouseLeave);
     window.addEventListener("touchmove", onTouchMove);
     window.addEventListener("touchend", onTouchEnd);
     return () => {
       window.removeEventListener("mousemove", onMouseMove);
+      document.removeEventListener("mouseleave", onMouseLeave);
       window.removeEventListener("touchmove", onTouchMove);
       window.removeEventListener("touchend", onTouchEnd);
     };
+  }, []);
+
+  // 데스크탑: 마우스 휠 줌 — window에 붙여야 Three.js Canvas 이벤트 삼킴 방지
+  const isInfoOpenRef = useRef(false);
+  useEffect(() => {
+    isInfoOpenRef.current = isInfoOpen;
+  }, [isInfoOpen]);
+
+  useEffect(() => {
+    const onWheel = (e) => {
+      if (isInfoOpenRef.current) return; // info 팝업 열려 있으면 스크롤 허용
+      e.preventDefault();
+      const next = Math.max(
+        2,
+        Math.min(10, pinchZoomRef.current + e.deltaY * 0.008),
+      );
+      pinchZoomRef.current = next;
+      setExternalZoom(next);
+    };
+    window.addEventListener("wheel", onWheel, { passive: false });
+    return () => window.removeEventListener("wheel", onWheel);
+  }, []);
+
+  // 데스크탑: 마우스 드래그 패닝
+  useEffect(() => {
+    const MAX_PAN = 0.8;
+    const onMouseMove = (e) => {
+      if (!mouseDragRef.current) return;
+      const dx = e.clientX - mouseDragRef.current.x;
+      const dy = e.clientY - mouseDragRef.current.y;
+      const s = pinchZoomRef.current * 0.0005;
+      const newX = Math.max(
+        -MAX_PAN,
+        Math.min(MAX_PAN, panOffsetRef.current.x - dx * s),
+      );
+      const newY = Math.max(
+        -MAX_PAN,
+        Math.min(MAX_PAN, panOffsetRef.current.y + dy * s),
+      );
+      panOffsetRef.current = { x: newX, y: newY };
+      setPanOffset({ x: newX, y: newY });
+      mouseDragRef.current = { x: e.clientX, y: e.clientY };
+    };
+    const onMouseUp = () => {
+      if (!mouseDragRef.current) return;
+      mouseDragRef.current = null;
+      panOffsetRef.current = { x: 0, y: 0 };
+      setPanOffset({ x: 0, y: 0 });
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, []);
+
+  // 데스크탑 힌트 — 첫 진입 시 4초간 표시
+  useEffect(() => {
+    const t = setTimeout(() => setShowDesktopHint(false), 30000);
+    return () => clearTimeout(t);
   }, []);
 
   // 핀치줌 + 1손가락 패닝 핸들러
@@ -166,7 +241,10 @@ export default function SharePage({ params }) {
       lastPinchDistRef.current = Math.sqrt(dx * dx + dy * dy);
       lastPanPosRef.current = null;
     } else if (e.touches.length === 1) {
-      lastPanPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      lastPanPosRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
     }
   }, []);
 
@@ -177,7 +255,10 @@ export default function SharePage({ params }) {
       const dy = e.touches[0].clientY - e.touches[1].clientY;
       const dist = Math.sqrt(dx * dx + dy * dy);
       const delta = lastPinchDistRef.current - dist;
-      const next = Math.max(2, Math.min(10, pinchZoomRef.current + delta * 0.03));
+      const next = Math.max(
+        2,
+        Math.min(10, pinchZoomRef.current + delta * 0.03),
+      );
       pinchZoomRef.current = next;
       setExternalZoom(next);
       lastPinchDistRef.current = dist;
@@ -188,11 +269,20 @@ export default function SharePage({ params }) {
       const dy = e.touches[0].clientY - lastPanPosRef.current.y;
       const sensitivity = pinchZoomRef.current * 0.0005;
       const MAX_PAN = 0.8;
-      const newX = Math.max(-MAX_PAN, Math.min(MAX_PAN, panOffsetRef.current.x - dx * sensitivity));
-      const newY = Math.max(-MAX_PAN, Math.min(MAX_PAN, panOffsetRef.current.y + dy * sensitivity));
+      const newX = Math.max(
+        -MAX_PAN,
+        Math.min(MAX_PAN, panOffsetRef.current.x - dx * sensitivity),
+      );
+      const newY = Math.max(
+        -MAX_PAN,
+        Math.min(MAX_PAN, panOffsetRef.current.y + dy * sensitivity),
+      );
       panOffsetRef.current = { x: newX, y: newY };
       setPanOffset({ x: newX, y: newY });
-      lastPanPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      lastPanPosRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
     }
   }, []);
 
@@ -248,21 +338,42 @@ export default function SharePage({ params }) {
   );
 
   // Build cylindrical column strips — viewport-responsive
-  const RADIUS = 700;
-
-  const { GRID_COLS, ARC_SPREAD, ROWS_PER_COL, PERSPECTIVE } = useMemo(() => {
-    if (typeof window === "undefined")
-      return { GRID_COLS: 16, ARC_SPREAD: 200, ROWS_PER_COL: 8, PERSPECTIVE: "clamp(600px, 60vw, 1200px)" };
-    const isMobile = window.innerWidth < 768;
-    if (isMobile) {
-      // perspective를 크게 올려 원근 압축 완화, 행 수 늘려 세로 커버리지 확보
-      return { GRID_COLS: 8, ARC_SPREAD: 140, ROWS_PER_COL: 5, PERSPECTIVE: "1400px" };
-    }
-    const aspect = window.innerWidth / window.innerHeight;
-    const spread = Math.min(Math.round(aspect * 130), 280);
-    const cols = Math.max(14, Math.round(spread / 12));
-    return { GRID_COLS: cols, ARC_SPREAD: spread, ROWS_PER_COL: 8, PERSPECTIVE: "clamp(600px, 60vw, 1200px)" };
-  }, []);
+  const { GRID_COLS, ARC_SPREAD, ROWS_PER_COL, PERSPECTIVE, RADIUS } =
+    useMemo(() => {
+      if (typeof window === "undefined")
+        return {
+          GRID_COLS: 16,
+          ARC_SPREAD: 200,
+          ROWS_PER_COL: 8,
+          PERSPECTIVE: "1400px",
+          RADIUS: 700,
+        };
+      const isMobile = window.innerWidth < 768;
+      if (isMobile) {
+        return {
+          GRID_COLS: 8,
+          ARC_SPREAD: 140,
+          ROWS_PER_COL: 5,
+          PERSPECTIVE: "1400px",
+          RADIUS: 700,
+        };
+      }
+      // 데스크탑: 뷰포트 크기에 맞게 반지름·원근 스케일
+      const vmax = Math.max(window.innerWidth, window.innerHeight);
+      const radius = Math.round(vmax * 0.48);
+      const aspect = window.innerWidth / window.innerHeight;
+      const spread = Math.min(Math.round(aspect * 150), 360);
+      const cols = Math.max(16, Math.round(spread / 10));
+      const rows = window.innerHeight > 1200 ? 10 : 8;
+      const perspective = `${Math.round(radius * 1.5)}px`;
+      return {
+        GRID_COLS: cols,
+        ARC_SPREAD: spread,
+        ROWS_PER_COL: rows,
+        PERSPECTIVE: perspective,
+        RADIUS: radius,
+      };
+    }, []);
 
   const angleStep = ARC_SPREAD / (GRID_COLS - 1);
   const cellWidth = Math.ceil(
@@ -300,9 +411,7 @@ export default function SharePage({ params }) {
         <p className="text-sm font-light tracking-wide text-white/60">
           {error}
         </p>
-        <p className="text-xs tracking-wider text-white/30">
-          {t.linkError}
-        </p>
+        <p className="text-xs tracking-wider text-white/30">{t.linkError}</p>
       </div>
     );
   }
@@ -315,15 +424,16 @@ export default function SharePage({ params }) {
         <p className="text-sm font-light tracking-wide text-white/60">
           {t.privateAlbum}
         </p>
-        <p className="text-xs tracking-wider text-white/30">
-          {t.privateDesc}
-        </p>
+        <p className="text-xs tracking-wider text-white/30">{t.privateDesc}</p>
       </div>
     );
   }
 
   return (
-    <div className="relative w-screen overflow-hidden bg-black" style={{ height: "100dvh" }}>
+    <div
+      className="relative w-screen overflow-hidden bg-black"
+      style={{ height: "100dvh" }}
+    >
       {/* Background: Concave cylindrical photo grid */}
       {images.length > 0 && (
         <div className="pointer-events-none absolute inset-0">
@@ -336,7 +446,12 @@ export default function SharePage({ params }) {
           >
             <div
               className="relative"
-              style={{ transformStyle: "preserve-3d", transform: "rotateX(8deg)", width: "100vw", height: "100vh" }}
+              style={{
+                transformStyle: "preserve-3d",
+                transform: "rotateX(8deg)",
+                width: "100vw",
+                height: "100vh",
+              }}
             >
               {gridColumns.map(({ colIdx, angle, images: colImages }) => (
                 <div
@@ -359,7 +474,9 @@ export default function SharePage({ params }) {
                         className="w-full rounded-sm object-cover opacity-0 transition-opacity duration-[1200ms] ease-out"
                         style={{ aspectRatio: "1" }}
                         draggable={false}
-                        onLoad={(e) => { e.currentTarget.style.opacity = "1"; }}
+                        onLoad={(e) => {
+                          e.currentTarget.style.opacity = "1";
+                        }}
                       />
                     ))}
                   </div>
@@ -375,6 +492,10 @@ export default function SharePage({ params }) {
         ref={albumRef}
         className={`absolute inset-0 z-10 transition-opacity duration-1000 ${ready ? "opacity-100" : "opacity-0"}`}
         style={{ touchAction: "none" }}
+        onMouseDown={(e) => {
+          if (e.button !== 0) return;
+          mouseDragRef.current = { x: e.clientX, y: e.clientY };
+        }}
         onTouchStart={handlePinchStart}
         onTouchMove={handlePinchMove}
         onTouchEnd={handlePinchEnd}
@@ -406,7 +527,10 @@ export default function SharePage({ params }) {
         className={`pointer-events-none absolute inset-x-0 top-0 z-20 pt-10 text-center transition-all duration-1000 ease-out ${
           ready ? "opacity-100" : "translate-y-2 opacity-0"
         }`}
-        style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%)" }}
+        style={{
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, transparent 100%)",
+        }}
       >
         {albumTitle && (
           <h1 className="text-lg font-medium tracking-[0.2em] text-white sm:text-xl">
@@ -420,12 +544,32 @@ export default function SharePage({ params }) {
         )}
       </div>
 
+      {/* 데스크탑 마우스 휠 힌트 — 앨범 오른쪽 중앙 */}
+      <div
+        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] flex -translate-y-[50%] flex-col transition-opacity duration-1000 ${
+          showDesktopHint ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <Lottie
+          animationData={scrollMouse}
+          loop
+          autoplay
+          style={{ width: 200, height: 200 }}
+        />
+        <span className="text-white-100 flex w-full translate-x-2 justify-center rounded-md text-[14px] whitespace-nowrap">
+          Scroll to Zoom
+        </span>
+      </div>
+
       {/* 버튼 오버레이 — 하단 */}
       <div
-        className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-3 pb-[max(env(safe-area-inset-bottom),16px)] pt-6 transition-all delay-300 duration-1000 ease-out ${
+        className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-3 pt-6 pb-[max(env(safe-area-inset-bottom),16px)] transition-all delay-300 duration-1000 ease-out ${
           ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
         }`}
-        style={{ background: "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)" }}
+        style={{
+          background:
+            "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
+        }}
       >
         <div className="flex items-center gap-4">
           <button
@@ -472,7 +616,7 @@ export default function SharePage({ params }) {
             className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="max-h-[70dvh] overflow-y-auto px-6 pb-6 pt-4">
+            <div className="max-h-[70dvh] overflow-y-auto px-6 pt-4 pb-6">
               {/* Title */}
               {albumTitle && (
                 <div className="mb-5">
@@ -532,7 +676,10 @@ export default function SharePage({ params }) {
                     {t.signupPrompt}
                   </p>
                   <button
-                    onClick={() => { setIsInfoOpen(false); router.push("/login"); }}
+                    onClick={() => {
+                      setIsInfoOpen(false);
+                      router.push("/login");
+                    }}
                     className="text-[15px] font-medium tracking-wide text-white/70 underline underline-offset-4 transition-colors hover:text-white"
                   >
                     {t.signupCta}

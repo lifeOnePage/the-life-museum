@@ -796,13 +796,13 @@ export function generateBackCoverDataUrl(
   themeBgImg,
   themeStickerImg,
 ) {
-  const size = 1024;       // 드로잉 좌표계
-  const resolution = 2048; // 실제 캔버스 픽셀 (핀치줌 시 선명도 확보)
+  const size = 1024;   // 드로잉 좌표계 = 실제 캔버스 픽셀
+  const resolution = 1024;
   const canvas = document.createElement("canvas");
   canvas.width = resolution;
   canvas.height = resolution;
   const ctx = canvas.getContext("2d");
-  ctx.scale(resolution / size, resolution / size);
+  ctx.scale(resolution / size, resolution / size); // = scale(1, 1)
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
@@ -853,5 +853,5 @@ export function generateBackCoverDataUrl(
       break;
   }
 
-  return canvas.toDataURL("image/png");
+  return canvas.toDataURL("image/jpeg", 0.92);
 }

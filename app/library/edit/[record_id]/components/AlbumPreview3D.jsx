@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo, useRef, useEffect } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
 import AlbumCover3D from "./AlbumCover3D";
@@ -47,12 +47,19 @@ function getZoomConfig() {
 function CameraZoom({ zoom, panOffset }) {
   const { camera } = useThree();
 
+  // Z는 즉시 적용
   useEffect(() => {
     camera.position.z = zoom;
-    camera.position.x = panOffset?.x ?? 0;
-    camera.position.y = panOffset?.y ?? 0;
     camera.updateProjectionMatrix();
-  }, [zoom, panOffset, camera]);
+  }, [zoom, camera]);
+
+  // X/Y는 매 프레임 lerp → 손 떼면 중심으로 부드럽게 복귀
+  useFrame(() => {
+    const tx = panOffset?.x ?? 0;
+    const ty = panOffset?.y ?? 0;
+    camera.position.x += (tx - camera.position.x) * 0.1;
+    camera.position.y += (ty - camera.position.y) * 0.1;
+  });
 
   return null;
 }

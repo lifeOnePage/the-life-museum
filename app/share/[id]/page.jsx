@@ -92,8 +92,8 @@ export default function SharePage({ params }) {
   const currentTiltRef = useRef({ x: 0, y: 0 });
 
   // 핀치줌 + 패닝 — 브라우저 확대 대신 Three.js 카메라 이동
-  const [externalZoom, setExternalZoom] = useState(7.5);
-  const pinchZoomRef = useRef(7.5);
+  const [externalZoom, setExternalZoom] = useState(9.5);
+  const pinchZoomRef = useRef(9.5);
   const lastPinchDistRef = useRef(null);
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
   const panOffsetRef = useRef({ x: 0, y: 0 });
@@ -199,6 +199,9 @@ export default function SharePage({ params }) {
   const handlePinchEnd = useCallback(() => {
     lastPinchDistRef.current = null;
     lastPanPosRef.current = null;
+    // 손 떼면 pan 중심으로 복귀 (CameraZoom lerp가 부드럽게 처리)
+    panOffsetRef.current = { x: 0, y: 0 };
+    setPanOffset({ x: 0, y: 0 });
   }, []);
 
   const handleAlbumClick = useCallback(() => {

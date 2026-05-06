@@ -7,24 +7,13 @@ import { Suspense, useEffect, useRef, useState, useMemo } from "react";
 import ShelfScene from "./ShelfScene";
 import useShelfGestures from "../hooks/useShelfGestures";
 
-function FPSLimiter({ fps }) {
+// Keeps the demand-mode render loop alive by requesting the next frame
+// from within useFrame (single RAF chain, no separate loop).
+function RenderLoop() {
   const { invalidate } = useThree();
-
-  useEffect(() => {
-    let rafId;
-    let lastTime = 0;
-    const interval = 1000 / fps;
-    const loop = (time) => {
-      rafId = requestAnimationFrame(loop);
-      if (time - lastTime >= interval) {
-        lastTime = time - ((time - lastTime) % interval);
-        invalidate();
-      }
-    };
-    rafId = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(rafId);
-  }, [fps, invalidate]);
-
+  useFrame(() => {
+    invalidate();
+  });
   return null;
 }
 
@@ -108,7 +97,7 @@ export default function ShelfCanvas({
   }, [ROWS]);
 
   // 제스처 훅 (touch + wheel은 내부 addEventListener, pointer만 반환)
-  const { onPointerDown, onPointerMove, onPointerUp } = useShelfGestures({
+  const { onPointerDown, onPointerMove, onPointerUp, isScrollingRef } = useShelfGestures({
       wrapperRef,
       scrollRangeRef,
       cameraYOffsetRef,
@@ -179,7 +168,7 @@ export default function ShelfCanvas({
         }}
         frameloop="demand"
       >
-        <FPSLimiter fps={60} />
+        <RenderLoop />
         {/* 라이팅: 따뜻한 앰버/골드 무드 */}
         <ambientLight intensity={2} color="#957A57" />
         <DirLightWithHelper
@@ -214,6 +203,7 @@ export default function ShelfCanvas({
             onCloseAlbum={onCloseAlbum}
             onHoverLabelPos={onHoverLabelPos}
             windowWidth={windowWidth}
+            isScrollingRef={isScrollingRef}
           />
         </Suspense>
 

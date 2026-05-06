@@ -21,6 +21,7 @@ import {
   FOCUS_FADE_SPEED,
   FOCUS_MIN_SPEED_RATIO,
   VIDEO_FOCUS_MIN_SPEED_RATIO,
+  VIDEO_CAMERA_STOP_DIST,
   AUTO_RESPAWN_OFFSET,
   OPACITY_PEAK_DIST,
   FLOOR_Y,
@@ -103,6 +104,8 @@ export default function Scene({
     smoothSpeed: cameraSpeed,
     // Video: prevent duplicate play triggers per focus cycle
     videoTriggered: false,
+    // Track if clone was ever within visible range (for backward-scroll dismiss)
+    cloneReachedView: false,
   });
 
   // Fast planeId → mediaType lookup (independent of texture load state)
@@ -376,6 +379,7 @@ export default function Scene({
         wrappedPZ,
       ];
       s.videoTriggered = false;
+      s.cloneReachedView = false;
       setFocusRender({ mode: "manual", targetId: planeId });
     },
     [planes, corridorSpan, startVideoPlayback, stopVideoPlayback, pauseVideoPlayback, resumeVideoPlayback],
@@ -426,6 +430,7 @@ export default function Scene({
       initialized: true,
       smoothSpeed: cameraSpeed,
       videoTriggered: false,
+      cloneReachedView: false,
     };
     camera.position.set(0, 0, CAMERA_START_Z);
   }
@@ -601,6 +606,30 @@ export default function Scene({
           50,
           s.cameraZ - 400,
         );
+
+      // Force-dismiss manual focus when camera scrolls past/away while paused
+      if (s.focusMode === "manual" && s.focusCloneZ !== 0) {
+        const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
+        if (distToClone <= OPACITY_APPEAR_DIST) {
+          s.cloneReachedView = true;
+        }
+        const cameraPastClone = s.cameraZ < s.focusCloneZ;
+        const cloneOutOfView = s.cloneReachedView && distToClone > OPACITY_APPEAR_DIST;
+        if (cameraPastClone || cloneOutOfView) {
+          const vps = videoPlayState.current;
+          if (vps.isPlaying && vps.activePlaneId === s.targetPlaneId) {
+            stopVideoPlayback(s.targetPlaneId);
+          }
+          s.focusMode = "idle";
+          s.targetPlaneId = null;
+          s.fadeProgress = 0;
+          s.focusCloneZ = 0;
+          s.manualPlaneOriginalPos = null;
+          s.videoTriggered = false;
+          setFocusRender({ mode: "idle", targetId: null });
+        }
+      }
+
       return;
     }
 
@@ -626,10 +655,14 @@ export default function Scene({
           && vpsRef.isPlaying
           && vpsRef.activePlaneId === s.targetPlaneId;
         if (isActiveVideoPlaying) {
-          // Video playing → immediate full stop target (smooth decel via k=6)
-          // Camera stops near where video triggered (~OPACITY_PEAK_DIST from clone)
-          // After video ends, smooth acceleration via k=2
-          targetEffectiveSpeed = 0;
+          // Video playing → creep toward VIDEO_CAMERA_STOP_DIST, then full stop
+          if (distToClone > VIDEO_CAMERA_STOP_DIST) {
+            const remainRatio = (distToClone - VIDEO_CAMERA_STOP_DIST)
+                              / (OPACITY_PEAK_DIST - VIDEO_CAMERA_STOP_DIST);
+            targetEffectiveSpeed = cameraSpeed * 0.1 * remainRatio;
+          } else {
+            targetEffectiveSpeed = 0;
+          }
         } else {
           targetEffectiveSpeed =
             cameraSpeed * (1.0 - (1.0 - FOCUS_MIN_SPEED_RATIO) * t);
@@ -683,6 +716,7 @@ export default function Scene({
         s.fadeProgress = 0;
         s.focusCloneZ = s.cameraZ - DISPLAY_OFFSET_Z;
         s.videoTriggered = false;
+        s.cloneReachedView = false;
         setFocusRender({ mode: "auto", targetId: target.id });
       }
     } else if (s.focusMode === "auto" || s.focusMode === "manual") {
@@ -691,6 +725,11 @@ export default function Scene({
 
       // Dismiss when camera approaches the clone's fixed position
       const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
+
+      // Track whether the clone ever entered visible range
+      if (distToClone <= OPACITY_APPEAR_DIST) {
+        s.cloneReachedView = true;
+      }
 
       // Video trigger: start playback when close enough (auto-focus only)
       if (!s.videoTriggered && distToClone <= OPACITY_PEAK_DIST) {
@@ -738,6 +777,7 @@ export default function Scene({
                   s.fadeProgress = 0;
                   s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
                   s.videoTriggered = false;
+                  s.cloneReachedView = false;
                   setFocusRender({ mode: "auto", targetId: next.id });
                 } else {
                   setFocusRender({ mode: "idle", targetId: null });
@@ -751,12 +791,13 @@ export default function Scene({
         }
       }
 
-      // Guard: auto-focus video playing → skip distance-based dismiss (ended event handles it)
+      // Force-dismiss: camera passed clone or clone scrolled out of view
       const vps = videoPlayState.current;
-      const isAutoVideoPlaying = s.focusMode === "auto" && vps.isPlaying && vps.activePlaneId === s.targetPlaneId;
+      const cameraPastClone = s.cameraZ < s.focusCloneZ;
+      const cloneOutOfView = s.cloneReachedView && distToClone > OPACITY_APPEAR_DIST;
 
-      if (!isAutoVideoPlaying && distToClone < FOCUS_DISMISS_DISTANCE) {
-        // Stop video if playing during dismiss
+      if (cameraPastClone || cloneOutOfView) {
+        // Stop video if playing
         if (vps.isPlaying && vps.activePlaneId === s.targetPlaneId) {
           stopVideoPlayback(s.targetPlaneId);
         }
@@ -769,6 +810,8 @@ export default function Scene({
           });
         }
 
+        const wasAuto = s.focusMode === "auto";
+
         // Dismiss
         s.focusMode = "idle";
         s.targetPlaneId = null;
@@ -777,17 +820,64 @@ export default function Scene({
         s.manualPlaneOriginalPos = null;
         s.videoTriggered = false;
 
-        // Immediately pick next auto
-        const next = pickAutoTarget(s);
-        if (next) {
-          s.focusMode = "auto";
-          s.targetPlaneId = next.id;
-          s.fadeProgress = 0;
-          s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
-          s.videoTriggered = false;
-          setFocusRender({ mode: "auto", targetId: next.id });
+        if (wasAuto) {
+          // Auto: pick next target to maintain sequence
+          const next = pickAutoTarget(s);
+          if (next) {
+            s.focusMode = "auto";
+            s.targetPlaneId = next.id;
+            s.fadeProgress = 0;
+            s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
+            s.videoTriggered = false;
+            s.cloneReachedView = false;
+            setFocusRender({ mode: "auto", targetId: next.id });
+          } else {
+            setFocusRender({ mode: "idle", targetId: null });
+          }
         } else {
+          // Manual: just go idle
           setFocusRender({ mode: "idle", targetId: null });
+        }
+      } else if (distToClone < FOCUS_DISMISS_DISTANCE) {
+        // Normal distance-based dismiss (not during auto video playback)
+        const isAutoVideoPlaying = s.focusMode === "auto" && vps.isPlaying && vps.activePlaneId === s.targetPlaneId;
+        if (isAutoVideoPlaying) {
+          // Skip — ended event handles dismiss
+        } else {
+          // Stop video if playing during dismiss
+          if (vps.isPlaying && vps.activePlaneId === s.targetPlaneId) {
+            stopVideoPlayback(s.targetPlaneId);
+          }
+
+          // Save current focus as previous (only for auto mode with valid target)
+          if (s.focusMode === "auto" && s.targetPlaneId != null) {
+            setPrevFocusRender({
+              targetId: s.targetPlaneId,
+              cloneZ: s.focusCloneZ,
+            });
+          }
+
+          // Dismiss
+          s.focusMode = "idle";
+          s.targetPlaneId = null;
+          s.fadeProgress = 0;
+          s.focusCloneZ = 0;
+          s.manualPlaneOriginalPos = null;
+          s.videoTriggered = false;
+
+          // Immediately pick next auto
+          const next = pickAutoTarget(s);
+          if (next) {
+            s.focusMode = "auto";
+            s.targetPlaneId = next.id;
+            s.fadeProgress = 0;
+            s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
+            s.videoTriggered = false;
+            s.cloneReachedView = false;
+            setFocusRender({ mode: "auto", targetId: next.id });
+          } else {
+            setFocusRender({ mode: "idle", targetId: null });
+          }
         }
       }
     }

@@ -26,6 +26,9 @@ export default function useShelfGestures({
   // Mouse drag state
   const dragRef = useRef({ dragging: false, startY: 0, startOffset: 0 });
 
+  // Scrolling flag — true during active touch scroll or mouse drag
+  const isScrollingRef = useRef(false);
+
   // Touch + wheel handlers — all via addEventListener with passive:false
   useEffect(() => {
     const el = wrapperRef.current;
@@ -43,6 +46,7 @@ export default function useShelfGestures({
         t.mode = "scroll";
         t.startY = e.touches[0].clientY;
         t.startOffset = cameraYOffsetRef.current;
+        isScrollingRef.current = true;
         // Do NOT preventDefault for 1-finger — R3F click/hover must work
       } else if (e.touches.length === 2) {
         t.mode = "pinch";
@@ -75,6 +79,7 @@ export default function useShelfGestures({
 
       if (e.touches.length === 0) {
         t.mode = null;
+        isScrollingRef.current = false;
       } else if (e.touches.length === 1 && t.mode === "pinch") {
         // Pinch → single finger: seamlessly switch to scroll
         t.mode = "scroll";
@@ -122,6 +127,7 @@ export default function useShelfGestures({
         startY: e.clientY,
         startOffset: cameraYOffsetRef.current,
       };
+      isScrollingRef.current = true;
     },
     [cameraYOffsetRef],
   );
@@ -141,7 +147,8 @@ export default function useShelfGestures({
   const onPointerUp = useCallback((e) => {
     if (e.pointerType === "touch") return;
     dragRef.current.dragging = false;
+    isScrollingRef.current = false;
   }, []);
 
-  return { onPointerDown, onPointerMove, onPointerUp };
+  return { onPointerDown, onPointerMove, onPointerUp, isScrollingRef };
 }

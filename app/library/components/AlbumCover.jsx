@@ -1,7 +1,7 @@
 "use client";
 
 import * as THREE from "three";
-import { useRef, useMemo, useState, useEffect } from "react";
+import { useRef, useMemo, useState, useEffect, memo } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { parseGIF, decompressFrames } from "gifuct-js";
 import { getMediaType } from "../utils/mediaType";
@@ -298,7 +298,7 @@ function createPlaceholderTexture(index, isFront = true) {
   return texture;
 }
 
-export default function AlbumCover({
+export default memo(function AlbumCover({
   index = 0,
   position = [0, 0, 0],
   size = 0.8,
@@ -311,6 +311,7 @@ export default function AlbumCover({
   isFlipped = false,
   isPlayable = true,
   sceneOffset = 0,
+  isScrollingRef,
   onClick,
   onHoverChange,
   onGroupRef,
@@ -654,16 +655,18 @@ export default function AlbumCover({
           material={materials}
           onClick={(e) => {
             e.stopPropagation();
-            onClick?.();
+            onClick?.(index);
           }}
           onPointerOver={(e) => {
+            if (isScrollingRef?.current) return;
             e.stopPropagation();
             setHovered(true);
-            onHoverChange?.(true);
+            onHoverChange?.(index, true);
           }}
           onPointerOut={() => {
+            if (isScrollingRef?.current) return;
             setHovered(false);
-            onHoverChange?.(false);
+            onHoverChange?.(index, false);
           }}
         >
           {/* N x N x m 얇은 정사각판 */}
@@ -672,4 +675,4 @@ export default function AlbumCover({
       </group>
     </group>
   );
-}
+});

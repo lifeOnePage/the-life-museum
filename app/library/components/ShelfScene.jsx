@@ -71,6 +71,7 @@ export default function ShelfScene({
   onCloseAlbum,
   onHoverLabelPos,
   windowWidth = 1280,
+  isScrollingRef,
 }) {
   const { camera, gl } = useThree();
 
@@ -167,21 +168,51 @@ export default function ShelfScene({
 
   // 호버된 앨범의 하단 중앙을 화면 좌표(px)로 투영
   // 라벨은 이 점 기준으로 translateX(-50%) 하면 앨범 바로 아래 중앙에 정렬됨
+  const projVec = useMemo(() => new THREE.Vector3(), []);
   const projectAlbumBottomCenter = useCallback(
     (position) => {
-      const vec = new THREE.Vector3(
+      projVec.set(
         position[0], // 앨범 수평 중앙
         position[1] + sceneOffset + HOVER_LIFT - albumSize / 2 - 0.05, // 로컬→월드 변환: sceneOffset 포함
         position[2],
       );
-      vec.project(camera);
+      projVec.project(camera);
       const rect = gl.domElement.getBoundingClientRect();
-      const x = ((vec.x + 1) / 2) * rect.width + rect.left;
-      const y = ((-vec.y + 1) / 2) * rect.height + rect.top;
+      const x = ((projVec.x + 1) / 2) * rect.width + rect.left;
+      const y = ((-projVec.y + 1) / 2) * rect.height + rect.top;
       return { x, y };
     },
-    [camera, gl, albumSize, sceneOffset],
+    [camera, gl, albumSize, sceneOffset, projVec],
   );
+
+  // Stable callback refs — hold latest values without causing re-renders
+  const latestRef = useRef({ albums, albumPositions, selectedAlbum, projectAlbumBottomCenter, onHoverLabelPos, onAlbumClick, onFlipAlbum });
+  latestRef.current = { albums, albumPositions, selectedAlbum, projectAlbumBottomCenter, onHoverLabelPos, onAlbumClick, onFlipAlbum };
+
+  // Stable onHoverChange: accepts (index, hovered) from AlbumCover
+  const handleHoverChange = useCallback((index, hovered) => {
+    const { albums: a, albumPositions: ap, projectAlbumBottomCenter: proj, onHoverLabelPos: onPos } = latestRef.current;
+    setHoveredIndex(hovered ? index : null);
+    if (hovered) {
+      const pos = ap[index]?.position;
+      if (pos) {
+        const screenPos = proj(pos);
+        onPos?.({ album: a[index], ...screenPos });
+      }
+    } else {
+      onPos?.(null);
+    }
+  }, []);
+
+  // Stable onClick: accepts (index) from AlbumCover
+  const handleAlbumClick = useCallback((index) => {
+    const { albums: a, selectedAlbum: sel, onAlbumClick: onClk, onFlipAlbum: onFlp } = latestRef.current;
+    if (sel?.index === index) {
+      onFlp?.();
+    } else {
+      onClk?.(index, a[index] || {});
+    }
+  }, []);
 
   // 선택된 앨범의 Three.js Group ref
   const selectedGroupRef = useRef(null);
@@ -249,7 +280,7 @@ export default function ShelfScene({
       {/* 앨범 커버들 (albums 개수만큼) */}
       {albumPositions
         .slice(0, albums.length)
-        .map(({ index, position, row, col }) => {
+        .map(({ index, position }) => {
           const album = albums[index] || {};
           const isSelectedAlbum = selectedAlbum?.index === index;
 
@@ -273,23 +304,10 @@ export default function ShelfScene({
               isFlipped={isSelectedAlbum && isFlipped}
               isPlayable={isPlayable}
               sceneOffset={sceneOffset}
-              onClick={() => {
-                if (isSelectedAlbum) {
-                  onFlipAlbum?.();
-                } else {
-                  onAlbumClick?.(index, album);
-                }
-              }}
+              onClick={handleAlbumClick}
+              isScrollingRef={isScrollingRef}
               onGroupRef={handleGroupRef}
-              onHoverChange={(hovered) => {
-                setHoveredIndex(hovered ? index : null);
-                if (hovered) {
-                  const screenPos = projectAlbumBottomCenter(position);
-                  onHoverLabelPos?.({ album, ...screenPos });
-                } else {
-                  onHoverLabelPos?.(null);
-                }
-              }}
+              onHoverChange={handleHoverChange}
             />
           );
         })}

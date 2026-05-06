@@ -6,17 +6,18 @@ import { useMemo } from "react";
 export default function Wall({ position = [0, 0, 0], size = [8, 4, 0.1] }) {
   // 벽 텍스처 (미세한 노이즈로 약간의 질감)
   const wallTexture = useMemo(() => {
+    const SIZE = 256;
     const canvas = document.createElement("canvas");
-    canvas.width = 2000;
-    canvas.height = 2000;
+    canvas.width = SIZE;
+    canvas.height = SIZE;
     const ctx = canvas.getContext("2d");
 
     // 기본 배경색 (어두운 웜 차콜)
     ctx.fillStyle = "#1a1510";
-    ctx.fillRect(0, 0, 2000, 2000);
+    ctx.fillRect(0, 0, SIZE, SIZE);
 
     // 미세한 노이즈 추가
-    const imageData = ctx.getImageData(0, 0, 2000, 2000);
+    const imageData = ctx.getImageData(0, 0, SIZE, SIZE);
     const data = imageData.data;
     for (let i = 0; i < data.length; i += 4) {
       const noise = (Math.random() - 0.5) * 10;

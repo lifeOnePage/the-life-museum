@@ -19,16 +19,17 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
 
   // 밝은 벽면 미세 노이즈 텍스처
   const wallTexture = useMemo(() => {
+    const SIZE = 128;
     const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = SIZE;
+    canvas.height = SIZE;
     const ctx = canvas.getContext("2d");
 
     ctx.fillStyle = NICHE_BACK;
-    ctx.fillRect(0, 0, 512, 512);
+    ctx.fillRect(0, 0, SIZE, SIZE);
 
     // 미세 노이즈
-    const imageData = ctx.getImageData(0, 0, 512, 512);
+    const imageData = ctx.getImageData(0, 0, SIZE, SIZE);
     const data = imageData.data;
     for (let i = 0; i < data.length; i += 4) {
       const noise = (Math.random() - 0.5) * 8;

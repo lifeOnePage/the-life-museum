@@ -131,11 +131,23 @@ export default function AlbumPreview3D({
       if (lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov")) {
         return Promise.resolve(null);
       }
+      const isBlobOrData = src.startsWith("blob:") || src.startsWith("data:");
       return new Promise((resolve) => {
         const img = new Image();
-        if (crossOrigin) img.crossOrigin = "anonymous";
+        if (crossOrigin && !isBlobOrData) img.crossOrigin = "anonymous";
         img.onload = () => resolve(img);
-        img.onerror = () => resolve(null);
+        img.onerror = () => {
+          // CORS 실패 시 백엔드 프록시로 재시도 (R2 버킷 CORS 미설정 대응)
+          if (crossOrigin && !isBlobOrData) {
+            const proxy = new Image();
+            proxy.crossOrigin = "anonymous";
+            proxy.onload = () => resolve(proxy);
+            proxy.onerror = () => resolve(null);
+            proxy.src = `https://the-life-museum-backend-production.up.railway.app/api/v1/scraper/proxy/image?url=${encodeURIComponent(src)}`;
+          } else {
+            resolve(null);
+          }
+        };
         img.src = src;
       });
     }
@@ -197,6 +209,24 @@ export default function AlbumPreview3D({
   const dragStartX = useRef(null);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showCursorTip, setShowCursorTip] = useState(false);
+
+  // 마우스 휠 줌 (externalZoom이 없을 때만)
+  const canvasContainerRef = useRef(null);
+  const wheelZoomRef = useRef(zoom);
+  useEffect(() => {
+    const el = canvasContainerRef.current;
+    if (!el || typeof externalZoom === "number") return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const cfg = getZoomConfig();
+      const next = Math.max(cfg.min, Math.min(cfg.max, wheelZoomRef.current + e.deltaY * 0.008));
+      wheelZoomRef.current = next;
+      setZoom(next);
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [externalZoom]);
 
   const handlePointerDown = (e) => {
     dragStartX.current = e.clientX;
@@ -287,6 +317,7 @@ export default function AlbumPreview3D({
       )}
       <div className="relative min-h-0 w-full flex-1">
         <div
+          ref={canvasContainerRef}
           className="absolute inset-0 cursor-grab active:cursor-grabbing"
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}

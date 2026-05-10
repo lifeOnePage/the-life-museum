@@ -4,7 +4,7 @@ const ZOOM_MIN = 2.9;
 const ZOOM_MAX = 3.5;
 // 앨범 선택 시 줌 제한 (앨범 Z=2.5에서 0.4 간격 — 관통 방지)
 const ZOOM_MIN_SELECTED = 2.9;
-const ZOOM_MAX_SELECTED = 3.5;
+const ZOOM_MAX_SELECTED = 4.0;
 // 수평 패닝 범위 (앨범 크기 0.8의 ~37.5%)
 const PAN_X_MAX = 0.3;
 

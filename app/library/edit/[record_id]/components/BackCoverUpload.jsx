@@ -3,6 +3,8 @@
 import { useState, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImagePlus, RefreshCw, Upload, FolderOpen, X } from "lucide-react";
+import { authedFetch } from "@/app/utils/authedFetch";
+
 const API_URL = "https://the-life-museum-backend-production.up.railway.app";
 
 function LazyImage({ src, alt, className }) {
@@ -62,8 +64,16 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
   const [localFile, setLocalFile] = useState(null);
 
   useImperativeHandle(ref, () => ({
+    // 저장 성공 후 page.jsx에서 호출 — localFile 초기화, saveUrl을 R2 URL로 교체
+    markSaved: (url) => {
+      setLocalFile(null);
+      setSaveUrl(url);
+    },
     save: async () => {
+      let finalUrl = null;
+
       if (localFile) {
+        // 1단계: R2 업로드
         const formData = new FormData();
         formData.append("file", localFile);
         formData.append("prefix", "back-cover");
@@ -72,13 +82,31 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
           body: formData,
         });
         const data = await res.json();
-        if (!data.ok) throw new Error("뒷면 이미지 업로드 실패");
-        return data.publicUrl;
+        if (!data.ok || !data.publicUrl) throw new Error("뒷면 이미지 업로드 실패");
+        finalUrl = data.publicUrl;
+      } else if (saveUrl) {
+        finalUrl = saveUrl;
       }
-      if (saveUrl) return saveUrl;
-      return null;
+
+      if (!finalUrl) return null;
+
+      // 2단계: 백엔드 DB에 backCoverImageUrl 저장 (프론트 커버와 동일하게 authedFetch 사용)
+      const patchRes = await authedFetch(
+        `${API_URL}/api/v1/record/${record_id}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ backCoverImageUrl: finalUrl }),
+        },
+      );
+      if (!patchRes.ok) {
+        const errData = await patchRes.json().catch(() => ({}));
+        throw new Error(errData.error || errData.detail || "뒷면 이미지 저장 실패");
+      }
+
+      return finalUrl;
     },
-  }));
+  }), [localFile, saveUrl, record_id]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -90,7 +118,7 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
     onUrlChange(URL.createObjectURL(file));
   };
 
-  const handleSelectPhoto = (index) => {
+  const handleSelectPhoto = async (index) => {
     setSelectedPhotoIndex(index);
     const media = photoMedia[index];
     if (!media) return;
@@ -98,10 +126,21 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
     const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
     setSaveUrl(proxyUrl);
     setLocalFile(null);
-    // 미리보기: blob URL 우선 (canvas CORS 호환), 없으면 proxy URL
-    const blobUrl = photoBlobUrls[index];
-    onUrlChange(blobUrl || proxyUrl);
     setShowPhotodrive(false);
+
+    // blob URL 우선 사용 (canvas CORS 호환)
+    const existingBlob = photoBlobUrls[index];
+    if (existingBlob) {
+      onUrlChange(existingBlob);
+      return;
+    }
+    try {
+      const res = await fetch(proxyUrl);
+      const blob = await res.blob();
+      onUrlChange(URL.createObjectURL(blob));
+    } catch {
+      onUrlChange(proxyUrl);
+    }
   };
 
   const handleClear = () => {

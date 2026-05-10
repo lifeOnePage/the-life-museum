@@ -241,7 +241,7 @@ export default function ShareScene({
     }
 
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (!frontCover.startsWith("blob:") && !frontCover.startsWith("data:")) img.crossOrigin = "anonymous";
     img.onload = () => setFrontCoverImg(img);
     img.onerror = () => setFrontCoverImg(null);
     img.src = frontCover;

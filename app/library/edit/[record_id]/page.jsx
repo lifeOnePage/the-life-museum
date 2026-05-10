@@ -92,7 +92,7 @@ const T = {
     generating: "생성 중...",
     generateStory: "글 생성",
     timeline: "타임라인",
-    addItem: (n) => `항목 추가 (${n}/6)`,
+    addItem: (n) => `항목 추가 (${n}/10)`,
     emptyTimeline: "타임라인 항목을 추가해보세요",
     yearPlaceholder: "연도",
     eventPlaceholder: "내용을 입력하세요...",
@@ -156,7 +156,7 @@ const T = {
     generating: "Generating...",
     generateStory: "Generate",
     timeline: "Timeline",
-    addItem: (n) => `Add item (${n}/6)`,
+    addItem: (n) => `Add item (${n}/10)`,
     emptyTimeline: "Add your first timeline item",
     yearPlaceholder: "Year",
     eventPlaceholder: "Enter description...",
@@ -466,7 +466,7 @@ const Index = ({ params }) => {
 
           let timelineData = [];
           if (data.timeline?.events) {
-            timelineData = data.timeline.events.slice(0, 6).map((event) => ({
+            timelineData = data.timeline.events.slice(0, 10).map((event) => ({
               year: (event.timestamp ? event.timestamp : "").slice(0, 13),
               event:
                 `${event.title}${event.description ? ` - ${event.description}` : ""}`.slice(
@@ -707,22 +707,13 @@ const Index = ({ params }) => {
       );
     }
 
-    if (isBackCoverDirty) {
-      const doSaveBackCover = async () => {
-        let finalUrl = backCoverImageUrl;
-        if (backCoverRef.current) {
-          const uploadedUrl = await backCoverRef.current.save();
-          if (uploadedUrl !== null) finalUrl = uploadedUrl;
-        }
-        await saveBackCoverImage(finalUrl);
-        return { editor: "backCover", success: true, url: finalUrl };
-      };
+    if (isBackCoverDirty && backCoverRef.current) {
+      // BackCoverUpload.save() handles R2 upload + backend PATCH atomically (mirrors CoverImageEditor)
       promises.push(
-        doSaveBackCover().catch((err) => ({
-          editor: "backCover",
-          success: false,
-          error: err,
-        })),
+        backCoverRef.current
+          .save()
+          .then((url) => ({ editor: "backCover", success: true, url: url ?? backCoverImageUrl }))
+          .catch((err) => ({ editor: "backCover", success: false, error: err })),
       );
     }
 
@@ -758,8 +749,11 @@ const Index = ({ params }) => {
           initialState.current.frontCover = frontCover;
         } else if (r.value.editor === "backCover") {
           const savedUrl = r.value.url;
-          initialState.current.backCoverImageUrl = savedUrl;
-          setBackCoverImageUrl(savedUrl);
+          // blob URL을 상태로 유지 (R2 URL로 교체하면 CORS 재로드 실패로 preview 리셋됨)
+          // dirty check은 현재 blob URL 기준으로 통과됨
+          initialState.current.backCoverImageUrl = backCoverImageUrl;
+          // BackCoverUpload 내부에서 localFile 초기화, saveUrl을 R2 URL로 교체
+          backCoverRef.current?.markSaved?.(savedUrl);
         } else if (r.value.editor === "bio") {
           initialState.current.bio = bio;
         } else if (r.value.editor === "timeline") {
@@ -911,7 +905,7 @@ const Index = ({ params }) => {
 
   // Timeline helpers
   const addTimelineItem = () => {
-    if (timeline.length >= 6) return;
+    if (timeline.length >= 10) return;
     const newId = `tl-${nextIdRef.current++}`;
     timelineIdsRef.current = [...timelineIdsRef.current, newId];
     setTimeline([...timeline, { year: "", event: "" }]);
@@ -1545,7 +1539,7 @@ const Index = ({ params }) => {
                 </TabsContent>
 
                 {/* Back tab */}
-                <TabsContent className="px-4 pt-5 sm:px-5" value="back">
+                <TabsContent className="px-4 pt-5 data-[state=inactive]:hidden sm:px-5" value="back" forceMount>
                   <div className="space-y-5 pb-10">
                     {/* Back Cover Image Section - collapsible */}
                     <div className="rounded-lg border border-white/10">
@@ -1904,7 +1898,7 @@ const Index = ({ params }) => {
 
                               <button
                                 onClick={addTimelineItem}
-                                disabled={timeline.length >= 6}
+                                disabled={timeline.length >= 10}
                                 className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
                               >
                                 <Plus className="h-3 w-3" />{" "}

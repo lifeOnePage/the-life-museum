@@ -518,11 +518,8 @@ const Index = ({ params }) => {
           setBgmUrl(data.bgmUrl || null);
           setBgmId(data.bgmId ? `bgm${data.bgmId}` : null);
 
-          // Initialize photo drive data for CoverImageEditor
-          const images = (data.mediaList ?? []).filter(
-            (m) => m.type === "image",
-          );
-          photoDrive.init(images);
+          // Fetch media separately and initialize photo drive
+          photoDrive.refresh();
 
           initialState.current = {
             frontCover: coverUrl,

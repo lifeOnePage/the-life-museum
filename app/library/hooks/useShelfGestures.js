@@ -1,7 +1,12 @@
 import { useEffect, useRef, useCallback } from "react";
 
-const ZOOM_MIN = 2.5;
-const ZOOM_MAX = 5.5;
+const ZOOM_MIN = 2.9;
+const ZOOM_MAX = 3.5;
+// 앨범 선택 시 줌 제한 (앨범 Z=2.5에서 0.4 간격 — 관통 방지)
+const ZOOM_MIN_SELECTED = 2.9;
+const ZOOM_MAX_SELECTED = 3.5;
+// 수평 패닝 범위 (앨범 크기 0.8의 ~37.5%)
+const PAN_X_MAX = 0.3;
 
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
@@ -11,20 +16,29 @@ export default function useShelfGestures({
   wrapperRef,
   scrollRangeRef,
   cameraYOffsetRef,
+  cameraXOffsetRef,
   cameraZRef,
   selectedAlbum,
 }) {
   // Touch state
   const touchRef = useRef({
-    mode: null, // 'scroll' | 'pinch' | null
+    mode: null, // 'scroll' | 'pinch' | 'pan' | null
     startY: 0,
+    startX: 0,
     startOffset: 0,
+    startXOffset: 0,
     startDist: 0,
     startZoom: 0,
   });
 
   // Mouse drag state
-  const dragRef = useRef({ dragging: false, startY: 0, startOffset: 0 });
+  const dragRef = useRef({
+    dragging: false,
+    startY: 0,
+    startX: 0,
+    startOffset: 0,
+    startXOffset: 0,
+  });
 
   // Scrolling flag — true during active touch scroll or mouse drag
   const isScrollingRef = useRef(false);
@@ -43,10 +57,17 @@ export default function useShelfGestures({
     function onTouchStart(e) {
       const t = touchRef.current;
       if (e.touches.length === 1) {
-        t.mode = "scroll";
-        t.startY = e.touches[0].clientY;
-        t.startOffset = cameraYOffsetRef.current;
-        isScrollingRef.current = true;
+        if (selectedAlbum !== null) {
+          // 앨범 선택 시: 수평 패닝 모드
+          t.mode = "pan";
+          t.startX = e.touches[0].clientX;
+          t.startXOffset = cameraXOffsetRef.current;
+        } else {
+          t.mode = "scroll";
+          t.startY = e.touches[0].clientY;
+          t.startOffset = cameraYOffsetRef.current;
+          isScrollingRef.current = true;
+        }
         // Do NOT preventDefault for 1-finger — R3F click/hover must work
       } else if (e.touches.length === 2) {
         t.mode = "pinch";
@@ -59,18 +80,24 @@ export default function useShelfGestures({
     function onTouchMove(e) {
       const t = touchRef.current;
 
-      if (t.mode === "scroll" && e.touches.length === 1) {
+      if (t.mode === "pan" && e.touches.length === 1) {
+        // 앨범 선택 시: 수평 패닝
+        const deltaX = e.touches[0].clientX - t.startX;
+        const newXOffset = t.startXOffset - deltaX * 0.002;
+        cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
+      } else if (t.mode === "scroll" && e.touches.length === 1) {
         const delta = e.touches[0].clientY - t.startY;
         const newOffset = t.startOffset + delta * 0.009;
         const range = scrollRangeRef.current;
         cameraYOffsetRef.current = clamp(newOffset, -range, range);
       } else if (t.mode === "pinch" && e.touches.length === 2) {
         e.preventDefault();
-        // if (selectedAlbum === null) return;
 
         const dist = getTouchDist(e.touches);
         const ratio = t.startDist / dist;
-        cameraZRef.current = clamp(t.startZoom * ratio, ZOOM_MIN, ZOOM_MAX);
+        const zMin = selectedAlbum !== null ? ZOOM_MIN_SELECTED : ZOOM_MIN;
+        const zMax = selectedAlbum !== null ? ZOOM_MAX_SELECTED : ZOOM_MAX;
+        cameraZRef.current = clamp(t.startZoom * ratio, zMin, zMax);
       }
     }
 
@@ -81,21 +108,34 @@ export default function useShelfGestures({
         t.mode = null;
         isScrollingRef.current = false;
       } else if (e.touches.length === 1 && t.mode === "pinch") {
-        // Pinch → single finger: seamlessly switch to scroll
-        t.mode = "scroll";
-        t.startY = e.touches[0].clientY;
-        t.startOffset = cameraYOffsetRef.current;
+        // Pinch → single finger: seamlessly switch
+        if (selectedAlbum !== null) {
+          t.mode = "pan";
+          t.startX = e.touches[0].clientX;
+          t.startXOffset = cameraXOffsetRef.current;
+        } else {
+          t.mode = "scroll";
+          t.startY = e.touches[0].clientY;
+          t.startOffset = cameraYOffsetRef.current;
+        }
       }
     }
 
     function onWheel(e) {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault(); // works because passive:false
+        const zMin = selectedAlbum !== null ? ZOOM_MIN_SELECTED : ZOOM_MIN;
+        const zMax = selectedAlbum !== null ? ZOOM_MAX_SELECTED : ZOOM_MAX;
         cameraZRef.current = clamp(
           cameraZRef.current + e.deltaY * 0.005,
-          ZOOM_MIN,
-          ZOOM_MAX,
+          zMin,
+          zMax,
         );
+      } else if (selectedAlbum !== null) {
+        // 앨범 선택 시: 수평 스크롤로 패닝
+        e.preventDefault();
+        const newXOffset = cameraXOffsetRef.current + e.deltaX * 0.001;
+        cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
       } else {
         const range = scrollRangeRef.current;
         const newOffset = cameraYOffsetRef.current + e.deltaY * 0.001;
@@ -116,7 +156,14 @@ export default function useShelfGestures({
       el.removeEventListener("touchend", onTouchEnd);
       el.removeEventListener("wheel", onWheel);
     };
-  }, [wrapperRef, scrollRangeRef, cameraYOffsetRef, cameraZRef, selectedAlbum]);
+  }, [
+    wrapperRef,
+    scrollRangeRef,
+    cameraYOffsetRef,
+    cameraXOffsetRef,
+    cameraZRef,
+    selectedAlbum,
+  ]);
 
   // Mouse pointer handlers (returned for JSX props — touch skipped)
   const onPointerDown = useCallback(
@@ -125,23 +172,33 @@ export default function useShelfGestures({
       dragRef.current = {
         dragging: true,
         startY: e.clientY,
+        startX: e.clientX,
         startOffset: cameraYOffsetRef.current,
+        startXOffset: cameraXOffsetRef.current,
       };
       isScrollingRef.current = true;
     },
-    [cameraYOffsetRef],
+    [cameraYOffsetRef, cameraXOffsetRef],
   );
 
   const onPointerMove = useCallback(
     (e) => {
       if (e.pointerType === "touch") return;
       if (!dragRef.current.dragging) return;
-      const delta = e.clientY - dragRef.current.startY;
-      const newOffset = dragRef.current.startOffset + delta * 0.003;
-      const range = scrollRangeRef.current;
-      cameraYOffsetRef.current = clamp(newOffset, -range, range);
+
+      if (selectedAlbum !== null) {
+        // 앨범 선택 시: 수평 패닝
+        const deltaX = e.clientX - dragRef.current.startX;
+        const newXOffset = dragRef.current.startXOffset - deltaX * 0.002;
+        cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
+      } else {
+        const delta = e.clientY - dragRef.current.startY;
+        const newOffset = dragRef.current.startOffset + delta * 0.003;
+        const range = scrollRangeRef.current;
+        cameraYOffsetRef.current = clamp(newOffset, -range, range);
+      }
     },
-    [scrollRangeRef, cameraYOffsetRef],
+    [scrollRangeRef, cameraYOffsetRef, cameraXOffsetRef, selectedAlbum],
   );
 
   const onPointerUp = useCallback((e) => {

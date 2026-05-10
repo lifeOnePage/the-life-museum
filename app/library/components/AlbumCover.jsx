@@ -419,22 +419,11 @@ export default memo(function AlbumCover({
     const state = animationState.current;
 
     if (isSelected) {
-      // 화면 크기에 맞게 앨범이 항상 화면 중앙에 오도록 동적 계산
-      // Y: 현재 카메라 Y (스크롤 오프셋 반영)
-      // Z: FOV + aspect + 앨범 크기로 화면 점유율 65%가 되는 거리 계산
-      const fovYRad = (camera.fov * Math.PI) / 180;
-      const aspect = camera.aspect || 1;
-      const fovXRad = 2 * Math.atan(Math.tan(fovYRad / 2) * aspect);
-      // 세로/가로 중 더 좁은 방향 기준으로 거리 계산 (클리핑 방지)
-      const constrainedFov = Math.min(fovYRad, fovXRad);
-      const DISPLAY_FRACTION = 0.65;
-      const dist = size / 2 / (Math.tan(constrainedFov / 2) * DISPLAY_FRACTION);
-
       state.targetX = CAMERA_FRONT_POSITION.x;
-      // 로컬 좌표 보정: outerGroupRef는 sceneOffset만큼 이동된 부모 group의 자식
-      // 월드 y = targetY + sceneOffset = camera.position.y 이 되도록 보정
+      // Y: 카메라 스크롤에 따라 화면 중앙 유지 (로컬 좌표 보정)
       state.targetY = camera.position.y - sceneOffset;
-      state.targetZ = camera.position.z - dist;
+      // Z: 카메라 위치와 무관한 고정값
+      state.targetZ = CAMERA_FRONT_POSITION.z;
       state.targetRotX = 0;
       state.targetRotY = isFlipped ? Math.PI : 0;
     } else {

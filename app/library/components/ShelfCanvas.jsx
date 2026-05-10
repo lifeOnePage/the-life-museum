@@ -17,18 +17,21 @@ function RenderLoop() {
   return null;
 }
 
-// Canvas 내부 서브컴포넌트: 카메라 Y + Z를 부드럽게 반영
-function CameraController({ yOffsetRef, zRef }) {
+// Canvas 내부 서브컴포넌트: 카메라 X + Y + Z를 부드럽게 반영
+function CameraController({ xOffsetRef, yOffsetRef, zRef }) {
   const { camera } = useThree();
   useFrame(() => {
+    const targetX = xOffsetRef.current;
     const targetY = 1.5 + yOffsetRef.current;
     const targetZ = zRef.current;
+    const dx = targetX - camera.position.x;
     const dy = targetY - camera.position.y;
     const dz = targetZ - camera.position.z;
-    if (Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+    if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+      camera.position.x += dx * 0.12;
       camera.position.y += dy * 0.12;
       camera.position.z += dz * 0.1;
-      camera.lookAt(0, camera.position.y, 0);
+      camera.lookAt(camera.position.x, camera.position.y, 0);
     }
   });
   return null;
@@ -87,6 +90,7 @@ export default function ShelfCanvas({
   }, [windowWidth, albums.length, COLS]);
 
   // Camera refs
+  const cameraXOffsetRef = useRef(0);
   const cameraYOffsetRef = useRef(0);
   const cameraZRef = useRef(3.8);
   const scrollRangeRef = useRef((ROWS - 1) * 0.7);
@@ -101,15 +105,24 @@ export default function ShelfCanvas({
       wrapperRef,
       scrollRangeRef,
       cameraYOffsetRef,
+      cameraXOffsetRef,
       cameraZRef,
       selectedAlbum,
     });
+
+  // 앨범 선택 해제 시 X 패닝 리셋
+  useEffect(() => {
+    if (selectedAlbum === null) {
+      cameraXOffsetRef.current = 0;
+    }
+  }, [selectedAlbum]);
 
   // 카메라 제어 메서드를 부모에 노출
   useEffect(() => {
     if (cameraControlRef) {
       cameraControlRef.current = {
         reset: () => {
+          cameraXOffsetRef.current = 0;
           cameraYOffsetRef.current = 0;
           cameraZRef.current = 3.8;
         },
@@ -207,7 +220,7 @@ export default function ShelfCanvas({
           />
         </Suspense>
 
-        <CameraController yOffsetRef={cameraYOffsetRef} zRef={cameraZRef} />
+        <CameraController xOffsetRef={cameraXOffsetRef} yOffsetRef={cameraYOffsetRef} zRef={cameraZRef} />
       </Canvas>
     </div>
   );

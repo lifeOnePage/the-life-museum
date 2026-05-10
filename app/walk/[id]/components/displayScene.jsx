@@ -183,7 +183,7 @@ function PlaybackControls({
 export default function DisplayScene({ recordId, locale }) {
   const t = T[locale] || T.ko;
   const router = useRouter();
-  const { data: recordData, loading, error } = useRecordData(recordId);
+  const { data: recordData, loading, error, mediaLoading } = useRecordData(recordId);
   const [isPlaying, setIsPlaying] = useState(false);
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
   const [isMuted, setIsMuted] = useState(false);
@@ -349,6 +349,18 @@ export default function DisplayScene({ recordId, locale }) {
   // }
 
   if (mediaList.length === 0) {
+    if (mediaLoading) {
+      return (
+        <div className="flex h-full w-full items-center justify-center bg-black text-white">
+          <div className="text-center">
+            <div className="mb-4 text-2xl">Loading...</div>
+            <div className="text-sm text-gray-400">
+              미디어를 불러오는 중
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="flex h-full w-full items-center justify-center bg-black text-white">
         <div className="text-center">

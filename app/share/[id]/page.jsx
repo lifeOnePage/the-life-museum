@@ -64,7 +64,7 @@ export default function SharePage({ params }) {
   const t = T[locale] || T.ko;
   const router = useRouter();
 
-  const { data: recordData, loading, error } = useRecordData(id);
+  const { data: recordData, loading, error, mediaLoading } = useRecordData(id);
   const { token } = useAuth();
   const isLoggedIn = !!token;
   const [ready, setReady] = useState(false);

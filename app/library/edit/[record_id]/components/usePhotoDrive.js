@@ -21,7 +21,7 @@ export function usePhotoDrive(record_id) {
     setIsRefreshing(true);
     try {
       const response = await authedFetch(
-        `${API_URL}/api/v1/record/${record_id}`,
+        `${API_URL}/api/v1/record/${record_id}/media`,
       );
       const result = await response.json();
       if (result.ok && result.data) {

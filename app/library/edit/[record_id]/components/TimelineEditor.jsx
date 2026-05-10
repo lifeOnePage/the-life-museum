@@ -103,7 +103,7 @@ const TimelineEditor = forwardRef(
                   value={item.year}
                   onChange={(e) => updateItem(index, "year", e.target.value)}
                   placeholder="연도"
-                  className="w-24 border border-white/10 bg-[#2e2720] text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
+                  className="w-36 border border-white/10 bg-[#2e2720] text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
                 />
                 <div className="flex flex-1 flex-col gap-0.5">
                   <Input

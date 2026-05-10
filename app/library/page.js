@@ -44,8 +44,9 @@ async function generateAlbumCovers(item) {
     event: e.title,
   }));
 
-  const [frontCoverImg, themeBgImg, themeStickerImg] = await Promise.all([
+  const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg] = await Promise.all([
     loadImage(item.coverImage?.url),
+    loadImage(item.backCoverImageUrl || null),
     loadImage(THEME_BG_MAP[themeKey] || null),
     themeKey === "kitsch"
       ? loadImage("/images/albumtheme/kitsch 2.png")
@@ -56,7 +57,7 @@ async function generateAlbumCovers(item) {
     themeKey,
     bio,
     timeline,
-    frontCoverImg,
+    backCoverImg,
     item.title || "",
     item.subtitle || "",
     null,

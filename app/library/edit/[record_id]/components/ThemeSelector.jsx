@@ -369,12 +369,40 @@ function FullImagePreview() {
       </defs>
       <rect width="44" height="56" rx="2" fill="url(#fullImgGrad)" />
       {/* Photo icon hint */}
-      <rect x="14" y="18" width="16" height="12" rx="2" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+      <rect
+        x="14"
+        y="18"
+        width="16"
+        height="12"
+        rx="2"
+        fill="none"
+        stroke="rgba(255,255,255,0.3)"
+        strokeWidth="1"
+      />
       <circle cx="18" cy="22" r="2" fill="rgba(255,255,255,0.3)" />
-      <path d="M14 28 l5-4 4 3 4-5 3 6" stroke="rgba(255,255,255,0.3)" strokeWidth="1" fill="none" />
+      <path
+        d="M14 28 l5-4 4 3 4-5 3 6"
+        stroke="rgba(255,255,255,0.3)"
+        strokeWidth="1"
+        fill="none"
+      />
       {/* Label */}
-      <rect x="10" y="36" width="24" height="1.5" rx="0.75" fill="rgba(255,255,255,0.2)" />
-      <rect x="14" y="40" width="16" height="1" rx="0.5" fill="rgba(255,255,255,0.15)" />
+      <rect
+        x="10"
+        y="36"
+        width="24"
+        height="1.5"
+        rx="0.75"
+        fill="rgba(255,255,255,0.2)"
+      />
+      <rect
+        x="14"
+        y="40"
+        width="16"
+        height="1"
+        rx="0.5"
+        fill="rgba(255,255,255,0.15)"
+      />
     </svg>
   );
 }
@@ -386,13 +414,12 @@ const PREVIEW_MAP = {
   minimalist: MinimalistPreview,
 };
 
-const ThemeSelector = ({ selectedTheme, onThemeChange, locale }) => {
+const ThemeSelector = ({ selectedTheme, onThemeChange }) => {
   return (
     <div className="space-y-3">
       {THEME_LIST.map((option) => {
         const isSelected = selectedTheme === option.key;
         const PreviewComponent = PREVIEW_MAP[option.key];
-        const description = locale === "en" ? option.descriptionEn : option.description;
         return (
           <button
             key={option.key}
@@ -413,15 +440,13 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, locale }) => {
               <p className="text-sm font-medium text-[#e8d5b7]">
                 {option.name}
               </p>
-              <p className="text-xs text-[#9b8b7a]">{description}</p>
+              <p className="text-xs text-[#9b8b7a]">{option.description}</p>
             </div>
 
             {/* Radio indicator */}
             <div
               className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                isSelected
-                  ? "border-[#c4b49a] bg-[#c4b49a]"
-                  : "border-white/25"
+                isSelected ? "border-[#c4b49a] bg-[#c4b49a]" : "border-white/25"
               }`}
             >
               {isSelected && <div className="h-2 w-2 rounded-full bg-white" />}

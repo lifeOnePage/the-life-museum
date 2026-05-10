@@ -292,9 +292,9 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove, t }) {
       </div>
       <Input
         value={item.year}
-        onChange={(e) => onUpdate(index, "year", e.target.value.slice(0, 8))}
+        onChange={(e) => onUpdate(index, "year", e.target.value.slice(0, 13))}
         placeholder={t.yearPlaceholder}
-        maxLength={8}
+        maxLength={13}
         className="h-9 w-[70px] rounded-[5px] border-white/10 bg-[#2e2720] text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
       />
       <div className="relative flex-1">
@@ -467,7 +467,7 @@ const Index = ({ params }) => {
           let timelineData = [];
           if (data.timeline?.events) {
             timelineData = data.timeline.events.slice(0, 6).map((event) => ({
-              year: (event.timestamp ? event.timestamp : "").slice(0, 8),
+              year: (event.timestamp ? event.timestamp : "").slice(0, 13),
               event:
                 `${event.title}${event.description ? ` - ${event.description}` : ""}`.slice(
                   0,

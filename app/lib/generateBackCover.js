@@ -321,16 +321,16 @@ function drawKitschLayout(
       ctx.letterSpacing = "-0.5px";
 
       // Year
-      ctx.font = `bold 24px ${bookkFont}`;
+      ctx.font = `bold 20px ${bookkFont}`;
       ctx.fillStyle = theme.text;
-      ctx.textAlign = "center";
-      ctx.fillText(item.year, size / 2 - 270, cursorY);
+      ctx.textAlign = "right";
+      ctx.fillText(item.year, size / 2 - 210, cursorY);
 
       // Event
       ctx.font = `32px ${bookkFont}`;
       ctx.fillStyle = theme.text + "cc";
       ctx.textAlign = "left";
-      const eventX = size / 2 - 200;
+      const eventX = size / 2 - 170;
       const eventMaxW = (backCoverImg ? contentRight : size - margin) - eventX;
       const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
       for (let li = 0; li < eventLines.length; li++) {
@@ -476,7 +476,7 @@ function drawIllustrationLayout(
       ctx.restore();
 
       // Year above
-      ctx.font = `bold 24px ${bookkFont}`;
+      ctx.font = `bold 17px ${bookkFont}`;
       ctx.fillStyle = "#406E78";
       ctx.textAlign = "center";
       ctx.fillText(item.year, x, tlY - 25);
@@ -708,7 +708,7 @@ function drawMinimalistLayout(
       ctx.stroke();
 
       // Year above
-      ctx.font = `bold 24px ${escoredreamFont}`;
+      ctx.font = `bold 19px ${escoredreamFont}`;
       ctx.fillStyle = theme.accent;
       ctx.textAlign = "center";
       ctx.fillText(item.year, x, tlY - 16);
@@ -796,13 +796,13 @@ export function generateBackCoverDataUrl(
   themeBgImg,
   themeStickerImg,
 ) {
-  const size = 1024;   // 드로잉 좌표계 = 실제 캔버스 픽셀
-  const resolution = 1024;
+  const size = 1024; // 드로잉 좌표계 (변경 불필요)
+  const resolution = 2048; // 실제 캔버스 픽셀 — 2x로 Retina 화질 확보
   const canvas = document.createElement("canvas");
   canvas.width = resolution;
   canvas.height = resolution;
   const ctx = canvas.getContext("2d");
-  ctx.scale(resolution / size, resolution / size); // = scale(1, 1)
+  ctx.scale(resolution / size, resolution / size); // = scale(2, 2)
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
 
@@ -853,5 +853,5 @@ export function generateBackCoverDataUrl(
       break;
   }
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  return canvas.toDataURL("image/jpeg", 0.95);
 }

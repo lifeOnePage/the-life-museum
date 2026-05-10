@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
@@ -119,78 +119,74 @@ export default function AlbumPreview3D({
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // Load front cover as HTMLImageElement (for color extraction only)
+  // Load all images in parallel + extract colors — single effect to avoid
+  // multiple sequential state updates that each trigger an expensive canvas recompute.
   useEffect(() => {
-    if (!frontCover || typeof document === "undefined") {
-      setFrontCoverImg(null);
-      setExtractedColors(null);
-      return;
-    }
-    const lower = frontCover.toLowerCase().split("?")[0];
-    const isVideo =
-      lower.endsWith(".mp4") ||
-      lower.endsWith(".webm") ||
-      lower.endsWith(".mov");
-    if (isVideo) {
-      setFrontCoverImg(null);
-      return;
-    }
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => setFrontCoverImg(img);
-    img.onerror = () => setFrontCoverImg(null);
-    img.src = frontCover;
-  }, [frontCover]);
+    if (typeof document === "undefined") return;
+    let cancelled = false;
 
-  // Load backCoverImageUrl as HTMLImageElement (for back cover rendering)
-  // Falls back to frontCoverImg when not provided or same URL
-  useEffect(() => {
-    if (
-      !backCoverImageUrl ||
-      backCoverImageUrl === frontCover ||
-      typeof document === "undefined"
-    ) {
-      setBackCoverImg(null); // will use frontCoverImg as fallback in useMemo
-      return;
+    function loadImg(src, crossOrigin = true) {
+      if (!src) return Promise.resolve(null);
+      const lower = src.toLowerCase().split("?")[0];
+      if (lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov")) {
+        return Promise.resolve(null);
+      }
+      return new Promise((resolve) => {
+        const img = new Image();
+        if (crossOrigin) img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(null);
+        img.src = src;
+      });
     }
-    const lower = backCoverImageUrl.toLowerCase().split("?")[0];
-    const isVideo =
-      lower.endsWith(".mp4") ||
-      lower.endsWith(".webm") ||
-      lower.endsWith(".mov");
-    if (isVideo) {
-      setBackCoverImg(null);
-      return;
-    }
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => setBackCoverImg(img);
-    img.onerror = () => setBackCoverImg(null);
-    img.src = backCoverImageUrl;
-  }, [backCoverImageUrl, frontCover]);
 
-  // Extract dominant colors from front cover
-  useEffect(() => {
-    if (!frontCoverImg) {
-      setExtractedColors(null);
-      return;
+    async function loadAll() {
+      const key = selectedTheme || "minimalist";
+      const bgMap = {
+        kitsch: "/images/albumtheme/kitsch.png",
+        illustration: "/images/albumtheme/illustration.png",
+      };
+      const backSrc = (backCoverImageUrl && backCoverImageUrl !== frontCover) ? backCoverImageUrl : null;
+
+      const [frontImg, backImg, bgImg, stickerImg] = await Promise.all([
+        loadImg(frontCover),
+        loadImg(backSrc),
+        loadImg(bgMap[key] || null, false),
+        key === "kitsch" ? loadImg("/images/albumtheme/kitsch 2.png", false) : Promise.resolve(null),
+      ]);
+
+      if (cancelled) return;
+
+      let colors = null;
+      if (frontImg) {
+        try {
+          const extracted = await extractColors(frontImg, { pixels: 10000, distance: 0.2 });
+          const main = extracted.sort((a, b) => b.area - a.area)[0];
+          if (main) {
+            const { red, green, blue } = main;
+            colors = [0.4, 0.7, 1.0].map((factor) => {
+              const r = Math.min(255, Math.round(red * factor));
+              const g = Math.min(255, Math.round(green * factor));
+              const b = Math.min(255, Math.round(blue * factor));
+              return `rgb(${r}, ${g}, ${b})`;
+            });
+          }
+        } catch {}
+      }
+
+      if (cancelled) return;
+
+      // All state updates batched into one render (React 18)
+      setFrontCoverImg(frontImg);
+      setBackCoverImg(backImg);
+      setThemeBgImg(bgImg);
+      setThemeStickerImg(stickerImg);
+      setExtractedColors(colors);
     }
-    extractColors(frontCoverImg, { pixels: 10000, distance: 0.2 })
-      .then((colors) => {
-        const main = colors.sort((a, b) => b.area - a.area)[0];
-        if (!main) return;
-        // Generate 3 brightness variants: dark, mid, light
-        const { red, green, blue } = main;
-        const variants = [0.4, 0.7, 1.0].map((factor) => {
-          const r = Math.min(255, Math.round(red * factor));
-          const g = Math.min(255, Math.round(green * factor));
-          const b = Math.min(255, Math.round(blue * factor));
-          return `rgb(${r}, ${g}, ${b})`;
-        });
-        setExtractedColors(variants);
-      })
-      .catch(() => setExtractedColors(null));
-  }, [frontCoverImg]);
+
+    loadAll();
+    return () => { cancelled = true; };
+  }, [frontCover, backCoverImageUrl, selectedTheme]);
 
   // Sync with external flipped prop (tab switch)
   useEffect(() => {
@@ -215,89 +211,53 @@ export default function AlbumPreview3D({
     dragStartX.current = null;
   };
 
-  // Load theme background image and sticker when themeKey changes
-  useEffect(() => {
-    const key = selectedTheme || "minimalist";
-    const bgMap = {
-      kitsch: "/images/albumtheme/kitsch.png",
-      illustration: "/images/albumtheme/illustration.png",
-    };
-    const bgSrc = bgMap[key];
-    if (!bgSrc) {
-      setThemeBgImg(null);
-      setThemeStickerImg(null);
-      return;
-    }
-    const img = new Image();
-    img.onload = () => setThemeBgImg(img);
-    img.onerror = () => setThemeBgImg(null);
-    img.src = bgSrc;
-
-    // Load sticker overlay for kitsch theme
-    if (key === "kitsch") {
-      const sticker = new Image();
-      sticker.onload = () => setThemeStickerImg(sticker);
-      sticker.onerror = () => setThemeStickerImg(null);
-      sticker.src = "/images/albumtheme/kitsch 2.png";
-    } else {
-      setThemeStickerImg(null);
-    }
-  }, [selectedTheme]);
-
   const themeKey = selectedTheme || "minimalist";
   const theme = UNIFIED_THEMES[themeKey] || UNIFIED_THEMES.minimalist;
 
-  const frontCoverDataUrl = useMemo(() => {
-    if (typeof document === "undefined") return null;
-    // Skip if no image and no title to overlay
-    if (!frontCoverImg && !(titleOverlayEnabled && albumTitle)) return null;
-    return generateFrontCoverDataUrl(frontCoverImg, {
-      title: titleOverlayEnabled ? albumTitle || "" : "",
-      subtitle: "",
-      position: titlePosition || "bottom-center",
-      font: titleFont || "Pretendard Variable",
-      color: titleColor || "#000000",
-      stroke: titleStroke ?? false,
-      strokeOpacity: titleStrokeOpacity ?? 100,
-    });
-  }, [
-    frontCoverImg,
-    albumTitle,
-    titleOverlayEnabled,
-    titlePosition,
-    titleFont,
-    titleColor,
-    titleStroke,
-    titleStrokeOpacity,
-  ]);
+  // Debounced front cover canvas: run async after render, 200ms debounce
+  // prevents blocking the main thread on every prop change
+  const [frontCoverDataUrl, setFrontCoverDataUrl] = useState(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!frontCoverImg && !(titleOverlayEnabled && albumTitle)) {
+      setFrontCoverDataUrl(null);
+      return;
+    }
+    const t = setTimeout(() => {
+      setFrontCoverDataUrl(generateFrontCoverDataUrl(frontCoverImg, {
+        title: titleOverlayEnabled ? albumTitle || "" : "",
+        subtitle: "",
+        position: titlePosition || "bottom-center",
+        font: titleFont || "Pretendard Variable",
+        color: titleColor || "#000000",
+        stroke: titleStroke ?? false,
+        strokeOpacity: titleStrokeOpacity ?? 100,
+      }));
+    }, 200);
+    return () => clearTimeout(t);
+  }, [frontCoverImg, albumTitle, titleOverlayEnabled, titlePosition, titleFont, titleColor, titleStroke, titleStrokeOpacity]);
 
-  const backCoverDataUrl = useMemo(() => {
-    if (typeof document === "undefined") return null;
-    // backCoverImg이 없으면 frontCoverImg로 폴백 (기본값 = 앞면)
+  // Debounced back cover canvas: coalesces rapid sequential updates (image loads,
+  // bio typing, theme changes) into a single 200ms-delayed canvas computation
+  const [backCoverDataUrl, setBackCoverDataUrl] = useState(null);
+  useEffect(() => {
+    if (typeof document === "undefined") return;
     const imgForBack = backCoverImg || frontCoverImg;
-    return generateBackCoverDataUrl(
-      themeKey,
-      bio || "",
-      timeline || [],
-      imgForBack,
-      albumTitle || "",
-      albumSubTitle || "",
-      extractedColors,
-      themeBgImg,
-      themeStickerImg,
-    );
-  }, [
-    themeKey,
-    bio,
-    timeline,
-    backCoverImg,
-    frontCoverImg,
-    albumTitle,
-    albumSubTitle,
-    extractedColors,
-    themeBgImg,
-    themeStickerImg,
-  ]);
+    const t = setTimeout(() => {
+      setBackCoverDataUrl(generateBackCoverDataUrl(
+        themeKey,
+        bio || "",
+        timeline || [],
+        imgForBack,
+        albumTitle || "",
+        albumSubTitle || "",
+        extractedColors,
+        themeBgImg,
+        themeStickerImg,
+      ));
+    }, 200);
+    return () => clearTimeout(t);
+  }, [themeKey, bio, timeline, backCoverImg, frontCoverImg, albumTitle, albumSubTitle, extractedColors, themeBgImg, themeStickerImg]);
 
   return (
     <div className="flex h-full w-full flex-col items-center">

@@ -49,7 +49,7 @@ export const FLOOR_Y = -0;
 export const FLOOR_COLOR = "#000000";
 
 // Fog
-export const FOG_COLOR = "#ffffff";
+export const FOG_COLOR = "#000000";
 export const FOG_NEAR = 300;
 export const FOG_FAR = 2000;
 

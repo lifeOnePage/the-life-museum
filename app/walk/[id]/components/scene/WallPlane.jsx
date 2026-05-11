@@ -86,6 +86,7 @@ function WallPlane({
   focusMode, // 'none' | 'auto' | 'manual'
   onClick,
   onTextureLoaded,
+  onTextureUnloaded,
   displayScale,
   stateRef,
   corridorSpan,
@@ -736,6 +737,7 @@ function WallPlane({
       }
       loadStateRef.current = "idle";
       flickerState.current = { active: false, elapsed: 0, done: false };
+      onTextureUnloaded?.(id);
     }
 
     // Imperative visibility culling: hide planes beyond fog range

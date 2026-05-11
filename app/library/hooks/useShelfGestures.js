@@ -58,10 +58,12 @@ export default function useShelfGestures({
       const t = touchRef.current;
       if (e.touches.length === 1) {
         if (selectedAlbum !== null) {
-          // 앨범 선택 시: 수평 패닝 모드
+          // 앨범 선택 시: 수평 + 수직 패닝 모드
           t.mode = "pan";
           t.startX = e.touches[0].clientX;
+          t.startY = e.touches[0].clientY;
           t.startXOffset = cameraXOffsetRef.current;
+          t.startOffset = cameraYOffsetRef.current;
         } else {
           t.mode = "scroll";
           t.startY = e.touches[0].clientY;
@@ -81,10 +83,14 @@ export default function useShelfGestures({
       const t = touchRef.current;
 
       if (t.mode === "pan" && e.touches.length === 1) {
-        // 앨범 선택 시: 수평 패닝
+        // 앨범 선택 시: 수평 + 수직 패닝
         const deltaX = e.touches[0].clientX - t.startX;
+        const deltaY = e.touches[0].clientY - t.startY;
         const newXOffset = t.startXOffset - deltaX * 0.002;
         cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
+        const newYOffset = t.startOffset + deltaY * 0.009;
+        const range = scrollRangeRef.current;
+        cameraYOffsetRef.current = clamp(newYOffset, -range, range);
       } else if (t.mode === "scroll" && e.touches.length === 1) {
         const delta = e.touches[0].clientY - t.startY;
         const newOffset = t.startOffset + delta * 0.009;
@@ -112,7 +118,9 @@ export default function useShelfGestures({
         if (selectedAlbum !== null) {
           t.mode = "pan";
           t.startX = e.touches[0].clientX;
+          t.startY = e.touches[0].clientY;
           t.startXOffset = cameraXOffsetRef.current;
+          t.startOffset = cameraYOffsetRef.current;
         } else {
           t.mode = "scroll";
           t.startY = e.touches[0].clientY;
@@ -132,10 +140,13 @@ export default function useShelfGestures({
           zMax,
         );
       } else if (selectedAlbum !== null) {
-        // 앨범 선택 시: 수평 스크롤로 패닝
+        // 앨범 선택 시: 수평 패닝 + 수직 스크롤
         e.preventDefault();
         const newXOffset = cameraXOffsetRef.current + e.deltaX * 0.001;
         cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
+        const range = scrollRangeRef.current;
+        const newYOffset = cameraYOffsetRef.current + e.deltaY * 0.001;
+        cameraYOffsetRef.current = clamp(newYOffset, -range, range);
       } else {
         const range = scrollRangeRef.current;
         const newOffset = cameraYOffsetRef.current + e.deltaY * 0.001;
@@ -187,10 +198,14 @@ export default function useShelfGestures({
       if (!dragRef.current.dragging) return;
 
       if (selectedAlbum !== null) {
-        // 앨범 선택 시: 수평 패닝
+        // 앨범 선택 시: 수평 + 수직 패닝
         const deltaX = e.clientX - dragRef.current.startX;
+        const deltaY = e.clientY - dragRef.current.startY;
         const newXOffset = dragRef.current.startXOffset - deltaX * 0.002;
         cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
+        const newYOffset = dragRef.current.startOffset + deltaY * 0.003;
+        const range = scrollRangeRef.current;
+        cameraYOffsetRef.current = clamp(newYOffset, -range, range);
       } else {
         const delta = e.clientY - dragRef.current.startY;
         const newOffset = dragRef.current.startOffset + delta * 0.003;

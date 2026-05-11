@@ -8,11 +8,12 @@ const ZOOM_MAX_SELECTED = 4.0;
 // 수평 패닝 범위 (앨범 크기 0.8의 ~37.5%)
 const PAN_X_MAX = 0.3;
 
-// 터치 감도 — 뷰포트 크기에 비례하여 모바일에서 감도 감소
+// 터치 감도 — 뷰포트 기반 보정 (모바일에서 약간 감소, 데스크톱에서 약간 증가)
 const REF_WIDTH = 1440;
-const TOUCH_SENSITIVITY = 0.005; // 터치 패닝/스크롤 통합 감도
+const TOUCH_SENSITIVITY = 0.007; // 터치 패닝/스크롤 통합 감도
 function touchScale() {
-  return window.innerWidth / REF_WIDTH;
+  // sqrt 적용으로 모바일 감도 완만하게 감소 (390px → ~0.52, 768px → ~0.73)
+  return Math.sqrt(window.innerWidth / REF_WIDTH);
 }
 
 function clamp(v, min, max) {

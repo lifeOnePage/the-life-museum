@@ -44,14 +44,15 @@ async function generateAlbumCovers(item) {
     event: e.title,
   }));
 
-  const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg] = await Promise.all([
-    loadImage(item.coverImage?.url),
-    loadImage(item.backCoverImageUrl || null),
-    loadImage(THEME_BG_MAP[themeKey] || null),
-    themeKey === "kitsch"
-      ? loadImage("/images/albumtheme/kitsch 2.png")
-      : Promise.resolve(null),
-  ]);
+  const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg] =
+    await Promise.all([
+      loadImage(item.coverImage?.url),
+      loadImage(item.backCoverImageUrl || null),
+      loadImage(THEME_BG_MAP[themeKey] || null),
+      themeKey === "kitsch"
+        ? loadImage("/images/albumtheme/kitsch 2.png")
+        : Promise.resolve(null),
+    ]);
 
   const backImage = generateBackCoverDataUrl(
     themeKey,
@@ -387,7 +388,7 @@ export default function MyShelfPage({ params }) {
         {selectedAlbum && (
           <div
             className="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap will-change-transform"
-            style={{ top: "calc(50% + min(32.5vw, 32.5vh) + 16px)" }}
+            style={{ top: "calc(50% + min(32.5vw, 32.5vh) + 40px)" }}
           >
             {selectedRole === "owner" && (
               <button

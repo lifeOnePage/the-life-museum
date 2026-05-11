@@ -10,6 +10,7 @@ const PAN_X_MAX = 0.3;
 
 // 터치 감도 — 뷰포트 크기에 비례하여 모바일에서 감도 감소
 const REF_WIDTH = 1440;
+const TOUCH_SENSITIVITY = 0.005; // 터치 패닝/스크롤 통합 감도
 function touchScale() {
   return window.innerWidth / REF_WIDTH;
 }
@@ -93,15 +94,15 @@ export default function useShelfGestures({
         const s = touchScale();
         const deltaX = e.touches[0].clientX - t.startX;
         const deltaY = e.touches[0].clientY - t.startY;
-        const newXOffset = t.startXOffset - deltaX * 0.002 * s;
+        const newXOffset = t.startXOffset - deltaX * TOUCH_SENSITIVITY * s;
         cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
-        const newYOffset = t.startOffset + deltaY * 0.009 * s;
+        const newYOffset = t.startOffset + deltaY * TOUCH_SENSITIVITY * s;
         const range = scrollRangeRef.current;
         cameraYOffsetRef.current = clamp(newYOffset, -range, range);
       } else if (t.mode === "scroll" && e.touches.length === 1) {
         const s = touchScale();
         const delta = e.touches[0].clientY - t.startY;
-        const newOffset = t.startOffset + delta * 0.009 * s;
+        const newOffset = t.startOffset + delta * TOUCH_SENSITIVITY * s;
         const range = scrollRangeRef.current;
         cameraYOffsetRef.current = clamp(newOffset, -range, range);
       } else if (t.mode === "pinch" && e.touches.length === 2) {

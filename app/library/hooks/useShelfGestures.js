@@ -8,6 +8,12 @@ const ZOOM_MAX_SELECTED = 4.0;
 // 수평 패닝 범위 (앨범 크기 0.8의 ~37.5%)
 const PAN_X_MAX = 0.3;
 
+// 터치 감도 — 뷰포트 크기에 비례하여 모바일에서 감도 감소
+const REF_WIDTH = 1440;
+function touchScale() {
+  return window.innerWidth / REF_WIDTH;
+}
+
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
@@ -84,16 +90,18 @@ export default function useShelfGestures({
 
       if (t.mode === "pan" && e.touches.length === 1) {
         // 앨범 선택 시: 수평 + 수직 패닝
+        const s = touchScale();
         const deltaX = e.touches[0].clientX - t.startX;
         const deltaY = e.touches[0].clientY - t.startY;
-        const newXOffset = t.startXOffset - deltaX * 0.002;
+        const newXOffset = t.startXOffset - deltaX * 0.002 * s;
         cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
-        const newYOffset = t.startOffset + deltaY * 0.009;
+        const newYOffset = t.startOffset + deltaY * 0.009 * s;
         const range = scrollRangeRef.current;
         cameraYOffsetRef.current = clamp(newYOffset, -range, range);
       } else if (t.mode === "scroll" && e.touches.length === 1) {
+        const s = touchScale();
         const delta = e.touches[0].clientY - t.startY;
-        const newOffset = t.startOffset + delta * 0.009;
+        const newOffset = t.startOffset + delta * 0.009 * s;
         const range = scrollRangeRef.current;
         cameraYOffsetRef.current = clamp(newOffset, -range, range);
       } else if (t.mode === "pinch" && e.touches.length === 2) {

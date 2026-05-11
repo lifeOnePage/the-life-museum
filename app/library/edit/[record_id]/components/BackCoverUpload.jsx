@@ -126,7 +126,6 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
     const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
     setSaveUrl(proxyUrl);
     setLocalFile(null);
-    setShowPhotodrive(false);
 
     // blob URL 우선 사용 (canvas CORS 호환)
     const existingBlob = photoBlobUrls[index];

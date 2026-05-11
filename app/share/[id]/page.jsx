@@ -87,6 +87,9 @@ export default function SharePage({ params }) {
   }, []);
   const [flipProgress, setFlipProgress] = useState(0);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [infoFontScale, setInfoFontScale] = useState(1);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  useEffect(() => { if (!isInfoOpen) setInfoFontScale(1); }, [isInfoOpen]);
   const albumRef = useRef(null);
   const idleRafRef = useRef(null);
   // Library와 동일: 전체 윈도우 기준 정규화, 0.5rad max, 0.08 smoothing
@@ -183,7 +186,7 @@ export default function SharePage({ params }) {
       if (isInfoOpenRef.current) return; // info 팝업 열려 있으면 스크롤 허용
       e.preventDefault();
       const next = Math.max(
-        2,
+        4.5,
         Math.min(10, pinchZoomRef.current + e.deltaY * 0.008),
       );
       pinchZoomRef.current = next;
@@ -256,7 +259,7 @@ export default function SharePage({ params }) {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const delta = lastPinchDistRef.current - dist;
       const next = Math.max(
-        2,
+        4.5,
         Math.min(10, pinchZoomRef.current + delta * 0.03),
       );
       pinchZoomRef.current = next;
@@ -546,7 +549,7 @@ export default function SharePage({ params }) {
 
       {/* 데스크탑 마우스 휠 힌트 — 앨범 오른쪽 중앙 */}
       <div
-        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] flex -translate-y-[50%] flex-col transition-opacity duration-1000 ${
+        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] hidden md:flex -translate-y-[50%] flex-col transition-opacity duration-1000 ${
           showDesktopHint ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -615,6 +618,12 @@ export default function SharePage({ params }) {
           <div
             className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setInfoFontScale((s) => Math.max(0.7, Math.min(1.7, s - e.deltaY * 0.001)));
+            }}
+            style={{ zoom: isMobile ? 1 : infoFontScale }}
           >
             <div className="max-h-[70dvh] overflow-y-auto px-6 pt-4 pb-6">
               {/* Title */}
@@ -686,7 +695,7 @@ export default function SharePage({ params }) {
                   </button>
                 </div>
               )}
-            </div>
+            </div>{/* scroll container */}
 
             <button
               onClick={() => setIsInfoOpen(false)}

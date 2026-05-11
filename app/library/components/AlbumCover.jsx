@@ -11,7 +11,7 @@ import { staticTextureCache, gifFrameCache } from "../utils/textureCache";
 const CAMERA_FRONT_POSITION = {
   x: 0,
   y: 1.6,
-  z: 2.5,
+  z: 2.25,
 };
 
 // 마우스 tilt 효과 설정

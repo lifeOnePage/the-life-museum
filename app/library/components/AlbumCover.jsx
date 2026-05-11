@@ -600,8 +600,12 @@ export default memo(function AlbumCover({
     canvas.height = res;
     const ctx = canvas.getContext("2d");
     const gradient = ctx.createRadialGradient(
-      res / 2, res / 2, 0,
-      res / 2, res / 2, res / 2,
+      res / 2,
+      res / 2,
+      0,
+      res / 2,
+      res / 2,
+      res / 2,
     );
     gradient.addColorStop(0, "rgba(0,0,0,0.22)");
     gradient.addColorStop(0.5, "rgba(0,0,0,0.10)");
@@ -630,11 +634,7 @@ export default memo(function AlbumCover({
         scale={[1, 0.5, 1]}
       >
         <planeGeometry args={[size * 0.9, size * 0.9]} />
-        <meshBasicMaterial
-          map={shadowTexture}
-          transparent
-          depthWrite={false}
-        />
+        <meshBasicMaterial map={shadowTexture} transparent depthWrite={false} />
       </mesh>
 
       {/* 내부 그룹: 메시 포함 */}

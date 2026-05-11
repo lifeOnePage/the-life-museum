@@ -143,6 +143,11 @@ export default function Scene({
   // Auto-play trigger: fire once when enough textures are loaded
   const autoPlayFiredRef = useRef(false);
 
+  // Handle texture unloaded (far-distance cleanup in WallPlane)
+  const handleTextureUnloaded = useCallback((planeId) => {
+    textureMap.current.delete(planeId);
+  }, []);
+
   // Handle texture loaded from WallPlane (4th arg: videoMeta for video planes)
   const handleTextureLoaded = useCallback(
     (planeId, texture, aspectRatio, videoMeta) => {
@@ -184,6 +189,10 @@ export default function Scene({
     const video = texInfo.videoElement;
 
     // Guard: video element may have been disposed (far-distance cleanup)
+    if (!videoElementMap.current.has(planeId)) {
+      textureMap.current.delete(planeId); // stale entry 정리
+      return;
+    }
     if (!video.src || video.readyState === 0) {
       console.warn(`[Scene] startVideoPlayback BAIL: disposed/unready plane=${planeId}`, {
         src: video.src?.substring(0, 60),
@@ -235,17 +244,22 @@ export default function Scene({
     const p = video.play();
     if (p) {
       p.then(() => {
+        if (vps.activePlaneId !== planeId) return;
         console.log(`[Scene] ✓ Video playing (unmuted) plane=${planeId}`);
         onVideoBgmControl?.(true);
       }).catch((err) => {
+        // 의도적 중단(stopVideoPlayback or cleanup)이면 무시
+        if (vps.activePlaneId !== planeId || err.name === "AbortError") return;
         console.warn(`[Scene] Unmuted play rejected (plane=${planeId}):`, err.message);
-        // Autoplay with audio rejected — retry muted (visual-only)
+        // Autoplay policy 거부(NotAllowedError)만 muted 재시도
         video.muted = true;
         video.play().then(() => {
+          if (vps.activePlaneId !== planeId) return;
           console.log(`[Scene] ✓ Video playing (muted) plane=${planeId}`);
           onVideoBgmControl?.(true);
         }).catch((err2) => {
-          console.error(`[Scene] ✗ Muted play ALSO failed (plane=${planeId}):`, err2.message);
+          if (vps.activePlaneId !== planeId) return;
+          console.warn(`[Scene] ✗ Muted play failed (plane=${planeId}):`, err2.message);
           // Both attempts failed — clean up
           video.removeEventListener("ended", defaultOnEnded);
           if (vps.endedHandler === defaultOnEnded) {
@@ -310,12 +324,17 @@ export default function Scene({
     const p = video.play();
     if (p) {
       p.then(() => {
+        if (vps.activePlaneId !== planeId) return;
         onVideoBgmControl?.(true);
-      }).catch(() => {
+      }).catch((err) => {
+        // 의도적 중단이면 무시
+        if (vps.activePlaneId !== planeId || err.name === "AbortError") return;
         video.muted = true;
         video.play().then(() => {
+          if (vps.activePlaneId !== planeId) return;
           onVideoBgmControl?.(true);
-        }).catch(() => {
+        }).catch((err2) => {
+          if (vps.activePlaneId !== planeId) return;
           vps.isPlaying = false;
         });
       });
@@ -974,6 +993,7 @@ export default function Scene({
               focusMode={focusMode}
               onClick={handlePlaneClick}
               onTextureLoaded={handleTextureLoaded}
+              onTextureUnloaded={handleTextureUnloaded}
               displayScale={DISPLAY_SCALE}
               stateRef={state}
               corridorSpan={corridorSpan}

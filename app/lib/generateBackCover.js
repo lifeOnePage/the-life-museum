@@ -312,27 +312,28 @@ function drawKitschLayout(
 
   // Timeline — vertical list, centered
   if (timeline.length > 0) {
+    const escoredreamFont = escoredreamFontLoaded ? '"Escoredream"' : bookkFont;
     const maxItems = Math.min(timeline.length, 10);
     const items = timeline.slice(0, maxItems);
     const useDense = items.length > 5;
-    const yearFontSize = useDense ? 19 : 20;
-    const eventFontSize = useDense ? 28 : 32;
-    const lineHeight = useDense ? 28 : 42;
-    const itemSpacing = useDense ? 46 : 72;
+    const yearFontSize = useDense ? 18 : 18;
+    const eventFontSize = useDense ? 18 : 18;
+    const lineHeight = useDense ? 20 : 42;
+    const itemSpacing = useDense ? 36 : 72;
     cursorY += useDense ? 30 : 60;
 
     for (const item of items) {
-      if (cursorY > size - 200) break;
+      if (cursorY > (bio ? size - margin - 160 : size - 100)) break;
       ctx.letterSpacing = "-0.5px";
 
       // Year
-      ctx.font = `bold ${yearFontSize}px ${bookkFont}`;
+      ctx.font = `bold ${yearFontSize}px ${escoredreamFont}`;
       ctx.fillStyle = theme.text;
       ctx.textAlign = "right";
       ctx.fillText(item.year, size / 2 - 210, cursorY);
 
       // Event
-      ctx.font = `${eventFontSize}px ${bookkFont}`;
+      ctx.font = `${eventFontSize}px ${escoredreamFont}`;
       ctx.fillStyle = theme.text + "cc";
       ctx.textAlign = "left";
       const eventX = size / 2 - 170;
@@ -361,7 +362,7 @@ function drawKitschLayout(
     ctx.fillText("ALBUM STORY", size / 2, bioBottom - 80);
     ctx.letterSpacing = "0px";
 
-    ctx.font = `500 21px ${escoredreamFont}`;
+    ctx.font = `500 18px ${escoredreamFont}`;
     ctx.fillStyle = theme.text + "aa";
     const bioLines = wrapText(ctx, bio, rightPhotoW + 330);
     const maxBioLines = 6;
@@ -453,9 +454,7 @@ function drawIllustrationLayout(
     const maxItems = Math.min(timeline.length, 10);
     const items = timeline.slice(0, maxItems);
     const useMultiRow = items.length > 5;
-    const rows = useMultiRow
-      ? [items.slice(0, 5), items.slice(5)]
-      : [items];
+    const rows = useMultiRow ? [items.slice(0, 5), items.slice(5)] : [items];
 
     const tlLeft = margin + 40;
     const tlRight = size - margin - 40;
@@ -502,8 +501,11 @@ function drawIllustrationLayout(
         ctx.textAlign = "center";
         const itemSpacing =
           rowMaxItems > 1 ? tlWidth / (rowMaxItems - 1) : tlWidth;
-        const eventMaxW = Math.max(itemSpacing * 0.95, 100);
-        const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
+        const eventMaxW = Math.max(
+          Math.min(itemSpacing, tlWidth / 4) * 0.95,
+          100,
+        );
+        const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 4);
         ctx.fill();
         ctx.fillStyle = "#406E78";
         for (let li = 0; li < eventLines.length; li++) {
@@ -637,7 +639,7 @@ function drawMinimalistLayout(
   const photoW = size * 0.68;
   const photoH = timeline.length > 5 ? size * 0.33 : size * 0.4;
   const photoX = (size - photoW) / 2;
-  const photoY = cursorY + 10;
+  const photoY = cursorY - 50;
 
   if (backCoverImg) {
     ctx.save();
@@ -689,22 +691,20 @@ function drawMinimalistLayout(
     ctx.textAlign = "left";
   }
 
-  cursorY = photoY + photoH + 60;
+  cursorY = photoY + photoH + 35;
 
   // Timeline — horizontal line(s) below photo, open circle dots
   if (timeline.length > 0) {
     const maxItems = Math.min(timeline.length, 10);
     const items = timeline.slice(0, maxItems);
     const useMultiRow = items.length > 5;
-    const rows = useMultiRow
-      ? [items.slice(0, 5), items.slice(5)]
-      : [items];
+    const rows = useMultiRow ? [items.slice(0, 5), items.slice(5)] : [items];
 
     const tlLeft = margin + 30;
     const tlRight = size - margin - 30;
     const tlWidth = tlRight - tlLeft;
     const firstRowY = cursorY + 20;
-    const rowSpacing = 110;
+    const rowSpacing = 130;
 
     for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
       const rowItems = rows[rowIdx];
@@ -748,8 +748,11 @@ function drawMinimalistLayout(
         ctx.fillStyle = theme.text;
         const itemSpacing =
           rowMaxItems > 1 ? tlWidth / (rowMaxItems - 1) : tlWidth;
-        const eventMaxW = Math.max(itemSpacing * 0.85, 100);
-        const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 3);
+        const eventMaxW = Math.max(
+          Math.min(itemSpacing, tlWidth / 4) * 0.85,
+          100,
+        );
+        const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 4);
         for (let li = 0; li < eventLines.length; li++) {
           ctx.fillText(eventLines[li], x, tlY + 28 + li * 24);
         }

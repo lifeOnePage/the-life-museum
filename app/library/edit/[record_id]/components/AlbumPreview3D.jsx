@@ -328,10 +328,8 @@ export default function AlbumPreview3D({
                 x: e.clientX - rect.left,
                 y: e.clientY - rect.top,
               });
-              setShowCursorTip(true);
             }
           }}
-          onPointerEnter={() => hideControls && setShowCursorTip(true)}
           onPointerLeave={() => {
             dragStartX.current = null;
             setShowCursorTip(false);
@@ -377,6 +375,7 @@ export default function AlbumPreview3D({
               isFlipped={isFlipped}
               rotationY={rotationY}
               onClick={hideControls && onExpand ? onExpand : toggleFlip}
+              onHoverChange={hideControls ? setShowCursorTip : undefined}
             />
           </Canvas>
         </div>

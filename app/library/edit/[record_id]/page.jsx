@@ -51,6 +51,7 @@ import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
+import { authedFetch } from "@/app/utils/authedFetch";
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const T = {
@@ -301,14 +302,14 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove, t }) {
         <Input
           value={item.event}
           onChange={(e) =>
-            onUpdate(index, "event", e.target.value.slice(0, 20))
+            onUpdate(index, "event", e.target.value.slice(0, 25))
           }
           placeholder={t.eventPlaceholder}
-          maxLength={20}
+          maxLength={25}
           className="h-9 w-full rounded-[5px] border-white/10 bg-[#2e2720] pr-8 text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
         />
         <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[9px] text-[#9b8b7a]">
-          {item.event.length}/20
+          {item.event.length}/25
         </span>
       </div>
       <button
@@ -471,7 +472,7 @@ const Index = ({ params }) => {
               event:
                 `${event.title}${event.description ? ` - ${event.description}` : ""}`.slice(
                   0,
-                  20,
+                  25,
                 ),
             }));
           }
@@ -511,7 +512,6 @@ const Index = ({ params }) => {
           setMyboxUrl(data.myboxUrl || "");
           setExternalLinkTitle(data.externalLinkTitle || "");
           setExternalLinkUrl(data.externalLinkUrl || "");
-          console.log("storyGenCount from GET:", data.storyGenCount);
           if (data.storyGenCount != null) {
             setStoryGenCount(data.storyGenCount);
           }
@@ -823,15 +823,11 @@ const Index = ({ params }) => {
     setStoryGenCount(optimisticCount);
 
     try {
-      const token = localStorage.getItem("app_token");
-      const response = await fetch(
+      const response = await authedFetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
@@ -842,28 +838,26 @@ const Index = ({ params }) => {
         throw new Error(data.error || t.errorGenerate);
       }
       setBio(data.data?.result || "");
-      // Sync with server value if provided
-      const newCount =
-        data.data?.storyGenCount != null
-          ? data.data.storyGenCount
-          : optimisticCount;
+
+      const serverCount = data.data?.storyGenCount;
+      const newCount = serverCount != null ? serverCount : optimisticCount;
       setStoryGenCount(newCount);
 
-      // Persist count to server
-      fetch(
-        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ storyGenCount: newCount }),
-        },
-      )
-        .then((r) => r.json())
-        .then((d) => console.log("storyGenCount PATCH response:", d))
-        .catch((e) => console.error("Failed to persist storyGenCount:", e));
+      // 전용 엔드포인트로 생성 횟수 저장
+      try {
+        const countRes = await authedFetch(
+          `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/story-gen-count`,
+          { method: "PATCH" },
+        );
+        if (countRes.ok) {
+          const countData = await countRes.json();
+          if (countData.data?.storyGenCount != null) {
+            setStoryGenCount(countData.data.storyGenCount);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to persist storyGenCount:", e);
+      }
     } catch (err) {
       setBioError(err.message);
     } finally {

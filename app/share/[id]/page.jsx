@@ -91,6 +91,21 @@ export default function SharePage({ params }) {
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
   useEffect(() => { if (!isInfoOpen) setInfoFontScale(1); }, [isInfoOpen]);
   const albumRef = useRef(null);
+  const infoModalRef = useRef(null);
+
+  // 모달 열릴 때 핀치줌 완전 차단 (touchstart + touchmove 모두)
+  useEffect(() => {
+    if (!isInfoOpen) return;
+    const el = infoModalRef.current;
+    if (!el) return;
+    const block = (e) => { if (e.touches.length >= 2) e.preventDefault(); };
+    el.addEventListener("touchstart", block, { passive: false });
+    el.addEventListener("touchmove", block, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", block);
+      el.removeEventListener("touchmove", block);
+    };
+  }, [isInfoOpen]);
   const idleRafRef = useRef(null);
   // Library와 동일: 전체 윈도우 기준 정규화, 0.5rad max, 0.08 smoothing
   const targetTiltRef = useRef({ x: 0, y: 0 });
@@ -611,6 +626,7 @@ export default function SharePage({ params }) {
       {/* Info Popup */}
       {isInfoOpen && (
         <div
+          ref={infoModalRef}
           className="fixed inset-0 z-50 flex items-center justify-center"
           onClick={() => setIsInfoOpen(false)}
         >
@@ -618,14 +634,20 @@ export default function SharePage({ params }) {
           <div
             className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
-            onWheel={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setInfoFontScale((s) => Math.max(0.7, Math.min(1.7, s - e.deltaY * 0.001)));
-            }}
-            style={{ zoom: isMobile ? 1 : infoFontScale }}
+            style={!isMobile ? { zoom: infoFontScale } : {}}
           >
-            <div className="max-h-[70dvh] overflow-y-auto px-6 pt-4 pb-6">
+            {/* 데스크탑: maxHeight를 zoom 역수로 보정해 화면 높이 초과 방지 */}
+            {/* 모바일: 고정 max-h, 내부 콘텐츠만 zoom */}
+            <div
+              className="overflow-y-auto px-6 pt-10 pb-6"
+              style={
+                !isMobile
+                  ? { maxHeight: `${Math.floor(window.innerHeight * 0.9 / infoFontScale)}px` }
+                  : { maxHeight: "70dvh" }
+              }
+            >
+              {/* 모바일 전용 콘텐츠 zoom 래퍼 */}
+              <div style={isMobile ? { zoom: infoFontScale } : {}}>
               {/* Title */}
               {albumTitle && (
                 <div className="mb-5">
@@ -695,14 +717,30 @@ export default function SharePage({ params }) {
                   </button>
                 </div>
               )}
+              </div>{/* /모바일 zoom 래퍼 */}
             </div>{/* scroll container */}
 
-            <button
-              onClick={() => setIsInfoOpen(false)}
-              className="absolute top-4 right-4 text-white/25 transition-colors hover:text-white/60"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {/* 상단 버튼 바 */}
+            <div className="absolute top-3 right-3 flex items-center gap-1">
+              <button
+                onClick={() => setInfoFontScale((s) => Math.max(0.7, +(s - 0.1).toFixed(1)))}
+                className="flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:text-white/70 text-[13px] font-light"
+              >
+                A-
+              </button>
+              <button
+                onClick={() => setInfoFontScale((s) => Math.min(1.7, +(s + 0.1).toFixed(1)))}
+                className="flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:text-white/70 text-[15px] font-light"
+              >
+                A+
+              </button>
+              <button
+                onClick={() => setIsInfoOpen(false)}
+                className="ml-1 text-white/25 transition-colors hover:text-white/60"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

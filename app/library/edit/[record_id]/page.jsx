@@ -44,14 +44,15 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import CoverImageEditor from "./components/CoverImageEditor";
 import TitleOverlayEditor from "./components/TitleOverlayEditor";
-const AlbumPreview3D = dynamic(() => import("./components/AlbumPreview3D"), { ssr: false });
+const AlbumPreview3D = dynamic(() => import("./components/AlbumPreview3D"), {
+  ssr: false,
+});
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
-import { authedFetch } from "@/app/utils/authedFetch";
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const T = {
@@ -67,6 +68,7 @@ const T = {
     lastSaved: "마지막 저장",
     tabFront: "앞면",
     tabBack: "뒷면",
+    tabGallery: "갤러리",
     titleLabel: "제목",
     subtitleLabel: "부제목",
     titlePlaceholder: "앨범 제목을 입력하세요",
@@ -93,7 +95,7 @@ const T = {
     generating: "생성 중...",
     generateStory: "글 생성",
     timeline: "타임라인",
-    addItem: (n) => `항목 추가 (${n}/10)`,
+    addItem: (n) => `항목 추가 (${n}/6)`,
     emptyTimeline: "타임라인 항목을 추가해보세요",
     yearPlaceholder: "연도",
     eventPlaceholder: "내용을 입력하세요...",
@@ -131,6 +133,7 @@ const T = {
     lastSaved: "Last saved",
     tabFront: "Front",
     tabBack: "Back",
+    tabGallery: "Gallery",
     titleLabel: "Title",
     subtitleLabel: "Subtitle",
     titlePlaceholder: "Enter album title",
@@ -157,7 +160,7 @@ const T = {
     generating: "Generating...",
     generateStory: "Generate",
     timeline: "Timeline",
-    addItem: (n) => `Add item (${n}/10)`,
+    addItem: (n) => `Add item (${n}/6)`,
     emptyTimeline: "Add your first timeline item",
     yearPlaceholder: "Year",
     eventPlaceholder: "Enter description...",
@@ -302,14 +305,14 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove, t }) {
         <Input
           value={item.event}
           onChange={(e) =>
-            onUpdate(index, "event", e.target.value.slice(0, 25))
+            onUpdate(index, "event", e.target.value.slice(0, 20))
           }
           placeholder={t.eventPlaceholder}
-          maxLength={25}
+          maxLength={20}
           className="h-9 w-full rounded-[5px] border-white/10 bg-[#2e2720] pr-8 text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
         />
         <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[9px] text-[#9b8b7a]">
-          {item.event.length}/25
+          {item.event.length}/20
         </span>
       </div>
       <button
@@ -467,12 +470,12 @@ const Index = ({ params }) => {
 
           let timelineData = [];
           if (data.timeline?.events) {
-            timelineData = data.timeline.events.slice(0, 10).map((event) => ({
+            timelineData = data.timeline.events.slice(0, 6).map((event) => ({
               year: (event.timestamp ? event.timestamp : "").slice(0, 13),
               event:
                 `${event.title}${event.description ? ` - ${event.description}` : ""}`.slice(
                   0,
-                  25,
+                  20,
                 ),
             }));
           }
@@ -512,14 +515,18 @@ const Index = ({ params }) => {
           setMyboxUrl(data.myboxUrl || "");
           setExternalLinkTitle(data.externalLinkTitle || "");
           setExternalLinkUrl(data.externalLinkUrl || "");
+          console.log("storyGenCount from GET:", data.storyGenCount);
           if (data.storyGenCount != null) {
             setStoryGenCount(data.storyGenCount);
           }
           setBgmUrl(data.bgmUrl || null);
           setBgmId(data.bgmId ? `bgm${data.bgmId}` : null);
 
-          // Fetch media separately and initialize photo drive
-          photoDrive.refresh();
+          // Initialize photo drive data for CoverImageEditor
+          const images = (data.mediaList ?? []).filter(
+            (m) => m.type === "image",
+          );
+          photoDrive.init(images);
 
           initialState.current = {
             frontCover: coverUrl,
@@ -707,13 +714,22 @@ const Index = ({ params }) => {
       );
     }
 
-    if (isBackCoverDirty && backCoverRef.current) {
-      // BackCoverUpload.save() handles R2 upload + backend PATCH atomically (mirrors CoverImageEditor)
+    if (isBackCoverDirty) {
+      const doSaveBackCover = async () => {
+        let finalUrl = backCoverImageUrl;
+        if (backCoverRef.current) {
+          const uploadedUrl = await backCoverRef.current.save();
+          if (uploadedUrl !== null) finalUrl = uploadedUrl;
+        }
+        await saveBackCoverImage(finalUrl);
+        return { editor: "backCover", success: true, url: finalUrl };
+      };
       promises.push(
-        backCoverRef.current
-          .save()
-          .then((url) => ({ editor: "backCover", success: true, url: url ?? backCoverImageUrl }))
-          .catch((err) => ({ editor: "backCover", success: false, error: err })),
+        doSaveBackCover().catch((err) => ({
+          editor: "backCover",
+          success: false,
+          error: err,
+        })),
       );
     }
 
@@ -749,11 +765,8 @@ const Index = ({ params }) => {
           initialState.current.frontCover = frontCover;
         } else if (r.value.editor === "backCover") {
           const savedUrl = r.value.url;
-          // blob URL을 상태로 유지 (R2 URL로 교체하면 CORS 재로드 실패로 preview 리셋됨)
-          // dirty check은 현재 blob URL 기준으로 통과됨
-          initialState.current.backCoverImageUrl = backCoverImageUrl;
-          // BackCoverUpload 내부에서 localFile 초기화, saveUrl을 R2 URL로 교체
-          backCoverRef.current?.markSaved?.(savedUrl);
+          initialState.current.backCoverImageUrl = savedUrl;
+          setBackCoverImageUrl(savedUrl);
         } else if (r.value.editor === "bio") {
           initialState.current.bio = bio;
         } else if (r.value.editor === "timeline") {
@@ -823,11 +836,15 @@ const Index = ({ params }) => {
     setStoryGenCount(optimisticCount);
 
     try {
-      const response = await authedFetch(
+      const token = localStorage.getItem("app_token");
+      const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
       );
@@ -838,26 +855,28 @@ const Index = ({ params }) => {
         throw new Error(data.error || t.errorGenerate);
       }
       setBio(data.data?.result || "");
-
-      const serverCount = data.data?.storyGenCount;
-      const newCount = serverCount != null ? serverCount : optimisticCount;
+      // Sync with server value if provided
+      const newCount =
+        data.data?.storyGenCount != null
+          ? data.data.storyGenCount
+          : optimisticCount;
       setStoryGenCount(newCount);
 
-      // 전용 엔드포인트로 생성 횟수 저장
-      try {
-        const countRes = await authedFetch(
-          `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/story-gen-count`,
-          { method: "PATCH" },
-        );
-        if (countRes.ok) {
-          const countData = await countRes.json();
-          if (countData.data?.storyGenCount != null) {
-            setStoryGenCount(countData.data.storyGenCount);
-          }
-        }
-      } catch (e) {
-        console.error("Failed to persist storyGenCount:", e);
-      }
+      // Persist count to server
+      fetch(
+        `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ storyGenCount: newCount }),
+        },
+      )
+        .then((r) => r.json())
+        .then((d) => console.log("storyGenCount PATCH response:", d))
+        .catch((e) => console.error("Failed to persist storyGenCount:", e));
     } catch (err) {
       setBioError(err.message);
     } finally {
@@ -899,7 +918,7 @@ const Index = ({ params }) => {
 
   // Timeline helpers
   const addTimelineItem = () => {
-    if (timeline.length >= 10) return;
+    if (timeline.length >= 6) return;
     const newId = `tl-${nextIdRef.current++}`;
     timelineIdsRef.current = [...timelineIdsRef.current, newId];
     setTimeline([...timeline, { year: "", event: "" }]);
@@ -1306,6 +1325,12 @@ const Index = ({ params }) => {
                 >
                   {t.tabBack}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="gallery"
+                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
+                >
+                  {t.tabGallery}
+                </TabsTrigger>
               </TabsList>
 
               {/* Scrollable editor content */}
@@ -1487,53 +1512,11 @@ const Index = ({ params }) => {
                         )}
                       </AnimatePresence>
                     </div>
-                    {/* BGM Section */}
-                    <div className="rounded-lg border border-white/10">
-                      <button
-                        onClick={() => setBgmOpen(!bgmOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#e8d5b7]">
-                            {t.bgm}
-                          </span>
-                          {bgmUrl && (
-                            <span className="text-[11px] text-[#c4b49a]">
-                              {t.bgmSelected}
-                            </span>
-                          )}
-                        </div>
-                        {bgmOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {bgmOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <BgmEditor
-                                selectedBgmUrl={bgmUrl}
-                                onBgmChange={handleBgmChange}
-                                locale={locale}
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
                   </div>
                 </TabsContent>
 
                 {/* Back tab */}
-                <TabsContent className="px-4 pt-5 data-[state=inactive]:hidden sm:px-5" value="back" forceMount>
+                <TabsContent className="px-4 pt-5 sm:px-5" value="back">
                   <div className="space-y-5 pb-10">
                     {/* Back Cover Image Section - collapsible */}
                     <div className="rounded-lg border border-white/10">
@@ -1892,7 +1875,7 @@ const Index = ({ params }) => {
 
                               <button
                                 onClick={addTimelineItem}
-                                disabled={timeline.length >= 10}
+                                disabled={timeline.length >= 6}
                                 className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
                               >
                                 <Plus className="h-3 w-3" />{" "}
@@ -1912,6 +1895,54 @@ const Index = ({ params }) => {
                                   {timelineError}
                                 </p>
                               )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Gallery tab */}
+                <TabsContent className="px-4 pt-5 sm:px-5" value="gallery">
+                  <div className="space-y-5 pb-10">
+                    {/* BGM Section */}
+                    <div className="rounded-lg border border-white/10">
+                      <button
+                        onClick={() => setBgmOpen(!bgmOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
+                            {t.bgm}
+                          </span>
+                          {bgmUrl && (
+                            <span className="text-[11px] text-[#c4b49a]">
+                              {t.bgmSelected}
+                            </span>
+                          )}
+                        </div>
+                        {bgmOpen ? (
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {bgmOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                              <BgmEditor
+                                selectedBgmUrl={bgmUrl}
+                                onBgmChange={handleBgmChange}
+                                locale={locale}
+                              />
                             </div>
                           </motion.div>
                         )}

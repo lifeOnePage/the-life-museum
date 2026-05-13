@@ -95,7 +95,7 @@ const T = {
     generating: "생성 중...",
     generateStory: "글 생성",
     timeline: "타임라인",
-    addItem: (n) => `항목 추가 (${n}/6)`,
+    addItem: (n) => `항목 추가 (${n}/10)`,
     emptyTimeline: "타임라인 항목을 추가해보세요",
     yearPlaceholder: "연도",
     eventPlaceholder: "내용을 입력하세요...",
@@ -160,7 +160,7 @@ const T = {
     generating: "Generating...",
     generateStory: "Generate",
     timeline: "Timeline",
-    addItem: (n) => `Add item (${n}/6)`,
+    addItem: (n) => `Add item (${n}/10)`,
     emptyTimeline: "Add your first timeline item",
     yearPlaceholder: "Year",
     eventPlaceholder: "Enter description...",
@@ -470,7 +470,7 @@ const Index = ({ params }) => {
 
           let timelineData = [];
           if (data.timeline?.events) {
-            timelineData = data.timeline.events.slice(0, 6).map((event) => ({
+            timelineData = data.timeline.events.slice(0, 10).map((event) => ({
               year: (event.timestamp ? event.timestamp : "").slice(0, 13),
               event:
                 `${event.title}${event.description ? ` - ${event.description}` : ""}`.slice(
@@ -918,7 +918,7 @@ const Index = ({ params }) => {
 
   // Timeline helpers
   const addTimelineItem = () => {
-    if (timeline.length >= 6) return;
+    if (timeline.length >= 10) return;
     const newId = `tl-${nextIdRef.current++}`;
     timelineIdsRef.current = [...timelineIdsRef.current, newId];
     setTimeline([...timeline, { year: "", event: "" }]);
@@ -1875,7 +1875,7 @@ const Index = ({ params }) => {
 
                               <button
                                 onClick={addTimelineItem}
-                                disabled={timeline.length >= 6}
+                                disabled={timeline.length >= 10}
                                 className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
                               >
                                 <Plus className="h-3 w-3" />{" "}

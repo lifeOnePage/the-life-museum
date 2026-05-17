@@ -4,6 +4,7 @@ import { Fragment, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { requestAlbumPayment } from "@/app/utils/payment";
 
 const T = {
   ko: {
@@ -17,6 +18,16 @@ const T = {
     save: "저장",
     saving: "저장 중...",
     planSupport: "지원 예정입니다.",
+    planTitle: "앨범 구매",
+    planDesc: "앨범 1권을 구매하면 나만의 전시를 만들 수 있어요.",
+    albumPrice: "₩10,000",
+    albumUnit: "/ 1권",
+    buyAlbum: "구매하기",
+    purchasing: "결제 진행 중...",
+    paymentMethods: "카드 · 카카오페이 · 네이버페이 · 토스페이",
+    paymentError: "결제 요청 중 오류가 발생했습니다.",
+    paymentSuccess: "결제가 완료되었습니다!",
+    verifying: "결제 확인 중...",
   },
   en: {
     profile: "Profile",
@@ -29,6 +40,16 @@ const T = {
     save: "save",
     saving: "saving...",
     planSupport: "Coming soon.",
+    planTitle: "Purchase Album",
+    planDesc: "Buy an album to create your own exhibition.",
+    albumPrice: "₩10,000",
+    albumUnit: "/ 1 album",
+    buyAlbum: "Purchase",
+    purchasing: "Processing payment...",
+    paymentMethods: "Card · Kakao Pay · Naver Pay · Toss Pay",
+    paymentError: "An error occurred while requesting payment.",
+    paymentSuccess: "Payment complete!",
+    verifying: "Verifying payment...",
   },
 };
 
@@ -71,6 +92,9 @@ export default function ProfileModal({ onClose }) {
     email: user?.email || "",
   });
   const [saving, setSaving] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
 
   useEffect(() => {
     setCurrentLocale(getStoredLocale());
@@ -258,16 +282,84 @@ export default function ProfileModal({ onClose }) {
 
           {tab === "plan" && (
             <div className="py-2">
-              <div className="space-y-3">
-                <div className="h-5 w-1/3 animate-pulse rounded bg-white/5" />
-                <div className="h-4 w-full animate-pulse rounded bg-white/5" />
-                <div className="h-4 w-3/4 animate-pulse rounded bg-white/5" />
-                <div className="h-4 w-5/6 animate-pulse rounded bg-white/5" />
-                <div className="mt-4 h-10 w-full animate-pulse rounded-lg bg-white/5" />
+              {/* 가격 카드 */}
+              <div className="rounded-xl border border-white/10 bg-white/[0.03] p-5">
+                <h3 className="mb-1 text-base font-semibold text-[#e8d5b7]">
+                  {t.planTitle}
+                </h3>
+                <p className="mb-4 text-sm text-[#9b8b7a]">
+                  {t.planDesc}
+                </p>
+
+                <div className="mb-4 flex items-baseline gap-1">
+                  <span className="text-2xl font-bold text-[#e8d5b7]">
+                    {t.albumPrice}
+                  </span>
+                  <span className="text-sm text-[#9b8b7a]">{t.albumUnit}</span>
+                </div>
+
+                {paymentSuccess ? (
+                  <div className="flex flex-col items-center gap-2 py-2">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
+                      <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                    <p className="text-sm font-medium text-green-400">{t.paymentSuccess}</p>
+                  </div>
+                ) : (
+                  <>
+                    <button
+                      onClick={async () => {
+                        setPurchasing(true);
+                        setPaymentError("");
+                        try {
+                          const rsp = await requestAlbumPayment({
+                            userId: user?.id || "anonymous",
+                            userName: user?.name || "",
+                            userEmail: user?.email || "",
+                            locale: currentLocale,
+                          });
+                          // 결제 성공 → 백엔드 검증
+                          const res = await authedFetch(`${BASE_URL}/payment/confirm`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              imp_uid: rsp.imp_uid,
+                              merchant_uid: rsp.merchant_uid,
+                            }),
+                          });
+                          if (res.ok) {
+                            setPaymentSuccess(true);
+                          } else {
+                            const data = await res.json().catch(() => ({}));
+                            setPaymentError(data.message || data.detail || t.paymentError);
+                          }
+                        } catch (err) {
+                          console.error("Payment failed:", err);
+                          setPaymentError(err.message || t.paymentError);
+                        } finally {
+                          setPurchasing(false);
+                        }
+                      }}
+                      disabled={purchasing}
+                      className="w-full rounded-lg bg-[#c4b49a] py-3 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
+                    >
+                      {purchasing ? t.purchasing : t.buyAlbum}
+                    </button>
+
+                    {paymentError && (
+                      <p className="mt-3 text-center text-sm text-red-400/80">
+                        {paymentError}
+                      </p>
+                    )}
+
+                    <p className="mt-3 text-center text-xs text-white/20">
+                      {t.paymentMethods}
+                    </p>
+                  </>
+                )}
               </div>
-              <p className="mt-6 text-center text-sm text-white/30">
-                {t.planSupport}
-              </p>
             </div>
           )}
         </div>

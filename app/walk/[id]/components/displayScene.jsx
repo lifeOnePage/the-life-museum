@@ -27,6 +27,7 @@ const T = {
     musicOff: "음악 끄기",
     fullscreenOff: "전체화면 해제",
     fullscreen: "전체화면",
+    preparing: "전시 준비 중",
   },
   en: {
     exit: "Exit",
@@ -37,6 +38,7 @@ const T = {
     musicOff: "Mute",
     fullscreenOff: "Exit Fullscreen",
     fullscreen: "Fullscreen",
+    preparing: "Preparing exhibition",
   },
 };
 
@@ -47,6 +49,35 @@ function Tooltip({ label, children }) {
       <span className="pointer-events-none absolute top-full left-1/2 mt-2 -translate-x-1/2 rounded bg-black/80 px-2 py-1 text-xs whitespace-nowrap text-white opacity-0 transition-opacity group-hover:opacity-100">
         {label}
       </span>
+    </div>
+  );
+}
+
+// Loading overlay with progress bar and fade-out support
+function LoadingOverlay({ pct, title, fading }) {
+  return (
+    <div
+      className={`absolute inset-0 z-20 flex items-center justify-center bg-black transition-opacity duration-1000 ease-out ${fading ? "opacity-0" : "opacity-100"}`}
+    >
+      <div className="flex w-72 flex-col items-center gap-6">
+        {title && (
+          <div className="text-center text-lg font-light tracking-wide text-white/80">
+            {title}
+          </div>
+        )}
+
+        <div className="w-full">
+          <div className="mb-2 h-[2px] w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-white/70 transition-all duration-300 ease-out"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+          <div className="text-center text-xs tracking-widest text-white/40">
+            {pct}%
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -183,7 +214,17 @@ function PlaybackControls({
 export default function DisplayScene({ recordId, locale }) {
   const t = T[locale] || T.ko;
   const router = useRouter();
-  const { data: recordData, loading, error, mediaLoading } = useRecordData(recordId);
+
+  const [scrapingProgress, setScrapingProgress] = useState(null);
+
+  const handleMediaProgress = useCallback((event) => {
+    setScrapingProgress(event);
+  }, []);
+
+  const { data: recordData, loading, error, mediaLoading } = useRecordData(recordId, {
+    onMediaProgress: handleMediaProgress,
+  });
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
   const [isMuted, setIsMuted] = useState(false);
@@ -192,8 +233,16 @@ export default function DisplayScene({ recordId, locale }) {
   const bgmMutedByVideoRef = useRef(false);
   const textureConfig = useMemo(() => getTextureConfig(), []);
 
+  const [sceneReady, setSceneReady] = useState(false);
+  const [overlayFading, setOverlayFading] = useState(false);
+  const [overlayVisible, setOverlayVisible] = useState(true);
+  const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 });
   const [showControls, setShowControls] = useState(true);
   const idleTimerRef = useRef(null);
+
+  // Smooth progress animation state
+  const [animatedPct, setAnimatedPct] = useState(0);
+  const targetPctRef = useRef(0);
 
   const bgmUrl = recordData?.bgmUrl || null;
 
@@ -270,8 +319,21 @@ export default function DisplayScene({ recordId, locale }) {
     setIsPlaying((prev) => !prev);
   }, []);
 
+  const handleLoadProgress = useCallback((loaded, total) => {
+    setLoadProgress({ loaded, total });
+  }, []);
+
   const handleAutoPlay = useCallback(() => {
-    setIsPlaying(true);
+    // Scene textures are ready — start overlay fade-out, then begin playback
+    setSceneReady(true);
+    targetPctRef.current = 100;
+    setAnimatedPct(100);
+    setOverlayFading(true);
+    // Wait for overlay fade-out (1s CSS transition) before starting playback
+    setTimeout(() => {
+      setOverlayVisible(false);
+      setIsPlaying(true);
+    }, 1000);
   }, []);
 
   const handleToggleFullscreen = useCallback(() => {
@@ -310,18 +372,50 @@ export default function DisplayScene({ recordId, locale }) {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-black text-white">
-        <div className="text-center">
-          <div className="mb-4 text-2xl">Loading...</div>
-          <div className="text-sm text-gray-400">
-            Fetching media from server
-          </div>
-        </div>
-      </div>
-    );
-  }
+  // Compute target progress from SSE events + texture loading (real values only)
+  useEffect(() => {
+    if (scrapingProgress) {
+      const { phase, sourceIndex, totalSources } = scrapingProgress;
+      if (phase === 'started') {
+        // Stream connected — small initial progress
+        targetPctRef.current = Math.max(targetPctRef.current, 3);
+      } else if (phase === 'scraping') {
+        // Source scraping started — map to proportional range within 3-90%
+        const base = 3 + Math.round((sourceIndex / totalSources) * 87);
+        targetPctRef.current = Math.max(targetPctRef.current, base);
+      } else if (phase === 'source_done' || phase === 'source_error') {
+        targetPctRef.current = 3 + Math.round(((sourceIndex + 1) / totalSources) * 87);
+      } else if (phase === 'optimizing') {
+        targetPctRef.current = 90;
+      }
+    }
+  }, [scrapingProgress]);
+
+  useEffect(() => {
+    if (loadProgress.total > 0) {
+      const realPct = Math.min(100, Math.round((loadProgress.loaded / loadProgress.total) * 100));
+      targetPctRef.current = 90 + Math.round(realPct * 0.1);
+    }
+  }, [loadProgress]);
+
+  // Smooth easing toward target (no prediction/creep — only animates toward real milestones)
+  useEffect(() => {
+    if (sceneReady) return;
+
+    const interval = setInterval(() => {
+      setAnimatedPct((prev) => {
+        const target = targetPctRef.current;
+        if (prev >= target) return prev;
+        const diff = target - prev;
+        const step = Math.max(0.3, diff * 0.06);
+        return Math.min(target, prev + step);
+      });
+    }, 50);
+
+    return () => clearInterval(interval);
+  }, [sceneReady]);
+
+  const displayPct = Math.round(animatedPct);
 
   if (error) {
     return (
@@ -334,33 +428,7 @@ export default function DisplayScene({ recordId, locale }) {
     );
   }
 
-  // if (recordData?.isPublic === false) {
-  //   return (
-  //     <div className="flex h-full w-full flex-col items-center justify-center gap-4 bg-black px-6 text-center">
-  //       <p className="text-2xl">🔒</p>
-  //       <p className="text-sm font-light tracking-wide text-white/60">
-  //         비공개 앨범입니다
-  //       </p>
-  //       <p className="text-xs tracking-wider text-white/30">
-  //         앨범 소유자만 열람할 수 있어요
-  //       </p>
-  //     </div>
-  //   );
-  // }
-
-  if (mediaList.length === 0) {
-    if (mediaLoading) {
-      return (
-        <div className="flex h-full w-full items-center justify-center bg-black text-white">
-          <div className="text-center">
-            <div className="mb-4 text-2xl">Loading...</div>
-            <div className="text-sm text-gray-400">
-              미디어를 불러오는 중
-            </div>
-          </div>
-        </div>
-      );
-    }
+  if (!loading && !mediaLoading && mediaList.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-black text-white">
         <div className="text-center">
@@ -375,55 +443,69 @@ export default function DisplayScene({ recordId, locale }) {
 
   return (
     <div className="relative h-full w-full">
+      {/* Loading overlay — fades out when scene is ready, removed after transition */}
+      {overlayVisible && (
+        <LoadingOverlay
+          pct={displayPct}
+          title={recordData?.title || t.preparing}
+          fading={overlayFading}
+        />
+      )}
+
       <div
         className={`transition-opacity duration-500 ${!isFullscreen || showControls ? "opacity-100" : "pointer-events-none opacity-0"}`}
       >
-        <PlaybackControls
-          isPlaying={isPlaying}
-          onTogglePlay={handleTogglePlay}
-          cameraSpeed={cameraSpeed}
-          onCameraSpeedChange={setCameraSpeed}
-          onExit={() => router.back()}
-          hasBgm={!!bgmUrl}
-          isMuted={isMuted}
-          onToggleMute={() => setIsMuted((m) => !m)}
-          isFullscreen={isFullscreen}
-          onToggleFullscreen={handleToggleFullscreen}
-          t={t}
-        />
+        {!overlayVisible && (
+          <PlaybackControls
+            isPlaying={isPlaying}
+            onTogglePlay={handleTogglePlay}
+            cameraSpeed={cameraSpeed}
+            onCameraSpeedChange={setCameraSpeed}
+            onExit={() => router.back()}
+            hasBgm={!!bgmUrl}
+            isMuted={isMuted}
+            onToggleMute={() => setIsMuted((m) => !m)}
+            isFullscreen={isFullscreen}
+            onToggleFullscreen={handleToggleFullscreen}
+            t={t}
+          />
+        )}
       </div>
 
-      <Canvas
-        dpr={[1, 1.5]}
-        camera={{
-          position: [0, 0, 300],
-          fov: 80,
-          near: 0.1,
-          far: 7200,
-        }}
-        gl={{
-          antialias: false,
-          alpha: false,
-          powerPreference: "high-performance",
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 0.85,
-        }}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <Suspense fallback={null}>
-          <Scene
-            planes={planes}
-            mediaListLength={mediaList.length}
-            isPlaying={isPlaying}
-            cameraSpeed={cameraSpeed}
-            textureConfig={textureConfig}
-            onAutoPlay={handleAutoPlay}
-            onTogglePlay={handleTogglePlay}
-            onToggleFullscreen={handleToggleFullscreen}
-            onVideoBgmControl={handleVideoBgmControl}
-          />
-        </Suspense>
-      </Canvas>
+      {!loading && mediaList.length > 0 && (
+        <Canvas
+          dpr={[1, 1.5]}
+          camera={{
+            position: [0, 0, 0],
+            fov: 80,
+            near: 0.1,
+            far: 7200,
+          }}
+          gl={{
+            antialias: false,
+            alpha: false,
+            powerPreference: "high-performance",
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 0.85,
+          }}
+          style={{ width: "100%", height: "100%" }}
+        >
+          <Suspense fallback={null}>
+            <Scene
+              planes={planes}
+              mediaListLength={mediaList.length}
+              isPlaying={isPlaying}
+              cameraSpeed={cameraSpeed}
+              textureConfig={textureConfig}
+              onAutoPlay={handleAutoPlay}
+              onLoadProgress={handleLoadProgress}
+              onTogglePlay={handleTogglePlay}
+              onToggleFullscreen={handleToggleFullscreen}
+              onVideoBgmControl={handleVideoBgmControl}
+            />
+          </Suspense>
+        </Canvas>
+      )}
     </div>
   );
 }

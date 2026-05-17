@@ -24,14 +24,22 @@ const THEME_BG_MAP = {
 
 function loadImage(src) {
   return new Promise((resolve) => {
-    if (!src) {
-      resolve(null);
-      return;
-    }
+    if (!src) { resolve(null); return; }
+    const isBlobOrData = src.startsWith("blob:") || src.startsWith("data:");
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (!isBlobOrData) img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
+    img.onerror = () => {
+      if (!isBlobOrData) {
+        const proxy = new Image();
+        proxy.crossOrigin = "anonymous";
+        proxy.onload = () => resolve(proxy);
+        proxy.onerror = () => resolve(null);
+        proxy.src = `https://the-life-museum-backend-production.up.railway.app/api/v1/scraper/proxy/image?url=${encodeURIComponent(src)}`;
+      } else {
+        resolve(null);
+      }
+    };
     img.src = src;
   });
 }

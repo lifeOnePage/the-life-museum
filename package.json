@@ -23,6 +23,7 @@
     "@react-three/fiber": "^9.4.0",
     "@react-three/postprocessing": "^3.0.4",
     "@rtcoder/dominant-color": "^0.1.4",
+    "@stripe/stripe-js": "^9.5.0",
     "aws-sdk": "^2.1692.0",
     "extract-colors": "^4.2.1",
     "firebase": "^12.7.0",
@@ -38,6 +39,7 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-icons": "^5.5.0",
+    "stripe": "^22.1.1",
     "three": "^0.180.0"
   },
   "devDependencies": {

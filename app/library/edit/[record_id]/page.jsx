@@ -44,7 +44,9 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import CoverImageEditor from "./components/CoverImageEditor";
 import TitleOverlayEditor from "./components/TitleOverlayEditor";
-const AlbumPreview3D = dynamic(() => import("./components/AlbumPreview3D"), { ssr: false });
+const AlbumPreview3D = dynamic(() => import("./components/AlbumPreview3D"), {
+  ssr: false,
+});
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
@@ -66,6 +68,7 @@ const T = {
     lastSaved: "마지막 저장",
     tabFront: "앞면",
     tabBack: "뒷면",
+    tabGallery: "갤러리",
     titleLabel: "제목",
     subtitleLabel: "부제목",
     titlePlaceholder: "앨범 제목을 입력하세요",
@@ -92,7 +95,7 @@ const T = {
     generating: "생성 중...",
     generateStory: "글 생성",
     timeline: "타임라인",
-    addItem: (n) => `항목 추가 (${n}/6)`,
+    addItem: (n) => `항목 추가 (${n}/10)`,
     emptyTimeline: "타임라인 항목을 추가해보세요",
     yearPlaceholder: "연도",
     eventPlaceholder: "내용을 입력하세요...",
@@ -130,6 +133,7 @@ const T = {
     lastSaved: "Last saved",
     tabFront: "Front",
     tabBack: "Back",
+    tabGallery: "Gallery",
     titleLabel: "Title",
     subtitleLabel: "Subtitle",
     titlePlaceholder: "Enter album title",
@@ -156,7 +160,7 @@ const T = {
     generating: "Generating...",
     generateStory: "Generate",
     timeline: "Timeline",
-    addItem: (n) => `Add item (${n}/6)`,
+    addItem: (n) => `Add item (${n}/10)`,
     emptyTimeline: "Add your first timeline item",
     yearPlaceholder: "Year",
     eventPlaceholder: "Enter description...",
@@ -466,7 +470,7 @@ const Index = ({ params }) => {
 
           let timelineData = [];
           if (data.timeline?.events) {
-            timelineData = data.timeline.events.slice(0, 6).map((event) => ({
+            timelineData = data.timeline.events.slice(0, 10).map((event) => ({
               year: (event.timestamp ? event.timestamp : "").slice(0, 13),
               event:
                 `${event.title}${event.description ? ` - ${event.description}` : ""}`.slice(
@@ -518,8 +522,11 @@ const Index = ({ params }) => {
           setBgmUrl(data.bgmUrl || null);
           setBgmId(data.bgmId ? `bgm${data.bgmId}` : null);
 
-          // Fetch media separately and initialize photo drive
-          photoDrive.refresh();
+          // Initialize photo drive data for CoverImageEditor
+          const images = (data.mediaList ?? []).filter(
+            (m) => m.type === "image",
+          );
+          photoDrive.init(images);
 
           initialState.current = {
             frontCover: coverUrl,
@@ -911,7 +918,7 @@ const Index = ({ params }) => {
 
   // Timeline helpers
   const addTimelineItem = () => {
-    if (timeline.length >= 6) return;
+    if (timeline.length >= 10) return;
     const newId = `tl-${nextIdRef.current++}`;
     timelineIdsRef.current = [...timelineIdsRef.current, newId];
     setTimeline([...timeline, { year: "", event: "" }]);
@@ -1318,6 +1325,12 @@ const Index = ({ params }) => {
                 >
                   {t.tabBack}
                 </TabsTrigger>
+                <TabsTrigger
+                  value="gallery"
+                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
+                >
+                  {t.tabGallery}
+                </TabsTrigger>
               </TabsList>
 
               {/* Scrollable editor content */}
@@ -1492,48 +1505,6 @@ const Index = ({ params }) => {
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 preloadBlobs={photoDrive.preloadBlobs}
-                                locale={locale}
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                    {/* BGM Section */}
-                    <div className="rounded-lg border border-white/10">
-                      <button
-                        onClick={() => setBgmOpen(!bgmOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#e8d5b7]">
-                            {t.bgm}
-                          </span>
-                          {bgmUrl && (
-                            <span className="text-[11px] text-[#c4b49a]">
-                              {t.bgmSelected}
-                            </span>
-                          )}
-                        </div>
-                        {bgmOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {bgmOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <BgmEditor
-                                selectedBgmUrl={bgmUrl}
-                                onBgmChange={handleBgmChange}
                                 locale={locale}
                               />
                             </div>
@@ -1904,7 +1875,7 @@ const Index = ({ params }) => {
 
                               <button
                                 onClick={addTimelineItem}
-                                disabled={timeline.length >= 6}
+                                disabled={timeline.length >= 10}
                                 className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
                               >
                                 <Plus className="h-3 w-3" />{" "}
@@ -1924,6 +1895,54 @@ const Index = ({ params }) => {
                                   {timelineError}
                                 </p>
                               )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                </TabsContent>
+
+                {/* Gallery tab */}
+                <TabsContent className="px-4 pt-5 sm:px-5" value="gallery">
+                  <div className="space-y-5 pb-10">
+                    {/* BGM Section */}
+                    <div className="rounded-lg border border-white/10">
+                      <button
+                        onClick={() => setBgmOpen(!bgmOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
+                            {t.bgm}
+                          </span>
+                          {bgmUrl && (
+                            <span className="text-[11px] text-[#c4b49a]">
+                              {t.bgmSelected}
+                            </span>
+                          )}
+                        </div>
+                        {bgmOpen ? (
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {bgmOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                              <BgmEditor
+                                selectedBgmUrl={bgmUrl}
+                                onBgmChange={handleBgmChange}
+                                locale={locale}
+                              />
                             </div>
                           </motion.div>
                         )}

@@ -312,32 +312,38 @@ function drawKitschLayout(
 
   // Timeline — vertical list, centered
   if (timeline.length > 0) {
-    const maxItems = 6;
+    const escoredreamFont = escoredreamFontLoaded ? '"Escoredream"' : bookkFont;
+    const maxItems = Math.min(timeline.length, 10);
     const items = timeline.slice(0, maxItems);
-    cursorY += 60;
+    const useDense = items.length > 5;
+    const yearFontSize = useDense ? 18 : 18;
+    const eventFontSize = useDense ? 18 : 18;
+    const lineHeight = useDense ? 20 : 42;
+    const itemSpacing = useDense ? 36 : 72;
+    cursorY += useDense ? 30 : 60;
 
     for (const item of items) {
-      if (cursorY > size - 200) break;
+      if (cursorY > (bio ? size - margin - 160 : size - 100)) break;
       ctx.letterSpacing = "-0.5px";
 
       // Year
-      ctx.font = `bold 20px ${bookkFont}`;
+      ctx.font = `bold ${yearFontSize}px ${escoredreamFont}`;
       ctx.fillStyle = theme.text;
       ctx.textAlign = "right";
       ctx.fillText(item.year, size / 2 - 210, cursorY);
 
       // Event
-      ctx.font = `32px ${bookkFont}`;
+      ctx.font = `${eventFontSize}px ${escoredreamFont}`;
       ctx.fillStyle = theme.text + "cc";
       ctx.textAlign = "left";
       const eventX = size / 2 - 170;
       const eventMaxW = (backCoverImg ? contentRight : size - margin) - eventX;
       const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
       for (let li = 0; li < eventLines.length; li++) {
-        ctx.fillText(eventLines[li], eventX, cursorY + li * 42);
+        ctx.fillText(eventLines[li], eventX, cursorY + li * lineHeight);
       }
 
-      cursorY += 72 + (eventLines.length - 1) * 42;
+      cursorY += itemSpacing + (eventLines.length - 1) * lineHeight;
     }
     ctx.textAlign = "left";
   }
@@ -356,7 +362,7 @@ function drawKitschLayout(
     ctx.fillText("ALBUM STORY", size / 2, bioBottom - 80);
     ctx.letterSpacing = "0px";
 
-    ctx.font = `500 21px ${escoredreamFont}`;
+    ctx.font = `500 18px ${escoredreamFont}`;
     ctx.fillStyle = theme.text + "aa";
     const bioLines = wrapText(ctx, bio, rightPhotoW + 330);
     const maxBioLines = 6;
@@ -443,57 +449,71 @@ function drawIllustrationLayout(
     cursorY += 40;
   }
 
-  // Timeline — horizontal line in middle area with filled circle dots
+  // Timeline — horizontal line(s) in middle area with filled circle dots
   if (timeline.length > 0) {
-    const tlY = size * 0.52;
-    const maxItems = Math.min(timeline.length, 6);
+    const maxItems = Math.min(timeline.length, 10);
     const items = timeline.slice(0, maxItems);
+    const useMultiRow = items.length > 5;
+    const rows = useMultiRow ? [items.slice(0, 5), items.slice(5)] : [items];
+
     const tlLeft = margin + 40;
     const tlRight = size - margin - 40;
     const tlWidth = tlRight - tlLeft;
+    const firstRowY = useMultiRow ? size * 0.43 : size * 0.52;
+    const rowSpacing = 155;
 
-    // Horizontal line
-    ctx.strokeStyle = "#406E78";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(tlLeft, tlY);
-    ctx.lineTo(tlRight, tlY);
-    ctx.stroke();
+    for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+      const rowItems = rows[rowIdx];
+      const tlY = firstRowY + rowIdx * rowSpacing;
+      const rowMaxItems = rowItems.length;
 
-    // Dots and labels
-    for (let i = 0; i < maxItems; i++) {
-      const x =
-        maxItems === 1
-          ? (tlLeft + tlRight) / 2
-          : tlLeft + (i / (maxItems - 1)) * tlWidth;
-      const item = items[i];
-
-      // Filled circle dot
+      // Horizontal line
+      ctx.strokeStyle = "#406E78";
+      ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.arc(x, tlY, 7, 0, Math.PI * 2);
-      ctx.fillStyle = "#fff";
-      ctx.fill();
-      ctx.restore();
+      ctx.moveTo(tlLeft, tlY);
+      ctx.lineTo(tlRight, tlY);
+      ctx.stroke();
 
-      // Year above
-      ctx.font = `bold 17px ${bookkFont}`;
-      ctx.fillStyle = "#406E78";
-      ctx.textAlign = "center";
-      ctx.fillText(item.year, x, tlY - 25);
+      // Dots and labels
+      for (let i = 0; i < rowMaxItems; i++) {
+        const x =
+          rowMaxItems === 1
+            ? (tlLeft + tlRight) / 2
+            : tlLeft + (i / (rowMaxItems - 1)) * tlWidth;
+        const item = rowItems[i];
 
-      // Event below
-      ctx.font = `600 19px ${bookkFont}`;
-      ctx.textAlign = "center";
-      const itemSpacing = maxItems > 1 ? tlWidth / (maxItems - 1) : tlWidth;
-      const eventMaxW = Math.max(itemSpacing * 0.95, 100);
-      const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 2);
-      ctx.fill();
-      ctx.fillStyle = "#406E78";
-      for (let li = 0; li < eventLines.length; li++) {
-        ctx.fillText(eventLines[li], x, tlY + 40 + li * 22);
+        // Filled circle dot
+        ctx.beginPath();
+        ctx.arc(x, tlY, 7, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff";
+        ctx.fill();
+        ctx.restore();
+
+        // Year above
+        ctx.font = `bold 17px ${bookkFont}`;
+        ctx.fillStyle = "#406E78";
+        ctx.textAlign = "center";
+        ctx.fillText(item.year, x, tlY - 25);
+
+        // Event below
+        ctx.font = `600 19px ${bookkFont}`;
+        ctx.textAlign = "center";
+        const itemSpacing =
+          rowMaxItems > 1 ? tlWidth / (rowMaxItems - 1) : tlWidth;
+        const eventMaxW = Math.max(
+          Math.min(itemSpacing, tlWidth / 4) * 0.95,
+          100,
+        );
+        const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 4);
+        ctx.fill();
+        ctx.fillStyle = "#406E78";
+        for (let li = 0; li < eventLines.length; li++) {
+          ctx.fillText(eventLines[li], x, tlY + 40 + li * 22);
+        }
       }
+      ctx.textAlign = "left";
     }
-    ctx.textAlign = "left";
   }
 
   // Bottom — semi-transparent dark overlay band with bio text
@@ -617,9 +637,9 @@ function drawMinimalistLayout(
 
   // Center — front cover photo (rectangular)
   const photoW = size * 0.68;
-  const photoH = size * 0.4;
+  const photoH = timeline.length > 5 ? size * 0.33 : size * 0.4;
   const photoX = (size - photoW) / 2;
-  const photoY = cursorY + 10;
+  const photoY = cursorY - 50;
 
   if (backCoverImg) {
     ctx.save();
@@ -671,61 +691,75 @@ function drawMinimalistLayout(
     ctx.textAlign = "left";
   }
 
-  cursorY = photoY + photoH + 60;
+  cursorY = photoY + photoH + 35;
 
-  // Timeline — horizontal line below photo, open circle dots
+  // Timeline — horizontal line(s) below photo, open circle dots
   if (timeline.length > 0) {
-    const tlY = cursorY + 20;
-    const maxItems = Math.min(timeline.length, 6);
+    const maxItems = Math.min(timeline.length, 10);
     const items = timeline.slice(0, maxItems);
+    const useMultiRow = items.length > 5;
+    const rows = useMultiRow ? [items.slice(0, 5), items.slice(5)] : [items];
+
     const tlLeft = margin + 30;
     const tlRight = size - margin - 30;
     const tlWidth = tlRight - tlLeft;
+    const firstRowY = cursorY + 20;
+    const rowSpacing = 130;
 
-    // Horizontal line
-    ctx.strokeStyle = "#000";
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(tlLeft, tlY);
-    ctx.lineTo(tlRight, tlY);
-    ctx.stroke();
+    for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+      const rowItems = rows[rowIdx];
+      const tlY = firstRowY + rowIdx * rowSpacing;
+      const rowMaxItems = rowItems.length;
 
-    // Open circle dots and labels
-    for (let i = 0; i < maxItems; i++) {
-      const x =
-        maxItems === 1
-          ? (tlLeft + tlRight) / 2
-          : tlLeft + (i / (maxItems - 1)) * tlWidth;
-      const item = items[i];
-
-      // Open circle dot
+      // Horizontal line
+      ctx.strokeStyle = "#000";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(x, tlY, 5, 0, Math.PI * 2);
-      ctx.fillStyle = "#ffffff";
-      ctx.fill();
-      ctx.strokeStyle = theme.accent;
-      ctx.lineWidth = 2;
+      ctx.moveTo(tlLeft, tlY);
+      ctx.lineTo(tlRight, tlY);
       ctx.stroke();
 
-      // Year above
-      ctx.font = `bold 19px ${escoredreamFont}`;
-      ctx.fillStyle = theme.accent;
-      ctx.textAlign = "center";
-      ctx.fillText(item.year, x, tlY - 16);
+      // Open circle dots and labels
+      for (let i = 0; i < rowMaxItems; i++) {
+        const x =
+          rowMaxItems === 1
+            ? (tlLeft + tlRight) / 2
+            : tlLeft + (i / (rowMaxItems - 1)) * tlWidth;
+        const item = rowItems[i];
 
-      // Event below
-      ctx.font = `600 17px ${escoredreamFont}`;
-      ctx.letterSpacing = "-0.7px";
-      ctx.fillStyle = theme.text;
-      const itemSpacing = maxItems > 1 ? tlWidth / (maxItems - 1) : tlWidth;
-      const eventMaxW = Math.max(itemSpacing * 0.85, 100);
-      const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 3);
-      for (let li = 0; li < eventLines.length; li++) {
-        ctx.fillText(eventLines[li], x, tlY + 28 + li * 24);
+        // Open circle dot
+        ctx.beginPath();
+        ctx.arc(x, tlY, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.strokeStyle = theme.accent;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Year above
+        ctx.font = `bold 19px ${escoredreamFont}`;
+        ctx.fillStyle = theme.accent;
+        ctx.textAlign = "center";
+        ctx.fillText(item.year, x, tlY - 16);
+
+        // Event below
+        ctx.font = `600 17px ${escoredreamFont}`;
+        ctx.letterSpacing = "-0.7px";
+        ctx.fillStyle = theme.text;
+        const itemSpacing =
+          rowMaxItems > 1 ? tlWidth / (rowMaxItems - 1) : tlWidth;
+        const eventMaxW = Math.max(
+          Math.min(itemSpacing, tlWidth / 4) * 0.85,
+          100,
+        );
+        const eventLines = wrapText(ctx, item.event, eventMaxW).slice(0, 4);
+        for (let li = 0; li < eventLines.length; li++) {
+          ctx.fillText(eventLines[li], x, tlY + 28 + li * 24);
+        }
       }
+      ctx.textAlign = "left";
     }
-    ctx.textAlign = "left";
-    cursorY = tlY + 50;
+    cursorY = firstRowY + (rows.length - 1) * rowSpacing + 50;
   }
 
   // "ALBUM STORY" label + bio text at bottom, centered with top/bottom lines

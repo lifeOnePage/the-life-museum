@@ -87,7 +87,25 @@ export default function SharePage({ params }) {
   }, []);
   const [flipProgress, setFlipProgress] = useState(0);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
+  const [infoFontScale, setInfoFontScale] = useState(1);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  useEffect(() => { if (!isInfoOpen) setInfoFontScale(1); }, [isInfoOpen]);
   const albumRef = useRef(null);
+  const infoModalRef = useRef(null);
+
+  // 모달 열릴 때 핀치줌 완전 차단 (touchstart + touchmove 모두)
+  useEffect(() => {
+    if (!isInfoOpen) return;
+    const el = infoModalRef.current;
+    if (!el) return;
+    const block = (e) => { if (e.touches.length >= 2) e.preventDefault(); };
+    el.addEventListener("touchstart", block, { passive: false });
+    el.addEventListener("touchmove", block, { passive: false });
+    return () => {
+      el.removeEventListener("touchstart", block);
+      el.removeEventListener("touchmove", block);
+    };
+  }, [isInfoOpen]);
   const idleRafRef = useRef(null);
   // Library와 동일: 전체 윈도우 기준 정규화, 0.5rad max, 0.08 smoothing
   const targetTiltRef = useRef({ x: 0, y: 0 });
@@ -183,7 +201,7 @@ export default function SharePage({ params }) {
       if (isInfoOpenRef.current) return; // info 팝업 열려 있으면 스크롤 허용
       e.preventDefault();
       const next = Math.max(
-        2,
+        4.5,
         Math.min(10, pinchZoomRef.current + e.deltaY * 0.008),
       );
       pinchZoomRef.current = next;
@@ -256,7 +274,7 @@ export default function SharePage({ params }) {
       const dist = Math.sqrt(dx * dx + dy * dy);
       const delta = lastPinchDistRef.current - dist;
       const next = Math.max(
-        2,
+        4.5,
         Math.min(10, pinchZoomRef.current + delta * 0.03),
       );
       pinchZoomRef.current = next;
@@ -546,7 +564,7 @@ export default function SharePage({ params }) {
 
       {/* 데스크탑 마우스 휠 힌트 — 앨범 오른쪽 중앙 */}
       <div
-        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] flex -translate-y-[50%] flex-col transition-opacity duration-1000 ${
+        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] hidden md:flex -translate-y-[50%] flex-col transition-opacity duration-1000 ${
           showDesktopHint ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -608,6 +626,7 @@ export default function SharePage({ params }) {
       {/* Info Popup */}
       {isInfoOpen && (
         <div
+          ref={infoModalRef}
           className="fixed inset-0 z-50 flex items-center justify-center"
           onClick={() => setIsInfoOpen(false)}
         >
@@ -615,8 +634,20 @@ export default function SharePage({ params }) {
           <div
             className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl"
             onClick={(e) => e.stopPropagation()}
+            style={!isMobile ? { zoom: infoFontScale } : {}}
           >
-            <div className="max-h-[70dvh] overflow-y-auto px-6 pt-4 pb-6">
+            {/* 데스크탑: maxHeight를 zoom 역수로 보정해 화면 높이 초과 방지 */}
+            {/* 모바일: 고정 max-h, 내부 콘텐츠만 zoom */}
+            <div
+              className="overflow-y-auto px-6 pt-10 pb-6"
+              style={
+                !isMobile
+                  ? { maxHeight: `${Math.floor(window.innerHeight * 0.9 / infoFontScale)}px` }
+                  : { maxHeight: "70dvh" }
+              }
+            >
+              {/* 모바일 전용 콘텐츠 zoom 래퍼 */}
+              <div style={isMobile ? { zoom: infoFontScale } : {}}>
               {/* Title */}
               {albumTitle && (
                 <div className="mb-5">
@@ -686,14 +717,30 @@ export default function SharePage({ params }) {
                   </button>
                 </div>
               )}
-            </div>
+              </div>{/* /모바일 zoom 래퍼 */}
+            </div>{/* scroll container */}
 
-            <button
-              onClick={() => setIsInfoOpen(false)}
-              className="absolute top-4 right-4 text-white/25 transition-colors hover:text-white/60"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {/* 상단 버튼 바 */}
+            <div className="absolute top-3 right-3 flex items-center gap-1">
+              <button
+                onClick={() => setInfoFontScale((s) => Math.max(0.7, +(s - 0.1).toFixed(1)))}
+                className="flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:text-white/70 text-[13px] font-light"
+              >
+                A-
+              </button>
+              <button
+                onClick={() => setInfoFontScale((s) => Math.min(1.7, +(s + 0.1).toFixed(1)))}
+                className="flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:text-white/70 text-[15px] font-light"
+              >
+                A+
+              </button>
+              <button
+                onClick={() => setIsInfoOpen(false)}
+                className="ml-1 text-white/25 transition-colors hover:text-white/60"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

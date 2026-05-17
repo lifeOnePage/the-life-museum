@@ -109,12 +109,12 @@ const TimelineEditor = forwardRef(
                   <Input
                     value={item.event}
                     onChange={(e) => updateItem(index, "event", e.target.value)}
-                    maxLength={20}
+                    maxLength={25}
                     placeholder="내용을 입력하세요..."
                     className="border border-white/10 bg-[#2e2720] text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
                   />
                   <p className="text-right text-xs text-[#9b8b7a]/60">
-                    {item.event.length} / 20
+                    {item.event.length} / 25
                   </p>
                 </div>
                 <Button

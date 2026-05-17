@@ -49,6 +49,8 @@ export default function Scene({
   onTogglePlay,
   onToggleFullscreen,
   onVideoBgmControl,
+  videoPreviewEnabled,
+  videoMaxDuration,
 }) {
   const { camera } = useThree();
   const controlsRef = useRef();
@@ -601,6 +603,21 @@ export default function Scene({
     if (Math.abs(camera.fov - targetFovRef.current) > 0.1) {
       camera.fov = THREE.MathUtils.lerp(camera.fov, targetFovRef.current, 0.1);
       camera.updateProjectionMatrix();
+    }
+
+    // Video preview mode: enforce max duration limit
+    if (videoPreviewEnabled && videoMaxDuration > 0) {
+      const vps = videoPlayState.current;
+      if (vps.isPlaying && vps.activePlaneId != null) {
+        const texInfo = textureMap.current.get(vps.activePlaneId);
+        if (texInfo?.videoElement && texInfo.videoElement.currentTime >= videoMaxDuration) {
+          if (vps.endedHandler) {
+            vps.endedHandler();
+          } else {
+            stopVideoPlayback(vps.activePlaneId);
+          }
+        }
+      }
     }
 
     if (!isPlaying) {

@@ -11,7 +11,7 @@ import {
   useRef,
 } from "react";
 import * as THREE from "three";
-import { X, Maximize2, Minimize2, Gauge } from "lucide-react";
+import { X, Maximize2, Minimize2, Gauge, Video } from "lucide-react";
 import Scene from "./scene/Scene";
 import { SEED, CAMERA_SPEED, getTextureConfig } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
@@ -28,6 +28,8 @@ const T = {
     fullscreenOff: "전체화면 해제",
     fullscreen: "전체화면",
     preparing: "전시 준비 중",
+    videoOptions: "비디오 옵션",
+    videoPreview: "비디오 조금씩만 보기",
   },
   en: {
     exit: "Exit",
@@ -39,8 +41,19 @@ const T = {
     fullscreenOff: "Exit Fullscreen",
     fullscreen: "Fullscreen",
     preparing: "Preparing exhibition",
+    videoOptions: "Video Options",
+    videoPreview: "Short video preview",
   },
 };
+
+const VIDEO_DURATION_OPTIONS = [
+  { label: "10초", value: 10 },
+  { label: "30초", value: 30 },
+  { label: "1분", value: 60 },
+  { label: "3분", value: 180 },
+  { label: "10분", value: 600 },
+  { label: "30분", value: 1800 },
+];
 
 function Tooltip({ label, children }) {
   return (
@@ -94,8 +107,25 @@ function PlaybackControls({
   hasBgm,
   isFullscreen,
   onToggleFullscreen,
+  videoPreviewEnabled,
+  onToggleVideoPreview,
+  videoMaxDuration,
+  onVideoMaxDurationChange,
   t,
 }) {
+  const [showVideoOptions, setShowVideoOptions] = useState(false);
+  const videoOptionsRef = useRef(null);
+
+  useEffect(() => {
+    if (!showVideoOptions) return;
+    const handleClickOutside = (e) => {
+      if (videoOptionsRef.current && !videoOptionsRef.current.contains(e.target)) {
+        setShowVideoOptions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showVideoOptions]);
   return (
     <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
       <Tooltip label={t.exit}>
@@ -148,6 +178,57 @@ function PlaybackControls({
           className="w-24 accent-white"
         />
       </Tooltip>
+
+      <div ref={videoOptionsRef} className="relative">
+        <Tooltip label={t.videoOptions}>
+          <button
+            onClick={() => setShowVideoOptions((v) => !v)}
+            className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+              videoPreviewEnabled
+                ? "bg-white/40 hover:bg-white/50"
+                : "bg-white/20 hover:bg-white/30"
+            }`}
+          >
+            <Video className="h-5 w-5 text-white" />
+          </button>
+        </Tooltip>
+        {showVideoOptions && (
+          <div className="absolute top-full left-1/2 mt-2 -translate-x-1/2 rounded-lg bg-black/80 p-3 backdrop-blur-sm min-w-[200px]">
+            <div className="flex items-center justify-between gap-3 mb-2">
+              <span className="text-xs text-white/80 whitespace-nowrap">
+                {t.videoPreview}
+              </span>
+              <button
+                role="switch"
+                aria-checked={videoPreviewEnabled}
+                onClick={onToggleVideoPreview}
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full transition-colors ${
+                  videoPreviewEnabled ? "bg-white/50" : "bg-white/20"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform mt-0.5 ${
+                    videoPreviewEnabled ? "translate-x-4 ml-0.5" : "translate-x-0 ml-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+            {videoPreviewEnabled && (
+              <select
+                value={videoMaxDuration}
+                onChange={(e) => onVideoMaxDurationChange(Number(e.target.value))}
+                className="w-full rounded bg-white/10 px-2 py-1.5 text-xs text-white outline-none cursor-pointer hover:bg-white/20 transition-colors [&>option]:bg-neutral-900 [&>option]:text-white"
+              >
+                {VIDEO_DURATION_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+      </div>
 
       {hasBgm && (
         <>
@@ -229,6 +310,8 @@ export default function DisplayScene({ recordId, locale }) {
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [videoPreviewEnabled, setVideoPreviewEnabled] = useState(false);
+  const [videoMaxDuration, setVideoMaxDuration] = useState(30);
   const bgmRef = useRef(null);
   const bgmMutedByVideoRef = useRef(false);
   const textureConfig = useMemo(() => getTextureConfig(), []);
@@ -496,6 +579,10 @@ export default function DisplayScene({ recordId, locale }) {
             onToggleMute={() => setIsMuted((m) => !m)}
             isFullscreen={isFullscreen}
             onToggleFullscreen={handleToggleFullscreen}
+            videoPreviewEnabled={videoPreviewEnabled}
+            onToggleVideoPreview={() => setVideoPreviewEnabled((v) => !v)}
+            videoMaxDuration={videoMaxDuration}
+            onVideoMaxDurationChange={setVideoMaxDuration}
             t={t}
           />
         )}
@@ -531,6 +618,8 @@ export default function DisplayScene({ recordId, locale }) {
               onTogglePlay={handleTogglePlay}
               onToggleFullscreen={handleToggleFullscreen}
               onVideoBgmControl={handleVideoBgmControl}
+              videoPreviewEnabled={videoPreviewEnabled}
+              videoMaxDuration={videoMaxDuration}
             />
           </Suspense>
         </Canvas>

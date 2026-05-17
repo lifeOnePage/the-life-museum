@@ -324,13 +324,12 @@ export default function DisplayScene({ recordId, locale }) {
   }, []);
 
   const handleAutoPlay = useCallback(() => {
-    // Scene textures are ready — start overlay fade-out, then begin playback
-    setSceneReady(true);
+    // Scene textures are ready — set target to 100 and let the easing interval
+    // animate smoothly toward it instead of jumping instantly
     targetPctRef.current = 100;
-    setAnimatedPct(100);
     setOverlayFading(true);
-    // Wait for overlay fade-out (1s CSS transition) before starting playback
     setTimeout(() => {
+      setSceneReady(true);
       setOverlayVisible(false);
       setIsPlaying(true);
     }, 1000);
@@ -373,20 +372,49 @@ export default function DisplayScene({ recordId, locale }) {
   }, []);
 
   // Compute target progress from SSE events + texture loading (real values only)
+  // Ranges: 0-60% scraping, 60-95% texture loading, 95-100% autoplay fade
   useEffect(() => {
     if (scrapingProgress) {
       const { phase, sourceIndex, totalSources } = scrapingProgress;
+      const SCRAPE_RANGE = 60; // 0-60%
+
       if (phase === 'started') {
-        // Stream connected — small initial progress
-        targetPctRef.current = Math.max(targetPctRef.current, 3);
+        targetPctRef.current = Math.max(targetPctRef.current, 1);
       } else if (phase === 'scraping') {
-        // Source scraping started — map to proportional range within 3-90%
-        const base = 3 + Math.round((sourceIndex / totalSources) * 87);
+        const base = Math.round((sourceIndex / totalSources) * SCRAPE_RANGE);
         targetPctRef.current = Math.max(targetPctRef.current, base);
+      } else if (phase === 'scraping_detail') {
+        // Sub-step progress within a single source
+        const sourceRange = SCRAPE_RANGE / totalSources;
+        const sourceStart = sourceIndex * sourceRange;
+        const { step, current, total } = scrapingProgress;
+
+        // Map each step to a fraction within the source range
+        const SUB_STEPS = {
+          fetching_page: 0.1,
+          urls_found: 0.15,
+          building_list: 0.95,
+          page_loading: 0.15,
+          waiting_for_content: 0.25,
+          collecting_media: 0.85,
+        };
+
+        let subPct;
+        if (step === 'probing_media' && total > 0) {
+          subPct = 0.15 + (current / total) * 0.75;
+        } else if (step === 'scrolling' && total > 0) {
+          subPct = 0.25 + (current / total) * 0.5;
+        } else {
+          subPct = SUB_STEPS[step] ?? 0;
+        }
+
+        const overallPct = sourceStart + subPct * sourceRange;
+        targetPctRef.current = Math.max(targetPctRef.current, Math.round(overallPct));
       } else if (phase === 'source_done' || phase === 'source_error') {
-        targetPctRef.current = 3 + Math.round(((sourceIndex + 1) / totalSources) * 87);
+        const pct = Math.round(((sourceIndex + 1) / totalSources) * SCRAPE_RANGE);
+        targetPctRef.current = Math.max(targetPctRef.current, pct);
       } else if (phase === 'optimizing') {
-        targetPctRef.current = 90;
+        targetPctRef.current = Math.max(targetPctRef.current, SCRAPE_RANGE);
       }
     }
   }, [scrapingProgress]);
@@ -394,26 +422,27 @@ export default function DisplayScene({ recordId, locale }) {
   useEffect(() => {
     if (loadProgress.total > 0) {
       const realPct = Math.min(100, Math.round((loadProgress.loaded / loadProgress.total) * 100));
-      targetPctRef.current = 90 + Math.round(realPct * 0.1);
+      // Map texture loading to 60-95% range
+      targetPctRef.current = Math.max(targetPctRef.current, 60 + Math.round(realPct * 0.35));
     }
   }, [loadProgress]);
 
   // Smooth easing toward target (no prediction/creep — only animates toward real milestones)
+  // Keeps running even after sceneReady so animatedPct reaches 100% smoothly
   useEffect(() => {
-    if (sceneReady) return;
-
     const interval = setInterval(() => {
       setAnimatedPct((prev) => {
         const target = targetPctRef.current;
         if (prev >= target) return prev;
         const diff = target - prev;
         const step = Math.max(0.3, diff * 0.06);
-        return Math.min(target, prev + step);
+        const next = Math.min(target, prev + step);
+        return next;
       });
     }, 50);
 
     return () => clearInterval(interval);
-  }, [sceneReady]);
+  }, []);
 
   const displayPct = Math.round(animatedPct);
 

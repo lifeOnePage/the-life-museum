@@ -34,9 +34,9 @@ import {
   OPACITY_APPEAR_DIST,
 } from "../lib/constants";
 
-// ─── 동시 텍스처 로딩 제한 ───────────────────────────────────────────────
-// 50개 동시 HTTP 요청 → 4개로 제한하여 네트워크/CPU 부하 분산
-const MAX_CONCURRENT_LOADS = 30;
+// ─── 동시 로딩 제한 ─────────────────────────────────────────────────────
+const MAX_CONCURRENT_LOADS = 30;       // 이미지 + 비디오 포스터 (Tier 1)
+const MAX_CONCURRENT_VIDEO_LOADS = 2;  // 비디오 엘리먼트 생성 (Tier 2)
 
 export default function Scene({
   planes,
@@ -45,9 +45,12 @@ export default function Scene({
   cameraSpeed,
   textureConfig,
   onAutoPlay,
+  onLoadProgress,
   onTogglePlay,
   onToggleFullscreen,
   onVideoBgmControl,
+  videoPreviewEnabled,
+  videoMaxDuration,
 }) {
   const { camera } = useThree();
   const controlsRef = useRef();
@@ -59,8 +62,9 @@ export default function Scene({
   // Texture cache: { [planeId]: { texture, aspectRatio } }
   const textureMap = useRef(new Map());
 
-  // Shared counter for concurrent texture loads (passed to all WallPlanes)
-  const activeLoadsRef = useRef(0);
+  // Shared counters for concurrent loads (passed to all WallPlanes)
+  const activeLoadsRef = useRef(0);      // images + video posters
+  const activeVideoLoadsRef = useRef(0); // video elements only (Tier 2)
 
   // Video element registry (populated by WallPlane, used for play/pause control)
   const videoElementMap = useRef(new Map());
@@ -159,17 +163,21 @@ export default function Scene({
         videoElement: videoMeta?.videoElement || null,
       });
 
-      // 전체 plane의 30% 이상 또는 최소 3개 로딩 완료 시 자동 재생
+      const loadedCount = textureMap.current.size;
+      const threshold = Math.ceil(planes.length * 0.8);
+
+      // Report progress to parent for loading UI
+      onLoadProgress?.(loadedCount, threshold);
+
+      // 전체 plane의 80% 이상 로딩 완료 시 자동 재생
       if (!autoPlayFiredRef.current && planes.length > 0) {
-        const loadedCount = textureMap.current.size;
-        const threshold = Math.ceil(planes.length * 0.8);
         if (loadedCount >= threshold) {
           autoPlayFiredRef.current = true;
           onAutoPlay?.();
         }
       }
     },
-    [planes.length, onAutoPlay],
+    [planes.length, onAutoPlay, onLoadProgress],
   );
 
   // ─── Video playback control ─────────────────────────────────────────────
@@ -597,6 +605,21 @@ export default function Scene({
       camera.updateProjectionMatrix();
     }
 
+    // Video preview mode: enforce max duration limit
+    if (videoPreviewEnabled && videoMaxDuration > 0) {
+      const vps = videoPlayState.current;
+      if (vps.isPlaying && vps.activePlaneId != null) {
+        const texInfo = textureMap.current.get(vps.activePlaneId);
+        if (texInfo?.videoElement && texInfo.videoElement.currentTime >= videoMaxDuration) {
+          if (vps.endedHandler) {
+            vps.endedHandler();
+          } else {
+            stopVideoPlayback(vps.activePlaneId);
+          }
+        }
+      }
+    }
+
     if (!isPlaying) {
       // Manual movement while paused
       const MANUAL_KEY_SPEED = 200;
@@ -751,9 +774,10 @@ export default function Scene({
       }
 
       // Video trigger: start playback when close enough (auto-focus only)
+      // Only triggers when videoElement is available (Tier 2 loaded); retries each frame otherwise.
       if (!s.videoTriggered && distToClone <= OPACITY_PEAK_DIST) {
         const currentTexInfo = s.targetPlaneId != null ? textureMap.current.get(s.targetPlaneId) : null;
-        if (currentTexInfo?.isVideo) {
+        if (currentTexInfo?.isVideo && currentTexInfo.videoElement) {
           s.videoTriggered = true;
           console.log(`[Scene] Video trigger: mode=${s.focusMode} plane=${s.targetPlaneId} dist=${distToClone.toFixed(1)}`);
           if (s.focusMode === "auto") {
@@ -1003,6 +1027,8 @@ export default function Scene({
               anisotropy={textureConfig.anisotropy}
               mediaType={p.mediaType}
               videoElementMap={videoElementMap}
+              activeVideoLoadsRef={activeVideoLoadsRef}
+              maxConcurrentVideoLoads={MAX_CONCURRENT_VIDEO_LOADS}
             />
           </Suspense>
         );

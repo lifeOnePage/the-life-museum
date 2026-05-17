@@ -2,6 +2,13 @@
 
 import { loadStripe } from "@stripe/stripe-js";
 
+// ── 크레딧 패키지 가격표 ──────────────────────────────
+const PACKAGE_PRICES = {
+  credit_1000: { krw: 10000, usd: 999, label: "1,000 Credits" },
+  credit_3900: { krw: 29000, usd: 2499, label: "3,900 Credits" },
+  credit_9900: { krw: 59000, usd: 4999, label: "9,900 Credits" },
+};
+
 // ── PortOne (국내) ──────────────────────────────────
 const IMP_CODE = "imp22125511";
 const PG = "tosspayments.iamporttest_3";
@@ -27,12 +34,14 @@ function loadIamportScript() {
 }
 
 /**
- * 국내 결제 (PortOne V1 팝업)
- * @returns {Promise<object>} { imp_uid, merchant_uid, ... }
+ * 국내 크레딧 결제 (PortOne V1 팝업)
  */
-export async function requestAlbumPaymentKR({ userId, userName, userEmail, locale = "ko" }) {
+async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale = "ko" }) {
+  const pricing = PACKAGE_PRICES[pkg];
+  if (!pricing) throw new Error(`Invalid package: ${pkg}`);
+
   const IMP = await loadIamportScript();
-  const merchantUid = `album_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+  const merchantUid = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
   return new Promise((resolve, reject) => {
     IMP.request_pay(
@@ -40,11 +49,11 @@ export async function requestAlbumPaymentKR({ userId, userName, userEmail, local
         pg: PG,
         pay_method: "card",
         merchant_uid: merchantUid,
-        name: locale === "ko" ? "앨범 1권 구매" : "Album Purchase (1)",
-        amount: 10000,
+        name: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
+        amount: pricing.krw,
         buyer_name: userName || undefined,
         buyer_email: userEmail || undefined,
-        m_redirect_url: `${window.location.origin}/payment/success`,
+        m_redirect_url: `${window.location.origin}/payment/success?package=${pkg}`,
       },
       (rsp) => {
         if (rsp.success) {
@@ -69,13 +78,13 @@ function getStripe() {
 }
 
 /**
- * 해외 결제 (Stripe Checkout 리다이렉트)
+ * 해외 크레딧 결제 (Stripe Checkout 리다이렉트)
  */
-export async function requestAlbumPaymentStripe({ userId, locale = "en" }) {
+async function requestCreditPurchaseStripe({ package: pkg, userId, locale = "en" }) {
   const res = await fetch("/api/stripe/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ locale, userId }),
+    body: JSON.stringify({ locale, userId, package: pkg }),
   });
 
   const data = await res.json();
@@ -83,7 +92,6 @@ export async function requestAlbumPaymentStripe({ userId, locale = "en" }) {
 
   const stripe = await getStripe();
   if (data.url) {
-    // Stripe Checkout 페이지로 리다이렉트
     window.location.href = data.url;
   }
 }
@@ -93,10 +101,15 @@ export async function requestAlbumPaymentStripe({ userId, locale = "en" }) {
 /**
  * locale에 따라 국내/해외 결제 자동 분기
  */
-export async function requestAlbumPayment({ userId, userName, userEmail, locale = "ko" }) {
+export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, locale = "ko" }) {
   if (locale === "ko") {
-    return requestAlbumPaymentKR({ userId, userName, userEmail, locale });
+    return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale });
   } else {
-    return requestAlbumPaymentStripe({ userId, locale });
+    return requestCreditPurchaseStripe({ package: pkg, userId, locale });
   }
+}
+
+// ── 하위호환: 기존 requestAlbumPayment도 export ──
+export async function requestAlbumPayment({ userId, userName, userEmail, locale = "ko" }) {
+  return requestCreditPurchase({ package: "credit_1000", userId, userName, userEmail, locale });
 }

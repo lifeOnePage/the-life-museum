@@ -37,7 +37,7 @@ export const OPACITY_HOLD_DIST = 30; // 이 거리에서 hold 종료, fade-out �
 // 포커싱 전환 시 즉시 cameraSpeed로 복귀 후 다시 감속
 export const FOCUS_MIN_SPEED_RATIO = 0.2;
 export const VIDEO_FOCUS_MIN_SPEED_RATIO = 0; // 비디오 auto-focus 시 카메라 완전 정지
-export const VIDEO_CAMERA_STOP_DIST = 40; // 비디오 재생 시 카메라가 이 거리에서 완전 정지 (HOLD 구간 내)
+export const VIDEO_CAMERA_STOP_DIST = 50; // 비디오 재생 시 카메라가 이 거리에서 완전 정지 (HOLD 구간 내)
 
 export const AUTO_RESPAWN_OFFSET = 205;
 // auto→auto 전환 시 클론 스폰 거리.

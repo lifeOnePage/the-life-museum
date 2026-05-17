@@ -10,15 +10,15 @@ const BASE_URL =
 const T = {
   ko: {
     verifying: "결제 확인 중...",
-    success: "결제 완료!",
-    successDesc: "앨범 구매가 완료되었습니다.",
+    success: "충전 완료!",
+    successDesc: (c) => `${c.toLocaleString()} 크레딧이 충전되었습니다.`,
     goLibrary: "라이브러리로 이동",
     error: "결제 확인 실패",
   },
   en: {
     verifying: "Verifying payment...",
-    success: "Payment Complete!",
-    successDesc: "Your album purchase is confirmed.",
+    success: "Credits Added!",
+    successDesc: (c) => `${c.toLocaleString()} credits have been added.`,
     goLibrary: "Go to Library",
     error: "Payment verification failed",
   },
@@ -32,69 +32,84 @@ function PaymentSuccessContent() {
 
   const [status, setStatus] = useState("verifying");
   const [errorMsg, setErrorMsg] = useState("");
+  const [addedCredits, setAddedCredits] = useState(0);
 
   useEffect(() => {
-    // Stripe Checkout 결과
+    const pkg = searchParams.get("package") || "credit_1000";
+    // Stripe Checkout result
     const sessionId = searchParams.get("session_id");
-    // PortOne 모바일 리다이렉트 결과
+    // PortOne mobile redirect result
     const impUid = searchParams.get("imp_uid");
     const merchantUid = searchParams.get("merchant_uid");
     const impSuccess = searchParams.get("imp_success");
 
-    if (sessionId) {
-      // Stripe: session_id로 백엔드 검증
-      authedFetch(`${BASE_URL}/payment/confirm`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ stripe_session_id: sessionId }),
-      })
-        .then(async (res) => {
-          if (res.ok) {
-            setStatus("success");
-          } else {
-            const data = await res.json().catch(() => ({}));
+    async function confirmAndPurchase() {
+      try {
+        // Step 1: Confirm payment with gateway (if applicable)
+        if (sessionId) {
+          const confirmRes = await authedFetch(`${BASE_URL}/payment/confirm`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ stripe_session_id: sessionId }),
+          });
+          if (!confirmRes.ok) {
+            const data = await confirmRes.json().catch(() => ({}));
             setStatus("error");
-            setErrorMsg(data.message || data.detail || `Error ${res.status}`);
+            setErrorMsg(data.message || data.detail || `Error ${confirmRes.status}`);
+            return;
           }
-        })
-        .catch((err) => {
+        } else if (impUid && merchantUid) {
+          if (impSuccess === "false") {
+            setStatus("error");
+            setErrorMsg(searchParams.get("error_msg") || "Payment cancelled");
+            return;
+          }
+          const confirmRes = await authedFetch(`${BASE_URL}/payment/confirm`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ imp_uid: impUid, merchant_uid: merchantUid }),
+          });
+          if (!confirmRes.ok) {
+            const data = await confirmRes.json().catch(() => ({}));
+            setStatus("error");
+            setErrorMsg(data.message || data.detail || `Error ${confirmRes.status}`);
+            return;
+          }
+        } else if (!sessionId && !impUid) {
           setStatus("error");
-          setErrorMsg(err.message);
+          setErrorMsg("Missing payment parameters");
+          return;
+        }
+
+        // Step 2: Add credits via backend
+        const creditRes = await authedFetch(`${BASE_URL}/credit/purchase`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ package: pkg }),
         });
-      return;
-    }
 
-    // PortOne
-    if (impSuccess === "false") {
-      setStatus("error");
-      setErrorMsg(searchParams.get("error_msg") || "Payment cancelled");
-      return;
-    }
-
-    if (!impUid || !merchantUid) {
-      setStatus("error");
-      setErrorMsg("Missing payment parameters");
-      return;
-    }
-
-    authedFetch(`${BASE_URL}/payment/confirm`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ imp_uid: impUid, merchant_uid: merchantUid }),
-    })
-      .then(async (res) => {
-        if (res.ok) {
+        if (creditRes.ok) {
+          const data = await creditRes.json();
+          setAddedCredits(data.added || 0);
+          // Update stored user credits
+          try {
+            const stored = JSON.parse(localStorage.getItem("app_user") || "{}");
+            stored.credits = data.credits;
+            localStorage.setItem("app_user", JSON.stringify(stored));
+          } catch {}
           setStatus("success");
         } else {
-          const data = await res.json().catch(() => ({}));
+          const data = await creditRes.json().catch(() => ({}));
           setStatus("error");
-          setErrorMsg(data.message || data.detail || `Error ${res.status}`);
+          setErrorMsg(data.message || data.detail || `Error ${creditRes.status}`);
         }
-      })
-      .catch((err) => {
+      } catch (err) {
         setStatus("error");
         setErrorMsg(err.message);
-      });
+      }
+    }
+
+    confirmAndPurchase();
   }, [searchParams]);
 
   return (
@@ -115,7 +130,9 @@ function PaymentSuccessContent() {
               </svg>
             </div>
             <h2 className="mb-2 text-xl font-semibold text-[#e8d5b7]">{t.success}</h2>
-            <p className="mb-6 text-sm text-[#9b8b7a]">{t.successDesc}</p>
+            <p className="mb-6 text-sm text-[#9b8b7a]">
+              {t.successDesc(addedCredits)}
+            </p>
             <button
               onClick={() => router.push(`/${locale}/library`)}
               className="w-full rounded-lg bg-[#c4b49a] py-3 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7]"

@@ -34,10 +34,37 @@ function PaymentSuccessContent() {
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
+    // Stripe Checkout 결과
+    const sessionId = searchParams.get("session_id");
+    // PortOne 모바일 리다이렉트 결과
     const impUid = searchParams.get("imp_uid");
     const merchantUid = searchParams.get("merchant_uid");
     const impSuccess = searchParams.get("imp_success");
 
+    if (sessionId) {
+      // Stripe: session_id로 백엔드 검증
+      authedFetch(`${BASE_URL}/payment/confirm`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stripe_session_id: sessionId }),
+      })
+        .then(async (res) => {
+          if (res.ok) {
+            setStatus("success");
+          } else {
+            const data = await res.json().catch(() => ({}));
+            setStatus("error");
+            setErrorMsg(data.message || data.detail || `Error ${res.status}`);
+          }
+        })
+        .catch((err) => {
+          setStatus("error");
+          setErrorMsg(err.message);
+        });
+      return;
+    }
+
+    // PortOne
     if (impSuccess === "false") {
       setStatus("error");
       setErrorMsg(searchParams.get("error_msg") || "Payment cancelled");

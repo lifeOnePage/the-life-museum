@@ -320,20 +320,23 @@ export default function ProfileModal({ onClose }) {
                             userEmail: user?.email || "",
                             locale: currentLocale,
                           });
-                          // 결제 성공 → 백엔드 검증
-                          const res = await authedFetch(`${BASE_URL}/payment/confirm`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              imp_uid: rsp.imp_uid,
-                              merchant_uid: rsp.merchant_uid,
-                            }),
-                          });
-                          if (res.ok) {
-                            setPaymentSuccess(true);
-                          } else {
-                            const data = await res.json().catch(() => ({}));
-                            setPaymentError(data.message || data.detail || t.paymentError);
+                          // Stripe는 리다이렉트 → 여기까지 안 옴
+                          // PortOne만 콜백으로 여기 도달
+                          if (rsp?.imp_uid) {
+                            const res = await authedFetch(`${BASE_URL}/payment/confirm`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                imp_uid: rsp.imp_uid,
+                                merchant_uid: rsp.merchant_uid,
+                              }),
+                            });
+                            if (res.ok) {
+                              setPaymentSuccess(true);
+                            } else {
+                              const data = await res.json().catch(() => ({}));
+                              setPaymentError(data.message || data.detail || t.paymentError);
+                            }
                           }
                         } catch (err) {
                           console.error("Payment failed:", err);

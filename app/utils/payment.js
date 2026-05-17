@@ -1,11 +1,13 @@
 "use client";
 
+import { loadStripe } from "@stripe/stripe-js";
+
+// ── PortOne (국내) ──────────────────────────────────
 const IMP_CODE = "imp22125511";
 const PG = "tosspayments.iamporttest_3";
 
 let scriptLoaded = false;
 
-/** iamport 스크립트 로드 */
 function loadIamportScript() {
   return new Promise((resolve, reject) => {
     if (scriptLoaded && window.IMP) {
@@ -25,12 +27,11 @@ function loadIamportScript() {
 }
 
 /**
- * 앨범 단건 결제 요청 (PortOne V1 팝업 방식)
- * @returns {Promise<object>} 결제 성공 시 { imp_uid, merchant_uid, ... }
+ * 국내 결제 (PortOne V1 팝업)
+ * @returns {Promise<object>} { imp_uid, merchant_uid, ... }
  */
-export async function requestAlbumPayment({ userId, userName, userEmail, locale = "ko" }) {
+export async function requestAlbumPaymentKR({ userId, userName, userEmail, locale = "ko" }) {
   const IMP = await loadIamportScript();
-
   const merchantUid = `album_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
   return new Promise((resolve, reject) => {
@@ -43,7 +44,6 @@ export async function requestAlbumPayment({ userId, userName, userEmail, locale 
         amount: 10000,
         buyer_name: userName || undefined,
         buyer_email: userEmail || undefined,
-        // 모바일 결제 완료 후 리다이렉트 URL
         m_redirect_url: `${window.location.origin}/payment/success`,
       },
       (rsp) => {
@@ -55,4 +55,48 @@ export async function requestAlbumPayment({ userId, userName, userEmail, locale 
       },
     );
   });
+}
+
+// ── Stripe (해외) ──────────────────────────────────
+
+let stripePromise = null;
+
+function getStripe() {
+  if (!stripePromise) {
+    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+  }
+  return stripePromise;
+}
+
+/**
+ * 해외 결제 (Stripe Checkout 리다이렉트)
+ */
+export async function requestAlbumPaymentStripe({ userId, locale = "en" }) {
+  const res = await fetch("/api/stripe/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ locale, userId }),
+  });
+
+  const data = await res.json();
+  if (data.error) throw new Error(data.error);
+
+  const stripe = await getStripe();
+  if (data.url) {
+    // Stripe Checkout 페이지로 리다이렉트
+    window.location.href = data.url;
+  }
+}
+
+// ── 통합 함수 (locale 기반 분기) ──────────────────
+
+/**
+ * locale에 따라 국내/해외 결제 자동 분기
+ */
+export async function requestAlbumPayment({ userId, userName, userEmail, locale = "ko" }) {
+  if (locale === "ko") {
+    return requestAlbumPaymentKR({ userId, userName, userEmail, locale });
+  } else {
+    return requestAlbumPaymentStripe({ userId, locale });
+  }
 }

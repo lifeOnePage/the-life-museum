@@ -1,7 +1,11 @@
 // contexts/AuthContext.js
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useCallback, useEffect, useMemo, useState } from "react";
+import { authedFetch } from "@/app/utils/authedFetch";
+
+const BASE_URL =
+  "https://the-life-museum-backend-production.up.railway.app/api/v1";
 
 const AuthCtx = createContext(null);
 
@@ -10,6 +14,21 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const refreshCredits = useCallback(async () => {
+    try {
+      const res = await authedFetch(`${BASE_URL}/credit/balance`);
+      if (res.ok) {
+        const data = await res.json();
+        setUser((prev) => {
+          if (!prev) return prev;
+          const updated = { ...prev, credits: data.credits };
+          localStorage.setItem("app_user", JSON.stringify(updated));
+          return updated;
+        });
+      }
+    } catch {}
+  }, []);
+
   useEffect(() => {
     const t = localStorage.getItem("app_token");
     const u = localStorage.getItem("app_user");
@@ -17,6 +36,11 @@ export function AuthProvider({ children }) {
     if (u) setUser(JSON.parse(u));
     setLoading(false);
   }, []);
+
+  // Fetch latest credits when authenticated
+  useEffect(() => {
+    if (token) refreshCredits();
+  }, [token, refreshCredits]);
 
   // Listen for forced logout from authedFetch
   useEffect(() => {
@@ -47,8 +71,8 @@ export function AuthProvider({ children }) {
   };
 
   const value = useMemo(
-    () => ({ token, user, setUser, signinWithToken, signout, loading }),
-    [token, user, loading],
+    () => ({ token, user, setUser, signinWithToken, signout, loading, refreshCredits }),
+    [token, user, loading, refreshCredits],
   );
 
   return <AuthCtx.Provider value={value}>{children}</AuthCtx.Provider>;

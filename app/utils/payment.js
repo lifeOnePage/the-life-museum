@@ -96,13 +96,13 @@ async function requestCreditPurchaseStripe({ package: pkg, userId, locale = "en"
   }
 }
 
-// ── 통합 함수 (locale 기반 분기) ──────────────────
+// ── 통합 함수 (method 기반 분기) ──────────────────
 
 /**
- * locale에 따라 국내/해외 결제 자동 분기
+ * method ("domestic" | "international") 에 따라 결제 분기
  */
-export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, locale = "ko" }) {
-  if (locale === "ko") {
+export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, locale = "ko", method = "domestic" }) {
+  if (method === "domestic") {
     return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale });
   } else {
     return requestCreditPurchaseStripe({ package: pkg, userId, locale });

@@ -68,10 +68,13 @@ const T = {
     myCredits: "내 크레딧",
     buyCredits: "구매하기",
     purchasing: "결제 진행 중...",
-    paymentMethods: "카드 · 카카오페이 · 네이버페이 · 토스페이",
+    domestic: "국내 결제",
+    international: "해외 결제",
+    domesticDesc: "카드 · 카카오페이 · 네이버페이 · 토스페이",
+    internationalDesc: "Visa · Mastercard · Google Pay · Apple Pay",
     paymentError: "결제 요청 중 오류가 발생했습니다.",
     paymentSuccess: "크레딧이 충전되었습니다!",
-    usageTitle: "사용처",
+    usageTitle: "크레딧 정책",
     usageAlbum: "새 앨범 생성",
     usageAlbumCost: "900C / 회",
     usageEmoji: "일반 이모지",
@@ -95,7 +98,10 @@ const T = {
     myCredits: "My Credits",
     buyCredits: "Purchase",
     purchasing: "Processing payment...",
-    paymentMethods: "Card · Kakao Pay · Naver Pay · Toss Pay",
+    domestic: "Domestic",
+    international: "International",
+    domesticDesc: "Card · Kakao Pay · Naver Pay · Toss Pay",
+    internationalDesc: "Visa · Mastercard · Google Pay · Apple Pay",
     paymentError: "An error occurred while requesting payment.",
     paymentSuccess: "Credits have been added!",
     usageTitle: "Usage",
@@ -211,7 +217,7 @@ export default function ProfileModal({ onClose }) {
     }
   };
 
-  const handlePurchase = async () => {
+  const handlePurchase = async (method) => {
     if (selectedPackage === "free") return;
     setPurchasing(true);
     setPaymentError("");
@@ -222,6 +228,7 @@ export default function ProfileModal({ onClose }) {
         userName: user?.name || "",
         userEmail: user?.email || "",
         locale: currentLocale,
+        method,
       });
       // Stripe redirects — won't reach here
       // PortOne callback reaches here
@@ -252,6 +259,8 @@ export default function ProfileModal({ onClose }) {
   };
 
   const selectedPkg = CREDIT_PACKAGES.find((p) => p.key === selectedPackage);
+  console.log("user", user);
+  console.log("user?.credit", user?.credit);
 
   return (
     <div
@@ -259,7 +268,7 @@ export default function ProfileModal({ onClose }) {
       onClick={onClose}
     >
       <div
-        className="mx-4 w-full max-w-md rounded-2xl bg-[#1e1a14] shadow-xl ring-1 ring-white/10 sm:mx-0"
+        className="mx-4 w-full max-w-lg rounded-2xl bg-[#1e1a14] shadow-xl ring-1 ring-white/10 sm:mx-0"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 모달 헤더 */}
@@ -389,28 +398,29 @@ export default function ProfileModal({ onClose }) {
           {tab === "plan" && (
             <div className="py-2">
               {/* 잔액 표시 */}
-              <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm font-medium text-[#9b8b7a]">
+              <div className="mb-5 flex items-center justify-between">
+                <span className="text-base font-medium text-[#9b8b7a]">
                   {t.myCredits}
                 </span>
-                <span className="text-xl font-bold text-[#e8d5b7]">
+                <span className="text-2xl font-bold text-[#e8d5b7]">
                   {(user?.credits ?? 0).toLocaleString()} C
                 </span>
               </div>
 
               {/* 패키지 선택 그리드 */}
-              <div className="mb-4 grid grid-cols-4 gap-2">
+              <div className="mb-5 grid grid-cols-4 gap-2.5">
                 {CREDIT_PACKAGES.map((pkg) => {
                   const isSelected = selectedPackage === pkg.key;
                   const isFree = pkg.key === "free";
-                  const price = currentLocale === "ko" ? pkg.priceKRW : pkg.priceUSD;
+                  const price =
+                    currentLocale === "ko" ? pkg.priceKRW : pkg.priceUSD;
 
                   return (
                     <button
                       key={pkg.key}
                       onClick={() => !isFree && setSelectedPackage(pkg.key)}
                       disabled={isFree}
-                      className={`relative rounded-lg border p-3 text-center transition ${
+                      className={`relative rounded-lg border p-3.5 text-center transition ${
                         isFree
                           ? "cursor-default border-white/5 bg-white/[0.02] opacity-50"
                           : isSelected
@@ -419,20 +429,18 @@ export default function ProfileModal({ onClose }) {
                       }`}
                     >
                       {pkg.badge && (
-                        <span className="absolute -top-2 -right-1 rounded-full bg-[#c4b49a] px-1.5 py-0.5 text-[10px] font-bold text-[#1a1510]">
+                        <span className="absolute -top-2.5 -right-1 rounded-full bg-[#c4b49a] px-2 py-0.5 text-xs font-bold text-[#1a1510]">
                           {pkg.badge}
                         </span>
                       )}
-                      <div className="text-sm font-semibold text-[#e8d5b7]">
+                      <div className="text-base font-semibold text-[#e8d5b7]">
                         {currentLocale === "ko" ? pkg.labelKo : pkg.labelEn}
                       </div>
-                      <div className="mt-1 text-xs text-[#9b8b7a]">
-                        {isFree
-                          ? t.free
-                          : formatPrice(price, currentLocale)}
+                      <div className="mt-1 text-sm text-[#9b8b7a]">
+                        {isFree ? t.free : formatPrice(price, currentLocale)}
                       </div>
                       {pkg.descKo && !isFree && (
-                        <div className="mt-0.5 text-[10px] text-[#9b8b7a]/70">
+                        <div className="mt-0.5 text-xs text-[#9b8b7a]/70">
                           {currentLocale === "ko" ? pkg.descKo : pkg.descEn}
                         </div>
                       )}
@@ -441,12 +449,12 @@ export default function ProfileModal({ onClose }) {
                 })}
               </div>
 
-              {/* 사용처 안내 */}
-              <div className="mb-4 rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3">
-                <p className="mb-2 text-xs font-medium text-[#9b8b7a]">
+              {/* 크레딧 정책 안내 */}
+              <div className="mb-5 rounded-lg border border-white/5 bg-white/[0.02] px-4 py-3.5">
+                <p className="mb-2.5 text-sm font-medium text-[#9b8b7a]">
                   {t.usageTitle}
                 </p>
-                <div className="space-y-1.5 text-xs">
+                <div className="space-y-2 text-sm">
                   <div className="flex justify-between text-[#e8d5b7]/80">
                     <span>{t.usageAlbum}</span>
                     <span className="text-[#9b8b7a]">{t.usageAlbumCost}</span>
@@ -457,7 +465,9 @@ export default function ProfileModal({ onClose }) {
                   </div>
                   <div className="flex justify-between text-[#e8d5b7]/80">
                     <span>{t.usageLimitedEmoji}</span>
-                    <span className="text-[#9b8b7a]">{t.usageLimitedEmojiCost}</span>
+                    <span className="text-[#9b8b7a]">
+                      {t.usageLimitedEmojiCost}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -466,35 +476,67 @@ export default function ProfileModal({ onClose }) {
               {paymentSuccess ? (
                 <div className="flex flex-col items-center gap-2 py-2">
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
-                    <svg className="h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    <svg
+                      className="h-6 w-6 text-green-400"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
                     </svg>
                   </div>
-                  <p className="text-sm font-medium text-green-400">
+                  <p className="text-base font-medium text-green-400">
                     {t.paymentSuccess}
                   </p>
                 </div>
               ) : (
                 <>
-                  <button
-                    onClick={handlePurchase}
-                    disabled={purchasing || selectedPackage === "free"}
-                    className="w-full rounded-lg bg-[#c4b49a] py-3 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
-                  >
-                    {purchasing
-                      ? t.purchasing
-                      : `${t.buyCredits} — ${selectedPkg ? formatPrice(currentLocale === "ko" ? selectedPkg.priceKRW : selectedPkg.priceUSD, currentLocale) : ""}`}
-                  </button>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      onClick={() => handlePurchase("domestic")}
+                      disabled={purchasing || selectedPackage === "free"}
+                      className="rounded-lg bg-[#c4b49a] py-3.5 text-center transition hover:bg-[#e8d5b7] disabled:opacity-40"
+                    >
+                      <span className="block text-base font-medium text-[#1a1510]">
+                        {purchasing ? t.purchasing : `${t.domestic}`}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-[#1a1510]/60">
+                        {selectedPkg
+                          ? `${formatPrice(selectedPkg.priceKRW, "ko")}`
+                          : ""}
+                      </span>
+                    </button>
+                    <button
+                      onClick={() => handlePurchase("international")}
+                      disabled={purchasing || selectedPackage === "free"}
+                      className="rounded-lg border border-[#c4b49a] py-3.5 text-center transition hover:bg-[#c4b49a]/10 disabled:opacity-40"
+                    >
+                      <span className="block text-base font-medium text-[#e8d5b7]">
+                        {purchasing ? t.purchasing : `${t.international}`}
+                      </span>
+                      <span className="mt-0.5 block text-xs text-[#9b8b7a]">
+                        {selectedPkg
+                          ? `${formatPrice(selectedPkg.priceUSD, "en")}`
+                          : ""}
+                      </span>
+                    </button>
+                  </div>
+
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-center text-xs text-white/20">
+                    <span>{t.domesticDesc}</span>
+                    <span>{t.internationalDesc}</span>
+                  </div>
 
                   {paymentError && (
                     <p className="mt-3 text-center text-sm text-red-400/80">
                       {paymentError}
                     </p>
                   )}
-
-                  <p className="mt-3 text-center text-xs text-white/20">
-                    {t.paymentMethods}
-                  </p>
                 </>
               )}
             </div>

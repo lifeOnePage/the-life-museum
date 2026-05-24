@@ -588,10 +588,6 @@ export default function SharePage({ params }) {
         className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 pt-4 pb-[max(env(safe-area-inset-bottom),10px)] transition-all delay-300 duration-1000 ease-out ${
           ready ? "-translate-y-20 opacity-100" : "translate-y-4 opacity-0"
         }`}
-        // style={{
-        //   background:
-        //     "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
-        // }}
       >
         <div className="flex items-center gap-4">
           <button
@@ -619,7 +615,7 @@ export default function SharePage({ params }) {
               href={externalLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-light tracking-[0.15em] text-white/40 underline underline-offset-4 transition-colors hover:text-white/70"
+              className="bg-black/5 p-1 text-xs font-medium tracking-[0.15em] text-white/40 underline underline-offset-4 backdrop-blur-sm transition-colors hover:text-white/70"
             >
               {externalLinkTitle || t.externalLink}
             </a>

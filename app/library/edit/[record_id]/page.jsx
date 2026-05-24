@@ -68,7 +68,7 @@ const T = {
     lastSaved: "마지막 저장",
     tabFront: "앞면",
     tabBack: "뒷면",
-    tabGallery: "갤러리",
+    tabGallery: "레코드",
     titleLabel: "제목",
     subtitleLabel: "부제목",
     titlePlaceholder: "앨범 제목을 입력하세요",
@@ -133,7 +133,7 @@ const T = {
     lastSaved: "Last saved",
     tabFront: "Front",
     tabBack: "Back",
-    tabGallery: "Gallery",
+    tabGallery: "Record",
     titleLabel: "Title",
     subtitleLabel: "Subtitle",
     titlePlaceholder: "Enter album title",
@@ -522,11 +522,7 @@ const Index = ({ params }) => {
           setBgmUrl(data.bgmUrl || null);
           setBgmId(data.bgmId ? `bgm${data.bgmId}` : null);
 
-          // Initialize photo drive data for CoverImageEditor
-          const images = (data.mediaList ?? []).filter(
-            (m) => m.type === "image",
-          );
-          photoDrive.init(images);
+          // Photo drive now auto-fetches on mount via useEffect
 
           initialState.current = {
             frontCover: coverUrl,
@@ -1504,6 +1500,7 @@ const Index = ({ params }) => {
                                 photoBlobUrls={photoDrive.photoBlobUrls}
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
+                                isLoading={photoDrive.isLoading}
                                 preloadBlobs={photoDrive.preloadBlobs}
                                 locale={locale}
                               />
@@ -1554,6 +1551,7 @@ const Index = ({ params }) => {
                                 photoBlobUrls={photoDrive.photoBlobUrls}
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
+                                isLoading={photoDrive.isLoading}
                                 preloadBlobs={photoDrive.preloadBlobs}
                                 locale={locale}
                               />

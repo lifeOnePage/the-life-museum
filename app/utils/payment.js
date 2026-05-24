@@ -1,7 +1,5 @@
 "use client";
 
-import { loadStripe } from "@stripe/stripe-js";
-
 // ── 크레딧 패키지 가격표 ──────────────────────────────
 const PACKAGE_PRICES = {
   credit_1000: { krw: 10000, usd: 999, label: "1,000 Credits" },
@@ -9,9 +7,9 @@ const PACKAGE_PRICES = {
   credit_9900: { krw: 59000, usd: 4999, label: "9,900 Credits" },
 };
 
-// ── PortOne (국내) ──────────────────────────────────
+// ── PortOne V1 (국내 — 토스페이먼츠) ──────────────────
 const IMP_CODE = "imp22125511";
-const PG = "tosspayments.iamporttest_3";
+const PG_DOMESTIC = "tosspayments.iamporttest_3";
 
 let scriptLoaded = false;
 
@@ -34,7 +32,7 @@ function loadIamportScript() {
 }
 
 /**
- * 국내 크레딧 결제 (PortOne V1 팝업)
+ * 국내 크레딧 결제 (PortOne V1 → 토스페이먼츠)
  */
 async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale = "ko" }) {
   const pricing = PACKAGE_PRICES[pkg];
@@ -46,7 +44,7 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
   return new Promise((resolve, reject) => {
     IMP.request_pay(
       {
-        pg: PG,
+        pg: PG_DOMESTIC,
         pay_method: "card",
         merchant_uid: merchantUid,
         name: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
@@ -66,34 +64,39 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
   });
 }
 
-// ── Stripe (해외) ──────────────────────────────────
-
-let stripePromise = null;
-
-function getStripe() {
-  if (!stripePromise) {
-    stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
-  }
-  return stripePromise;
-}
+// ── PortOne V2 (해외 — PayPal) ──────────────────
+const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
+const PAYPAL_CHANNEL_KEY = "channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044";
 
 /**
- * 해외 크레딧 결제 (Stripe Checkout 리다이렉트)
+ * 해외 크레딧 결제 (PortOne V2 → PayPal)
  */
-async function requestCreditPurchaseStripe({ package: pkg, userId, locale = "en" }) {
-  const res = await fetch("/api/stripe/checkout", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ locale, userId, package: pkg }),
+async function requestCreditPurchasePayPal({ package: pkg, userId, userName, userEmail, locale = "en" }) {
+  const pricing = PACKAGE_PRICES[pkg];
+  if (!pricing) throw new Error(`Invalid package: ${pkg}`);
+
+  const PortOne = await import("@portone/browser-sdk/v2");
+
+  const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+  const response = await PortOne.requestPayment({
+    storeId: PORTONE_V2_STORE_ID,
+    channelKey: PAYPAL_CHANNEL_KEY,
+    paymentId,
+    orderName: `Credit Purchase (${pricing.label})`,
+    totalAmount: pricing.usd,
+    currency: "CURRENCY_USD",
+    payMethod: "PAYPAL",
   });
 
-  const data = await res.json();
-  if (data.error) throw new Error(data.error);
-
-  const stripe = await getStripe();
-  if (data.url) {
-    window.location.href = data.url;
+  if (response.code) {
+    if (response.code === "PAY_PROCESS_CANCELED") {
+      throw new Error("결제를 취소하였습니다.");
+    }
+    throw new Error(response.message || "Payment cancelled.");
   }
+
+  return { paymentId: response.paymentId, imp_uid: null };
 }
 
 // ── 통합 함수 (method 기반 분기) ──────────────────
@@ -105,7 +108,7 @@ export async function requestCreditPurchase({ package: pkg, userId, userName, us
   if (method === "domestic") {
     return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale });
   } else {
-    return requestCreditPurchaseStripe({ package: pkg, userId, locale });
+    return requestCreditPurchasePayPal({ package: pkg, userId, userName, userEmail, locale });
   }
 }
 

@@ -586,7 +586,7 @@ export default function SharePage({ params }) {
       {/* 버튼 오버레이 — 하단 */}
       <div
         className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 pt-4 pb-[max(env(safe-area-inset-bottom),10px)] transition-all delay-300 duration-1000 ease-out ${
-          ready ? "-translate-y-30 opacity-100" : "translate-y-4 opacity-0"
+          ready ? "-translate-y-20 opacity-100" : "translate-y-4 opacity-0"
         }`}
         // style={{
         //   background:
@@ -596,13 +596,13 @@ export default function SharePage({ params }) {
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsInfoOpen(true)}
-            className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+            className="rounded-full border border-white/15 bg-black/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
           >
             <Info className="h-4 w-4" />
           </button>
           <button
             onClick={handleAlbumClick}
-            className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+            className="rounded-full border border-white/15 bg-black/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
           >
             <Icon360 className="h-4 w-4" />
           </button>
@@ -610,7 +610,7 @@ export default function SharePage({ params }) {
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={() => router.push(`/walk/${id}`)}
-            className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
+            className="rounded-full border border-white/25 bg-black/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
           >
             {t.gallery}
           </button>

@@ -36,29 +36,15 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     const pkg = searchParams.get("package") || "credit_1000";
-    // Stripe Checkout result
-    const sessionId = searchParams.get("session_id");
-    // PortOne mobile redirect result
+    // PortOne 모바일 리다이렉트 결과
     const impUid = searchParams.get("imp_uid");
     const merchantUid = searchParams.get("merchant_uid");
     const impSuccess = searchParams.get("imp_success");
 
     async function confirmAndPurchase() {
       try {
-        // Step 1: Confirm payment with gateway (if applicable)
-        if (sessionId) {
-          const confirmRes = await authedFetch(`${BASE_URL}/payment/confirm`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ stripe_session_id: sessionId }),
-          });
-          if (!confirmRes.ok) {
-            const data = await confirmRes.json().catch(() => ({}));
-            setStatus("error");
-            setErrorMsg(data.message || data.detail || `Error ${confirmRes.status}`);
-            return;
-          }
-        } else if (impUid && merchantUid) {
+        // Step 1: PortOne 결제 검증
+        if (impUid && merchantUid) {
           if (impSuccess === "false") {
             setStatus("error");
             setErrorMsg(searchParams.get("error_msg") || "Payment cancelled");
@@ -75,7 +61,7 @@ function PaymentSuccessContent() {
             setErrorMsg(data.message || data.detail || `Error ${confirmRes.status}`);
             return;
           }
-        } else if (!sessionId && !impUid) {
+        } else if (!impUid) {
           setStatus("error");
           setErrorMsg("Missing payment parameters");
           return;

@@ -102,6 +102,7 @@ export default function CoverImageGenerator({
   photoBlobUrls,
   onRefreshPhotos,
   isRefreshing,
+  isLoading,
   preloadBlobs,
   locale,
 }) {
@@ -274,7 +275,16 @@ export default function CoverImageGenerator({
             </p>
           </div>
 
-          {photoMedia.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-3 gap-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="aspect-square animate-pulse rounded-md bg-[#3a3028]"
+                />
+              ))}
+            </div>
+          ) : photoMedia.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center">
               <ImagePlus className="mb-2 h-8 w-8 text-[#9b8b7a]/40" />
               <p className="text-sm text-[#9b8b7a]">

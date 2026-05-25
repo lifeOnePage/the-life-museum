@@ -68,10 +68,10 @@ const T = {
     myCredits: "내 크레딧",
     buyCredits: "구매하기",
     purchasing: "결제 진행 중...",
-    domestic: "국내 결제",
-    international: "해외 결제",
+    domestic: "간편결제 및 카드",
+    international: "페이팔",
     domesticDesc: "카드 · 카카오페이 · 네이버페이 · 토스페이",
-    internationalDesc: "Visa · Mastercard · Google Pay · Apple Pay",
+    internationalDesc: "PayPal",
     paymentError: "결제 요청 중 오류가 발생했습니다.",
     paymentSuccess: "크레딧이 충전되었습니다!",
     usageTitle: "크레딧 정책",
@@ -83,6 +83,7 @@ const T = {
     usageLimitedEmojiCost: "200C / 개",
     selectPackage: "패키지를 선택하세요",
     free: "무료",
+    paymentErrorMsg: "결제 요청 중 오류가 발생했습니다.",
   },
   en: {
     profile: "Profile",
@@ -98,10 +99,10 @@ const T = {
     myCredits: "My Credits",
     buyCredits: "Purchase",
     purchasing: "Processing payment...",
-    domestic: "Domestic",
-    international: "International",
+    domestic: "Easy Pay & Card",
+    international: "PayPal",
     domesticDesc: "Card · Kakao Pay · Naver Pay · Toss Pay",
-    internationalDesc: "Visa · Mastercard · Google Pay · Apple Pay",
+    internationalDesc: "PayPal",
     paymentError: "An error occurred while requesting payment.",
     paymentSuccess: "Credits have been added!",
     usageTitle: "Usage",
@@ -113,6 +114,7 @@ const T = {
     usageLimitedEmojiCost: "200C / each",
     selectPackage: "Select a package",
     free: "Free",
+    paymentErrorMsg: "An error occurred while requesting payment.",
   },
 };
 
@@ -137,6 +139,7 @@ function formatPrice(price, locale) {
 
 export default function ProfileModal({ onClose }) {
   const [currentLocale, setCurrentLocale] = useState("ko");
+  const [currency, setCurrency] = useState("KRW");
 
   const t = T[currentLocale] || T.ko;
 
@@ -167,7 +170,9 @@ export default function ProfileModal({ onClose }) {
   const [selectedPackage, setSelectedPackage] = useState("credit_1000");
 
   useEffect(() => {
-    setCurrentLocale(getStoredLocale());
+    const locale = getStoredLocale();
+    setCurrentLocale(locale);
+    setCurrency(locale === "en" ? "USD" : "KRW");
   }, []);
 
   const handleLocaleChange = (locale) => {
@@ -230,10 +235,8 @@ export default function ProfileModal({ onClose }) {
         locale: currentLocale,
         method,
       });
-      // Stripe redirects — won't reach here
-      // PortOne callback reaches here
-      if (rsp?.imp_uid) {
-        // After payment confirmed, add credits via backend
+      // 결제 성공 → 백엔드에 크레딧 충전 요청
+      if (rsp?.imp_uid || rsp?.paymentId) {
         const res = await authedFetch(`${BASE_URL}/credit/purchase`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -397,7 +400,7 @@ export default function ProfileModal({ onClose }) {
 
           {tab === "plan" && (
             <div className="py-2">
-              {/* 잔액 표시 */}
+              {/* 잔액 + 통화 토글 */}
               <div className="mb-5 flex items-center justify-between">
                 <span className="text-base font-medium text-[#9b8b7a]">
                   {t.myCredits}
@@ -407,13 +410,39 @@ export default function ProfileModal({ onClose }) {
                 </span>
               </div>
 
+              {/* 통화 토글 */}
+              <div className="mb-5 flex items-center justify-center">
+                <div className="flex items-center rounded-full border border-white/10 text-sm">
+                  <button
+                    onClick={() => setCurrency("KRW")}
+                    className={`rounded-l-full px-4 py-1.5 transition ${
+                      currency === "KRW"
+                        ? "bg-[#c4b49a]/20 text-[#e8d5b7]"
+                        : "text-white/30 hover:text-white/50"
+                    }`}
+                  >
+                    ₩ {t.domestic}
+                  </button>
+                  <button
+                    onClick={() => setCurrency("USD")}
+                    className={`rounded-r-full px-4 py-1.5 transition ${
+                      currency === "USD"
+                        ? "bg-[#c4b49a]/20 text-[#e8d5b7]"
+                        : "text-white/30 hover:text-white/50"
+                    }`}
+                  >
+                    $ {t.international}
+                  </button>
+                </div>
+              </div>
+
               {/* 패키지 선택 그리드 */}
               <div className="mb-5 grid grid-cols-4 gap-2.5">
                 {CREDIT_PACKAGES.map((pkg) => {
                   const isSelected = selectedPackage === pkg.key;
                   const isFree = pkg.key === "free";
                   const price =
-                    currentLocale === "ko" ? pkg.priceKRW : pkg.priceUSD;
+                    currency === "KRW" ? pkg.priceKRW : pkg.priceUSD;
 
                   return (
                     <button
@@ -437,7 +466,12 @@ export default function ProfileModal({ onClose }) {
                         {currentLocale === "ko" ? pkg.labelKo : pkg.labelEn}
                       </div>
                       <div className="mt-1 text-sm text-[#9b8b7a]">
-                        {isFree ? t.free : formatPrice(price, currentLocale)}
+                        {isFree
+                          ? t.free
+                          : formatPrice(
+                              price,
+                              currency === "KRW" ? "ko" : "en",
+                            )}
                       </div>
                       {pkg.descKo && !isFree && (
                         <div className="mt-0.5 text-xs text-[#9b8b7a]/70">
@@ -496,45 +530,49 @@ export default function ProfileModal({ onClose }) {
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => handlePurchase("domestic")}
-                      disabled={purchasing || selectedPackage === "free"}
-                      className="rounded-lg bg-[#c4b49a] py-3.5 text-center transition hover:bg-[#e8d5b7] disabled:opacity-40"
-                    >
-                      <span className="block text-base font-medium text-[#1a1510]">
-                        {purchasing ? t.purchasing : `${t.domestic}`}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-[#1a1510]/60">
-                        {selectedPkg
-                          ? `${formatPrice(selectedPkg.priceKRW, "ko")}`
-                          : ""}
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => handlePurchase("international")}
-                      disabled={purchasing || selectedPackage === "free"}
-                      className="rounded-lg border border-[#c4b49a] py-3.5 text-center transition hover:bg-[#c4b49a]/10 disabled:opacity-40"
-                    >
-                      <span className="block text-base font-medium text-[#e8d5b7]">
-                        {purchasing ? t.purchasing : `${t.international}`}
-                      </span>
-                      <span className="mt-0.5 block text-xs text-[#9b8b7a]">
-                        {selectedPkg
-                          ? `${formatPrice(selectedPkg.priceUSD, "en")}`
-                          : ""}
-                      </span>
-                    </button>
-                  </div>
-
-                  <div className="mt-3 grid grid-cols-2 gap-3 text-center text-xs text-white/20">
-                    <span>{t.domesticDesc}</span>
-                    <span>{t.internationalDesc}</span>
-                  </div>
+                  <button
+                    onClick={() =>
+                      handlePurchase(
+                        currency === "KRW" ? "domestic" : "international",
+                      )
+                    }
+                    disabled={purchasing || selectedPackage === "free"}
+                    className="flex w-full flex-col items-center gap-2 rounded-lg bg-[#c4b49a] py-3.5 transition hover:bg-[#e8d5b7] disabled:opacity-40"
+                  >
+                    <span className="text-base font-medium text-[#1a1510]">
+                      {purchasing
+                        ? t.purchasing
+                        : currency === "KRW"
+                          ? t.domestic
+                          : t.international}
+                    </span>
+                    {/* 로고 */}
+                    <div className="flex items-center gap-2">
+                      {currency === "KRW" ? (
+                        <>
+                          <img src="/logo/Toss_App_Icon.png" alt="Toss Pay" className="h-5 rounded-sm object-contain" />
+                          <img src="/logo/bade_kakaopay.png" alt="Kakao Pay" className="h-5 rounded-sm object-contain" />
+                          <img src="/logo/badge_npay.svg" alt="Naver Pay" className="h-5 rounded-sm object-contain" />
+                        </>
+                      ) : (
+                        <img src="/logo/PayPal-Monogram-FullColor-RGB.png" alt="PayPal" className="h-5 rounded-sm object-contain" />
+                      )}
+                    </div>
+                    <span className="text-xs text-[#1a1510]/60">
+                      {selectedPkg
+                        ? formatPrice(
+                            currency === "KRW"
+                              ? selectedPkg.priceKRW
+                              : selectedPkg.priceUSD,
+                            currency === "KRW" ? "ko" : "en",
+                          )
+                        : ""}
+                    </span>
+                  </button>
 
                   {paymentError && (
                     <p className="mt-3 text-center text-sm text-red-400/80">
-                      {paymentError}
+                      {t.paymentErrorMsg}
                     </p>
                   )}
                 </>

@@ -89,7 +89,9 @@ export default function SharePage({ params }) {
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [infoFontScale, setInfoFontScale] = useState(1);
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
-  useEffect(() => { if (!isInfoOpen) setInfoFontScale(1); }, [isInfoOpen]);
+  useEffect(() => {
+    if (!isInfoOpen) setInfoFontScale(1);
+  }, [isInfoOpen]);
   const albumRef = useRef(null);
   const infoModalRef = useRef(null);
 
@@ -98,7 +100,9 @@ export default function SharePage({ params }) {
     if (!isInfoOpen) return;
     const el = infoModalRef.current;
     if (!el) return;
-    const block = (e) => { if (e.touches.length >= 2) e.preventDefault(); };
+    const block = (e) => {
+      if (e.touches.length >= 2) e.preventDefault();
+    };
     el.addEventListener("touchstart", block, { passive: false });
     el.addEventListener("touchmove", block, { passive: false });
     return () => {
@@ -564,7 +568,7 @@ export default function SharePage({ params }) {
 
       {/* 데스크탑 마우스 휠 힌트 — 앨범 오른쪽 중앙 */}
       <div
-        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] hidden md:flex -translate-y-[50%] flex-col transition-opacity duration-1000 ${
+        className={`pointer-events-none absolute top-1/2 right-[17%] z-[1000] hidden -translate-y-[50%] flex-col transition-opacity duration-1000 md:flex ${
           showDesktopHint ? "opacity-100" : "opacity-0"
         }`}
       >
@@ -581,24 +585,20 @@ export default function SharePage({ params }) {
 
       {/* 버튼 오버레이 — 하단 */}
       <div
-        className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-3 pt-6 pb-[max(env(safe-area-inset-bottom),16px)] transition-all delay-300 duration-1000 ease-out ${
-          ready ? "translate-y-0 opacity-100" : "translate-y-4 opacity-0"
+        className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 pt-4 pb-[max(env(safe-area-inset-bottom),10px)] transition-all delay-300 duration-1000 ease-out ${
+          ready ? "-translate-y-20 opacity-100" : "translate-y-4 opacity-0"
         }`}
-        style={{
-          background:
-            "linear-gradient(to top, rgba(0,0,0,0.55) 0%, transparent 100%)",
-        }}
       >
         <div className="flex items-center gap-4">
           <button
             onClick={() => setIsInfoOpen(true)}
-            className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+            className="rounded-full border border-white/15 bg-black/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
           >
             <Info className="h-4 w-4" />
           </button>
           <button
             onClick={handleAlbumClick}
-            className="rounded-full border border-white/15 bg-white/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
+            className="rounded-full border border-white/15 bg-black/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
           >
             <Icon360 className="h-4 w-4" />
           </button>
@@ -606,7 +606,7 @@ export default function SharePage({ params }) {
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={() => router.push(`/walk/${id}`)}
-            className="rounded-full border border-white/25 bg-white/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
+            className="rounded-full border border-white/25 bg-black/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
           >
             {t.gallery}
           </button>
@@ -615,7 +615,7 @@ export default function SharePage({ params }) {
               href={externalLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-light tracking-[0.15em] text-white/40 underline underline-offset-4 transition-colors hover:text-white/70"
+              className="bg-black/5 p-1 text-xs font-medium tracking-[0.15em] text-white/40 underline underline-offset-4 backdrop-blur-sm transition-colors hover:text-white/70"
             >
               {externalLinkTitle || t.externalLink}
             </a>
@@ -642,95 +642,116 @@ export default function SharePage({ params }) {
               className="overflow-y-auto px-6 pt-10 pb-6"
               style={
                 !isMobile
-                  ? { maxHeight: `${Math.floor(window.innerHeight * 0.9 / infoFontScale)}px` }
+                  ? {
+                      maxHeight: `${Math.floor((window.innerHeight * 0.9) / infoFontScale)}px`,
+                    }
                   : { maxHeight: "70dvh" }
               }
             >
-              {/* 모바일 전용 콘텐츠 zoom 래퍼 */}
-              <div style={isMobile ? { zoom: infoFontScale } : {}}>
-              {/* Title */}
-              {albumTitle && (
-                <div className="mb-5">
-                  <p className="mb-2 text-[10px] tracking-[0.25em] text-white/30 uppercase">
-                    Title
-                  </p>
-                  <p className="text-2xl leading-tight font-light tracking-wide text-white">
-                    {albumTitle}
-                  </p>
-                  {subtitle && (
-                    <p className="mt-2 text-[15px] leading-snug tracking-wide text-white/50">
-                      {subtitle}
+              {/* 모바일 전용 콘텐츠 scale 래퍼 (Safari zoom 호환) */}
+              <div
+                style={
+                  isMobile
+                    ? {
+                        transform: `scale(${infoFontScale})`,
+                        transformOrigin: "top left",
+                        width: `${100 / infoFontScale}%`,
+                      }
+                    : {}
+                }
+              >
+                {/* Title */}
+                {albumTitle && (
+                  <div className="mb-5">
+                    <p className="mb-2 text-[10px] tracking-[0.25em] text-white/30 uppercase">
+                      Title
                     </p>
-                  )}
-                </div>
-              )}
-
-              {/* Timeline */}
-              {timeline.length > 0 && (
-                <div className="mb-5">
-                  <div className="mb-3 border-t border-white/10" />
-                  <p className="mb-3 text-[10px] tracking-[0.25em] text-white/30 uppercase">
-                    Timeline
-                  </p>
-                  <div className="space-y-2">
-                    {timeline.map((t, i) => (
-                      <div key={i} className="flex gap-4">
-                        <span className="w-12 shrink-0 text-[15px] font-medium text-white/40">
-                          {t.year}
-                        </span>
-                        <span className="text-[15px] leading-snug text-white/70">
-                          {t.event}
-                        </span>
-                      </div>
-                    ))}
+                    <p className="text-2xl leading-tight font-light tracking-wide text-white">
+                      {albumTitle}
+                    </p>
+                    {subtitle && (
+                      <p className="mt-2 text-[15px] leading-snug tracking-wide text-white/50">
+                        {subtitle}
+                      </p>
+                    )}
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Story */}
-              {bio && (
-                <div>
-                  <div className="mb-3 border-t border-white/10" />
-                  <p className="mb-3 text-[10px] tracking-[0.25em] text-white/30 uppercase">
-                    Story
-                  </p>
-                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-white/70">
-                    {bio}
-                  </p>
-                </div>
-              )}
+                {/* Timeline */}
+                {timeline.length > 0 && (
+                  <div className="mb-5">
+                    <div className="mb-3 border-t border-white/10" />
+                    <p className="mb-3 text-[10px] tracking-[0.25em] text-white/30 uppercase">
+                      Timeline
+                    </p>
+                    <div className="space-y-2">
+                      {timeline.map((t, i) => (
+                        <div
+                          key={i}
+                          className="flex flex-col gap-0.5 sm:flex-row sm:gap-4"
+                        >
+                          <span className="shrink-0 text-[13px] font-medium text-white/40 sm:w-12 sm:text-[15px]">
+                            {t.year}
+                          </span>
+                          <span className="text-[15px] leading-snug text-white/70">
+                            {t.event}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-              {/* 비로그인 회원가입 유도 */}
-              {!isLoggedIn && (
-                <div className="mt-5 border-t border-white/10 pt-5 text-center">
-                  <p className="mb-3 text-[14px] text-white/40">
-                    {t.signupPrompt}
-                  </p>
-                  <button
-                    onClick={() => {
-                      setIsInfoOpen(false);
-                      router.push("/login");
-                    }}
-                    className="text-[15px] font-medium tracking-wide text-white/70 underline underline-offset-4 transition-colors hover:text-white"
-                  >
-                    {t.signupCta}
-                  </button>
-                </div>
-              )}
-              </div>{/* /모바일 zoom 래퍼 */}
-            </div>{/* scroll container */}
+                {/* Story */}
+                {bio && (
+                  <div>
+                    <div className="mb-3 border-t border-white/10" />
+                    <p className="mb-3 text-[10px] tracking-[0.25em] text-white/30 uppercase">
+                      Story
+                    </p>
+                    <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-white/70">
+                      {bio}
+                    </p>
+                  </div>
+                )}
+
+                {/* 비로그인 회원가입 유도 */}
+                {!isLoggedIn && (
+                  <div className="mt-5 border-t border-white/10 pt-5 text-center">
+                    <p className="mb-3 text-[14px] text-white/40">
+                      {t.signupPrompt}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setIsInfoOpen(false);
+                        router.push("/login");
+                      }}
+                      className="text-[15px] font-medium tracking-wide text-white/70 underline underline-offset-4 transition-colors hover:text-white"
+                    >
+                      {t.signupCta}
+                    </button>
+                  </div>
+                )}
+              </div>
+              {/* /모바일 zoom 래퍼 */}
+            </div>
+            {/* scroll container */}
 
             {/* 상단 버튼 바 */}
             <div className="absolute top-3 right-3 flex items-center gap-1">
               <button
-                onClick={() => setInfoFontScale((s) => Math.max(0.7, +(s - 0.1).toFixed(1)))}
-                className="flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:text-white/70 text-[13px] font-light"
+                onClick={() =>
+                  setInfoFontScale((s) => Math.max(0.7, +(s - 0.1).toFixed(1)))
+                }
+                className="flex h-6 w-6 items-center justify-center rounded text-[13px] font-light text-white/30 transition-colors hover:text-white/70"
               >
                 A-
               </button>
               <button
-                onClick={() => setInfoFontScale((s) => Math.min(1.7, +(s + 0.1).toFixed(1)))}
-                className="flex h-6 w-6 items-center justify-center rounded text-white/30 transition-colors hover:text-white/70 text-[15px] font-light"
+                onClick={() =>
+                  setInfoFontScale((s) => Math.min(1.7, +(s + 0.1).toFixed(1)))
+                }
+                className="flex h-6 w-6 items-center justify-center rounded text-[15px] font-light text-white/30 transition-colors hover:text-white/70"
               >
                 A+
               </button>

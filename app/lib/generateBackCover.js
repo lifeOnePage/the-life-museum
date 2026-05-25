@@ -170,7 +170,7 @@ function drawKitschLayout(
     ctx.fillRect(0, 0, size, size);
   }
 
-  const margin = 70;
+  const margin = 100;
   const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
   const rightPhotoW = size * 0.28;
   const contentRight = size - margin - rightPhotoW - 30; // left content area limit
@@ -407,7 +407,7 @@ function drawIllustrationLayout(
     ctx.fillRect(0, 0, size, size);
   }
 
-  const margin = 80;
+  const margin = 95;
   const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
   const yangjinFont = yangjinFontLoaded ? '"yangjin"' : bookkFont;
   // Title — top center, white bold with drop shadow
@@ -497,7 +497,7 @@ function drawIllustrationLayout(
         ctx.fillText(item.year, x, tlY - 25);
 
         // Event below
-        ctx.font = `600 19px ${bookkFont}`;
+        ctx.font = `600 17px ${bookkFont}`;
         ctx.textAlign = "center";
         const itemSpacing =
           rowMaxItems > 1 ? tlWidth / (rowMaxItems - 1) : tlWidth;
@@ -600,7 +600,7 @@ function drawMinimalistLayout(
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, size, size);
 
-  const margin = 70;
+  const margin = 100;
   const bookkFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
   let cursorY = margin;
 
@@ -737,13 +737,13 @@ function drawMinimalistLayout(
         ctx.stroke();
 
         // Year above
-        ctx.font = `bold 19px ${escoredreamFont}`;
+        ctx.font = `bold 16px ${escoredreamFont}`;
         ctx.fillStyle = theme.accent;
         ctx.textAlign = "center";
         ctx.fillText(item.year, x, tlY - 16);
 
         // Event below
-        ctx.font = `600 17px ${escoredreamFont}`;
+        ctx.font = `600 15px ${escoredreamFont}`;
         ctx.letterSpacing = "-0.7px";
         ctx.fillStyle = theme.text;
         const itemSpacing =

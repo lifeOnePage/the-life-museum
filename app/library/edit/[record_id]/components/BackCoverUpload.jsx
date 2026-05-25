@@ -49,6 +49,7 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
     photoBlobUrls,
     onRefreshPhotos,
     isRefreshing,
+    isLoading,
     preloadBlobs,
     locale,
   },
@@ -211,7 +212,16 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
                   <RefreshCw className={`h-3.5 w-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
                 </button>
               </div>
-              {photoMedia.length === 0 ? (
+              {isLoading ? (
+                <div className="grid grid-cols-3 gap-2">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="aspect-square animate-pulse rounded-md bg-[#3a3028]"
+                    />
+                  ))}
+                </div>
+              ) : photoMedia.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-center">
                   <ImagePlus className="mb-2 h-7 w-7 text-[#9b8b7a]/40" />
                   <p className="text-xs text-[#9b8b7a]">{t.noPhotos}</p>

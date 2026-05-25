@@ -146,8 +146,8 @@ export default function TVMediaViewport({
       });
     }
 
-    // Next item layer (only during transition)
-    if (nextItem != null && nextIndex != null && transitioning) {
+    // Next item layer (mounted before transition starts for fade-in)
+    if (nextItem != null && nextIndex != null) {
       result.push({
         key: nextIndex,
         item: nextItem,

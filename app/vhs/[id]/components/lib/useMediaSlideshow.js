@@ -40,25 +40,34 @@ export function useMediaSlideshow({
     }
   }, []);
 
+  const rafRef = useRef(null);
+
   const advance = useCallback(() => {
     if (count <= 1) return;
-    if (transitioning) return;
+    if (transitioning || nextIndex !== null) return;
 
     const next = (currentIndex + 1) % count;
+    // Phase 1: mount the next layer at opacity 0
     setNextIndex(next);
-    setTransitioning(true);
 
-    clearTransitionTimer();
-    transitionTimerRef.current = setTimeout(() => {
-      setCurrentIndex(next);
-      setNextIndex(null);
-      setTransitioning(false);
-    }, CROSSFADE_DURATION_MS);
-  }, [count, currentIndex, transitioning, clearTransitionTimer]);
+    // Phase 2: after paint, start the crossfade transition (0 → 1)
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = requestAnimationFrame(() => {
+        setTransitioning(true);
+
+        clearTransitionTimer();
+        transitionTimerRef.current = setTimeout(() => {
+          setCurrentIndex(next);
+          setNextIndex(null);
+          setTransitioning(false);
+        }, CROSSFADE_DURATION_MS);
+      });
+    });
+  }, [count, currentIndex, transitioning, nextIndex, clearTransitionTimer]);
 
   // Auto-advance timer for images and short video mode
   useEffect(() => {
-    if (!active || !isPlaying || count === 0 || transitioning) return;
+    if (!active || !isPlaying || count === 0 || transitioning || nextIndex !== null) return;
 
     const item = mediaList[currentIndex];
     if (!item) return;
@@ -82,6 +91,7 @@ export function useMediaSlideshow({
     active,
     isPlaying,
     currentIndex,
+    nextIndex,
     transitioning,
     count,
     mediaList,
@@ -96,6 +106,7 @@ export function useMediaSlideshow({
     return () => {
       clearTimer();
       clearTransitionTimer();
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
   }, [clearTimer, clearTransitionTimer]);
 

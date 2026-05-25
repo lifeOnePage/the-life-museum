@@ -605,7 +605,12 @@ export default function SharePage({ params }) {
         </div>
         <div className="flex flex-col items-center gap-3">
           <button
-            onClick={() => router.push(`/walk/${id}`)}
+            onClick={() => {
+              const route = recordData?.exhibitionType === "memorial_tape"
+                ? `/vhs/${id}`
+                : `/walk/${id}`;
+              router.push(route);
+            }}
             className="rounded-full border border-white/25 bg-black/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
           >
             {t.gallery}

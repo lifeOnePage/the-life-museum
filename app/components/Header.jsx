@@ -19,7 +19,7 @@ export default function Header() {
 
   return (
     <>
-      <div className="pointer-events-auto z-1000 box-border h-18 w-full bg-transparent p-3 text-white">
+      <div className="pointer-events-auto z-1000 box-border w-full bg-transparent p-3 pt-[max(env(safe-area-inset-top),12px)] text-white">
         <div className="flex h-full w-full items-center border-b border-white px-3 py-1 text-white">
           <div className="w-full flex-1">The Life Gallery</div>
           <div className="flex w-full flex-1">

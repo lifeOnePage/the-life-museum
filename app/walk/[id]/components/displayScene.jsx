@@ -12,6 +12,7 @@ import {
 } from "react";
 import * as THREE from "three";
 import { X, Maximize2, Minimize2, Gauge, Video } from "lucide-react";
+import { SlLogout } from "react-icons/sl";
 import Scene from "./scene/Scene";
 import { SEED, CAMERA_SPEED, getTextureConfig } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
@@ -119,7 +120,10 @@ function PlaybackControls({
   useEffect(() => {
     if (!showVideoOptions) return;
     const handleClickOutside = (e) => {
-      if (videoOptionsRef.current && !videoOptionsRef.current.contains(e.target)) {
+      if (
+        videoOptionsRef.current &&
+        !videoOptionsRef.current.contains(e.target)
+      ) {
         setShowVideoOptions(false);
       }
     };
@@ -133,7 +137,8 @@ function PlaybackControls({
           onClick={onExit}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
         >
-          <X className="h-4 w-4 text-white" />
+          {/* <X className="h-4 w-4 text-white" /> */}
+          <SlLogout className="h-4 w-4 text-white" />
         </button>
       </Tooltip>
 
@@ -193,9 +198,9 @@ function PlaybackControls({
           </button>
         </Tooltip>
         {showVideoOptions && (
-          <div className="absolute top-full left-1/2 mt-2 -translate-x-1/2 rounded-lg bg-black/80 p-3 backdrop-blur-sm min-w-[200px]">
-            <div className="flex items-center justify-between gap-3 mb-2">
-              <span className="text-xs text-white/80 whitespace-nowrap">
+          <div className="absolute top-full left-1/2 mt-2 min-w-[200px] -translate-x-1/2 rounded-lg bg-black/80 p-3 backdrop-blur-sm">
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <span className="text-xs whitespace-nowrap text-white/80">
                 {t.videoPreview}
               </span>
               <button
@@ -207,8 +212,10 @@ function PlaybackControls({
                 }`}
               >
                 <span
-                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform mt-0.5 ${
-                    videoPreviewEnabled ? "translate-x-4 ml-0.5" : "translate-x-0 ml-0.5"
+                  className={`pointer-events-none mt-0.5 inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                    videoPreviewEnabled
+                      ? "ml-0.5 translate-x-4"
+                      : "ml-0.5 translate-x-0"
                   }`}
                 />
               </button>
@@ -216,8 +223,10 @@ function PlaybackControls({
             {videoPreviewEnabled && (
               <select
                 value={videoMaxDuration}
-                onChange={(e) => onVideoMaxDurationChange(Number(e.target.value))}
-                className="w-full rounded bg-white/10 px-2 py-1.5 text-xs text-white outline-none cursor-pointer hover:bg-white/20 transition-colors [&>option]:bg-neutral-900 [&>option]:text-white"
+                onChange={(e) =>
+                  onVideoMaxDurationChange(Number(e.target.value))
+                }
+                className="w-full cursor-pointer rounded bg-white/10 px-2 py-1.5 text-xs text-white transition-colors outline-none hover:bg-white/20 [&>option]:bg-neutral-900 [&>option]:text-white"
               >
                 {VIDEO_DURATION_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -302,7 +311,12 @@ export default function DisplayScene({ recordId, locale }) {
     setScrapingProgress(event);
   }, []);
 
-  const { data: recordData, loading, error, mediaLoading } = useRecordData(recordId, {
+  const {
+    data: recordData,
+    loading,
+    error,
+    mediaLoading,
+  } = useRecordData(recordId, {
     onMediaProgress: handleMediaProgress,
   });
 
@@ -461,12 +475,12 @@ export default function DisplayScene({ recordId, locale }) {
       const { phase, sourceIndex, totalSources } = scrapingProgress;
       const SCRAPE_RANGE = 60; // 0-60%
 
-      if (phase === 'started') {
+      if (phase === "started") {
         targetPctRef.current = Math.max(targetPctRef.current, 1);
-      } else if (phase === 'scraping') {
+      } else if (phase === "scraping") {
         const base = Math.round((sourceIndex / totalSources) * SCRAPE_RANGE);
         targetPctRef.current = Math.max(targetPctRef.current, base);
-      } else if (phase === 'scraping_detail') {
+      } else if (phase === "scraping_detail") {
         // Sub-step progress within a single source
         const sourceRange = SCRAPE_RANGE / totalSources;
         const sourceStart = sourceIndex * sourceRange;
@@ -483,20 +497,25 @@ export default function DisplayScene({ recordId, locale }) {
         };
 
         let subPct;
-        if (step === 'probing_media' && total > 0) {
+        if (step === "probing_media" && total > 0) {
           subPct = 0.15 + (current / total) * 0.75;
-        } else if (step === 'scrolling' && total > 0) {
+        } else if (step === "scrolling" && total > 0) {
           subPct = 0.25 + (current / total) * 0.5;
         } else {
           subPct = SUB_STEPS[step] ?? 0;
         }
 
         const overallPct = sourceStart + subPct * sourceRange;
-        targetPctRef.current = Math.max(targetPctRef.current, Math.round(overallPct));
-      } else if (phase === 'source_done' || phase === 'source_error') {
-        const pct = Math.round(((sourceIndex + 1) / totalSources) * SCRAPE_RANGE);
+        targetPctRef.current = Math.max(
+          targetPctRef.current,
+          Math.round(overallPct),
+        );
+      } else if (phase === "source_done" || phase === "source_error") {
+        const pct = Math.round(
+          ((sourceIndex + 1) / totalSources) * SCRAPE_RANGE,
+        );
         targetPctRef.current = Math.max(targetPctRef.current, pct);
-      } else if (phase === 'optimizing') {
+      } else if (phase === "optimizing") {
         targetPctRef.current = Math.max(targetPctRef.current, SCRAPE_RANGE);
       }
     }
@@ -504,9 +523,15 @@ export default function DisplayScene({ recordId, locale }) {
 
   useEffect(() => {
     if (loadProgress.total > 0) {
-      const realPct = Math.min(100, Math.round((loadProgress.loaded / loadProgress.total) * 100));
+      const realPct = Math.min(
+        100,
+        Math.round((loadProgress.loaded / loadProgress.total) * 100),
+      );
       // Map texture loading to 60-95% range
-      targetPctRef.current = Math.max(targetPctRef.current, 60 + Math.round(realPct * 0.35));
+      targetPctRef.current = Math.max(
+        targetPctRef.current,
+        60 + Math.round(realPct * 0.35),
+      );
     }
   }, [loadProgress]);
 

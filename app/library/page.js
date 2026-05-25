@@ -157,6 +157,7 @@ export default function MyShelfPage({ params }) {
             edgeColor: item.bgColor || "#ffffff",
             role: item.role || "owner",
             isPublic: item.isPublic ?? false,
+            exhibitionType: item.exhibitionType ?? "walk",
           }));
           setCachedAlbums(newAlbums);
           setAlbums(newAlbums);
@@ -414,7 +415,10 @@ export default function MyShelfPage({ params }) {
             <button
               onClick={() => {
                 if (selectedAlbum.data?.id) {
-                  router.push(`/walk/${selectedAlbum.data.id}`);
+                  const route = selectedAlbum.data.exhibitionType === "memorial_tape"
+                    ? `/vhs/${selectedAlbum.data.id}`
+                    : `/walk/${selectedAlbum.data.id}`;
+                  router.push(route);
                 }
               }}
               className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"

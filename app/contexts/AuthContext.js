@@ -37,10 +37,10 @@ export function AuthProvider({ children }) {
     setLoading(false);
   }, []);
 
-  // Fetch latest credits when authenticated
+  // Fetch latest credits once auth is restored
   useEffect(() => {
-    if (token) refreshCredits();
-  }, [token, refreshCredits]);
+    if (!loading && user) refreshCredits();
+  }, [loading, user?.id, refreshCredits]);
 
   // Listen for forced logout from authedFetch
   useEffect(() => {

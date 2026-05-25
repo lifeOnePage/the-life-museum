@@ -1075,7 +1075,7 @@ const Index = ({ params }) => {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#1e1a14]">
       {/* Header - Mobile */}
-      <header className="border-b border-[rgba(255,255,255,0.08)] bg-[#241f18]">
+      <header className="border-b border-[rgba(255,255,255,0.08)] bg-[#241f18] pt-[env(safe-area-inset-top)]">
         <div className="relative flex items-center justify-between px-3 py-2 lg:hidden">
           <button
             data-tutorial="exit"

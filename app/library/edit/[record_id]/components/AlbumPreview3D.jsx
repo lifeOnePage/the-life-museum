@@ -210,9 +210,11 @@ export default function AlbumPreview3D({
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showCursorTip, setShowCursorTip] = useState(false);
 
-  // 마우스 휠 줌 (externalZoom이 없을 때만)
+  // 마우스 휠 줌 + 터치 핀치 줌 (externalZoom이 없을 때만)
   const canvasContainerRef = useRef(null);
   const wheelZoomRef = useRef(zoom);
+  const pinchStartDist = useRef(null);
+  const pinchStartZoom = useRef(null);
   useEffect(() => {
     const el = canvasContainerRef.current;
     if (!el || typeof externalZoom === "number") return;
@@ -224,8 +226,42 @@ export default function AlbumPreview3D({
       wheelZoomRef.current = next;
       setZoom(next);
     };
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchStartDist.current = Math.hypot(dx, dy);
+        pinchStartZoom.current = wheelZoomRef.current;
+      }
+    };
+    const onTouchMove = (e) => {
+      if (e.touches.length === 2 && pinchStartDist.current !== null) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const scale = pinchStartDist.current / dist;
+        const cfg = getZoomConfig();
+        const next = Math.max(cfg.min, Math.min(cfg.max, pinchStartZoom.current * scale));
+        wheelZoomRef.current = next;
+        setZoom(next);
+      }
+    };
+    const onTouchEnd = () => {
+      pinchStartDist.current = null;
+      pinchStartZoom.current = null;
+    };
     el.addEventListener("wheel", onWheel, { passive: false });
-    return () => el.removeEventListener("wheel", onWheel);
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
   }, [externalZoom]);
 
   const handlePointerDown = (e) => {

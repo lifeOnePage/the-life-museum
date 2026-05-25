@@ -56,9 +56,12 @@ export default function ShelfCanvas({
   const cameraRef = useRef(null);
   const wrapperRef = useRef(null);
 
-  // 모바일 세로 드래그 스크롤
+  // 뷰포트 크기 추적 (가로 + 세로)
   const [windowWidth, setWindowWidth] = useState(() =>
     typeof window !== "undefined" ? window.innerWidth : 1280,
+  );
+  const [windowHeight, setWindowHeight] = useState(() =>
+    typeof window !== "undefined" ? window.innerHeight : 800,
   );
   useEffect(() => {
     let rafId = null;
@@ -66,6 +69,7 @@ export default function ShelfCanvas({
       if (rafId) return;
       rafId = requestAnimationFrame(() => {
         setWindowWidth(window.innerWidth);
+        setWindowHeight(window.innerHeight);
         rafId = null;
       });
     };
@@ -85,15 +89,37 @@ export default function ShelfCanvas({
   }, [windowWidth]);
 
   const ROWS = useMemo(() => {
-    if (windowWidth >= 768) return 2;
     return Math.min(5, Math.max(2, Math.ceil(albums.length / COLS)));
-  }, [windowWidth, albums.length, COLS]);
+  }, [albums.length, COLS]);
+
+  // baseZ: 뷰포트 종횡비에 따라 카메라 Z를 자동 조정하여 앨범이 잘리지 않게 함
+  const FOV_RAD = (52 * Math.PI) / 180;
+  const TAN_HALF_FOV = Math.tan(FOV_RAD / 2);
+
+  const baseZ = useMemo(() => {
+    const aspect = windowWidth / windowHeight;
+    const albumSize = windowWidth < 768 ? 0.65 : 0.8;
+    const albumGap = windowWidth < 768 ? 0.08 : 0.15;
+    const totalWidth = COLS * albumSize + (COLS - 1) * albumGap;
+    const margin = 0.5;
+    const requiredHalfWidth = totalWidth / 2 + margin;
+    const requiredZ = requiredHalfWidth / (aspect * TAN_HALF_FOV);
+    return Math.max(3.8, Math.min(requiredZ, 6.5));
+  }, [windowWidth, windowHeight, COLS]);
+
+  const baseZRef = useRef(baseZ);
 
   // Camera refs
   const cameraXOffsetRef = useRef(0);
   const cameraYOffsetRef = useRef(0);
-  const cameraZRef = useRef(3.8);
+  const cameraZRef = useRef(baseZ);
   const scrollRangeRef = useRef((ROWS - 1) * 0.7);
+
+  // baseZ 변경 시 카메라 Z를 동기화
+  useEffect(() => {
+    baseZRef.current = baseZ;
+    cameraZRef.current = baseZ;
+  }, [baseZ]);
 
   // scrollRange 갱신
   useEffect(() => {
@@ -107,6 +133,7 @@ export default function ShelfCanvas({
       cameraYOffsetRef,
       cameraXOffsetRef,
       cameraZRef,
+      baseZRef,
       selectedAlbum,
     });
 
@@ -124,13 +151,13 @@ export default function ShelfCanvas({
         reset: () => {
           cameraXOffsetRef.current = 0;
           cameraYOffsetRef.current = 0;
-          cameraZRef.current = 3.8;
+          cameraZRef.current = baseZRef.current;
         },
         zoomIn: () => {
-          cameraZRef.current = Math.max(2.5, cameraZRef.current - 0.5);
+          cameraZRef.current = Math.max(baseZRef.current - 0.6, cameraZRef.current - 0.5);
         },
         zoomOut: () => {
-          cameraZRef.current = Math.min(5.5, cameraZRef.current + 0.5);
+          cameraZRef.current = Math.min(baseZRef.current + 0.6, cameraZRef.current + 0.5);
         },
       };
     }
@@ -216,6 +243,7 @@ export default function ShelfCanvas({
             onCloseAlbum={onCloseAlbum}
             onHoverLabelPos={onHoverLabelPos}
             windowWidth={windowWidth}
+            baseZ={baseZ}
             isScrollingRef={isScrollingRef}
           />
         </Suspense>

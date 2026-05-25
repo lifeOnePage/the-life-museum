@@ -1,0 +1,9 @@
+{
+  "appId": "com.lifeonepage.museum",
+  "appName": "The Life Museum",
+  "webDir": "out",
+  "server": {
+    "url": "https://the-life-museum.vercel.app",
+    "cleartext": true
+  }
+}

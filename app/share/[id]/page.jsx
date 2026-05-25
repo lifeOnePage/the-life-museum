@@ -546,7 +546,7 @@ export default function SharePage({ params }) {
 
       {/* 타이틀 오버레이 — 상단 */}
       <div
-        className={`pointer-events-none absolute inset-x-0 top-0 z-20 pt-10 text-center transition-all duration-1000 ease-out ${
+        className={`pointer-events-none absolute inset-x-0 top-0 z-20 pt-[max(env(safe-area-inset-top),2.5rem)] text-center transition-all duration-1000 ease-out ${
           ready ? "opacity-100" : "translate-y-2 opacity-0"
         }`}
         style={{

@@ -484,7 +484,7 @@ export default function AccountPage() {
       </aside>
 
       {/* ── 모바일 헤더 ── */}
-      <div className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-white/10 bg-[#1a1710] px-4 py-3 md:hidden">
+      <div className="fixed inset-x-0 top-0 z-40 flex items-center justify-between border-b border-white/10 bg-[#1a1710] px-4 py-3 pt-[max(env(safe-area-inset-top),12px)] md:hidden">
         <button
           onClick={() => router.push(`/${currentLocale}/library`)}
           className="text-white/40"
@@ -520,7 +520,7 @@ export default function AccountPage() {
 
       {/* 모바일 드롭다운 메뉴 */}
       {mobileMenuOpen && (
-        <div className="fixed inset-x-0 top-[49px] z-30 border-b border-white/10 bg-[#1a1710] p-4 md:hidden">
+        <div className="fixed inset-x-0 top-[calc(49px+max(env(safe-area-inset-top),12px)-12px)] z-30 border-b border-white/10 bg-[#1a1710] p-4 md:hidden">
           {MENU.map((item) =>
             item.children ? (
               <div key={item.key}>
@@ -561,7 +561,7 @@ export default function AccountPage() {
       )}
 
       {/* ── 메인 컨텐츠 ── */}
-      <main className="flex-1 overflow-y-auto pt-14 md:pt-0">
+      <main className="flex-1 overflow-y-auto pt-[calc(3.5rem+max(env(safe-area-inset-top),12px)-12px)] md:pt-0">
         <div className="mx-auto max-w-xl px-6 py-10 md:py-16">
           {/* ═══ 프로필 섹션 ═══ */}
           {section === "profile" && (

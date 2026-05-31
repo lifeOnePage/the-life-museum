@@ -78,6 +78,9 @@ const T = {
     coverDesignSub: "AI 생성 또는 직접 업로드",
     bgm: "배경음악",
     bgmSelected: "선택됨",
+    recordType: "레코드 타입",
+    recordTypeExhibit: "Exhibit",
+    recordTypeRetroTape: "Retro Tape",
     backCoverImage: "뒷면 이미지 설정하기",
     theme: "테마",
     backCoverGuide:
@@ -143,6 +146,9 @@ const T = {
     coverDesignSub: "AI generate or upload",
     bgm: "Background Music",
     bgmSelected: "Selected",
+    recordType: "Record Type",
+    recordTypeExhibit: "Exhibit",
+    recordTypeRetroTape: "Retro Tape",
     backCoverImage: "Set Back Cover Image",
     theme: "Theme",
     backCoverGuide:
@@ -361,6 +367,8 @@ const Index = ({ params }) => {
   const [titleOpen, setTitleOpen] = useState(false);
   const [coverOpen, setCoverOpen] = useState(false);
   const [bgmOpen, setBgmOpen] = useState(false);
+  const [recordTypeOpen, setRecordTypeOpen] = useState(false);
+  const [recordType, setRecordType] = useState("exhibit");
   const [themeOpen, setThemeOpen] = useState(false);
   const [backCoverImageOpen, setBackCoverImageOpen] = useState(true);
   const [storyOpen, setStoryOpen] = useState(false);
@@ -521,6 +529,7 @@ const Index = ({ params }) => {
           }
           setBgmUrl(data.bgmUrl || null);
           setBgmId(data.bgmId ? `bgm${data.bgmId}` : null);
+          setRecordType(data.recordType || "exhibit");
 
           // Photo drive now auto-fetches on mount via useEffect
 
@@ -540,6 +549,7 @@ const Index = ({ params }) => {
             bgmUrl: data.bgmUrl || null,
             bgmId: data.bgmId ? `bgm${data.bgmId}` : null,
             backCoverImageUrl: data.backCoverImageUrl || coverUrl,
+            recordType: data.recordType || "exhibit",
           };
         }
       } catch (error) {
@@ -584,6 +594,7 @@ const Index = ({ params }) => {
           coverTitleBgColor: strokeToDbColor(titleStroke, titleStrokeOpacity),
           bgmId: bgmId ? parseInt(bgmId.replace("bgm", ""), 10) : null,
           bgmUrl: bgmUrl || null,
+          recordType,
         }),
       },
     );
@@ -1275,7 +1286,7 @@ const Index = ({ params }) => {
       <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Preview Panel - top half on mobile, right side on desktop */}
         <div
-          className="h-[50vh] shrink-0 bg-[#1a1510] lg:order-2 lg:h-auto lg:flex-1"
+          className="h-[100vh] shrink-0 bg-[#1a1510] lg:order-2 lg:h-auto lg:flex-1"
           data-tutorial="preview"
         >
           <AlbumPreview3D
@@ -1904,6 +1915,73 @@ const Index = ({ params }) => {
                 {/* Gallery tab */}
                 <TabsContent className="px-4 pt-5 sm:px-5" value="gallery">
                   <div className="space-y-5 pb-10">
+                    {/* Record Type Section */}
+                    <div className="rounded-lg border border-white/10">
+                      <button
+                        onClick={() => setRecordTypeOpen(!recordTypeOpen)}
+                        className="flex w-full items-center justify-between px-4 py-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
+                            {t.recordType}
+                          </span>
+                          <span className="text-[11px] text-[#9b8b7a]">
+                            {recordType === "exhibit" ? t.recordTypeExhibit : t.recordTypeRetroTape}
+                          </span>
+                        </div>
+                        {recordTypeOpen ? (
+                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                        )}
+                      </button>
+                      <AnimatePresence initial={false}>
+                        {recordTypeOpen && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                              <div className="flex flex-col gap-2">
+                                {[
+                                  { value: "exhibit", label: t.recordTypeExhibit },
+                                  { value: "retro_tape", label: t.recordTypeRetroTape },
+                                ].map((option) => (
+                                  <label
+                                    key={option.value}
+                                    onClick={() => setRecordType(option.value)}
+                                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                                      recordType === option.value
+                                        ? "border-[#c4a882] bg-[#c4a882]/10"
+                                        : "border-white/10 hover:border-white/20"
+                                    }`}
+                                  >
+                                    <div
+                                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                                        recordType === option.value
+                                          ? "border-[#c4a882]"
+                                          : "border-white/30"
+                                      }`}
+                                    >
+                                      {recordType === option.value && (
+                                        <div className="h-2 w-2 rounded-full bg-[#c4a882]" />
+                                      )}
+                                    </div>
+                                    <span className="text-sm text-[#e8d5b7]">
+                                      {option.label}
+                                    </span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+
                     {/* BGM Section */}
                     <div className="rounded-lg border border-white/10">
                       <button

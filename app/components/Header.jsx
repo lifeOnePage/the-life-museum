@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
-import ProfileModal from "./ProfileModal";
+
+function getLocale() {
+  if (typeof window === "undefined") return "ko";
+  return localStorage.getItem("NEXT_LOCALE") || "ko";
+}
 
 export default function Header() {
-  const [showProfile, setShowProfile] = useState(false);
   const { signout } = useAuth();
   const router = useRouter();
 
@@ -18,19 +20,18 @@ export default function Header() {
   };
 
   return (
-    <>
-      <div className="pointer-events-auto z-1000 box-border w-full bg-transparent p-3 pt-[max(env(safe-area-inset-top),12px)] text-white">
-        <div className="flex h-full w-full items-center border-b border-white px-3 py-1 text-white">
-          <div className="w-full flex-1">The Life Gallery</div>
-          <div className="flex w-full flex-1">
-            <div className="flex flex-1 cursor-pointer justify-end gap-5">
-              <p onClick={() => setShowProfile(true)}>Profile</p>
-              <p onClick={handleLogout}>Logout</p>
-            </div>
+    <div className="pointer-events-auto z-1000 box-border w-full bg-transparent p-3 pt-[max(env(safe-area-inset-top),12px)] text-white">
+      <div className="flex h-full w-full items-center border-b border-white px-3 py-1 text-white">
+        <div className="w-full flex-1">The Life Records</div>
+        <div className="flex w-full flex-1">
+          <div className="flex flex-1 cursor-pointer justify-end gap-5">
+            <p onClick={() => router.push(`/${getLocale()}/account`)}>
+              Profile
+            </p>
+            <p onClick={handleLogout}>Logout</p>
           </div>
         </div>
       </div>
-      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
-    </>
+    </div>
   );
 }

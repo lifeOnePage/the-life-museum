@@ -637,7 +637,7 @@ export default function SharePage({ params }) {
         >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
           <div
-            className="relative z-10 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl"
+            className="relative z-10 w-full max-w-40 overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl md:max-w-lg"
             onClick={(e) => e.stopPropagation()}
             style={!isMobile ? { zoom: infoFontScale } : {}}
           >
@@ -695,7 +695,7 @@ export default function SharePage({ params }) {
                           key={i}
                           className="flex flex-col gap-0.5 sm:flex-row sm:gap-4"
                         >
-                          <span className="shrink-0 text-[13px] font-medium text-white/40 sm:w-12 sm:text-[15px]">
+                          <span className="shrink-0 text-[13px] font-medium text-white/40 sm:w-40 sm:text-[15px]">
                             {t.year}
                           </span>
                           <span className="text-[15px] leading-snug text-white/70">

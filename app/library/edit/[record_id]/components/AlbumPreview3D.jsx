@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { ZoomIn, ZoomOut, Maximize2, Minimize2 } from "lucide-react";
@@ -41,7 +41,7 @@ function getZoomConfig() {
   const isMobile = window.innerWidth < 1024;
   return isMobile
     ? { min: 4, max: 6, default: 7.5 }
-    : { min: 5, max: 7, default: 6 };
+    : { min: 3.5, max: 7, default: 6 };
 }
 
 function CameraZoom({ zoom, panOffset }) {
@@ -128,7 +128,11 @@ export default function AlbumPreview3D({
     function loadImg(src, crossOrigin = true) {
       if (!src) return Promise.resolve(null);
       const lower = src.toLowerCase().split("?")[0];
-      if (lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov")) {
+      if (
+        lower.endsWith(".mp4") ||
+        lower.endsWith(".webm") ||
+        lower.endsWith(".mov")
+      ) {
         return Promise.resolve(null);
       }
       const isBlobOrData = src.startsWith("blob:") || src.startsWith("data:");
@@ -158,13 +162,18 @@ export default function AlbumPreview3D({
         kitsch: "/images/albumtheme/kitsch.png",
         illustration: "/images/albumtheme/illustration.png",
       };
-      const backSrc = (backCoverImageUrl && backCoverImageUrl !== frontCover) ? backCoverImageUrl : null;
+      const backSrc =
+        backCoverImageUrl && backCoverImageUrl !== frontCover
+          ? backCoverImageUrl
+          : null;
 
       const [frontImg, backImg, bgImg, stickerImg] = await Promise.all([
         loadImg(frontCover),
         loadImg(backSrc),
         loadImg(bgMap[key] || null, false),
-        key === "kitsch" ? loadImg("/images/albumtheme/kitsch 2.png", false) : Promise.resolve(null),
+        key === "kitsch"
+          ? loadImg("/images/albumtheme/kitsch 2.png", false)
+          : Promise.resolve(null),
       ]);
 
       if (cancelled) return;
@@ -172,7 +181,10 @@ export default function AlbumPreview3D({
       let colors = null;
       if (frontImg) {
         try {
-          const extracted = await extractColors(frontImg, { pixels: 10000, distance: 0.2 });
+          const extracted = await extractColors(frontImg, {
+            pixels: 10000,
+            distance: 0.2,
+          });
           const main = extracted.sort((a, b) => b.area - a.area)[0];
           if (main) {
             const { red, green, blue } = main;
@@ -197,7 +209,9 @@ export default function AlbumPreview3D({
     }
 
     loadAll();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [frontCover, backCoverImageUrl, selectedTheme]);
 
   // Sync with external flipped prop (tab switch)
@@ -209,6 +223,94 @@ export default function AlbumPreview3D({
   const dragStartX = useRef(null);
   const [cursorPos, setCursorPos] = useState({ x: 0, y: 0 });
   const [showCursorTip, setShowCursorTip] = useState(false);
+
+  // ── 드래그 패닝 (share 페이지와 동일: 놓으면 중심 복귀) ──
+  const [panOffset, setPanOffset] = useState({ x: 0, y: 0 });
+  const panOffsetRef = useRef({ x: 0, y: 0 });
+  const lastPanPosRef = useRef(null);
+  const mouseDragRef = useRef(null);
+
+  // 데스크탑 마우스 드래그 패닝
+  useEffect(() => {
+    const MAX_PAN = 0.8;
+    const onMouseMove = (e) => {
+      if (!mouseDragRef.current) return;
+      const dx = e.clientX - mouseDragRef.current.x;
+      const dy = e.clientY - mouseDragRef.current.y;
+      const currentZoom =
+        typeof externalZoom === "number" ? externalZoom : wheelZoomRef.current;
+      const s = currentZoom * 0.0005;
+      const newX = Math.max(
+        -MAX_PAN,
+        Math.min(MAX_PAN, panOffsetRef.current.x - dx * s),
+      );
+      const newY = Math.max(
+        -MAX_PAN,
+        Math.min(MAX_PAN, panOffsetRef.current.y + dy * s),
+      );
+      panOffsetRef.current = { x: newX, y: newY };
+      setPanOffset({ x: newX, y: newY });
+      mouseDragRef.current = { x: e.clientX, y: e.clientY };
+    };
+    const onMouseUp = () => {
+      if (!mouseDragRef.current) return;
+      mouseDragRef.current = null;
+      panOffsetRef.current = { x: 0, y: 0 };
+      setPanOffset({ x: 0, y: 0 });
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [externalZoom]);
+
+  // 모바일 1손가락 패닝
+  const handlePanTouchStart = useCallback((e) => {
+    if (e.touches.length === 1) {
+      lastPanPosRef.current = {
+        x: e.touches[0].clientX,
+        y: e.touches[0].clientY,
+      };
+    }
+  }, []);
+
+  const handlePanTouchMove = useCallback(
+    (e) => {
+      if (e.touches.length === 1 && lastPanPosRef.current) {
+        const dx = e.touches[0].clientX - lastPanPosRef.current.x;
+        const dy = e.touches[0].clientY - lastPanPosRef.current.y;
+        const currentZoom =
+          typeof externalZoom === "number"
+            ? externalZoom
+            : wheelZoomRef.current;
+        const sensitivity = currentZoom * 0.0005;
+        const MAX_PAN = 0.8;
+        const newX = Math.max(
+          -MAX_PAN,
+          Math.min(MAX_PAN, panOffsetRef.current.x - dx * sensitivity),
+        );
+        const newY = Math.max(
+          -MAX_PAN,
+          Math.min(MAX_PAN, panOffsetRef.current.y + dy * sensitivity),
+        );
+        panOffsetRef.current = { x: newX, y: newY };
+        setPanOffset({ x: newX, y: newY });
+        lastPanPosRef.current = {
+          x: e.touches[0].clientX,
+          y: e.touches[0].clientY,
+        };
+      }
+    },
+    [externalZoom],
+  );
+
+  const handlePanTouchEnd = useCallback(() => {
+    lastPanPosRef.current = null;
+    panOffsetRef.current = { x: 0, y: 0 };
+    setPanOffset({ x: 0, y: 0 });
+  }, []);
 
   // 마우스 휠 줌 + 터치 핀치 줌 (externalZoom이 없을 때만)
   const canvasContainerRef = useRef(null);
@@ -222,7 +324,10 @@ export default function AlbumPreview3D({
       e.preventDefault();
       e.stopPropagation();
       const cfg = getZoomConfig();
-      const next = Math.max(cfg.min, Math.min(cfg.max, wheelZoomRef.current + e.deltaY * 0.008));
+      const next = Math.max(
+        cfg.min,
+        Math.min(cfg.max, wheelZoomRef.current + e.deltaY * 0.008),
+      );
       wheelZoomRef.current = next;
       setZoom(next);
     };
@@ -243,7 +348,10 @@ export default function AlbumPreview3D({
         const dist = Math.hypot(dx, dy);
         const scale = pinchStartDist.current / dist;
         const cfg = getZoomConfig();
-        const next = Math.max(cfg.min, Math.min(cfg.max, pinchStartZoom.current * scale));
+        const next = Math.max(
+          cfg.min,
+          Math.min(cfg.max, pinchStartZoom.current * scale),
+        );
         wheelZoomRef.current = next;
         setZoom(next);
       }
@@ -290,18 +398,29 @@ export default function AlbumPreview3D({
       return;
     }
     const t = setTimeout(() => {
-      setFrontCoverDataUrl(generateFrontCoverDataUrl(frontCoverImg, {
-        title: titleOverlayEnabled ? albumTitle || "" : "",
-        subtitle: "",
-        position: titlePosition || "bottom-center",
-        font: titleFont || "Pretendard Variable",
-        color: titleColor || "#000000",
-        stroke: titleStroke ?? false,
-        strokeOpacity: titleStrokeOpacity ?? 100,
-      }));
+      setFrontCoverDataUrl(
+        generateFrontCoverDataUrl(frontCoverImg, {
+          title: titleOverlayEnabled ? albumTitle || "" : "",
+          subtitle: "",
+          position: titlePosition || "bottom-center",
+          font: titleFont || "Pretendard Variable",
+          color: titleColor || "#000000",
+          stroke: titleStroke ?? false,
+          strokeOpacity: titleStrokeOpacity ?? 100,
+        }),
+      );
     }, 200);
     return () => clearTimeout(t);
-  }, [frontCoverImg, albumTitle, titleOverlayEnabled, titlePosition, titleFont, titleColor, titleStroke, titleStrokeOpacity]);
+  }, [
+    frontCoverImg,
+    albumTitle,
+    titleOverlayEnabled,
+    titlePosition,
+    titleFont,
+    titleColor,
+    titleStroke,
+    titleStrokeOpacity,
+  ]);
 
   // Debounced back cover canvas: coalesces rapid sequential updates (image loads,
   // bio typing, theme changes) into a single 200ms-delayed canvas computation
@@ -310,25 +429,38 @@ export default function AlbumPreview3D({
     if (typeof document === "undefined") return;
     const imgForBack = backCoverImg || frontCoverImg;
     const t = setTimeout(() => {
-      setBackCoverDataUrl(generateBackCoverDataUrl(
-        themeKey,
-        bio || "",
-        timeline || [],
-        imgForBack,
-        albumTitle || "",
-        albumSubTitle || "",
-        extractedColors,
-        themeBgImg,
-        themeStickerImg,
-      ));
+      setBackCoverDataUrl(
+        generateBackCoverDataUrl(
+          themeKey,
+          bio || "",
+          timeline || [],
+          imgForBack,
+          albumTitle || "",
+          albumSubTitle || "",
+          extractedColors,
+          themeBgImg,
+          themeStickerImg,
+        ),
+      );
     }, 200);
     return () => clearTimeout(t);
-  }, [themeKey, bio, timeline, backCoverImg, frontCoverImg, albumTitle, albumSubTitle, extractedColors, themeBgImg, themeStickerImg]);
+  }, [
+    themeKey,
+    bio,
+    timeline,
+    backCoverImg,
+    frontCoverImg,
+    albumTitle,
+    albumSubTitle,
+    extractedColors,
+    themeBgImg,
+    themeStickerImg,
+  ]);
 
   return (
-    <div className="flex h-full w-full flex-col items-center">
+    <div className="relative h-full w-full">
       {!hideControls && (
-        <div className="flex shrink-0 items-center gap-3 py-2">
+        <div className="absolute top-2 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/40 px-3 py-1.5 backdrop-blur-sm">
           <button
             onClick={() => setZoom((z) => Math.min(z + ZOOM_STEP, zoomCfg.max))}
             disabled={zoom >= zoomCfg.max}
@@ -351,11 +483,16 @@ export default function AlbumPreview3D({
           </button>
         </div>
       )}
-      <div className="relative min-h-0 w-full flex-1">
+      <div className="absolute inset-0">
         <div
           ref={canvasContainerRef}
           className="absolute inset-0 cursor-grab active:cursor-grabbing"
-          onPointerDown={handlePointerDown}
+          onPointerDown={(e) => {
+            handlePointerDown(e);
+            if (e.pointerType === "mouse") {
+              mouseDragRef.current = { x: e.clientX, y: e.clientY };
+            }
+          }}
           onPointerUp={handlePointerUp}
           onPointerMove={(e) => {
             if (hideControls) {
@@ -369,6 +506,11 @@ export default function AlbumPreview3D({
           onPointerLeave={() => {
             dragStartX.current = null;
             setShowCursorTip(false);
+          }}
+          onTouchStart={handlePanTouchStart}
+          onTouchMove={handlePanTouchMove}
+          onTouchEnd={(e) => {
+            handlePanTouchEnd();
           }}
         >
           {/* Cursor-following hint */}
@@ -388,7 +530,11 @@ export default function AlbumPreview3D({
           <Canvas
             camera={{ position: [0, 0, 10], fov: 30 }}
             dpr={[1, 2]}
-            gl={{ antialias: true, toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.85 }}
+            gl={{
+              antialias: true,
+              toneMapping: THREE.ACESFilmicToneMapping,
+              toneMappingExposure: 0.85,
+            }}
             resize={{ scroll: false, debounce: { scroll: 50, resize: 0 } }}
           >
             <ambientLight intensity={0.6} />
@@ -396,7 +542,10 @@ export default function AlbumPreview3D({
             <directionalLight position={[-2, 1, 2]} intensity={3} />
             <CameraZoom
               zoom={typeof externalZoom === "number" ? externalZoom : zoom}
-              panOffset={cameraOffset}
+              panOffset={{
+                x: (cameraOffset?.x ?? 0) + panOffset.x,
+                y: (cameraOffset?.y ?? 0) + panOffset.y,
+              }}
             />
             <AlbumCover3D
               index={0}

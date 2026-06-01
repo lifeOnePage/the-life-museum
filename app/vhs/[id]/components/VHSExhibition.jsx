@@ -14,12 +14,16 @@ import {
   INSERT_VIDEO_SRC,
   TV_OFF_IMAGE,
   TV_PLAYBACK_FRAME,
+  PHOTO_FRAME_CLOSEUP,
   STATIC_VIDEO_SRC,
+  TV_CLOSEUP_IMAGE,
 } from "./lib/constants";
 import VHSTapeIntro from "./VHSTapeIntro";
 import TVInsertVideo from "./TVInsertVideo";
 import TVScene from "./TVScene";
 import VHSControls from "./VHSControls";
+import PhotoFrameCloseup from "./PhotoFrameCloseup";
+import TVCloseup from "./TVCloseup";
 
 export default function VHSExhibition({ recordId, locale }) {
   const router = useRouter();
@@ -34,6 +38,13 @@ export default function VHSExhibition({ recordId, locale }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
+  // Photo frame closeup state
+  const [photoFrameOpen, setPhotoFrameOpen] = useState(false);
+  const [photoFrameIndex, setPhotoFrameIndex] = useState(0);
+
+  // TV closeup state
+  const [tvCloseupOpen, setTvCloseupOpen] = useState(false);
+
   const idleTimerRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -43,6 +54,12 @@ export default function VHSExhibition({ recordId, locale }) {
       (data?.mediaList ?? []).filter(
         (m) => m.type === "image" || m.type === "video"
       ),
+    [data]
+  );
+
+  // Filter images only (for photo frame)
+  const imageList = useMemo(
+    () => (data?.mediaList ?? []).filter((m) => m.type === "image"),
     [data]
   );
 
@@ -70,6 +87,8 @@ export default function VHSExhibition({ recordId, locale }) {
     preloadVideo(STATIC_VIDEO_SRC);
     preloadImage(TV_OFF_IMAGE);
     preloadImage(TV_PLAYBACK_FRAME);
+    preloadImage(PHOTO_FRAME_CLOSEUP);
+    preloadImage(TV_CLOSEUP_IMAGE);
   }, []);
 
   // Preload upcoming slideshow media
@@ -136,6 +155,27 @@ export default function VHSExhibition({ recordId, locale }) {
     router.back();
   }, [router]);
 
+  // Photo frame handlers
+  const handlePhotoFrameClick = useCallback(() => {
+    if (imageList.length === 0) return;
+    setPhotoFrameOpen(true);
+    setIsPlaying(false);
+  }, [imageList]);
+
+  const handlePhotoFrameClose = useCallback(() => {
+    setPhotoFrameOpen(false);
+    setIsPlaying(true);
+  }, []);
+
+  // TV closeup handlers
+  const handleTVClick = useCallback(() => {
+    setTvCloseupOpen(true);
+  }, []);
+
+  const handleTVCloseupClose = useCallback(() => {
+    setTvCloseupOpen(false);
+  }, []);
+
   // Extract record info
   const title = data?.title ?? "";
   const lifestory = data?.lifestory?.content ?? "";
@@ -201,10 +241,55 @@ export default function VHSExhibition({ recordId, locale }) {
           transitionType={transitionType}
           imageDuration={imageDuration}
           visible={scene !== "insert"}
+          frameImage={TV_PLAYBACK_FRAME}
+          photoFrameImageSrc={
+            imageList.length > 0
+              ? (imageList[photoFrameIndex]?.original_url || imageList[photoFrameIndex]?.thumbnail_url)
+              : undefined
+          }
+          onPhotoFrameClick={
+            imageList.length > 0 ? handlePhotoFrameClick : undefined
+          }
+          onTVClick={handleTVClick}
+          onAdvance={slideshow.advance}
+          onRetreat={slideshow.retreat}
         />
       )}
 
+      {/* Photo frame closeup overlay */}
       {scene === "playback" && (
+        <PhotoFrameCloseup
+          images={imageList}
+          selectedIndex={photoFrameIndex}
+          onChangeIndex={setPhotoFrameIndex}
+          onClose={handlePhotoFrameClose}
+          visible={photoFrameOpen}
+          colorFilter={colorFilter}
+        />
+      )}
+
+      {/* TV closeup overlay */}
+      {scene === "playback" && (
+        <TVCloseup
+          visible={tvCloseupOpen}
+          onClose={handleTVCloseupClose}
+          currentItem={slideshow.currentItem}
+          nextItem={slideshow.nextItem}
+          currentIndex={slideshow.currentIndex}
+          nextIndex={slideshow.nextIndex}
+          transitioning={slideshow.transitioning}
+          isPlaying={isPlaying}
+          videoMode={videoMode}
+          onVideoEnded={slideshow.advance}
+          colorFilter={colorFilter}
+          transitionType={transitionType}
+          imageDuration={imageDuration}
+          onAdvance={slideshow.advance}
+          onRetreat={slideshow.retreat}
+        />
+      )}
+
+      {scene === "playback" && !photoFrameOpen && !tvCloseupOpen && (
         <VHSControls
           isPlaying={isPlaying}
           onTogglePlay={() => setIsPlaying((p) => !p)}

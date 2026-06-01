@@ -1286,7 +1286,7 @@ const Index = ({ params }) => {
       <div className="relative flex flex-1 flex-col overflow-hidden lg:flex-row">
         {/* Preview Panel - top half on mobile, right side on desktop */}
         <div
-          className="h-[100vh] shrink-0 bg-[#1a1510] lg:order-2 lg:h-auto lg:flex-1"
+          className="h-[45vh] shrink-0 bg-[#1a1510] lg:order-2 lg:h-auto lg:flex-1"
           data-tutorial="preview"
         >
           <AlbumPreview3D

@@ -65,6 +65,27 @@ export function useMediaSlideshow({
     });
   }, [count, currentIndex, transitioning, nextIndex, clearTransitionTimer]);
 
+  const retreat = useCallback(() => {
+    if (count <= 1) return;
+    if (transitioning || nextIndex !== null) return;
+
+    const prev = (currentIndex - 1 + count) % count;
+    setNextIndex(prev);
+
+    rafRef.current = requestAnimationFrame(() => {
+      rafRef.current = requestAnimationFrame(() => {
+        setTransitioning(true);
+
+        clearTransitionTimer();
+        transitionTimerRef.current = setTimeout(() => {
+          setCurrentIndex(prev);
+          setNextIndex(null);
+          setTransitioning(false);
+        }, CROSSFADE_DURATION_MS);
+      });
+    });
+  }, [count, currentIndex, transitioning, nextIndex, clearTransitionTimer]);
+
   // Auto-advance timer for images and short video mode
   useEffect(() => {
     if (!active || !isPlaying || count === 0 || transitioning || nextIndex !== null) return;
@@ -137,6 +158,7 @@ export function useMediaSlideshow({
     currentItem,
     nextItem,
     advance,
+    retreat,
     preloadUrls,
   };
 }

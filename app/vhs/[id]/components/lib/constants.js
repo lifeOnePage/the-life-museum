@@ -3,8 +3,11 @@ export const VHS_BACKGROUND = "/vhs/vhs-gallery-background-desktop.png";
 export const VHS_TAPE_IMAGE = "/vhs/vhs-tape-detail-no-title-desktop.png";
 export const INSERT_VIDEO_SRC = "/vhs/tv-vhs-insert-animation.mp4";
 export const TV_OFF_IMAGE = "/vhs/tv-off-desktop.png";
-export const TV_PLAYBACK_FRAME = "/vhs/tv-playback-family-time-desktop.png";
+export const TV_PLAYBACK_FRAME = "/vhs/tv-room-desktop.png";
+export const PHOTO_FRAME_CLOSEUP = "/vhs/empty-frame-desktop.png";
 export const STATIC_VIDEO_SRC = "/vhs/tv-static-loop.mp4";
+export const TV_CLOSEUP_IMAGE =
+  "/vhs/tv-closeup-transparent-screen-desktop.png";
 
 // Scene transition timing (ms)
 export const TV_OFF_DURATION_MS = 1000;
@@ -14,11 +17,59 @@ export const CONTROLS_IDLE_TIMEOUT_MS = 3000;
 
 // TV screen viewport coordinates (% of tv-playback frame image)
 export const TV_SCREEN = {
-  left: 0.305,
-  top: 0.12,
-  width: 0.375,
-  height: 0.56,
+  left: 0.3,
+  top: 0.18,
+  width: 0.35,
+  height: 0.46,
   borderRadius: "2.5%",
+};
+
+// Photo frame clickable area in tv-room-desktop.png (% of frame image)
+export const PHOTO_FRAME = {
+  left: 0.763,
+  top: 0.285,
+  width: 0.101,
+  height: 0.162,
+};
+
+// Photo frame inner image area in tv-room-desktop.png (% of frame image)
+// DEBUG: red border is active in TVScene.jsx — remove after tuning
+export const PHOTO_FRAME_INNER = {
+  left: 0.783,
+  top: 0.54,
+  width: 0.11,
+  height: 0.12,
+};
+
+// Photo display area inside empty-frame-desktop.png (% of closeup image)
+export const PHOTO_FRAME_CLOSEUP_VIEWPORT = {
+  left: 0.275,
+  top: 0.065,
+  width: 0.45,
+  height: 0.635,
+  borderRadius: "1%",
+};
+
+// TV closeup screen viewport coordinates (% of tv-closeup image, 1920x1280)
+export const TV_CLOSEUP_SCREEN = {
+  left: 0.13,
+  top: 0.08,
+  width: 0.6,
+  height: 0.66,
+  borderRadius: "2%",
+};
+
+// TV closeup knob positions (% of tv-closeup image)
+export const TV_KNOB_UPPER = {
+  centerX: 0.81,
+  centerY: 0.19,
+  radius: 0.04,
+};
+
+export const TV_KNOB_LOWER = {
+  centerX: 0.81,
+  centerY: 0.34,
+  radius: 0.04,
 };
 
 // VHS tape label coordinates (% of tape image)

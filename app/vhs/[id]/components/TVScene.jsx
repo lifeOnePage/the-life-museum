@@ -6,7 +6,9 @@ import {
   TV_PLAYBACK_FRAME,
   STATIC_VIDEO_SRC,
   TV_SCREEN,
+  PHOTO_FRAME_INNER,
   CROSSFADE_DURATION_MS,
+  FILTER_OVERLAYS,
 } from "./lib/constants";
 import TVMediaViewport from "./TVMediaViewport";
 
@@ -40,11 +42,64 @@ export default function TVScene({
   transitionType,
   imageDuration,
   visible,
+  frameImage: frameImageSrc,
+  photoFrameImageSrc,
+  onPhotoFrameClick,
+  onTVClick,
+  onAdvance,
+  onRetreat,
 }) {
   const containerRef = useRef(null);
   const frameRef = useRef(null);
   const [screenBounds, setScreenBounds] = useState(null);
+  const [photoFrameBounds, setPhotoFrameBounds] = useState(null);
   const [frameNaturalSize, setFrameNaturalSize] = useState(null);
+  const scrollThrottleRef = useRef(false);
+  const touchStartRef = useRef(null);
+
+  const overlayColor = FILTER_OVERLAYS[colorFilter];
+
+  // Scroll/wheel handler on screen area
+  const handleWheel = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (scrollThrottleRef.current) return;
+      scrollThrottleRef.current = true;
+
+      if (e.deltaY > 0) {
+        onAdvance?.();
+      } else if (e.deltaY < 0) {
+        onRetreat?.();
+      }
+
+      setTimeout(() => {
+        scrollThrottleRef.current = false;
+      }, 300);
+    },
+    [onAdvance, onRetreat],
+  );
+
+  // Touch swipe handler
+  const handleTouchStart = useCallback((e) => {
+    touchStartRef.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback(
+    (e) => {
+      if (touchStartRef.current === null) return;
+      const deltaX = e.changedTouches[0].clientX - touchStartRef.current;
+      touchStartRef.current = null;
+
+      if (Math.abs(deltaX) < 50) return;
+
+      if (deltaX < 0) {
+        onAdvance?.();
+      } else {
+        onRetreat?.();
+      }
+    },
+    [onAdvance, onRetreat],
+  );
 
   const recalculate = useCallback(() => {
     if (!containerRef.current || !frameNaturalSize) return;
@@ -56,7 +111,7 @@ export default function TVScene({
       containerW,
       containerH,
       frameNaturalSize.w,
-      frameNaturalSize.h
+      frameNaturalSize.h,
     );
 
     setScreenBounds({
@@ -64,6 +119,13 @@ export default function TVScene({
       top: imgBounds.y + imgBounds.height * TV_SCREEN.top,
       width: imgBounds.width * TV_SCREEN.width,
       height: imgBounds.height * TV_SCREEN.height,
+    });
+
+    setPhotoFrameBounds({
+      left: imgBounds.x + imgBounds.width * PHOTO_FRAME_INNER.left,
+      top: imgBounds.y + imgBounds.height * PHOTO_FRAME_INNER.top,
+      width: imgBounds.width * PHOTO_FRAME_INNER.width,
+      height: imgBounds.height * PHOTO_FRAME_INNER.height,
     });
   }, [frameNaturalSize]);
 
@@ -75,16 +137,13 @@ export default function TVScene({
     return () => window.removeEventListener("resize", recalculate);
   }, [frameNaturalSize, recalculate]);
 
-  const handleFrameLoad = useCallback(
-    (e) => {
-      const img = e.target;
-      setFrameNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
-    },
-    []
-  );
+  const handleFrameLoad = useCallback((e) => {
+    const img = e.target;
+    setFrameNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+  }, []);
 
   const isOff = scene === "tvOff";
-  const frameImage = isOff ? TV_OFF_IMAGE : TV_PLAYBACK_FRAME;
+  const frameImage = isOff ? TV_OFF_IMAGE : frameImageSrc || TV_PLAYBACK_FRAME;
   const showContent = scene === "static" || scene === "playback";
 
   return (
@@ -149,6 +208,87 @@ export default function TVScene({
             />
           )}
         </div>
+      )}
+
+      {/* Clickable TV screen area + scroll/swipe capture */}
+      {screenBounds && scene === "playback" && (
+        <div
+          className="absolute"
+          style={{
+            left: screenBounds.left,
+            top: screenBounds.top,
+            width: screenBounds.width,
+            height: screenBounds.height,
+            borderRadius: TV_SCREEN.borderRadius,
+            zIndex: 3,
+            background: "transparent",
+          }}
+          onWheel={handleWheel}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+        >
+          {onTVClick && (
+            <button
+              onClick={onTVClick}
+              className="h-full w-full cursor-pointer border-2 border-transparent p-0 transition-[border-color,box-shadow] duration-300 hover:border-[#c9a84c] hover:shadow-[0_0_12px_2px_rgba(201,168,76,0.5)]"
+              style={{
+                borderRadius: TV_SCREEN.borderRadius,
+                background: "transparent",
+              }}
+              aria-label="TV 클로즈업"
+            />
+          )}
+        </div>
+      )}
+
+      {/* Photo inside the small frame (visible whenever the room image is shown) */}
+      {photoFrameBounds && photoFrameImageSrc && (
+        <div
+          className="absolute overflow-hidden"
+          style={{
+            left: photoFrameBounds.left,
+            top: photoFrameBounds.top,
+            width: photoFrameBounds.width,
+            height: photoFrameBounds.height,
+            zIndex: 1,
+          }}
+        >
+          <img
+            src={photoFrameImageSrc}
+            alt=""
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
+          {/* Color filter overlay */}
+          {overlayColor && (
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{
+                backgroundColor: overlayColor,
+                mixBlendMode: "color",
+              }}
+            />
+          )}
+        </div>
+      )}
+
+      {/* Clickable photo frame area */}
+      {photoFrameBounds && onPhotoFrameClick && (
+        <button
+          onClick={onPhotoFrameClick}
+          className="absolute cursor-pointer border-transparent p-0 transition-[border-color,box-shadow] duration-300 hover:border-[#c9a84c] hover:shadow-[0_0_12px_2px_rgba(201,168,76,0.5)]"
+          style={{
+            left: photoFrameBounds.left,
+            top: photoFrameBounds.top,
+            width: photoFrameBounds.width,
+            height: photoFrameBounds.height,
+            zIndex: 3,
+            borderWidth: 2,
+            borderStyle: "solid",
+            background: "transparent",
+          }}
+          aria-label="액자 보기"
+        />
       )}
     </div>
   );

@@ -20,7 +20,7 @@ export default function LifeCardHero() {
           className={`tab ${activeTab === "records" ? "active" : ""}`}
           onClick={() => setActiveTab("records")}
         >
-          Life Records
+          Life Recordz
         </button>
         <button
           className={`tab ${activeTab === "reels" ? "active" : ""}`}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Maximize2, Minimize2 } from "lucide-react";
+import { Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
 import { SlLogout } from "react-icons/sl";
 import {
   CROSSFADE_DURATION_MS,
@@ -36,6 +36,9 @@ export default function VHSControls({
   onToggleFullscreen,
   onExit,
   visible,
+  isMuted,
+  onToggleMute,
+  hasBgm,
 }) {
   return (
     <div
@@ -85,6 +88,22 @@ export default function VHSControls({
           )}
         </button>
       </Tooltip>
+
+      {/* BGM Mute / Unmute */}
+      {hasBgm && (
+        <Tooltip label={isMuted ? "음악 켜기" : "음악 끄기"}>
+          <button
+            onClick={onToggleMute}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+          >
+            {isMuted ? (
+              <VolumeX className="h-5 w-5 text-white" />
+            ) : (
+              <Volume2 className="h-5 w-5 text-white" />
+            )}
+          </button>
+        </Tooltip>
+      )}
 
       <div className="h-6 w-px bg-white/20" />
 

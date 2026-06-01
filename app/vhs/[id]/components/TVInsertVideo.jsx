@@ -30,7 +30,6 @@ export default function TVInsertVideo({ onEnded, visible }) {
       <video
         ref={videoRef}
         src={INSERT_VIDEO_SRC}
-        muted
         playsInline
         preload="auto"
         onEnded={onEnded}

@@ -18,6 +18,7 @@ import {
   STATIC_VIDEO_SRC,
   TV_CLOSEUP_IMAGE,
 } from "./lib/constants";
+import { useBGM } from "./lib/useBGM";
 import VHSTapeIntro from "./VHSTapeIntro";
 import TVInsertVideo from "./TVInsertVideo";
 import TVScene from "./TVScene";
@@ -37,6 +38,18 @@ export default function VHSExhibition({ recordId, locale }) {
   const [transitionType, setTransitionType] = useState(DEFAULT_TRANSITION);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+
+  // BGM with fade in/out
+  const bgmUrl = data?.bgmUrl || data?.bgm || null;
+  const {
+    isMuted: bgmMuted,
+    toggleMute: bgmToggleMute,
+    startBGM,
+    duck: bgmDuck,
+    unduck: bgmUnduck,
+    setBgmPlaying,
+    hasBgm,
+  } = useBGM(bgmUrl);
 
   // Photo frame closeup state
   const [photoFrameOpen, setPhotoFrameOpen] = useState(false);
@@ -124,6 +137,21 @@ export default function VHSExhibition({ recordId, locale }) {
     };
   }, [scene, resetIdleTimer]);
 
+  // Spacebar play/pause toggle
+  useEffect(() => {
+    if (scene !== "playback") return;
+
+    const handleKeyDown = (e) => {
+      if (e.code === "Space" && !e.repeat) {
+        e.preventDefault();
+        setIsPlaying((p) => !p);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [scene]);
+
   // Fullscreen handling
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
@@ -142,10 +170,42 @@ export default function VHSExhibition({ recordId, locale }) {
       document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
-  // Handle play button on intro
+  // Handle play button on intro — also starts BGM (satisfies autoplay policy via user gesture)
   const handlePlay = useCallback(() => {
+    startBGM();
     startInsert();
-  }, [startInsert]);
+  }, [startInsert, startBGM]);
+
+  // Sync BGM with global isPlaying state
+  useEffect(() => {
+    setBgmPlaying(isPlaying);
+  }, [isPlaying, setBgmPlaying]);
+
+  // Duck BGM during insert video scene
+  useEffect(() => {
+    if (scene === "insert") {
+      bgmDuck();
+    } else if (scene === "tvOff" || scene === "static") {
+      bgmUnduck();
+    }
+  }, [scene, bgmDuck, bgmUnduck]);
+
+  // Duck/unduck BGM based on current slideshow media type
+  const prevItemTypeRef = useRef(null);
+  useEffect(() => {
+    if (scene !== "playback") return;
+
+    const currentType = slideshow.currentItem?.type;
+    const prevType = prevItemTypeRef.current;
+
+    if (currentType === "video" && prevType !== "video") {
+      bgmDuck();
+    } else if (currentType !== "video" && prevType === "video") {
+      bgmUnduck();
+    }
+
+    prevItemTypeRef.current = currentType;
+  }, [scene, slideshow.currentItem?.type, bgmDuck, bgmUnduck]);
 
   // Handle exit
   const handleExit = useCallback(() => {
@@ -305,6 +365,9 @@ export default function VHSExhibition({ recordId, locale }) {
           onToggleFullscreen={toggleFullscreen}
           onExit={handleExit}
           visible={showControls}
+          isMuted={bgmMuted}
+          onToggleMute={bgmToggleMute}
+          hasBgm={hasBgm}
         />
       )}
 

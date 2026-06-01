@@ -30,7 +30,10 @@ function generateKenBurnsParams() {
  * so the animation continues uninterrupted.
  */
 function KenBurnsWrapper({ duration, children }) {
-  const [style, setStyle] = useState({ transform: "scale(1)", transition: "none" });
+  const [style, setStyle] = useState({
+    transform: "scale(1)",
+    transition: "none",
+  });
   const rafRef = useRef(null);
 
   useEffect(() => {
@@ -52,8 +55,8 @@ function KenBurnsWrapper({ duration, children }) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  // Only run on mount — animation persists across buffer swap thanks to React key
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only run on mount — animation persists across buffer swap thanks to React key
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -104,7 +107,7 @@ function MediaItem({ item, isPlaying, onVideoEnded, isFront }) {
       <video
         ref={videoRef}
         src={mediaSrc}
-        muted
+        // muted
         playsInline
         preload="auto"
         onEnded={isFront ? onVideoEnded : undefined}
@@ -167,9 +170,7 @@ export default function TVMediaViewport({
         const isFront = layer.isCurrent;
         // During transition: current fades out (opacity 0), next fades in (opacity 1)
         // Not transitioning: current is fully visible (opacity 1)
-        const opacity = transitioning
-          ? (isFront ? 0 : 1)
-          : (isFront ? 1 : 0);
+        const opacity = transitioning ? (isFront ? 0 : 1) : isFront ? 1 : 0;
 
         const media = (
           <MediaItem

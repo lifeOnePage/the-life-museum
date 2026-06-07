@@ -7,12 +7,8 @@ import { parseGIF, decompressFrames } from "gifuct-js";
 import { getMediaType } from "../utils/mediaType";
 import { staticTextureCache, gifFrameCache } from "../utils/textureCache";
 
-// 카메라 앞 고정 위치 (카메라 위치 [0, 1.5, 6] 기준)
-const CAMERA_FRONT_POSITION = {
-  x: 0,
-  y: 1.6,
-  z: 2.25,
-};
+// 선택된 앨범이 카메라로부터 떨어질 고정 거리
+const SELECTED_ALBUM_DISTANCE = 1.55;
 
 // 마우스 tilt 효과 설정
 const TILT_CONFIG = {
@@ -311,6 +307,7 @@ export default memo(function AlbumCover({
   isFlipped = false,
   isPlayable = true,
   sceneOffset = 0,
+  cameraBaseZ = 3.8,
   isScrollingRef,
   onClick,
   onHoverChange,
@@ -419,11 +416,11 @@ export default memo(function AlbumCover({
     const state = animationState.current;
 
     if (isSelected) {
-      state.targetX = CAMERA_FRONT_POSITION.x;
+      state.targetX = 0;
       // Y: 카메라 스크롤에 따라 화면 중앙 유지 (로컬 좌표 보정)
       state.targetY = camera.position.y - sceneOffset;
-      // Z: 카메라 위치와 무관한 고정값
-      state.targetZ = CAMERA_FRONT_POSITION.z;
+      // Z: 카메라 거리 기준 상대값 (baseZ가 커지면 앨범도 뒤로)
+      state.targetZ = cameraBaseZ - SELECTED_ALBUM_DISTANCE;
       state.targetRotX = 0;
       state.targetRotY = isFlipped ? Math.PI : 0;
     } else {
@@ -434,7 +431,7 @@ export default memo(function AlbumCover({
       state.targetRotX = tiltAngle; // 기울기 복원
       state.targetRotY = 0;
     }
-  }, [isSelected, isFlipped, originalPosition, tiltAngle, sceneOffset]);
+  }, [isSelected, isFlipped, originalPosition, tiltAngle, sceneOffset, cameraBaseZ]);
 
   // 호버 시 위로 리프트
   useEffect(() => {

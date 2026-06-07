@@ -71,6 +71,7 @@ export default function ShelfScene({
   onCloseAlbum,
   onHoverLabelPos,
   windowWidth = 1280,
+  baseZ = 3.8,
   isScrollingRef,
 }) {
   const { camera, gl } = useThree();
@@ -304,6 +305,7 @@ export default function ShelfScene({
               isFlipped={isSelectedAlbum && isFlipped}
               isPlayable={isPlayable}
               sceneOffset={sceneOffset}
+              cameraBaseZ={baseZ}
               onClick={handleAlbumClick}
               isScrollingRef={isScrollingRef}
               onGroupRef={handleGroupRef}

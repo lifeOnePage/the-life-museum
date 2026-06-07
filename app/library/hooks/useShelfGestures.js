@@ -1,10 +1,6 @@
 import { useEffect, useRef, useCallback } from "react";
 
-const ZOOM_MIN = 2.9;
-const ZOOM_MAX = 3.5;
-// 앨범 선택 시 줌 제한 (앨범 Z=2.5에서 0.4 간격 — 관통 방지)
-const ZOOM_MIN_SELECTED = 2.9;
-const ZOOM_MAX_SELECTED = 4.0;
+// 줌 범위는 baseZ 기준 상대 오프셋으로 결정됨 (getZoomBounds 참조)
 // 수평 패닝 범위 (앨범 크기 0.8의 ~37.5%)
 const PAN_X_MAX = 0.3;
 
@@ -20,12 +16,20 @@ function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
+function getZoomBounds(baseZ, isSelected) {
+  if (isSelected) {
+    return { zMin: baseZ - 0.9, zMax: baseZ + 0.6 };
+  }
+  return { zMin: baseZ - 0.6, zMax: baseZ + 0.6 };
+}
+
 export default function useShelfGestures({
   wrapperRef,
   scrollRangeRef,
   cameraYOffsetRef,
   cameraXOffsetRef,
   cameraZRef,
+  baseZRef,
   selectedAlbum,
 }) {
   // Touch state
@@ -111,8 +115,7 @@ export default function useShelfGestures({
 
         const dist = getTouchDist(e.touches);
         const ratio = t.startDist / dist;
-        const zMin = selectedAlbum !== null ? ZOOM_MIN_SELECTED : ZOOM_MIN;
-        const zMax = selectedAlbum !== null ? ZOOM_MAX_SELECTED : ZOOM_MAX;
+        const { zMin, zMax } = getZoomBounds(baseZRef.current, selectedAlbum !== null);
         cameraZRef.current = clamp(t.startZoom * ratio, zMin, zMax);
       }
     }
@@ -142,8 +145,7 @@ export default function useShelfGestures({
     function onWheel(e) {
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault(); // works because passive:false
-        const zMin = selectedAlbum !== null ? ZOOM_MIN_SELECTED : ZOOM_MIN;
-        const zMax = selectedAlbum !== null ? ZOOM_MAX_SELECTED : ZOOM_MAX;
+        const { zMin, zMax } = getZoomBounds(baseZRef.current, selectedAlbum !== null);
         cameraZRef.current = clamp(
           cameraZRef.current + e.deltaY * 0.005,
           zMin,
@@ -183,6 +185,7 @@ export default function useShelfGestures({
     cameraYOffsetRef,
     cameraXOffsetRef,
     cameraZRef,
+    baseZRef,
     selectedAlbum,
   ]);
 

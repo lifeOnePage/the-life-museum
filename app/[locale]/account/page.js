@@ -170,6 +170,12 @@ function setLocaleCookie(locale) {
   localStorage.setItem("NEXT_LOCALE", locale);
 }
 
+const COUPON_GROUP_STYLE = {
+  "와디즈 쿠폰": { border: "border-l-[#c4b49a]", badge: "bg-[#c4b49a]/15 text-[#c4b49a]", text: "text-[#c4b49a]/70" },
+  "카톡이벤트":  { border: "border-l-[#fee500]", badge: "bg-[#fee500]/15 text-[#fee500]", text: "text-[#fee500]/70" },
+};
+const DEFAULT_COUPON_STYLE = { border: "border-l-white/20", badge: "bg-white/10 text-white/50", text: "text-white/50" };
+
 function formatPrice(price, locale) {
   if (price === 0) return locale === "ko" ? "₩0" : "$0";
   if (locale === "ko") return `₩${price.toLocaleString()}`;
@@ -382,14 +388,26 @@ export default function AccountPage() {
     setCouponError("");
     setCouponDiscount(null);
 
-    // TODO: 임시 — 아무 코드나 10,000원 차감
+    // TODO: 임시 — 쿠폰 코드별 할인
     await new Promise((r) => setTimeout(r, 500));
+    const code = couponCode.trim().toLowerCase();
+    const COUPON_MAP = {
+      manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
+      "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
+      "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
+    };
+    const match = COUPON_MAP[code];
+    if (!match) {
+      setCouponError(t.couponInvalid);
+      setCouponValidating(false);
+      return;
+    }
     setCouponDiscount({
       type: "amount",
-      value: 10000,
+      value: match.value,
       code: couponCode.trim(),
-      groupName: "와디즈 쿠폰",
-      couponName: "10,000원 할인권",
+      groupName: match.groupName,
+      couponName: match.couponName,
     });
     setCouponValidating(false);
     return;
@@ -433,14 +451,26 @@ export default function AccountPage() {
     setSaveCouponValidating(true);
     setSaveCouponError("");
 
-    // TODO: 임시 — 아무 코드나 저장
+    // TODO: 임시 — 쿠폰 코드별 저장
     await new Promise((r) => setTimeout(r, 500));
+    const code = saveCouponCode.trim().toLowerCase();
+    const COUPON_MAP = {
+      manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
+      "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
+      "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
+    };
+    const match = COUPON_MAP[code];
+    if (!match) {
+      setSaveCouponError(currentLocale === "ko" ? "유효하지 않은 쿠폰 코드입니다." : "Invalid coupon code.");
+      setSaveCouponValidating(false);
+      return;
+    }
     const newCoupon = {
       type: "amount",
-      value: 10000,
+      value: match.value,
       code: saveCouponCode.trim(),
-      groupName: "와디즈 쿠폰",
-      couponName: "10,000원 할인권",
+      groupName: match.groupName,
+      couponName: match.couponName,
     };
 
     // 중복 체크
@@ -919,39 +949,45 @@ export default function AccountPage() {
                             {t.couponRemove}
                           </button>
                         </div>
-                        {(couponDiscount.groupName || couponDiscount.couponName) && (
-                          <div className="mt-2 flex flex-col gap-0.5 pl-6 text-xs text-green-400/70">
-                            {couponDiscount.groupName && <span>{couponDiscount.groupName}</span>}
-                            {couponDiscount.couponName && <span>{couponDiscount.couponName}</span>}
-                          </div>
-                        )}
+                        {(couponDiscount.groupName || couponDiscount.couponName) && (() => {
+                          const gs = COUPON_GROUP_STYLE[couponDiscount.groupName] || DEFAULT_COUPON_STYLE;
+                          return (
+                            <div className="mt-2 flex flex-col gap-0.5 pl-6 text-xs">
+                              {couponDiscount.groupName && <span className={gs.text}>{couponDiscount.groupName}</span>}
+                              {couponDiscount.couponName && <span className="text-green-400/70">{couponDiscount.couponName}</span>}
+                            </div>
+                          );
+                        })()}
                       </div>
                     ) : (
                       <div className="flex flex-col gap-3">
                         {/* 보관함 쿠폰 선택 */}
                         {savedCoupons.length > 0 && (
                           <div className="flex flex-col gap-2">
-                            {savedCoupons.map((coupon) => (
-                              <button
-                                key={coupon.code}
-                                onClick={() => handleApplySavedCoupon(coupon)}
-                                className="flex items-center justify-between rounded-lg border border-white/10 px-4 py-3 text-left transition hover:border-[#c4b49a]/30 hover:bg-[#c4b49a]/5"
-                              >
-                                <div className="flex flex-col gap-0.5">
-                                  {coupon.groupName && (
-                                    <span className="text-[10px] text-[#9b8b7a]">{coupon.groupName}</span>
-                                  )}
-                                  <span className="text-sm text-[#e8d5b7]">
-                                    {coupon.couponName || coupon.code}
+                            {savedCoupons.map((coupon) => {
+                              const gs = COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
+                              return (
+                                <button
+                                  key={coupon.code}
+                                  onClick={() => handleApplySavedCoupon(coupon)}
+                                  className={`flex items-center justify-between rounded-lg border border-white/10 border-l-[3px] ${gs.border} px-4 py-3 text-left transition hover:bg-white/5`}
+                                >
+                                  <div className="flex flex-col gap-0.5">
+                                    {coupon.groupName && (
+                                      <span className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}>{coupon.groupName}</span>
+                                    )}
+                                    <span className="text-sm text-[#e8d5b7]">
+                                      {coupon.couponName || coupon.code}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs text-[#c4b49a]">
+                                    {coupon.type === "percent"
+                                      ? `${coupon.value}%`
+                                      : formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")}
                                   </span>
-                                </div>
-                                <span className="text-xs text-[#c4b49a]">
-                                  {coupon.type === "percent"
-                                    ? `${coupon.value}%`
-                                    : formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")}
-                                </span>
-                              </button>
-                            ))}
+                                </button>
+                              );
+                            })}
                           </div>
                         )}
                         {/* 직접 입력 */}
@@ -1148,14 +1184,16 @@ export default function AccountPage() {
                 </div>
               ) : (
                 <div className="overflow-hidden rounded-xl border border-white/10">
-                  {savedCoupons.map((coupon, idx) => (
+                  {savedCoupons.map((coupon, idx) => {
+                    const gs = COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
+                    return (
                     <div
                       key={coupon.code}
-                      className={`flex items-center justify-between bg-[#1e1a14] px-5 py-4 ${idx > 0 ? "border-t border-white/8" : ""}`}
+                      className={`flex items-center justify-between bg-[#1e1a14] px-5 py-4 border-l-[3px] ${gs.border} ${idx > 0 ? "border-t border-white/8" : ""}`}
                     >
                       <div className="flex flex-col gap-0.5">
                         {coupon.groupName && (
-                          <span className="text-xs text-[#9b8b7a]">{coupon.groupName}</span>
+                          <span className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}>{coupon.groupName}</span>
                         )}
                         <span className="text-sm font-medium text-[#e8d5b7]">
                           {coupon.couponName || coupon.code}
@@ -1190,7 +1228,8 @@ export default function AccountPage() {
                         </button>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>

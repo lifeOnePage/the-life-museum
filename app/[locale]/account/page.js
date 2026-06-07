@@ -9,23 +9,14 @@ import { requestCreditPurchase } from "@/app/utils/payment";
 // ── 크레딧 패키지 ──────────────────────────────
 const CREDIT_PACKAGES = [
   {
-    key: "free",
-    credits: 0,
-    priceKRW: 0,
-    priceUSD: 0,
-    labelKo: "Free",
-    labelEn: "Free",
-    descKo: "30일 체험",
-    descEn: "30-day trial",
-    badge: null,
-  },
-  {
     key: "credit_1000",
     credits: 1000,
     priceKRW: 10000,
     priceUSD: 999,
-    labelKo: "1,000C",
-    labelEn: "1,000C",
+    originalPriceKRW: null,
+    originalPriceUSD: null,
+    labelKo: "1,000 크레딧",
+    labelEn: "1,000 Credits",
     descKo: "기본",
     descEn: "Basic",
     badge: null,
@@ -35,22 +26,26 @@ const CREDIT_PACKAGES = [
     credits: 3900,
     priceKRW: 29000,
     priceUSD: 2499,
-    labelKo: "3,900C",
-    labelEn: "3,900C",
+    originalPriceKRW: 39000,
+    originalPriceUSD: 3900,
+    labelKo: "3,900 크레딧",
+    labelEn: "3,900 Credits",
     descKo: "25% OFF",
     descEn: "25% OFF",
-    badge: "25%",
+    badge: "-25%",
   },
   {
     key: "credit_9900",
     credits: 9900,
     priceKRW: 59000,
     priceUSD: 4999,
-    labelKo: "9,900C",
-    labelEn: "9,900C",
+    originalPriceKRW: 99000,
+    originalPriceUSD: 9900,
+    labelKo: "9,900 크레딧",
+    labelEn: "9,900 Credits",
     descKo: "40% OFF",
     descEn: "40% OFF",
-    badge: "40%",
+    badge: "-40%",
   },
 ];
 
@@ -71,14 +66,24 @@ const T = {
     language: "언어",
     back: "돌아가기",
     myCredits: "내 크레딧",
+    creditUnit: "크레딧",
     purchasing: "결제 진행 중...",
     purchase: "결제하기",
-    domestic: "₩ KRW",
-    international: "$ USD",
+    domestic: "₩ 원화",
+    international: "$ 달러",
     paymentError: "결제 요청 중 오류가 발생했습니다.",
     paymentSuccess: "크레딧이 충전되었습니다!",
     free: "무료",
     paymentErrorMsg: "결제 요청 중 오류가 발생했습니다.",
+    creditUsageTitle: "크레딧 소모 기준",
+    creditUsageActivity: "활동 항목",
+    creditUsageAmount: "소모 크레딧",
+    creditUsageNote: "비고",
+    creditUsageRows: [
+      ["신규 앨범 생성", "900 크레딧 /회", "1회 생성 기준"],
+      ["일반 유료 아이템 구매", "100 크레딧 /회", "앨범 커버 테마 구매 등"],
+      ["한정판 아이템 구매", "200 크레딧 /회", "시즌/특별 한정판 등"],
+    ],
     couponPlaceholder: "쿠폰 코드 입력",
     couponApply: "적용",
     couponApplying: "확인 중...",
@@ -87,10 +92,16 @@ const T = {
     couponInvalid: "유효하지 않은 쿠폰 코드입니다.",
     discountLabel: "할인",
     finalPrice: "결제 금액",
-    couponTitle: "쿠폰 관리",
-    couponDesc: "보유 중인 쿠폰 코드를 입력하면 결제 시 할인이 적용됩니다.",
+    expectedCredits: "충전 후 예상 보유 크레딧",
+    totalPayment: "총 결제 금액",
+    couponTitle: "쿠폰 보관함",
+    couponDesc: "쿠폰 코드를 등록하면 충전 시 사용할 수 있습니다.",
     couponHistory: "적용된 쿠폰",
-    noCoupons: "적용된 쿠폰이 없습니다.",
+    noCoupons: "등록된 쿠폰이 없습니다.",
+    couponRegister: "등록",
+    couponRegistering: "확인 중...",
+    savedCoupons: "보유 쿠폰",
+    couponUse: "사용하기",
   },
   en: {
     profile: "Profile",
@@ -107,6 +118,7 @@ const T = {
     language: "Language",
     back: "Go back",
     myCredits: "My Credits",
+    creditUnit: "Credits",
     purchasing: "Processing payment...",
     purchase: "Purchase",
     domestic: "₩ KRW",
@@ -115,6 +127,15 @@ const T = {
     paymentSuccess: "Credits have been added!",
     free: "Free",
     paymentErrorMsg: "An error occurred while requesting payment.",
+    creditUsageTitle: "Credit Usage",
+    creditUsageActivity: "Activity",
+    creditUsageAmount: "Credits Used",
+    creditUsageNote: "Note",
+    creditUsageRows: [
+      ["Create new album", "900 Credits /ea", "Per generation"],
+      ["Standard item purchase", "100 Credits /ea", "Album cover themes, etc."],
+      ["Limited edition purchase", "200 Credits /ea", "Seasonal/special editions"],
+    ],
     couponPlaceholder: "Enter coupon code",
     couponApply: "Apply",
     couponApplying: "Checking...",
@@ -123,10 +144,16 @@ const T = {
     couponInvalid: "Invalid coupon code.",
     discountLabel: "Discount",
     finalPrice: "Total",
-    couponTitle: "Coupon",
-    couponDesc: "Enter a coupon code to get a discount on your next purchase.",
+    expectedCredits: "Expected credits after purchase",
+    totalPayment: "Total payment",
+    couponTitle: "Coupon Wallet",
+    couponDesc: "Register coupon codes to use when purchasing credits.",
     couponHistory: "Applied Coupons",
-    noCoupons: "No coupons applied.",
+    noCoupons: "No coupons registered.",
+    couponRegister: "Register",
+    couponRegistering: "Checking...",
+    savedCoupons: "My Coupons",
+    couponUse: "Use",
   },
 };
 
@@ -142,6 +169,12 @@ function setLocaleCookie(locale) {
   document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000; samesite=lax`;
   localStorage.setItem("NEXT_LOCALE", locale);
 }
+
+const COUPON_GROUP_STYLE = {
+  "와디즈 쿠폰": { border: "border-l-[#c4b49a]", badge: "bg-[#c4b49a]/15 text-[#c4b49a]", text: "text-[#c4b49a]/70" },
+  "카톡이벤트":  { border: "border-l-[#fee500]", badge: "bg-[#fee500]/15 text-[#fee500]", text: "text-[#fee500]/70" },
+};
+const DEFAULT_COUPON_STYLE = { border: "border-l-white/20", badge: "bg-white/10 text-white/50", text: "text-white/50" };
 
 function formatPrice(price, locale) {
   if (price === 0) return locale === "ko" ? "₩0" : "$0";
@@ -227,6 +260,8 @@ export default function AccountPage() {
   const [currentLocale, setCurrentLocale] = useState("ko");
   const [currency, setCurrency] = useState("KRW");
   const [section, setSection] = useState("profile"); // "profile" | "charge" | "coupon"
+  const [creditUsageOpen, setCreditUsageOpen] = useState(false);
+  const [chargeCouponOpen, setChargeCouponOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const t = T[currentLocale] || T.ko;
@@ -251,6 +286,10 @@ export default function AccountPage() {
   const [couponDiscount, setCouponDiscount] = useState(null);
   const [couponValidating, setCouponValidating] = useState(false);
   const [couponError, setCouponError] = useState("");
+  const [savedCoupons, setSavedCoupons] = useState([]);
+  const [saveCouponCode, setSaveCouponCode] = useState("");
+  const [saveCouponValidating, setSaveCouponValidating] = useState(false);
+  const [saveCouponError, setSaveCouponError] = useState("");
 
   useEffect(() => {
     const locale = getStoredLocale();
@@ -348,6 +387,31 @@ export default function AccountPage() {
     setCouponValidating(true);
     setCouponError("");
     setCouponDiscount(null);
+
+    // TODO: 임시 — 쿠폰 코드별 할인
+    await new Promise((r) => setTimeout(r, 500));
+    const code = couponCode.trim().toLowerCase();
+    const COUPON_MAP = {
+      manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
+      "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
+      "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
+    };
+    const match = COUPON_MAP[code];
+    if (!match) {
+      setCouponError(t.couponInvalid);
+      setCouponValidating(false);
+      return;
+    }
+    setCouponDiscount({
+      type: "amount",
+      value: match.value,
+      code: couponCode.trim(),
+      groupName: match.groupName,
+      couponName: match.couponName,
+    });
+    setCouponValidating(false);
+    return;
+
     try {
       const res = await authedFetch(`${BASE_URL}/coupon/validate`, {
         method: "POST",
@@ -379,6 +443,58 @@ export default function AccountPage() {
     setCouponCode("");
     setCouponDiscount(null);
     setCouponError("");
+  };
+
+  // 쿠폰 보관함에 저장
+  const handleSaveCoupon = async () => {
+    if (!saveCouponCode.trim()) return;
+    setSaveCouponValidating(true);
+    setSaveCouponError("");
+
+    // TODO: 임시 — 쿠폰 코드별 저장
+    await new Promise((r) => setTimeout(r, 500));
+    const code = saveCouponCode.trim().toLowerCase();
+    const COUPON_MAP = {
+      manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
+      "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
+      "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
+    };
+    const match = COUPON_MAP[code];
+    if (!match) {
+      setSaveCouponError(currentLocale === "ko" ? "유효하지 않은 쿠폰 코드입니다." : "Invalid coupon code.");
+      setSaveCouponValidating(false);
+      return;
+    }
+    const newCoupon = {
+      type: "amount",
+      value: match.value,
+      code: saveCouponCode.trim(),
+      groupName: match.groupName,
+      couponName: match.couponName,
+    };
+
+    // 중복 체크
+    if (savedCoupons.some((c) => c.code === newCoupon.code)) {
+      setSaveCouponError(currentLocale === "ko" ? "이미 등록된 쿠폰입니다." : "Coupon already registered.");
+      setSaveCouponValidating(false);
+      return;
+    }
+
+    setSavedCoupons((prev) => [...prev, newCoupon]);
+    setSaveCouponCode("");
+    setSaveCouponValidating(false);
+  };
+
+  const handleRemoveSavedCoupon = (code) => {
+    setSavedCoupons((prev) => prev.filter((c) => c.code !== code));
+    if (couponDiscount?.code === code) {
+      handleCouponRemove();
+    }
+  };
+
+  const handleApplySavedCoupon = (coupon) => {
+    setCouponDiscount(coupon);
+    setCouponCode(coupon.code);
   };
 
   const calcDiscountedPrice = (price) => {
@@ -417,30 +533,37 @@ export default function AccountPage() {
   // ══════════════════════════════════════════════════
   return (
     <div
-      className="flex min-h-screen bg-[#141210] text-white"
+      className="flex h-screen bg-[#141210] text-white"
       style={{ fontFamily: "pretendard, system-ui, -apple-system, sans-serif" }}
     >
       {/* ── 사이드바 (데스크탑) ── */}
       <aside className="hidden w-60 flex-shrink-0 border-r border-white/10 bg-[#1a1710] md:block">
         <div className="sticky top-0 px-5 pt-8 pb-6">
+          <button
+            onClick={() => router.push(`/${currentLocale}/library`)}
+            className="mb-3 flex items-center gap-2 text-xs text-white/30 transition hover:text-white/50"
+          >
+            <IconBack />
+            {t.back}
+          </button>
           <h1 className="mb-4 text-lg font-semibold text-[#e8d5b7]">
-            The Life Records
+            The Life Recordz
           </h1>
 
           <div className="mb-6 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5">
             <p className="text-xs text-white/30">{t.myCredits}</p>
             <p className="text-lg font-bold text-[#e8d5b7]">
-              {(user?.credits ?? 0).toLocaleString()} C
+              {(user?.credits ?? 0).toLocaleString()} {t.creditUnit}
             </p>
           </div>
 
-          <nav className="space-y-1">
+          <nav className="">
             {MENU.map((item) =>
               item.children ? (
-                <div key={item.key}>
-                  <p className="mt-5 mb-1 px-3 text-xs font-medium tracking-wider text-white/30 uppercase">
+                <div key={item.key} className="">
+                  {/* <p className="mt-5 mb-1 px-3 text-xs font-medium tracking-wider text-white/30 uppercase">
                     {item.label}
-                  </p>
+                  </p> */}
                   {item.children.map((child) => (
                     <button
                       key={child.key}
@@ -472,14 +595,6 @@ export default function AccountPage() {
               ),
             )}
           </nav>
-
-          <button
-            onClick={() => router.push(`/${currentLocale}/library`)}
-            className="mt-10 flex items-center gap-2 px-3 text-xs text-white/30 transition hover:text-white/50"
-          >
-            <IconBack />
-            {t.back}
-          </button>
         </div>
       </aside>
 
@@ -491,13 +606,18 @@ export default function AccountPage() {
         >
           <IconBack />
         </button>
-        <h1 className="text-sm font-semibold text-[#e8d5b7]">
-          {section === "profile"
-            ? t.profile
-            : section === "charge"
-              ? t.charge
-              : t.coupon}
-        </h1>
+        <div className="flex flex-col items-center">
+          <h1 className="text-sm font-semibold text-[#e8d5b7]">
+            {section === "profile"
+              ? t.profile
+              : section === "charge"
+                ? t.charge
+                : t.coupon}
+          </h1>
+          <p className="text-[11px] font-bold text-white/30">
+            {(user?.credits ?? 0).toLocaleString()} {t.creditUnit}
+          </p>
+        </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           className="text-white/40"
@@ -660,6 +780,49 @@ export default function AccountPage() {
                 {t.charge}
               </h2>
 
+              {/* 크레딧 소모 기준 (접이식) */}
+              <div className="mb-6 overflow-hidden rounded-xl border border-white/10">
+                <button
+                  onClick={() => setCreditUsageOpen(!creditUsageOpen)}
+                  className="flex w-full items-center justify-between px-4 py-3"
+                >
+                  <span className="text-sm font-medium text-[#9b8b7a]">
+                    {t.creditUsageTitle}
+                  </span>
+                  <svg
+                    className={`h-4 w-4 text-[#9b8b7a] transition-transform ${creditUsageOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+                {creditUsageOpen && (
+                  <div className="border-t border-white/8">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="border-b border-white/8 bg-white/5">
+                          <th className="px-4 py-2 text-left font-medium text-[#9b8b7a]">{t.creditUsageActivity}</th>
+                          <th className="px-4 py-2 text-center font-medium text-[#9b8b7a]">{t.creditUsageAmount}</th>
+                          <th className="px-4 py-2 text-right font-medium text-[#9b8b7a]">{t.creditUsageNote}</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {t.creditUsageRows.map((row, i) => (
+                          <tr key={i} className={i > 0 ? "border-t border-white/8" : ""}>
+                            <td className="px-4 py-2.5 text-[#c4b49a]">{row[0]}</td>
+                            <td className="px-4 py-2.5 text-center text-[#c4b49a]">{row[1]}</td>
+                            <td className="px-4 py-2.5 text-right text-[#9b8b7a]">{row[2]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
               {/* 통화 토글 */}
               <div className="mb-6 flex items-center justify-center">
                 <div className="flex items-center rounded-full border border-white/10 text-sm">
@@ -678,93 +841,215 @@ export default function AccountPage() {
                 </div>
               </div>
 
-              {/* 패키지 그리드 */}
-              <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {CREDIT_PACKAGES.map((pkg) => {
+              {/* 패키지 리스트 */}
+              <div className="mb-6 overflow-hidden rounded-xl border border-white/10">
+                {CREDIT_PACKAGES.map((pkg, idx) => {
                   const isSelected = selectedPackage === pkg.key;
-                  const isFree = pkg.key === "free";
                   const price =
                     currency === "KRW" ? pkg.priceKRW : pkg.priceUSD;
                   return (
                     <button
                       key={pkg.key}
-                      onClick={() => !isFree && setSelectedPackage(pkg.key)}
-                      disabled={isFree}
-                      className={`relative rounded-xl border p-4 text-center transition ${
-                        isFree
-                          ? "cursor-default border-white/5 bg-white/[0.02] opacity-50"
-                          : isSelected
-                            ? "border-[#c4b49a] bg-[#c4b49a]/10"
-                            : "border-white/10 bg-[#1e1a14] hover:border-white/20"
-                      }`}
+                      onClick={() => setSelectedPackage(pkg.key)}
+                      className={`flex w-full items-center gap-3 px-4 py-4 transition ${
+                        isSelected
+                          ? "bg-[#c4b49a]/10"
+                          : "hover:bg-white/5"
+                      } ${idx > 0 ? "border-t border-white/8" : ""}`}
                     >
-                      {pkg.badge && (
-                        <span className="absolute -top-2.5 -right-1 rounded-full bg-[#c4b49a] px-2 py-0.5 text-xs font-bold text-[#1a1510]">
-                          {pkg.badge}
-                        </span>
-                      )}
-                      <div className="text-base font-semibold text-[#e8d5b7]">
-                        {currentLocale === "ko" ? pkg.labelKo : pkg.labelEn}
+                      {/* 라디오 */}
+                      <div
+                        className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${
+                          isSelected ? "border-[#c4b49a]" : "border-white/30"
+                        }`}
+                      >
+                        {isSelected && (
+                          <div className="h-2.5 w-2.5 rounded-full bg-[#c4b49a]" />
+                        )}
                       </div>
-                      <div className="mt-1 text-sm text-[#9b8b7a]">
-                        {isFree
-                          ? t.free
-                          : formatPrice(
-                              price,
+                      {/* 크레딧 */}
+                      <span className="text-base font-semibold text-[#e8d5b7]">
+                        {currentLocale === "ko" ? pkg.labelKo : pkg.labelEn}
+                      </span>
+                      {/* 가격 + 배지 (오른쪽) */}
+                      <span className="ml-auto flex items-center gap-2 text-sm">
+                        {pkg.badge && (
+                          <span className="rounded-full bg-[#c4b49a] px-2 py-0.5 text-[10px] font-bold text-[#1a1510]">
+                            {pkg.badge}
+                          </span>
+                        )}
+                        <span className="text-[#e8d5b7]">
+                          {formatPrice(price, currency === "KRW" ? "ko" : "en")}
+                        </span>
+                        {(currency === "KRW" ? pkg.originalPriceKRW : pkg.originalPriceUSD) && (
+                          <span className="text-[#9b8b7a]/50 line-through">
+                            {formatPrice(
+                              currency === "KRW" ? pkg.originalPriceKRW : pkg.originalPriceUSD,
                               currency === "KRW" ? "ko" : "en",
                             )}
-                      </div>
-                      {pkg.descKo && !isFree && (
-                        <div className="mt-0.5 text-xs text-[#9b8b7a]/70">
-                          {currentLocale === "ko" ? pkg.descKo : pkg.descEn}
-                        </div>
-                      )}
+                          </span>
+                        )}
+                      </span>
                     </button>
                   );
                 })}
               </div>
 
-              {/* 할인 표시 */}
-              {couponDiscount && selectedPkg && selectedPackage !== "free" && (
+              {/* 쿠폰 적용 (접이식) */}
+              <div className="mb-6 overflow-hidden rounded-xl border border-white/10">
+                <button
+                  onClick={() => setChargeCouponOpen(!chargeCouponOpen)}
+                  className="flex w-full items-center justify-between px-4 py-3"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-[#9b8b7a]">
+                      {t.coupon}
+                    </span>
+                    {couponDiscount && (
+                      <span className="rounded-full bg-green-500/15 px-2 py-0.5 text-[10px] font-medium text-green-400">
+                        {t.couponApplied}
+                      </span>
+                    )}
+                  </div>
+                  <svg
+                    className={`h-4 w-4 text-[#9b8b7a] transition-transform ${chargeCouponOpen ? "rotate-180" : ""}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                  </svg>
+                </button>
+                {chargeCouponOpen && (
+                  <div className="border-t border-white/8 px-4 py-4">
+                    {couponDiscount ? (
+                      <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="h-4 w-4 text-green-400"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            <span className="text-sm font-medium text-green-400">
+                              {couponDiscount.type === "percent"
+                                ? `${couponDiscount.value}% ${t.discountLabel}`
+                                : `${formatPrice(couponDiscount.value, currency === "KRW" ? "ko" : "en")} ${t.discountLabel}`}
+                            </span>
+                          </div>
+                          <button
+                            onClick={handleCouponRemove}
+                            className="text-xs text-white/40 transition hover:text-white/60"
+                          >
+                            {t.couponRemove}
+                          </button>
+                        </div>
+                        {(couponDiscount.groupName || couponDiscount.couponName) && (() => {
+                          const gs = COUPON_GROUP_STYLE[couponDiscount.groupName] || DEFAULT_COUPON_STYLE;
+                          return (
+                            <div className="mt-2 flex flex-col gap-0.5 pl-6 text-xs">
+                              {couponDiscount.groupName && <span className={gs.text}>{couponDiscount.groupName}</span>}
+                              {couponDiscount.couponName && <span className="text-green-400/70">{couponDiscount.couponName}</span>}
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        {/* 보관함 쿠폰 선택 */}
+                        {savedCoupons.length > 0 && (
+                          <div className="flex flex-col gap-2">
+                            {savedCoupons.map((coupon) => {
+                              const gs = COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
+                              return (
+                                <button
+                                  key={coupon.code}
+                                  onClick={() => handleApplySavedCoupon(coupon)}
+                                  className={`flex items-center justify-between rounded-lg border border-white/10 border-l-[3px] ${gs.border} px-4 py-3 text-left transition hover:bg-white/5`}
+                                >
+                                  <div className="flex flex-col gap-0.5">
+                                    {coupon.groupName && (
+                                      <span className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}>{coupon.groupName}</span>
+                                    )}
+                                    <span className="text-sm text-[#e8d5b7]">
+                                      {coupon.couponName || coupon.code}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs text-[#c4b49a]">
+                                    {coupon.type === "percent"
+                                      ? `${coupon.value}%`
+                                      : formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+                        {/* 직접 입력 */}
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={couponCode}
+                            onChange={(e) => {
+                              setCouponCode(e.target.value);
+                              setCouponError("");
+                            }}
+                            placeholder={t.couponPlaceholder}
+                            className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 outline-none transition focus:border-[#c4b49a]"
+                          />
+                          <button
+                            onClick={handleCouponApply}
+                            disabled={couponValidating || !couponCode.trim()}
+                            className="rounded-lg bg-[#c4b49a] px-4 py-2.5 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
+                          >
+                            {couponValidating ? t.couponApplying : t.couponApply}
+                          </button>
+                        </div>
+                        {couponError && (
+                          <p className="mt-2 text-xs text-red-400/80">{couponError}</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* 요약 */}
+              {selectedPkg && (
                 <div className="mb-6 rounded-xl border border-white/10 bg-[#1e1a14] px-5 py-4 text-sm">
-                  <div className="flex justify-between text-[#9b8b7a]">
-                    <span>{selectedPkg.credits.toLocaleString()}C</span>
-                    <span>
-                      {formatPrice(
-                        currency === "KRW"
-                          ? selectedPkg.priceKRW
-                          : selectedPkg.priceUSD,
-                        currency === "KRW" ? "ko" : "en",
-                      )}
+                  <div className="flex justify-between py-1">
+                    <span className="text-[#9b8b7a]">{t.expectedCredits}</span>
+                    <span className="font-semibold text-[#e8d5b7]">
+                      {((user?.credits ?? 0) + selectedPkg.credits).toLocaleString()} {t.creditUnit}
                     </span>
                   </div>
-                  <div className="flex justify-between text-green-400">
-                    <span>{t.discountLabel}</span>
-                    <span>
-                      -
-                      {formatPrice(
-                        (currency === "KRW"
-                          ? selectedPkg.priceKRW
-                          : selectedPkg.priceUSD) -
+                  <div className="flex items-center justify-between border-t border-white/10 pt-2 mt-2">
+                    <span className="text-[#9b8b7a]">{t.totalPayment}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-bold text-[#e8d5b7]">
+                        {formatPrice(
                           calcDiscountedPrice(
                             currency === "KRW"
                               ? selectedPkg.priceKRW
                               : selectedPkg.priceUSD,
                           ),
-                        currency === "KRW" ? "ko" : "en",
-                      )}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex justify-between border-t border-white/10 pt-2 font-medium text-[#e8d5b7]">
-                    <span>{t.finalPrice}</span>
-                    <span>
-                      {formatPrice(
-                        calcDiscountedPrice(
-                          currency === "KRW"
-                            ? selectedPkg.priceKRW
-                            : selectedPkg.priceUSD,
-                        ),
-                        currency === "KRW" ? "ko" : "en",
+                          currency === "KRW" ? "ko" : "en",
+                        )}
+                      </span>
+                      {couponDiscount && calcDiscountedPrice(
+                        currency === "KRW" ? selectedPkg.priceKRW : selectedPkg.priceUSD
+                      ) !== (currency === "KRW" ? selectedPkg.priceKRW : selectedPkg.priceUSD) && (
+                        <span className="text-[#9b8b7a]/50 line-through">
+                          {formatPrice(
+                            currency === "KRW" ? selectedPkg.priceKRW : selectedPkg.priceUSD,
+                            currency === "KRW" ? "ko" : "en",
+                          )}
+                        </span>
                       )}
                     </span>
                   </div>
@@ -810,7 +1095,9 @@ export default function AccountPage() {
                       </span>
                       <span className="text-sm text-[#1a1510]/40">
                         {currency === "KRW"
-                          ? currentLocale === "ko" ? "간편결제 / 카드" : "Easy Pay / Card"
+                          ? currentLocale === "ko"
+                            ? "간편결제 / 카드"
+                            : "Easy Pay / Card"
                           : "PayPal"}
                       </span>
                     </div>
@@ -841,18 +1128,6 @@ export default function AccountPage() {
                         />
                       )}
                     </div>
-                    <span className="text-xs text-[#1a1510]/60">
-                      {selectedPkg
-                        ? `${currentLocale === "ko" ? "총" : "Total"} ${formatPrice(
-                            calcDiscountedPrice(
-                              currency === "KRW"
-                                ? selectedPkg.priceKRW
-                                : selectedPkg.priceUSD,
-                            ),
-                            currency === "KRW" ? "ko" : "en",
-                          )}`
-                        : ""}
-                    </span>
                   </button>
                   {paymentError && (
                     <p className="mt-3 text-center text-sm text-red-400/80">
@@ -861,10 +1136,11 @@ export default function AccountPage() {
                   )}
                 </>
               )}
+
             </div>
           )}
 
-          {/* ═══ 쿠폰 섹션 ═══ */}
+          {/* ═══ 쿠폰 섹션 (보관함) ═══ */}
           {section === "coupon" && (
             <div>
               <h2 className="mb-2 text-xl font-semibold text-[#e8d5b7]">
@@ -872,86 +1148,88 @@ export default function AccountPage() {
               </h2>
               <p className="mb-6 text-sm text-[#9b8b7a]">{t.couponDesc}</p>
 
-              {/* 쿠폰 입력 */}
-              <div className="rounded-xl border border-white/10 bg-[#1e1a14] p-6">
-                {couponDiscount ? (
-                  <div className="flex items-center justify-between rounded-xl border border-green-500/30 bg-green-500/10 px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <svg
-                        className="h-4 w-4 text-green-400"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      <span className="text-sm text-green-400">
-                        {t.couponApplied} (
-                        {couponDiscount.type === "percent"
-                          ? `${couponDiscount.value}%`
-                          : formatPrice(
-                              couponDiscount.value,
-                              currency === "KRW" ? "ko" : "en",
-                            )}
-                        )
-                      </span>
-                    </div>
-                    <button
-                      onClick={handleCouponRemove}
-                      className="text-xs text-white/40 transition hover:text-white/60"
-                    >
-                      {t.couponRemove}
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={couponCode}
-                        onChange={(e) => {
-                          setCouponCode(e.target.value);
-                          setCouponError("");
-                        }}
-                        placeholder={t.couponPlaceholder}
-                        className="flex-1 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-[#e8d5b7] placeholder-white/20 transition outline-none focus:border-[#c4b49a]"
-                      />
-                      <button
-                        onClick={handleCouponApply}
-                        disabled={couponValidating || !couponCode.trim()}
-                        className="rounded-xl bg-[#c4b49a] px-5 py-3 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
-                      >
-                        {couponValidating ? t.couponApplying : t.couponApply}
-                      </button>
-                    </div>
-                    {couponError && (
-                      <p className="mt-2 text-xs text-red-400/80">
-                        {couponError}
-                      </p>
-                    )}
-                  </>
+              {/* 쿠폰 코드 등록 */}
+              <div className="mb-6 rounded-xl border border-white/10 bg-[#1e1a14] p-5">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={saveCouponCode}
+                    onChange={(e) => {
+                      setSaveCouponCode(e.target.value);
+                      setSaveCouponError("");
+                    }}
+                    placeholder={t.couponPlaceholder}
+                    className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 outline-none transition focus:border-[#c4b49a]"
+                  />
+                  <button
+                    onClick={handleSaveCoupon}
+                    disabled={saveCouponValidating || !saveCouponCode.trim()}
+                    className="rounded-lg bg-[#c4b49a] px-4 py-2.5 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
+                  >
+                    {saveCouponValidating ? t.couponRegistering : t.couponRegister}
+                  </button>
+                </div>
+                {saveCouponError && (
+                  <p className="mt-2 text-xs text-red-400/80">{saveCouponError}</p>
                 )}
               </div>
 
-              {/* 쿠폰 적용 시 → 충전 페이지로 유도 */}
-              {couponDiscount && (
-                <div className="mt-6 rounded-xl border border-white/10 bg-[#1e1a14] p-6">
-                  <p className="mb-4 text-sm text-[#9b8b7a]">
-                    {currentLocale === "ko"
-                      ? "쿠폰이 적용되었습니다. 충전 페이지에서 결제를 진행해 주세요."
-                      : "Coupon applied. Please proceed to the Credits page to complete your purchase."}
-                  </p>
-                  <button
-                    onClick={() => setSection("charge")}
-                    className="rounded-xl bg-[#c4b49a] px-5 py-2.5 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7]"
-                  >
-                    {t.charge} →
-                  </button>
+              {/* 보유 쿠폰 목록 */}
+              <h3 className="mb-3 text-sm font-medium text-[#9b8b7a]">
+                {t.savedCoupons}
+              </h3>
+              {savedCoupons.length === 0 ? (
+                <div className="rounded-xl border border-white/10 bg-[#1e1a14] px-5 py-8 text-center text-sm text-[#9b8b7a]">
+                  {t.noCoupons}
+                </div>
+              ) : (
+                <div className="overflow-hidden rounded-xl border border-white/10">
+                  {savedCoupons.map((coupon, idx) => {
+                    const gs = COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
+                    return (
+                    <div
+                      key={coupon.code}
+                      className={`flex items-center justify-between bg-[#1e1a14] px-5 py-4 border-l-[3px] ${gs.border} ${idx > 0 ? "border-t border-white/8" : ""}`}
+                    >
+                      <div className="flex flex-col gap-0.5">
+                        {coupon.groupName && (
+                          <span className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}>{coupon.groupName}</span>
+                        )}
+                        <span className="text-sm font-medium text-[#e8d5b7]">
+                          {coupon.couponName || coupon.code}
+                        </span>
+                        <span className="text-xs text-[#c4b49a]">
+                          {coupon.type === "percent"
+                            ? `${coupon.value}% ${t.discountLabel}`
+                            : `${formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")} ${t.discountLabel}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {couponDiscount?.code === coupon.code ? (
+                          <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-400">
+                            {t.couponApplied}
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              handleApplySavedCoupon(coupon);
+                              setSection("charge");
+                            }}
+                            className="rounded-lg border border-[#c4b49a]/30 px-3 py-1 text-xs text-[#c4b49a] transition hover:bg-[#c4b49a]/10"
+                          >
+                            {t.couponUse}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleRemoveSavedCoupon(coupon.code)}
+                          className="text-xs text-white/30 transition hover:text-white/50"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

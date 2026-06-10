@@ -5,5 +5,15 @@
   "server": {
     "url": "https://the-life-museum.vercel.app",
     "cleartext": true
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchAutoHide": true,
+      "launchShowDuration": 2000,
+      "backgroundColor": "#141210",
+      "showSpinner": false,
+      "splashImmersive": true,
+      "splashFullScreen": true
+    }
   }
 }

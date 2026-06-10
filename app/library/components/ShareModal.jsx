@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Globe, Lock } from "lucide-react";
+import { Globe, Lock, ExternalLink } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { hapticTap } from "@/app/utils/haptics";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -12,12 +13,14 @@ const T = {
     title: "공개 범위 설정",
     copied: "복사됨",
     copy: "복사",
+    share: "공유",
     close: "닫기",
   },
   en: {
     title: "Visibility Settings",
     copied: "Copied",
     copy: "Copy",
+    share: "Share",
     close: "Close",
   },
 };
@@ -34,7 +37,8 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
 
   const handleSetPublic = async (value) => {
     if (value === isShared) return;
-    setIsShared(value); // 낙관적 업데이트
+    hapticTap();
+    setIsShared(value);
     try {
       const res = await authedFetch(`${BASE_URL}/record/${albumId}/public`, {
         method: "PATCH",
@@ -52,11 +56,28 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(shareLink);
+      hapticTap();
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
       console.error("Failed to copy:", err);
     }
+  };
+
+  const handleNativeShare = async () => {
+    hapticTap();
+    try {
+      const { isNativeApp } = await import("@/app/utils/platform");
+      if (isNativeApp()) {
+        const { Share } = await import("@capacitor/share");
+        await Share.share({
+          title: albumTitle,
+          url: shareLink,
+        });
+      } else if (navigator.share) {
+        await navigator.share({ title: albumTitle, url: shareLink });
+      }
+    } catch {}
   };
 
   return (
@@ -109,6 +130,13 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
               className="shrink-0 rounded-lg bg-[#c4b49a] px-4 py-2 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7]"
             >
               {copied ? t.copied : t.copy}
+            </button>
+            <button
+              onClick={handleNativeShare}
+              className="shrink-0 rounded-lg border border-[#c4b49a]/30 p-2 text-[#c4b49a] transition hover:bg-[#c4b49a]/10"
+              title={t.share}
+            >
+              <ExternalLink size={16} />
             </button>
           </div>
         )}

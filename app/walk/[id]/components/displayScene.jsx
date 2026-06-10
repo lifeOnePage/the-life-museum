@@ -131,7 +131,7 @@ function PlaybackControls({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showVideoOptions]);
   return (
-    <div className="absolute top-[max(env(safe-area-inset-top),1rem)] left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm">
+    <div className="absolute top-[max(env(safe-area-inset-top),1rem)] left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm max-w-[calc(100vw-2rem)]">
       <Tooltip label={t.exit}>
         <button
           onClick={onExit}

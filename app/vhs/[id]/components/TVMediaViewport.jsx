@@ -159,7 +159,7 @@ export default function TVMediaViewport({
     }
 
     return result;
-  }, [currentItem, nextItem, currentIndex, nextIndex, transitioning]);
+  }, [currentItem, nextItem, currentIndex, nextIndex]);
 
   return (
     <div

@@ -51,6 +51,15 @@ export default function VHSExhibition({ recordId, locale }) {
     hasBgm,
   } = useBGM(bgmUrl);
 
+  // Load saved VHS settings from record data
+  useEffect(() => {
+    if (!data) return;
+    if (data.vhsFilter) setColorFilter(data.vhsFilter);
+    if (data.vhsTransition) setTransitionType(data.vhsTransition);
+    if (data.vhsPhotoFrameIndex != null)
+      setPhotoFrameIndex(data.vhsPhotoFrameIndex);
+  }, [data]);
+
   // Photo frame closeup state
   const [photoFrameOpen, setPhotoFrameOpen] = useState(false);
   const [photoFrameIndex, setPhotoFrameIndex] = useState(0);
@@ -65,15 +74,15 @@ export default function VHSExhibition({ recordId, locale }) {
   const mediaList = useMemo(
     () =>
       (data?.mediaList ?? []).filter(
-        (m) => m.type === "image" || m.type === "video"
+        (m) => m.type === "image" || m.type === "video",
       ),
-    [data]
+    [data],
   );
 
   // Filter images only (for photo frame)
   const imageList = useMemo(
     () => (data?.mediaList ?? []).filter((m) => m.type === "image"),
-    [data]
+    [data],
   );
 
   const slideshow = useMediaSlideshow({
@@ -236,7 +245,21 @@ export default function VHSExhibition({ recordId, locale }) {
     setTvCloseupOpen(false);
   }, []);
 
+  // ─── Insert video delayed fade-in (fade through black) ───
+  const [insertReady, setInsertReady] = useState(false);
+  useEffect(() => {
+    if (scene === "insert") {
+      // Delay insert video appearance so intro fades to black first
+      const timer = setTimeout(() => setInsertReady(true), 400);
+      return () => clearTimeout(timer);
+    } else {
+      setInsertReady(false);
+    }
+  }, [scene]);
+
   // Extract record info
+  console.log("data", data);
+  const subTitle = data?.subtitle ?? "";
   const title = data?.title ?? "";
   const lifestory = data?.lifestory?.content ?? "";
 
@@ -265,13 +288,17 @@ export default function VHSExhibition({ recordId, locale }) {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="relative h-screen w-screen overflow-hidden bg-black"
-    >
+    <>
+      <style>{`@keyframes vhsFadeIn { from { opacity: 0 } to { opacity: 1 } }`}</style>
+      <div
+        ref={containerRef}
+        className="relative h-screen w-screen overflow-hidden bg-black"
+        style={{ animation: "vhsFadeIn 1400ms ease-in both" }}
+      >
       {/* Scene layers with crossfade */}
       {(scene === "intro" || scene === "insert") && (
         <VHSTapeIntro
+          subTitle={subTitle}
           title={title}
           lifestory={lifestory}
           onPlay={handlePlay}
@@ -282,7 +309,7 @@ export default function VHSExhibition({ recordId, locale }) {
       {(scene === "insert" || scene === "tvOff") && (
         <TVInsertVideo
           onEnded={onInsertEnded}
-          visible={scene === "insert"}
+          visible={scene === "insert" && insertReady}
         />
       )}
 
@@ -304,7 +331,8 @@ export default function VHSExhibition({ recordId, locale }) {
           frameImage={TV_PLAYBACK_FRAME}
           photoFrameImageSrc={
             imageList.length > 0
-              ? (imageList[photoFrameIndex]?.original_url || imageList[photoFrameIndex]?.thumbnail_url)
+              ? imageList[photoFrameIndex]?.original_url ||
+                imageList[photoFrameIndex]?.thumbnail_url
               : undefined
           }
           onPhotoFrameClick={
@@ -374,11 +402,10 @@ export default function VHSExhibition({ recordId, locale }) {
       {/* Empty media state */}
       {scene === "playback" && mediaList.length === 0 && !mediaLoading && (
         <div className="absolute inset-0 z-40 flex items-center justify-center">
-          <div className="text-sm text-white/50">
-            표시할 미디어가 없습니다
-          </div>
+          <div className="text-sm text-white/50">표시할 미디어가 없습니다</div>
         </div>
       )}
     </div>
+    </>
   );
 }

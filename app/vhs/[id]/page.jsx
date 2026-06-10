@@ -4,5 +4,9 @@ import VHSExhibition from "./components/VHSExhibition";
 
 export default function VHSPage({ params }) {
   const { id, locale } = use(params);
-  return <VHSExhibition recordId={id} locale={locale} />;
+  return (
+    <div className="h-screen w-screen bg-black">
+      <VHSExhibition recordId={id} locale={locale} />
+    </div>
+  );
 }

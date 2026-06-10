@@ -50,6 +50,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
+  const [icloudUrl, setIcloudUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // 공유 앨범 추가 상태
@@ -68,6 +69,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
           title: title.trim() || null,
           subTitle: subtitle.trim(),
           googlePhotoUrl: googlePhotoUrl.trim() || null,
+          icloudUrl: icloudUrl.trim() || null,
         }),
       });
       const json = await res.json();
@@ -203,16 +205,17 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
               />
             </div>
 
-            {/* iCloud URL (비활성화) */}
+            {/* iCloud URL */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-white/20">
+              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
                 iCloud URL
               </label>
               <input
                 type="url"
-                disabled
-                placeholder={t.comingSoon}
-                className="w-full cursor-not-allowed rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-white/20 placeholder-white/15"
+                value={icloudUrl}
+                onChange={(e) => setIcloudUrl(e.target.value)}
+                placeholder="https://www.icloud.com/sharedalbum/..."
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>
 

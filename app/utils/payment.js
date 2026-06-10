@@ -1,11 +1,17 @@
 "use client";
 
+import { isNativeApp } from "./platform";
+
 // ── 크레딧 패키지 가격표 ──────────────────────────────
 const PACKAGE_PRICES = {
   credit_1000: { krw: 10000, usd: 999, label: "1,000 Credits" },
   credit_3900: { krw: 29000, usd: 2499, label: "3,900 Credits" },
   credit_9900: { krw: 59000, usd: 4999, label: "9,900 Credits" },
 };
+
+// ── 앱 딥링크 & 웹 URL ──────────────────────────────
+const APP_SCHEME = "thelifemuseum";
+const WEB_ORIGIN = "https://the-life-museum.vercel.app";
 
 // ── PortOne V1 (국내 — 토스페이먼츠) ──────────────────
 const IMP_CODE = "imp22125511";
@@ -29,6 +35,29 @@ function loadIamportScript() {
     script.onerror = () => reject(new Error("Failed to load iamport SDK"));
     document.head.appendChild(script);
   });
+}
+
+/**
+ * 네이티브 앱 → 외부 브라우저에서 결제 페이지 열기
+ */
+async function requestCreditPurchaseNative({ package: pkg, locale = "ko", method = "domestic", couponCode }) {
+  const { Browser } = await import("@capacitor/browser");
+
+  const token = localStorage.getItem("app_token") || "";
+  const params = new URLSearchParams({
+    package: pkg,
+    locale,
+    method,
+    token,
+  });
+  if (couponCode) params.set("couponCode", couponCode);
+
+  const url = `${WEB_ORIGIN}/payment/checkout?${params.toString()}`;
+  await Browser.open({ url });
+
+  // 외부 브라우저로 넘겼으므로 앱에서는 결과를 기다리지 않음
+  // 결제 완료 후 딥링크로 앱에 복귀
+  return { native: true };
 }
 
 /**
@@ -103,8 +132,12 @@ async function requestCreditPurchasePayPal({ package: pkg, userId, userName, use
 
 /**
  * method ("domestic" | "international") 에 따라 결제 분기
+ * 네이티브 앱이면 외부 브라우저로 결제 페이지 오픈
  */
-export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, locale = "ko", method = "domestic" }) {
+export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, locale = "ko", method = "domestic", couponCode }) {
+  if (isNativeApp()) {
+    return requestCreditPurchaseNative({ package: pkg, locale, method, couponCode });
+  }
   if (method === "domestic") {
     return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale });
   } else {
@@ -116,3 +149,5 @@ export async function requestCreditPurchase({ package: pkg, userId, userName, us
 export async function requestAlbumPayment({ userId, userName, userEmail, locale = "ko" }) {
   return requestCreditPurchase({ package: "credit_1000", userId, userName, userEmail, locale });
 }
+
+export { APP_SCHEME, WEB_ORIGIN };

@@ -13,6 +13,7 @@ import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 import { cachedAlbums, setCachedAlbums } from "./utils/albumListCache";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { hapticTap } from "@/app/utils/haptics";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -190,6 +191,7 @@ export default function MyShelfPage({ params }) {
 
   // 앨범 클릭 핸들러 (3D에서 호출됨)
   const handleAlbumClick = useCallback((albumIndex, albumData) => {
+    hapticTap();
     setSelectedAlbum({ index: albumIndex, data: albumData });
     setIsFlipped(false);
     setHoverLabel(null);

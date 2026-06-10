@@ -118,7 +118,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md rounded-2xl bg-[#1e1a14] p-6 shadow-xl ring-1 ring-white/10"
+        className="mx-4 w-full max-w-md rounded-2xl bg-[#1e1a14] p-6 shadow-xl ring-1 ring-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 탭 헤더 */}

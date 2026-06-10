@@ -75,7 +75,7 @@ export const TV_KNOB_LOWER = {
 // VHS tape label coordinates (% of tape image)
 export const TAPE_LABEL = {
   left: 0.33,
-  top: 0.3,
+  top: 0.35,
   width: 0.34,
   height: 0.35,
 };

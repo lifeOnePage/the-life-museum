@@ -19,7 +19,13 @@ function getContainedImageBounds(containerW, containerH, imgNatW, imgNatH) {
   }
 }
 
-export default function VHSTapeIntro({ title, lifestory, onPlay, visible }) {
+export default function VHSTapeIntro({
+  subTitle,
+  title,
+  lifestory,
+  onPlay,
+  visible,
+}) {
   const containerRef = useRef(null);
   const [labelBounds, setLabelBounds] = useState(null);
   const [imgNatSize, setImgNatSize] = useState(null);
@@ -95,7 +101,7 @@ export default function VHSTapeIntro({ title, lifestory, onPlay, visible }) {
           {/* Title on tape label */}
           {title && (
             <div
-              className="absolute flex items-center justify-center overflow-hidden"
+              className="absolute flex flex-col items-center justify-center overflow-hidden"
               style={{
                 left: labelBounds.left,
                 top: labelBounds.top,
@@ -107,10 +113,19 @@ export default function VHSTapeIntro({ title, lifestory, onPlay, visible }) {
                 className="line-clamp-2 text-center font-bold text-neutral-800"
                 style={{
                   fontSize: "clamp(0.75rem, 2vw, 1.4rem)",
-                  lineHeight: 1.3,
+                  lineHeight: 2.0,
                 }}
               >
                 {title}
+              </span>
+              <span
+                className="line-clamp-2 text-center text-neutral-800"
+                style={{
+                  fontSize: "clamp(0.75rem, 1.5vw, 1.0rem)",
+                  lineHeight: 1.3,
+                }}
+              >
+                {subTitle}
               </span>
             </div>
           )}

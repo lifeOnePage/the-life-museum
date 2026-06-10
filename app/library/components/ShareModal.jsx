@@ -86,7 +86,7 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
       onClick={onClose}
     >
       <div
-        className="mx-4 w-full max-w-md rounded-2xl bg-[#1e1a14] p-6 shadow-xl ring-1 ring-white/10"
+        className="w-full max-w-md rounded-2xl bg-[#1e1a14] p-6 shadow-xl ring-1 ring-white/10"
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="mb-1 text-lg font-semibold text-[#e8d5b7]">{t.title}</h2>

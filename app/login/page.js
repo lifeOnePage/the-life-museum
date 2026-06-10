@@ -188,22 +188,20 @@ export default function LoginPage() {
 
   const containerStyle = {
     width: "100vw",
-    height: "100dvh",
+    height: "100vh",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     background: "linear-gradient(135deg, #37393b 0%, #1e1f21 50%, #000 100%)",
     color: "#fff",
     overflow: "hidden",
-    paddingTop: "env(safe-area-inset-top)",
-    paddingBottom: "env(safe-area-inset-bottom)",
   };
   const sheetStyle = {
     width: "100vw",
     maxWidth: 375,
-    height: "100%",
+    height: "100vh",
     position: "relative",
-    overflow: "auto",
+    overflow: "hidden",
     display: "flex",
     flexDirection: "column",
     fontFamily:

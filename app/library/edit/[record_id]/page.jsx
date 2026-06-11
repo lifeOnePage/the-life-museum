@@ -53,6 +53,7 @@ import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
+import AIConsentModal, { hasAIConsent } from "@/app/components/AIConsentModal";
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const T = {
@@ -830,10 +831,18 @@ const Index = ({ params }) => {
     router.push("/library");
   };
 
+  const pendingAIAction = useRef(null);
+  const consentResolveRef = useRef(null);
+
   // AI story generation
   const handleGenerate = async () => {
     const fullText = getFullBioText();
     if (!fullText || storyRemainingGens <= 0) return;
+    if (!hasAIConsent()) {
+      pendingAIAction.current = () => handleGenerate();
+      setShowAIConsent("story");
+      return;
+    }
     setIsGenerating(true);
     setBioError("");
     console.log("fullText", fullText);
@@ -1049,6 +1058,7 @@ const Index = ({ params }) => {
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAIConsent, setShowAIConsent] = useState(null);
 
   const handleDeleteRecord = async () => {
     setIsDeleting(true);
@@ -1514,6 +1524,13 @@ const Index = ({ params }) => {
                                 isLoading={photoDrive.isLoading}
                                 preloadBlobs={photoDrive.preloadBlobs}
                                 locale={locale}
+                                onRequestAIConsent={(type) => {
+                                  if (hasAIConsent()) return Promise.resolve(true);
+                                  return new Promise((resolve) => {
+                                    consentResolveRef.current = resolve;
+                                    setShowAIConsent(type);
+                                  });
+                                }}
                               />
                             </div>
                           </motion.div>
@@ -2277,6 +2294,30 @@ const Index = ({ params }) => {
         setActiveTab={setActiveTab}
         locale={locale}
       />
+
+      {showAIConsent && (
+        <AIConsentModal
+          type={showAIConsent}
+          locale={locale}
+          onAgree={() => {
+            setShowAIConsent(null);
+            if (consentResolveRef.current) {
+              consentResolveRef.current(true);
+              consentResolveRef.current = null;
+            }
+            pendingAIAction.current?.();
+            pendingAIAction.current = null;
+          }}
+          onCancel={() => {
+            setShowAIConsent(null);
+            if (consentResolveRef.current) {
+              consentResolveRef.current(false);
+              consentResolveRef.current = null;
+            }
+            pendingAIAction.current = null;
+          }}
+        />
+      )}
     </div>
   );
 };

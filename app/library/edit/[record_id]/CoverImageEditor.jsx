@@ -27,6 +27,7 @@ const CoverImageEditor = forwardRef(
       initialAlbumTitle,
       initialArtistName,
       record_id,
+      onRequestAIConsent,
     },
     ref,
   ) => {
@@ -145,6 +146,10 @@ const CoverImageEditor = forwardRef(
 
     const handleGenerate = async () => {
       if (!prompt.trim() || remainingGens <= 0) return;
+      if (onRequestAIConsent) {
+        const allowed = await onRequestAIConsent("cover");
+        if (!allowed) return;
+      }
       setIsGenerating(true);
       setSelectedImageIndex(-1);
       setError("");

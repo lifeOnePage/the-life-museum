@@ -20,6 +20,12 @@ const T = {
     saving: "저장 중...",
     language: "언어",
     back: "돌아가기",
+    deleteAccount: "계정 삭제",
+    deleteConfirmTitle: "정말 계정을 삭제하시겠습니까?",
+    deleteConfirmDesc:
+      "계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.",
+    deleteConfirm: "삭제",
+    deleting: "삭제 중...",
   },
   en: {
     profile: "Profile",
@@ -32,6 +38,12 @@ const T = {
     saving: "saving...",
     language: "Language",
     back: "Go back",
+    deleteAccount: "Delete Account",
+    deleteConfirmTitle: "Are you sure you want to delete your account?",
+    deleteConfirmDesc:
+      "Deleting your account will permanently remove all your data and cannot be undone.",
+    deleteConfirm: "Delete",
+    deleting: "Deleting...",
   },
 };
 
@@ -87,11 +99,13 @@ function IconBack() {
 // ══════════════════════════════════════════════════
 export default function AccountPage() {
   const router = useRouter();
-  const { user, setUser } = useAuth();
+  const { user, setUser, signout } = useAuth();
 
   const [currentLocale, setCurrentLocale] = useState("ko");
   const [section, setSection] = useState("profile");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const t = T[currentLocale] || T.ko;
 
@@ -149,6 +163,24 @@ export default function AccountPage() {
       console.error("Failed to update profile:", err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    try {
+      const res = await authedFetch(`${BASE_URL}/users/me`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        signout();
+        router.push("/login");
+      }
+    } catch (err) {
+      console.error("Failed to delete account:", err);
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
     }
   };
 
@@ -393,7 +425,52 @@ export default function AccountPage() {
                     </select>
                   </div>
                 </div>
+
+                {/* 계정 삭제 */}
+                <div className="mt-5 border-t border-white/10 pt-5">
+                  <button
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="text-sm text-red-400/70 transition hover:text-red-400"
+                  >
+                    {t.deleteAccount}
+                  </button>
+                </div>
               </div>
+
+              {/* 계정 삭제 확인 모달 */}
+              {showDeleteConfirm && (
+                <div
+                  className="fixed inset-0 z-9999 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  <div
+                    className="mx-4 w-full max-w-sm rounded-2xl bg-[#1e1a14] p-6 shadow-xl ring-1 ring-white/10"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <h3 className="mb-2 text-lg font-semibold text-[#e8d5b7]">
+                      {t.deleteConfirmTitle}
+                    </h3>
+                    <p className="mb-5 text-sm text-[#9b8b7a]">
+                      {t.deleteConfirmDesc}
+                    </p>
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => setShowDeleteConfirm(false)}
+                        className="flex-1 rounded-lg border border-white/10 py-2.5 text-sm text-[#9b8b7a] transition hover:bg-white/5"
+                      >
+                        {t.cancel}
+                      </button>
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={isDeleting}
+                        className="flex-1 rounded-lg bg-red-500/80 py-2.5 text-sm font-medium text-white transition hover:bg-red-500 disabled:opacity-40"
+                      >
+                        {isDeleting ? t.deleting : t.deleteConfirm}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

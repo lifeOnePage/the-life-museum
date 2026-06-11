@@ -105,6 +105,7 @@ export default function CoverImageGenerator({
   isLoading,
   preloadBlobs,
   locale,
+  onRequestAIConsent,
 }) {
   const t = T[locale] || T.ko;
   const STYLES = locale === "en" ? STYLES_EN : STYLES_KO;
@@ -153,6 +154,10 @@ export default function CoverImageGenerator({
 
   const handleGenerate = async () => {
     if (imageRefFiles.length === 0 || remainingGens <= 0) return;
+    if (onRequestAIConsent) {
+      const allowed = await onRequestAIConsent("cover");
+      if (!allowed) return;
+    }
     setIsGenerating(true);
     setSelectedImageIndex(-1);
     setError("");

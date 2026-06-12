@@ -10,7 +10,7 @@ const BASE_URL =
 
 // ── PortOne V1 ──
 const IMP_CODE = "imp22125511";
-const PG_DOMESTIC = "tosspayments.iamporttest_3";
+const PG_DOMESTIC = "kginicis.INIpayTest";
 
 // ── PortOne V2 ──
 const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";

@@ -15,7 +15,7 @@ const WEB_ORIGIN = "https://the-life-museum.vercel.app";
 
 // ── PortOne V1 (국내 — 토스페이먼츠) ──────────────────
 const IMP_CODE = "imp22125511";
-const PG_DOMESTIC = "tosspayments.iamporttest_3";
+const PG_DOMESTIC = "kginicis.INIpayTest";
 
 let scriptLoaded = false;
 

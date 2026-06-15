@@ -72,6 +72,12 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
           icloudUrl: icloudUrl.trim() || null,
         }),
       });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        const msg = errData.detail || errData.message || `Error ${res.status}`;
+        alert(msg);
+        return;
+      }
       const json = await res.json();
       if (json.ok) {
         onCreated?.(json.data);
@@ -80,10 +86,11 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
           router.push(`/library/edit/${json.data.id}`);
         }
       } else {
-        console.error("Failed to create album:", json.message);
+        alert(json.message || json.detail || "Failed to create album");
       }
     } catch (err) {
       console.error("Failed to create album:", err);
+      alert(err.message || "Network error");
     } finally {
       setSubmitting(false);
     }

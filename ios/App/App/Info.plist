@@ -62,5 +62,9 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Used to take photos for album covers</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Used to select photos for album covers</string>
 </dict>
 </plist>

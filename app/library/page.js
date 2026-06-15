@@ -78,13 +78,20 @@ async function generateAlbumCovers(item) {
   // Front cover with title overlay
   let frontImage = item.coverImage?.url ?? "#ffffff";
   if (item.coverTitleVisible && frontCoverImg) {
+    let stroke = item.coverTitleBgColor ?? false;
+    let strokeOpacity = 100;
+    if (stroke && typeof stroke === "string" && stroke.startsWith("#") && stroke.length === 9) {
+      strokeOpacity = Math.round((parseInt(stroke.slice(7, 9), 16) / 255) * 100);
+      stroke = stroke.slice(0, 7);
+    }
     const frontDataUrl = generateFrontCoverDataUrl(frontCoverImg, {
       title: item.title || "",
       subtitle: "",
       position: item.coverTitlePosition || "bottom-center",
       font: item.coverTitleFont || "Pretendard Variable",
       color: item.coverTitleColor || "#ffffff",
-      stroke: item.coverTitleBgColor ?? false,
+      stroke,
+      strokeOpacity,
     });
     if (frontDataUrl) frontImage = frontDataUrl;
   }

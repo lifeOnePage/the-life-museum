@@ -1092,7 +1092,9 @@ const Index = ({ params }) => {
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showAIConsent, setShowAIConsent] = useState(null);
+  const [showAIConsent, setShowAIConsent] = useState(() =>
+    hasAIConsent() ? null : "story"
+  );
 
   const handleDeleteRecord = async () => {
     setIsDeleting(true);

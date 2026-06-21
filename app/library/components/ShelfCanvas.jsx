@@ -202,9 +202,12 @@ export default function ShelfCanvas({
           width: "100%",
           height: "100%",
         }}
-        onCreated={({ camera }) => {
+        onCreated={({ camera, gl }) => {
           cameraRef.current = camera;
           camera.lookAt(0, 1.5, 0);
+          // 스크롤/줌 시 니체 배경을 벗어난 빈 영역이 회색으로 보이는 것을 방지.
+          // 페이지 배경(#1a1510)과 동일하게 클리어색을 지정하여 이음매를 없앤다.
+          gl.setClearColor("#1a1510", 1);
         }}
         frameloop="demand"
       >

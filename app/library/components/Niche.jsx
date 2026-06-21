@@ -42,16 +42,20 @@ export default function Niche({ position = [0, 0, 0], rows = 2 }) {
     const texture = new THREE.CanvasTexture(canvas);
     texture.wrapS = THREE.RepeatWrapping;
     texture.wrapT = THREE.RepeatWrapping;
-    texture.repeat.set(4, 4);
+    // 그레인을 더 촘촘하게 타일링하여 질감이 덜 크게(미세하게) 보이도록 함
+    texture.repeat.set(8, 8);
     return texture;
   }, []);
 
   return (
     <group position={position}>
-      {/* 외부 배경 벽 */}
-      <mesh raycast={() => null} position={[0, 0, 0]}>
-        <planeGeometry args={[12, 10]} />
-        <meshBasicMaterial color={CREAM} />
+      {/* 외부 배경 벽 — 어떤 스크롤/줌에서도 프러스텀을 항상 덮도록 크게 잡아
+          뒤쪽 빈 영역이 노출되지 않게 한다. 측벽과 동일한 standardMaterial을 써서
+          같은 앰버 조명을 받아 warm tone으로 블렌딩되도록 한다 (basic이면 조명을
+          안 받아 상대적으로 회색으로 떠 보임). */}
+      <mesh raycast={() => null} position={[0, 0, -1]}>
+        <planeGeometry args={[60, 50]} />
+        <meshStandardMaterial color={CREAM} roughness={0.75} metalness={0.0} />
       </mesh>
 
       {/* 크림색 내부 뒷판 */}

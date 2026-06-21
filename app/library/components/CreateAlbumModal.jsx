@@ -50,6 +50,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
+  const [googleDriveUrl, setGoogleDriveUrl] = useState("");
   const [icloudUrl, setIcloudUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -69,6 +70,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
           title: title.trim() || null,
           subTitle: subtitle.trim(),
           googlePhotoUrl: googlePhotoUrl.trim() || null,
+          googleDriveUrl: googleDriveUrl.trim() || null,
           icloudUrl: icloudUrl.trim() || null,
         }),
       });
@@ -195,6 +197,20 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
                 value={googlePhotoUrl}
                 onChange={(e) => setGooglePhotoUrl(e.target.value)}
                 placeholder="https://photos.google.com/..."
+                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
+              />
+            </div>
+
+            {/* Google Drive URL */}
+            <div>
+              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
+                Google Drive URL
+              </label>
+              <input
+                type="url"
+                value={googleDriveUrl}
+                onChange={(e) => setGoogleDriveUrl(e.target.value)}
+                placeholder="https://drive.google.com/drive/folders/..."
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>

@@ -416,6 +416,7 @@ const Index = ({ params }) => {
   // Record edit dialog
   const [showRecordEditDialog, setShowRecordEditDialog] = useState(false);
   const [editGooglePhotoUrl, setEditGooglePhotoUrl] = useState("");
+  const [editGoogleDriveUrl, setEditGoogleDriveUrl] = useState("");
   const [editIcloudUrl, setEditIcloudUrl] = useState("");
   const [editMyboxUrl, setEditMyboxUrl] = useState("");
   const [selectedUrlType, setSelectedUrlType] = useState("google");
@@ -425,6 +426,7 @@ const Index = ({ params }) => {
 
   // URLs from API
   const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
+  const [googleDriveUrl, setGoogleDriveUrl] = useState("");
   const [icloudUrl, setIcloudUrl] = useState("");
   const [myboxUrl, setMyboxUrl] = useState("");
   const [externalLinkTitle, setExternalLinkTitle] = useState("");
@@ -532,6 +534,7 @@ const Index = ({ params }) => {
           setTitleStroke(savedTitleStroke);
           setTitleStrokeOpacity(savedTitleStrokeOpacity);
           setGooglePhotoUrl(data.googlePhotoUrl || "");
+          setGoogleDriveUrl(data.googleDriveUrl || "");
           setIcloudUrl(data.icloudUrl || "");
           setMyboxUrl(data.myboxUrl || "");
           setExternalLinkTitle(data.externalLinkTitle || "");
@@ -998,6 +1001,7 @@ const Index = ({ params }) => {
   // Record edit dialog
   const openRecordEditDialog = () => {
     setEditGooglePhotoUrl(googlePhotoUrl);
+    setEditGoogleDriveUrl(googleDriveUrl);
     setEditIcloudUrl(icloudUrl);
     setEditMyboxUrl(myboxUrl);
     // Determine which URL type is selected based on existing data
@@ -1007,6 +1011,9 @@ const Index = ({ params }) => {
     } else if (icloudUrl) {
       setSelectedUrlType("icloud");
       setEditUrlValue(icloudUrl);
+    } else if (googleDriveUrl) {
+      setSelectedUrlType("drive");
+      setEditUrlValue(googleDriveUrl);
     } else {
       setSelectedUrlType("google");
       setEditUrlValue(googlePhotoUrl);
@@ -1023,6 +1030,7 @@ const Index = ({ params }) => {
     setRecordError("");
 
     const finalGoogleUrl = selectedUrlType === "google" ? editUrlValue : "";
+    const finalGoogleDriveUrl = selectedUrlType === "drive" ? editUrlValue : "";
     const finalIcloudUrl = selectedUrlType === "icloud" ? editUrlValue : "";
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
@@ -1037,6 +1045,7 @@ const Index = ({ params }) => {
           },
           body: JSON.stringify({
             googlePhotoUrl: finalGoogleUrl,
+            googleDriveUrl: finalGoogleDriveUrl,
             icloudUrl: finalIcloudUrl,
             myboxUrl: finalMyboxUrl,
             externalLinkTitle: editExternalLinkTitle,
@@ -1051,6 +1060,7 @@ const Index = ({ params }) => {
       }
 
       setGooglePhotoUrl(finalGoogleUrl);
+      setGoogleDriveUrl(finalGoogleDriveUrl);
       setIcloudUrl(finalIcloudUrl);
       setMyboxUrl(finalMyboxUrl);
       setExternalLinkTitle(editExternalLinkTitle);
@@ -2349,6 +2359,7 @@ const Index = ({ params }) => {
                   <div className="mb-3 flex gap-2">
                     {[
                       { key: "google", label: "Google Photo" },
+                      { key: "drive", label: "Google Drive" },
                       { key: "icloud", label: "iCloud" },
                       { key: "mybox", label: "Mybox" },
                     ].map((opt) => (
@@ -2360,9 +2371,11 @@ const Index = ({ params }) => {
                           setEditUrlValue(
                             opt.key === "google"
                               ? editGooglePhotoUrl
-                              : opt.key === "icloud"
-                                ? editIcloudUrl
-                                : editMyboxUrl,
+                              : opt.key === "drive"
+                                ? editGoogleDriveUrl
+                                : opt.key === "icloud"
+                                  ? editIcloudUrl
+                                  : editMyboxUrl,
                           );
                         }}
                         className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
@@ -2383,9 +2396,11 @@ const Index = ({ params }) => {
                     placeholder={
                       selectedUrlType === "google"
                         ? "https://photos.google.com/..."
-                        : selectedUrlType === "icloud"
-                          ? "https://www.icloud.com/sharedalbum/..."
-                          : t.serviceComingSoon
+                        : selectedUrlType === "drive"
+                          ? "https://drive.google.com/drive/folders/..."
+                          : selectedUrlType === "icloud"
+                            ? "https://www.icloud.com/sharedalbum/..."
+                            : t.serviceComingSoon
                     }
                     className={`w-full rounded-md border border-white/15 px-3 py-2 text-sm outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30 ${
                       selectedUrlType === "mybox"

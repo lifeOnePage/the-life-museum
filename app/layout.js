@@ -1,5 +1,6 @@
 // app/layout.js
 import { AuthProvider } from "./contexts/AuthContext";
+import DeepLinkHandler from "./components/DeepLinkHandler";
 import "./globals.css";
 
 export const metadata = {
@@ -28,7 +29,10 @@ export default function RootLayout({ children }) {
           // minHeight: "100vh",
         }}
       >
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <DeepLinkHandler />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

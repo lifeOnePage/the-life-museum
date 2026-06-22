@@ -195,7 +195,6 @@ export default function LoginPage() {
     background: "linear-gradient(135deg, #37393b 0%, #1e1f21 50%, #000 100%)",
     color: "#fff",
     overflow: "hidden",
-    paddingTop: "env(safe-area-inset-top)",
     paddingBottom: "env(safe-area-inset-bottom)",
   };
   const sheetStyle = {
@@ -206,6 +205,7 @@ export default function LoginPage() {
     overflow: "auto",
     display: "flex",
     flexDirection: "column",
+    paddingTop: "max(env(safe-area-inset-top), 12px)",
     fontFamily:
       "pretendard, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans KR, Helvetica, Arial, sans-serif",
   };

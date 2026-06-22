@@ -2,7 +2,7 @@
 
 - 스택: Next.js(App Router) + React, Prisma, Tailwind
 
-## 프로젝트 구조
+## 프로젝트 구조!!!
 
 ```
 app

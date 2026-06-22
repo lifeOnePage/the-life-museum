@@ -4,8 +4,7 @@ import { Fragment, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
-// 결제 기능은 심사 통과 후 활성화 예정
-// import { requestCreditPurchase } from "@/app/utils/payment";
+import { requestCreditPurchase } from "@/app/utils/payment";
 
 // ── 번역 ──────────────────────────────
 const T = {

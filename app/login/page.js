@@ -242,7 +242,7 @@ export default function LoginPage() {
           </button>
         )}
 
-        <div style={{ padding: "4px 24px" }}>
+        <div style={{ padding: canGoBack ? "4px 24px" : "60px 24px 4px" }}>
           <AnimatePresence mode="wait" initial={false}>
             {stage === "contact" && (
               <SlideScreen key="stage-contact">

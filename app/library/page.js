@@ -13,6 +13,7 @@ import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 import { cachedAlbums, setCachedAlbums } from "./utils/albumListCache";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { hapticTap } from "@/app/utils/haptics";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -77,13 +78,20 @@ async function generateAlbumCovers(item) {
   // Front cover with title overlay
   let frontImage = item.coverImage?.url ?? "#ffffff";
   if (item.coverTitleVisible && frontCoverImg) {
+    let stroke = item.coverTitleBgColor ?? false;
+    let strokeOpacity = 100;
+    if (stroke && typeof stroke === "string" && stroke.startsWith("#") && stroke.length === 9) {
+      strokeOpacity = Math.round((parseInt(stroke.slice(7, 9), 16) / 255) * 100);
+      stroke = stroke.slice(0, 7);
+    }
     const frontDataUrl = generateFrontCoverDataUrl(frontCoverImg, {
       title: item.title || "",
       subtitle: "",
       position: item.coverTitlePosition || "bottom-center",
       font: item.coverTitleFont || "Pretendard Variable",
       color: item.coverTitleColor || "#ffffff",
-      stroke: item.coverTitleBgColor ?? false,
+      stroke,
+      strokeOpacity,
     });
     if (frontDataUrl) frontImage = frontDataUrl;
   }
@@ -190,6 +198,7 @@ export default function MyShelfPage({ params }) {
 
   // 앨범 클릭 핸들러 (3D에서 호출됨)
   const handleAlbumClick = useCallback((albumIndex, albumData) => {
+    hapticTap();
     setSelectedAlbum({ index: albumIndex, data: albumData });
     setIsFlipped(false);
     setHoverLabel(null);

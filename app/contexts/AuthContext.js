@@ -1,8 +1,9 @@
 // contexts/AuthContext.js
 "use client";
 
-import { createContext, useContext, useCallback, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { initPushNotifications } from "@/app/utils/pushNotifications";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -41,6 +42,15 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     if (!loading && user) refreshCredits();
   }, [loading, user?.id, refreshCredits]);
+
+  // Init push notifications once user is authenticated
+  const pushInitRef = useRef(false);
+  useEffect(() => {
+    if (!loading && user && token && !pushInitRef.current) {
+      pushInitRef.current = true;
+      initPushNotifications({ userId: user.id, token });
+    }
+  }, [loading, user, token]);
 
   // Listen for forced logout from authedFetch
   useEffect(() => {

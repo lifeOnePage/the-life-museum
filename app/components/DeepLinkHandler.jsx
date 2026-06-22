@@ -27,8 +27,11 @@ export default function DeepLinkHandler() {
             // Universal/App Link: https://host/{locale}/share/{id}
             path = u.pathname + u.search;
           } else if (u.protocol === `${APP_SCHEME}:`) {
-            // 커스텀 스킴: lifemuseum:///{locale}/share/{id} (host 비움 → pathname)
-            path = (u.pathname || "/") + u.search;
+            // 커스텀 스킴은 두 형식을 모두 처리한다:
+            //   thelifemuseum:///{locale}/share/{id}  (host 비움 → pathname만)
+            //   thelifemuseum://payment/success?...    (host=payment → 경로에 합침)
+            const host = u.host ? `/${u.host}` : "";
+            path = host + (u.pathname || "") + u.search || "/";
           }
           if (path) router.push(path);
         } catch {

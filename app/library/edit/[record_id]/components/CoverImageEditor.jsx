@@ -80,6 +80,7 @@ const CoverImageEditor = forwardRef(
       isLoading,
       preloadBlobs,
       locale,
+      onRequestAIConsent,
     },
     ref,
   ) => {
@@ -395,6 +396,7 @@ const CoverImageEditor = forwardRef(
                 isLoading={isLoading}
                 preloadBlobs={preloadBlobs}
                 locale={locale}
+                onRequestAIConsent={onRequestAIConsent}
               />
             </motion.div>
           )}

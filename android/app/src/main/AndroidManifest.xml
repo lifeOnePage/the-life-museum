@@ -22,12 +22,12 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- 커스텀 스킴: lifemuseum:///{path} -->
+            <!-- 커스텀 스킴: thelifemuseum://... (결제 복귀·딥링크 공용) -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="lifemuseum" />
+                <data android:scheme="thelifemuseum" />
             </intent-filter>
 
             <!-- App Links: https://the-life-museum.vercel.app/...

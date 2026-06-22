@@ -1,3 +1,4 @@
+"use client";
 // app/utils/platform.js
 // 앱(Capacitor WebView) vs 웹 브라우저 구분 + 모바일 OS 감지 유틸.
 // Capacitor 앱은 server.url로 동일 웹 번들을 로드하므로 브라우저/앱이 같은 코드를
@@ -13,14 +14,17 @@ export function isNativeApp() {
   }
 }
 
-/** Capacitor 플랫폼: 'ios' | 'android' | 'web' */
-export function getCapacitorPlatform() {
+/** 현재 플랫폼 반환: "ios" | "android" | "web" */
+export function getPlatform() {
   try {
     return Capacitor.getPlatform();
   } catch {
     return "web";
   }
 }
+
+/** getPlatform()의 별칭 (가독성용) */
+export const getCapacitorPlatform = getPlatform;
 
 /**
  * 모바일 브라우저 OS 감지 (네이티브 앱이 아님을 전제).

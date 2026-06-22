@@ -1,8 +1,8 @@
 // app/utils/deeplink.js
 // 딥링크 상수 + helper. "앱으로 열기" 버튼과 네이티브 appUrlOpen 핸들러가 공유한다.
 
-/** 커스텀 URL 스킴 (네이티브 Info.plist / AndroidManifest와 일치해야 함) */
-export const APP_SCHEME = "lifemuseum";
+/** 커스텀 URL 스킴 (네이티브 Info.plist / AndroidManifest, 결제 리다이렉트와 공용) */
+export const APP_SCHEME = "thelifemuseum";
 
 /** Universal Links / App Links 호스트 (AASA·assetlinks·entitlements와 일치) */
 export const UNIVERSAL_HOST = "the-life-museum.vercel.app";

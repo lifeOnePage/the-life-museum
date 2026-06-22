@@ -8,6 +8,7 @@ import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
 import { X, Info } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useAuth } from "@/app/contexts/AuthContext";
+import SmartAppBanner from "@/app/components/SmartAppBanner";
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
 import scrollMouse from "@/public/lottie/scroll-mouse.json";
 
@@ -456,6 +457,7 @@ export default function SharePage({ params }) {
       className="relative w-screen overflow-hidden bg-black"
       style={{ height: "100dvh" }}
     >
+      <SmartAppBanner locale={locale} />
       {/* Background: Concave cylindrical photo grid */}
       {images.length > 0 && (
         <div className="pointer-events-none absolute inset-0">

@@ -22,6 +22,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- 커스텀 스킴: lifemuseum:///{path} -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="lifemuseum" />
+            </intent-filter>
+
+            <!-- App Links: https://the-life-museum.vercel.app/...
+                 autoVerify에는 /.well-known/assetlinks.json (SHA-256) 호스팅 필요 -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="the-life-museum.vercel.app"
+                    android:pathPrefix="/" />
+            </intent-filter>
+
         </activity>
 
         <provider

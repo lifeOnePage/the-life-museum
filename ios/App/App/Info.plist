@@ -47,5 +47,16 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.theliferecord.rec</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>lifemuseum</string>
+			</array>
+		</dict>
+	</array>
 </dict>
 </plist>

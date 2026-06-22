@@ -272,7 +272,6 @@ export default function AccountPage() {
   const [currentLocale, setCurrentLocale] = useState("ko");
   const [currency, setCurrency] = useState("KRW");
   const [section, setSection] = useState("profile"); // "profile" | "charge" | "coupon"
-  const [creditUsageOpen, setCreditUsageOpen] = useState(false);
   const [chargeCouponOpen, setChargeCouponOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -854,49 +853,6 @@ export default function AccountPage() {
                 {t.charge}
               </h2>
 
-              {/* 크레딧 소모 기준 (접이식) */}
-              <div className="mb-6 overflow-hidden rounded-xl border border-white/10">
-                <button
-                  onClick={() => setCreditUsageOpen(!creditUsageOpen)}
-                  className="flex w-full items-center justify-between px-4 py-3"
-                >
-                  <span className="text-sm font-medium text-[#9b8b7a]">
-                    {t.creditUsageTitle}
-                  </span>
-                  <svg
-                    className={`h-4 w-4 text-[#9b8b7a] transition-transform ${creditUsageOpen ? "rotate-180" : ""}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
-                {creditUsageOpen && (
-                  <div className="border-t border-white/8">
-                    <table className="w-full text-xs">
-                      <thead>
-                        <tr className="border-b border-white/8 bg-white/5">
-                          <th className="px-4 py-2 text-left font-medium text-[#9b8b7a]">{t.creditUsageActivity}</th>
-                          <th className="px-4 py-2 text-center font-medium text-[#9b8b7a]">{t.creditUsageAmount}</th>
-                          <th className="px-4 py-2 text-right font-medium text-[#9b8b7a]">{t.creditUsageNote}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {t.creditUsageRows.map((row, i) => (
-                          <tr key={i} className={i > 0 ? "border-t border-white/8" : ""}>
-                            <td className="px-4 py-2.5 text-[#c4b49a]">{row[0]}</td>
-                            <td className="px-4 py-2.5 text-center text-[#c4b49a]">{row[1]}</td>
-                            <td className="px-4 py-2.5 text-right text-[#9b8b7a]">{row[2]}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-
               {/* 통화 토글 */}
               <div className="mb-6 flex items-center justify-center">
                 <div className="flex items-center rounded-full border border-white/10 text-sm">
@@ -1210,6 +1166,35 @@ export default function AccountPage() {
                   )}
                 </>
               )}
+
+              {/* 크레딧 소모 기준 */}
+              <div className="mt-8 overflow-hidden rounded-xl border border-white/10">
+                <div className="px-4 py-3">
+                  <span className="text-sm font-medium text-[#9b8b7a]">
+                    {t.creditUsageTitle}
+                  </span>
+                </div>
+                <div className="border-t border-white/8">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="border-b border-white/8 bg-white/5">
+                        <th className="px-4 py-2 text-left font-medium text-[#9b8b7a]">{t.creditUsageActivity}</th>
+                        <th className="px-4 py-2 text-center font-medium text-[#9b8b7a]">{t.creditUsageAmount}</th>
+                        <th className="px-4 py-2 text-right font-medium text-[#9b8b7a]">{t.creditUsageNote}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {t.creditUsageRows.map((row, i) => (
+                        <tr key={i} className={i > 0 ? "border-t border-white/8" : ""}>
+                          <td className="px-4 py-2.5 text-[#c4b49a]">{row[0]}</td>
+                          <td className="px-4 py-2.5 text-center text-[#c4b49a]">{row[1]}</td>
+                          <td className="px-4 py-2.5 text-right text-[#9b8b7a]">{row[2]}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
             </div>
           )}

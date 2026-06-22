@@ -104,10 +104,9 @@ export default function LoginPage() {
   const [authUser, setAuthUser] = useState(null);
   const [authRefreshToken, setAuthRefreshToken] = useState(null);
 
-  const canGoBack = stage !== "contact";
-
   const handleBack = () => {
     setError("");
+    if (stage === "contact") return router.push("/");
     if (stage === "otp") return setStage("contact");
     if (stage === "language") return setStage("otp");
     if (stage === "signup") return setStage("language");
@@ -213,34 +212,32 @@ export default function LoginPage() {
   return (
     <div style={containerStyle}>
       <div style={sheetStyle}>
-        {canGoBack && (
-          <button
-            aria-label={t.back}
-            onClick={handleBack}
-            style={{
-              zIndex: 100,
-              width: "100%",
-              height: 36,
-              marginTop: 60,
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              display: "flex",
-              color: "#ababab",
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M15 18l-6-6 6-6"
-                stroke="#fff"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {t.back}
-          </button>
-        )}
+        <button
+          aria-label={t.back}
+          onClick={handleBack}
+          style={{
+            zIndex: 100,
+            width: "100%",
+            height: 36,
+            marginTop: 60,
+            border: "none",
+            background: "transparent",
+            cursor: "pointer",
+            display: "flex",
+            color: "#ababab",
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke="#fff"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {t.back}
+        </button>
 
         <div style={{ padding: "4px 24px" }}>
           <AnimatePresence mode="wait" initial={false}>

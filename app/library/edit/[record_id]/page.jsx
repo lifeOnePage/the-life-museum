@@ -58,6 +58,11 @@ import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 import AIConsentModal, { hasAIConsent } from "@/app/components/AIConsentModal";
 
+const ADMIN_EMAILS = new Set([
+  "goodchaeee@naver.com", "goodchaeee@gmail.com", "akea1027th@gmail.com",
+  "byul88byul@gmail.com", "jusub@sogang.ac.kr", "showyourmind@gmail.com",
+]);
+
 // ─── i18n ────────────────────────────────────────────────────────────────────
 const T = {
   ko: {
@@ -395,11 +400,20 @@ const Index = ({ params }) => {
   const [showTutorial, setShowTutorial] = useState(false);
   const [showHeaderMenu, setShowHeaderMenu] = useState(false);
 
+  // Admin check
+  const [isAdmin, setIsAdmin] = useState(false);
+  useEffect(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem("app_user") || "{}");
+      if (u.email && ADMIN_EMAILS.has(u.email)) setIsAdmin(true);
+    } catch {}
+  }, []);
+
   // AI story generation state
   const [isGenerating, setIsGenerating] = useState(false);
   const [bioError, setBioError] = useState("");
   const [storyGenCount, setStoryGenCount] = useState(0);
-  const storyRemainingGens = 3 - storyGenCount;
+  const storyRemainingGens = isAdmin ? Infinity : 3 - storyGenCount;
   const [usedChips, setUsedChips] = useState(new Set());
 
   const [timelineError, setTimelineError] = useState("");
@@ -1584,6 +1598,7 @@ const Index = ({ params }) => {
                                 isLoading={photoDrive.isLoading}
                                 preloadBlobs={photoDrive.preloadBlobs}
                                 locale={locale}
+                                isAdmin={isAdmin}
                                 onRequestAIConsent={(type) => {
                                   if (hasAIConsent()) return Promise.resolve(true);
                                   return new Promise((resolve) => {
@@ -1856,18 +1871,20 @@ const Index = ({ params }) => {
                               </div>
 
                               {/* Generation count */}
-                              <div className="flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
-                                <span className="text-xs text-[#c4b49a]">
-                                  {t.genCount}
-                                </span>
-                                <span
-                                  className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
-                                >
-                                  {storyGenCount}/3
-                                </span>
-                              </div>
+                              {!isAdmin && (
+                                <div className="flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
+                                  <span className="text-xs text-[#c4b49a]">
+                                    {t.genCount}
+                                  </span>
+                                  <span
+                                    className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
+                                  >
+                                    {storyGenCount}/3
+                                  </span>
+                                </div>
+                              )}
 
-                              {storyRemainingGens <= 0 && (
+                              {!isAdmin && storyRemainingGens <= 0 && (
                                 <div className="rounded-lg bg-red-500/10 px-3 py-2">
                                   <p className="text-xs text-red-500">
                                     {t.genExhausted}

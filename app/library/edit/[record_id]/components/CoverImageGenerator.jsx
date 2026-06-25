@@ -106,6 +106,7 @@ export default function CoverImageGenerator({
   preloadBlobs,
   locale,
   onRequestAIConsent,
+  isAdmin = false,
 }) {
   const t = T[locale] || T.ko;
   const STYLES = locale === "en" ? STYLES_EN : STYLES_KO;
@@ -121,7 +122,7 @@ export default function CoverImageGenerator({
 
   // Generation count tracking
   const [genCount, setGenCount] = useState(0);
-  const remainingGens = 3 - genCount;
+  const remainingGens = isAdmin ? Infinity : 3 - genCount;
 
   // Fetch coverGenCount on mount
   useEffect(() => {
@@ -345,16 +346,18 @@ export default function CoverImageGenerator({
           </div>
 
           {/* Remaining generations indicator */}
-          <div className="mb-4 flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
-            <span className="text-xs text-[#c4b49a]">{t.genCount}</span>
-            <span
-              className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
-            >
-              {3 - remainingGens}/3
-            </span>
-          </div>
+          {!isAdmin && (
+            <div className="mb-4 flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
+              <span className="text-xs text-[#c4b49a]">{t.genCount}</span>
+              <span
+                className={`text-xs font-medium ${remainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
+              >
+                {3 - remainingGens}/3
+              </span>
+            </div>
+          )}
 
-          {remainingGens <= 0 && (
+          {!isAdmin && remainingGens <= 0 && (
             <div className="mb-4 rounded-lg bg-red-500/10 px-3 py-2">
               <p className="text-xs text-red-500">
                 {t.genExhausted}

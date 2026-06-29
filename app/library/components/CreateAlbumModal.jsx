@@ -8,15 +8,17 @@ const T = {
   ko: {
     tabNew: "새 앨범 만들기",
     tabShare: "공유 앨범 추가",
-    titleLabel: "앨범 제목",
-    titlePlaceholder: "비워두면 구글 포토 앨범명 사용",
-    subtitleLabel: "설명",
-    subtitlePlaceholder: "앨범 설명을 입력하세요",
+    titleLabel: "앨범 제목 (선택)",
+    titlePlaceholder: "ex. 우리 가족의 국내여행",
+    subtitleLabel: "부제목 (선택)",
+    subtitlePlaceholder: "ex. 2026년 3월 2일",
+    photoStorage: "사진 저장소",
     comingSoon: "추후 지원 예정",
     cancel: "취소",
     creating: "생성 중...",
     create: "만들기",
-    shareDesc: "공유받은 전시 링크를 붙여넣으면 내 라이브러리에 앨범이 추가됩니다.",
+    shareDesc:
+      "공유받은 더라이프메모리 링크를 붙여넣으면 내 라이브러리에 앨범이 추가됩니다.",
     shareLabel: "공유 링크",
     adding: "추가 중...",
     add: "추가하기",
@@ -27,13 +29,15 @@ const T = {
     tabShare: "Add Shared Album",
     titleLabel: "Album Title",
     titlePlaceholder: "Leave blank to use Google Photos album name",
-    subtitleLabel: "Description",
+    subtitleLabel: "SubTitle",
     subtitlePlaceholder: "Enter album description",
+    photoStorage: "Photo Storage",
     comingSoon: "Coming soon",
     cancel: "Cancel",
     creating: "Creating...",
     create: "Create",
-    shareDesc: "Paste a shared exhibition link to add the album to your library.",
+    shareDesc:
+      "Paste a shared TheLifeMemory link to add the album to your library.",
     shareLabel: "Share Link",
     adding: "Adding...",
     add: "Add",
@@ -41,7 +45,26 @@ const T = {
   },
 };
 
-export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }) {
+// 사진 저장소 종류 (edit 페이지의 사진 저장소 입력 구조와 통일)
+const URL_TYPES = [
+  { key: "google", label: "Google Photo" },
+  { key: "drive", label: "Google Drive" },
+  { key: "icloud", label: "iCloud" },
+  { key: "mybox", label: "Mybox" },
+];
+
+const URL_PLACEHOLDERS = {
+  google: "https://photos.google.com/...",
+  drive: "https://drive.google.com/drive/folders/...",
+  icloud: "https://www.icloud.com/sharedalbum/...",
+};
+
+export default function CreateAlbumModal({
+  onClose,
+  onCreated,
+  baseUrl,
+  locale,
+}) {
   const t = T[locale] || T.ko;
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("new"); // 'new' | 'share'
@@ -49,9 +72,9 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
   // 새 앨범 만들기 상태
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  const [googlePhotoUrl, setGooglePhotoUrl] = useState("");
-  const [googleDriveUrl, setGoogleDriveUrl] = useState("");
-  const [icloudUrl, setIcloudUrl] = useState("");
+  // 사진 저장소: 종류 선택 + 단일 URL 입력 (edit 페이지와 동일 구조)
+  const [selectedUrlType, setSelectedUrlType] = useState("google");
+  const [urlValue, setUrlValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   // 공유 앨범 추가 상태
@@ -63,15 +86,17 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
 
     setSubmitting(true);
     try {
+      // 선택된 저장소 종류에 맞는 필드에만 URL 매핑 (Mybox는 추후 지원)
+      const url = urlValue.trim();
       const res = await authedFetch(`${baseUrl}/record`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: title.trim() || null,
           subTitle: subtitle.trim(),
-          googlePhotoUrl: googlePhotoUrl.trim() || null,
-          googleDriveUrl: googleDriveUrl.trim() || null,
-          icloudUrl: icloudUrl.trim() || null,
+          googlePhotoUrl: selectedUrlType === "google" ? url || null : null,
+          googleDriveUrl: selectedUrlType === "drive" ? url || null : null,
+          icloudUrl: selectedUrlType === "icloud" ? url || null : null,
         }),
       });
       if (!res.ok) {
@@ -113,7 +138,10 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
         onCreated?.(json.data);
         onClose();
       } else {
-        console.error("Failed to add shared album:", json.message || json.detail);
+        console.error(
+          "Failed to add shared album:",
+          json.message || json.detail,
+        );
         alert(json.detail || json.message || t.errorAdd);
       }
     } catch (err) {
@@ -159,9 +187,43 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
         {/* 새 앨범 만들기 탭 */}
         {activeTab === "new" && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* 제목 */}
+            {/* 사진 저장소: 종류 선택 + 단일 URL 입력 */}
             <div>
               <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
+                {t.photoStorage}
+              </label>
+              <div className="mb-3 flex gap-2">
+                {URL_TYPES.map((opt) => (
+                  <button
+                    key={opt.key}
+                    type="button"
+                    onClick={() => setSelectedUrlType(opt.key)}
+                    className={`flex-1 rounded-lg border px-2 py-2 text-xs font-medium transition-all ${
+                      selectedUrlType === opt.key
+                        ? "border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
+                        : "border-white/15 text-[#9b8b7a] hover:border-white/25"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <input
+                type="text"
+                value={selectedUrlType === "mybox" ? "" : urlValue}
+                onChange={(e) => setUrlValue(e.target.value)}
+                disabled={selectedUrlType === "mybox"}
+                placeholder={URL_PLACEHOLDERS[selectedUrlType] || t.comingSoon}
+                className={`w-full rounded-lg border px-3 py-2 placeholder-white/25 outline-none focus:border-[#c4b49a] ${
+                  selectedUrlType === "mybox"
+                    ? "cursor-not-allowed border-white/5 bg-white/[0.02] text-white/20"
+                    : "border-white/10 bg-white/5 text-[#e8d5b7]"
+                }`}
+              />
+            </div>
+            {/* 제목 */}
+            <div>
+              <label className="mb-1 block text-sm font-normal text-[#9b8b7a]">
                 {t.titleLabel}
               </label>
               <input
@@ -175,7 +237,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
 
             {/* 설명 */}
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
+              <label className="mb-1 block text-sm font-normal text-[#9b8b7a]">
                 {t.subtitleLabel}
               </label>
               <input
@@ -183,61 +245,6 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
                 placeholder={t.subtitlePlaceholder}
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
-              />
-            </div>
-
-            {/* Google Photo URL */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
-                Google Photo URL
-              </label>
-              <input
-                type="url"
-                value={googlePhotoUrl}
-                onChange={(e) => setGooglePhotoUrl(e.target.value)}
-                placeholder="https://photos.google.com/..."
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
-              />
-            </div>
-
-            {/* Google Drive URL */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
-                Google Drive URL
-              </label>
-              <input
-                type="url"
-                value={googleDriveUrl}
-                onChange={(e) => setGoogleDriveUrl(e.target.value)}
-                placeholder="https://drive.google.com/drive/folders/..."
-                className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
-              />
-            </div>
-
-            {/* Mybox URL (비활성화) */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-white/20">
-                Mybox URL
-              </label>
-              <input
-                type="url"
-                disabled
-                placeholder={t.comingSoon}
-                className="w-full cursor-not-allowed rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2 text-white/20 placeholder-white/15"
-              />
-            </div>
-
-            {/* iCloud URL */}
-            <div>
-              <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
-                iCloud URL
-              </label>
-              <input
-                type="url"
-                value={icloudUrl}
-                onChange={(e) => setIcloudUrl(e.target.value)}
-                placeholder="https://www.icloud.com/sharedalbum/..."
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>
@@ -265,9 +272,7 @@ export default function CreateAlbumModal({ onClose, onCreated, baseUrl, locale }
         {/* 공유 앨범 추가 탭 */}
         {activeTab === "share" && (
           <div className="flex flex-col gap-4">
-            <p className="text-sm text-[#9b8b7a]">
-              {t.shareDesc}
-            </p>
+            <p className="text-sm text-[#9b8b7a]">{t.shareDesc}</p>
             <div>
               <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
                 {t.shareLabel}

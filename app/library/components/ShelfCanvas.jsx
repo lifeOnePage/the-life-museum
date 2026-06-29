@@ -27,7 +27,11 @@ function CameraController({ xOffsetRef, yOffsetRef, zRef }) {
     const dx = targetX - camera.position.x;
     const dy = targetY - camera.position.y;
     const dz = targetZ - camera.position.z;
-    if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
+    if (
+      Math.abs(dx) > 0.0001 ||
+      Math.abs(dy) > 0.0001 ||
+      Math.abs(dz) > 0.0001
+    ) {
       camera.position.x += dx * 0.12;
       camera.position.y += dy * 0.12;
       camera.position.z += dz * 0.1;
@@ -109,11 +113,36 @@ export default function ShelfCanvas({
 
   const baseZRef = useRef(baseZ);
 
+  // ─── 세로 스크롤 한계 (비대칭) ───
+  // 카메라가 위로 너무 올라가면 뒷벽(brown 패널) 위쪽 크림색 여백이 프러스텀에
+  // 노출된다. 벽 상/하단 모서리를 프러스텀 상/하단이 넘지 않도록 오프셋 범위를
+  // 기하학적으로 계산한다. (ShelfScene/Niche의 좌표 규칙과 일치시켜야 함)
+  const scrollBounds = useMemo(() => {
+    const HALF_FOV_TAN = Math.tan(((52 / 2) * Math.PI) / 180); // 세로 FOV 52°
+    const H = baseZ * HALF_FOV_TAN; // z=0 평면에서 보이는 화면 절반 높이
+    const sceneOffset = -0.2 - (ROWS - 2) * 0.4; // ShelfScene과 동일
+    const nicheOriginY = sceneOffset + 1.5; // Niche가 group(sceneOffset) 안 [0,1.5]에 배치
+    const straightTopY = ROWS * 1.4 - 0.8; // Niche.jsx와 동일
+    const brownTopWorld = nicheOriginY + straightTopY + 0.3; // 뒷벽 상단 모서리
+    const brownBottomWorld = nicheOriginY - 2.0 - 0.3; // 뒷벽 하단 모서리
+    const MARGIN = 0.05; // 모서리에 딱 붙지 않도록 약간의 안쪽 여유
+    let max = brownTopWorld - H - 3 - MARGIN; // 카메라 기준 y=1.5
+    let min = brownBottomWorld + H - 1.5 + MARGIN;
+    if (max < min) {
+      // 프러스텀이 벽보다 크면 스크롤 없이 벽 중앙에 고정
+      const center = (brownTopWorld + brownBottomWorld) / 2 - 1.5;
+      max = center;
+      min = center;
+    }
+    return { min, max };
+  }, [ROWS, baseZ]);
+
   // Camera refs
   const cameraXOffsetRef = useRef(0);
   const cameraYOffsetRef = useRef(0);
   const cameraZRef = useRef(baseZ);
-  const scrollRangeRef = useRef((ROWS - 1) * 0.7);
+  const scrollMinRef = useRef(scrollBounds.min);
+  const scrollMaxRef = useRef(scrollBounds.max);
 
   // baseZ 변경 시 카메라 Z를 동기화
   useEffect(() => {
@@ -121,15 +150,22 @@ export default function ShelfCanvas({
     cameraZRef.current = baseZ;
   }, [baseZ]);
 
-  // scrollRange 갱신
+  // 스크롤 한계 갱신 + 현재 오프셋을 새 범위로 재클램프
   useEffect(() => {
-    scrollRangeRef.current = (ROWS - 1) * 0.7;
-  }, [ROWS]);
+    scrollMinRef.current = scrollBounds.min;
+    scrollMaxRef.current = scrollBounds.max;
+    cameraYOffsetRef.current = Math.max(
+      scrollBounds.min,
+      Math.min(scrollBounds.max, cameraYOffsetRef.current),
+    );
+  }, [scrollBounds]);
 
   // 제스처 훅 (touch + wheel은 내부 addEventListener, pointer만 반환)
-  const { onPointerDown, onPointerMove, onPointerUp, isScrollingRef } = useShelfGestures({
+  const { onPointerDown, onPointerMove, onPointerUp, isScrollingRef } =
+    useShelfGestures({
       wrapperRef,
-      scrollRangeRef,
+      scrollMinRef,
+      scrollMaxRef,
       cameraYOffsetRef,
       cameraXOffsetRef,
       cameraZRef,
@@ -150,14 +186,23 @@ export default function ShelfCanvas({
       cameraControlRef.current = {
         reset: () => {
           cameraXOffsetRef.current = 0;
-          cameraYOffsetRef.current = 0;
+          cameraYOffsetRef.current = Math.max(
+            scrollMinRef.current,
+            Math.min(scrollMaxRef.current, 0),
+          );
           cameraZRef.current = baseZRef.current;
         },
         zoomIn: () => {
-          cameraZRef.current = Math.max(baseZRef.current - 0.6, cameraZRef.current - 0.5);
+          cameraZRef.current = Math.max(
+            baseZRef.current - 0.6,
+            cameraZRef.current - 0.5,
+          );
         },
         zoomOut: () => {
-          cameraZRef.current = Math.min(baseZRef.current + 0.6, cameraZRef.current + 0.5);
+          cameraZRef.current = Math.min(
+            baseZRef.current + 0.6,
+            cameraZRef.current + 0.5,
+          );
         },
       };
     }
@@ -251,7 +296,11 @@ export default function ShelfCanvas({
           />
         </Suspense>
 
-        <CameraController xOffsetRef={cameraXOffsetRef} yOffsetRef={cameraYOffsetRef} zRef={cameraZRef} />
+        <CameraController
+          xOffsetRef={cameraXOffsetRef}
+          yOffsetRef={cameraYOffsetRef}
+          zRef={cameraZRef}
+        />
       </Canvas>
     </div>
   );

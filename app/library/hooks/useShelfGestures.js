@@ -18,7 +18,8 @@ function touchScale() {
 // 앨범이 적어 선반이 짧으면 픽셀당 이동량이 작아지고(감도 하한 0.0024까지 떨어짐)
 // 손가락 이동 대비 반응이 매우 무겁게 느껴졌다. 일반 스크롤 UI처럼 픽셀당 이동량을
 // 고정하면 선반 높이와 상관없이 감도가 항상 동일하고(짧은 선반도 가볍게), 긴 선반은
-// 자연스럽게 더 많이 스크롤하면 된다. (-range ~ +range 범위 클램프는 각 호출부에서 수행)
+// 자연스럽게 더 많이 스크롤하면 된다. (오프셋 범위 클램프는 scrollMinRef/scrollMaxRef로
+// 각 호출부에서 수행 — ShelfCanvas에서 뒷벽 기하학 기반으로 계산되는 비대칭 한계)
 const SCROLL_SENSITIVITY = 0.0055;
 
 function scrollDelta(deltaPx) {
@@ -38,7 +39,8 @@ function getZoomBounds(baseZ, isSelected) {
 
 export default function useShelfGestures({
   wrapperRef,
-  scrollRangeRef,
+  scrollMinRef,
+  scrollMaxRef,
   cameraYOffsetRef,
   cameraXOffsetRef,
   cameraZRef,
@@ -110,18 +112,24 @@ export default function useShelfGestures({
       if (t.mode === "pan" && e.touches.length === 1) {
         // 앨범 선택 시: 수평 + 수직 패닝
         const s = touchScale();
-        const range = scrollRangeRef.current;
         const deltaX = e.touches[0].clientX - t.startX;
         const deltaY = e.touches[0].clientY - t.startY;
         const newXOffset = t.startXOffset - deltaX * TOUCH_SENSITIVITY * s;
         cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
         const newYOffset = t.startOffset + scrollDelta(deltaY);
-        cameraYOffsetRef.current = clamp(newYOffset, -range, range);
+        cameraYOffsetRef.current = clamp(
+          newYOffset,
+          scrollMinRef.current,
+          scrollMaxRef.current,
+        );
       } else if (t.mode === "scroll" && e.touches.length === 1) {
-        const range = scrollRangeRef.current;
         const delta = e.touches[0].clientY - t.startY;
         const newOffset = t.startOffset + scrollDelta(delta);
-        cameraYOffsetRef.current = clamp(newOffset, -range, range);
+        cameraYOffsetRef.current = clamp(
+          newOffset,
+          scrollMinRef.current,
+          scrollMaxRef.current,
+        );
       } else if (t.mode === "pinch" && e.touches.length === 2) {
         e.preventDefault();
 
@@ -168,13 +176,19 @@ export default function useShelfGestures({
         e.preventDefault();
         const newXOffset = cameraXOffsetRef.current + e.deltaX * 0.001;
         cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
-        const range = scrollRangeRef.current;
         const newYOffset = cameraYOffsetRef.current + scrollDelta(e.deltaY);
-        cameraYOffsetRef.current = clamp(newYOffset, -range, range);
+        cameraYOffsetRef.current = clamp(
+          newYOffset,
+          scrollMinRef.current,
+          scrollMaxRef.current,
+        );
       } else {
-        const range = scrollRangeRef.current;
         const newOffset = cameraYOffsetRef.current + scrollDelta(e.deltaY);
-        cameraYOffsetRef.current = clamp(newOffset, -range, range);
+        cameraYOffsetRef.current = clamp(
+          newOffset,
+          scrollMinRef.current,
+          scrollMaxRef.current,
+        );
       }
     }
 
@@ -193,7 +207,8 @@ export default function useShelfGestures({
     };
   }, [
     wrapperRef,
-    scrollRangeRef,
+    scrollMinRef,
+    scrollMaxRef,
     cameraYOffsetRef,
     cameraXOffsetRef,
     cameraZRef,
@@ -224,21 +239,27 @@ export default function useShelfGestures({
 
       if (selectedAlbum !== null) {
         // 앨범 선택 시: 수평 + 수직 패닝
-        const range = scrollRangeRef.current;
         const deltaX = e.clientX - dragRef.current.startX;
         const deltaY = e.clientY - dragRef.current.startY;
         const newXOffset = dragRef.current.startXOffset - deltaX * 0.002;
         cameraXOffsetRef.current = clamp(newXOffset, -PAN_X_MAX, PAN_X_MAX);
         const newYOffset = dragRef.current.startOffset + scrollDelta(deltaY);
-        cameraYOffsetRef.current = clamp(newYOffset, -range, range);
+        cameraYOffsetRef.current = clamp(
+          newYOffset,
+          scrollMinRef.current,
+          scrollMaxRef.current,
+        );
       } else {
-        const range = scrollRangeRef.current;
         const delta = e.clientY - dragRef.current.startY;
         const newOffset = dragRef.current.startOffset + scrollDelta(delta);
-        cameraYOffsetRef.current = clamp(newOffset, -range, range);
+        cameraYOffsetRef.current = clamp(
+          newOffset,
+          scrollMinRef.current,
+          scrollMaxRef.current,
+        );
       }
     },
-    [scrollRangeRef, cameraYOffsetRef, cameraXOffsetRef, selectedAlbum],
+    [scrollMinRef, scrollMaxRef, cameraYOffsetRef, cameraXOffsetRef, selectedAlbum],
   );
 
   const onPointerUp = useCallback((e) => {

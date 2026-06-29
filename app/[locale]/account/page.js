@@ -581,7 +581,7 @@ export default function AccountPage() {
             {t.back}
           </button>
           <h1 className="mb-4 text-lg font-semibold text-[#e8d5b7]">
-            The Life Recordz
+            The Life Memory
           </h1>
 
           <div className="mb-6 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5">

@@ -59,8 +59,12 @@ import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 import AIConsentModal, { hasAIConsent } from "@/app/components/AIConsentModal";
 
 const ADMIN_EMAILS = new Set([
-  "goodchaeee@naver.com", "goodchaeee@gmail.com", "akea1027th@gmail.com",
-  "byul88byul@gmail.com", "jusub@sogang.ac.kr", "showyourmind@gmail.com",
+  "goodchaeee@naver.com",
+  "goodchaeee@gmail.com",
+  "akea1027th@gmail.com",
+  "byul88byul@gmail.com",
+  "jusub@sogang.ac.kr",
+  "showyourmind@gmail.com",
 ]);
 
 // ─── i18n ────────────────────────────────────────────────────────────────────
@@ -77,7 +81,7 @@ const T = {
     lastSaved: "마지막 저장",
     tabFront: "앞면",
     tabBack: "뒷면",
-    tabGallery: "레코드",
+    tabMemory: "메모리",
     titleLabel: "제목",
     subtitleLabel: "부제목",
     titlePlaceholder: "앨범 제목을 입력하세요",
@@ -87,7 +91,7 @@ const T = {
     coverDesignSub: "AI 생성 또는 직접 업로드",
     bgm: "배경음악",
     bgmSelected: "선택됨",
-    recordType: "레코드 타입",
+    recordType: "메모리 타입",
     recordTypeExhibit: "Exhibit",
     recordTypeRetroTape: "Retro Tape",
     backCoverImage: "뒷면 이미지 설정하기",
@@ -145,7 +149,7 @@ const T = {
     lastSaved: "Last saved",
     tabFront: "Front",
     tabBack: "Back",
-    tabGallery: "Record",
+    tabMemory: "Record",
     titleLabel: "Title",
     subtitleLabel: "Subtitle",
     titlePlaceholder: "Enter album title",
@@ -563,7 +567,8 @@ const Index = ({ params }) => {
           setRecordType(data.recordType || "exhibit");
           if (data.vhsFilter) setVhsFilter(data.vhsFilter);
           if (data.vhsTransition) setVhsTransition(data.vhsTransition);
-          if (data.vhsPhotoFrameIndex != null) setVhsPhotoFrameIndex(data.vhsPhotoFrameIndex);
+          if (data.vhsPhotoFrameIndex != null)
+            setVhsPhotoFrameIndex(data.vhsPhotoFrameIndex);
 
           // Photo drive now auto-fetches on mount via useEffect
 
@@ -590,7 +595,7 @@ const Index = ({ params }) => {
           };
         }
       } catch (error) {
-        console.error("레코드 불러오기 실패:", error);
+        console.error("메모리 불러오기 실패:", error);
       } finally {
         setIsLoading(false);
       }
@@ -633,8 +638,10 @@ const Index = ({ params }) => {
           bgmUrl: bgmUrl || null,
           recordType,
           vhsFilter: recordType === "retro_tape" ? vhsFilter : undefined,
-          vhsTransition: recordType === "retro_tape" ? vhsTransition : undefined,
-          vhsPhotoFrameIndex: recordType === "retro_tape" ? vhsPhotoFrameIndex : undefined,
+          vhsTransition:
+            recordType === "retro_tape" ? vhsTransition : undefined,
+          vhsPhotoFrameIndex:
+            recordType === "retro_tape" ? vhsPhotoFrameIndex : undefined,
         }),
       },
     );
@@ -1117,7 +1124,7 @@ const Index = ({ params }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAIConsent, setShowAIConsent] = useState(() =>
-    hasAIConsent() ? null : "story"
+    hasAIConsent() ? null : "story",
   );
 
   const handleDeleteRecord = async () => {
@@ -1420,7 +1427,7 @@ const Index = ({ params }) => {
                   value="gallery"
                   className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
-                  {t.tabGallery}
+                  {t.tabMemory}
                 </TabsTrigger>
               </TabsList>
 
@@ -1600,7 +1607,8 @@ const Index = ({ params }) => {
                                 locale={locale}
                                 isAdmin={isAdmin}
                                 onRequestAIConsent={(type) => {
-                                  if (hasAIConsent()) return Promise.resolve(true);
+                                  if (hasAIConsent())
+                                    return Promise.resolve(true);
                                   return new Promise((resolve) => {
                                     consentResolveRef.current = resolve;
                                     setShowAIConsent(type);
@@ -2020,7 +2028,9 @@ const Index = ({ params }) => {
                             {t.recordType}
                           </span>
                           <span className="text-[11px] text-[#9b8b7a]">
-                            {recordType === "exhibit" ? t.recordTypeExhibit : t.recordTypeRetroTape}
+                            {recordType === "exhibit"
+                              ? t.recordTypeExhibit
+                              : t.recordTypeRetroTape}
                           </span>
                         </div>
                         {recordTypeOpen ? (
@@ -2041,8 +2051,14 @@ const Index = ({ params }) => {
                             <div className="border-t border-white/8 px-4 pt-3 pb-4">
                               <div className="flex flex-col gap-2">
                                 {[
-                                  { value: "exhibit", label: t.recordTypeExhibit },
-                                  { value: "retro_tape", label: t.recordTypeRetroTape },
+                                  {
+                                    value: "exhibit",
+                                    label: t.recordTypeExhibit,
+                                  },
+                                  {
+                                    value: "retro_tape",
+                                    label: t.recordTypeRetroTape,
+                                  },
                                 ].map((option) => (
                                   <label
                                     key={option.value}
@@ -2159,7 +2175,9 @@ const Index = ({ params }) => {
                                     ].map((option) => (
                                       <label
                                         key={option.value}
-                                        onClick={() => setVhsFilter(option.value)}
+                                        onClick={() =>
+                                          setVhsFilter(option.value)
+                                        }
                                         className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
                                           vhsFilter === option.value
                                             ? "border-[#c4a882] bg-[#c4a882]/10"
@@ -2192,7 +2210,9 @@ const Index = ({ params }) => {
                         {/* Transition Section */}
                         <div className="rounded-lg border border-white/10">
                           <button
-                            onClick={() => setVhsTransitionOpen(!vhsTransitionOpen)}
+                            onClick={() =>
+                              setVhsTransitionOpen(!vhsTransitionOpen)
+                            }
                             className="flex w-full items-center justify-between px-4 py-3"
                           >
                             <div className="flex items-center gap-2">
@@ -2226,7 +2246,9 @@ const Index = ({ params }) => {
                                     ].map((option) => (
                                       <label
                                         key={option.value}
-                                        onClick={() => setVhsTransition(option.value)}
+                                        onClick={() =>
+                                          setVhsTransition(option.value)
+                                        }
                                         className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
                                           vhsTransition === option.value
                                             ? "border-[#c4a882] bg-[#c4a882]/10"

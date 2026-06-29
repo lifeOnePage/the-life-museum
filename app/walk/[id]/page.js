@@ -7,7 +7,7 @@ export default function WalkPage({ params }) {
   const { id, locale } = use(params);
 
   return (
-    <div className="relative h-screen w-screen overflow-hidden bg-black">
+    <div className="relative h-[100dvh] w-screen overflow-hidden bg-black">
       <SmartAppBanner locale={locale} />
       <DisplayScene recordId={id} locale={locale} />
     </div>

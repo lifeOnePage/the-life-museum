@@ -424,9 +424,14 @@ export default function MyShelfPage({ params }) {
             <button
               onClick={() => {
                 if (selectedAlbum.data?.id) {
-                  const route = selectedAlbum.data.exhibitionType === "memorial_tape"
-                    ? `/vhs/${selectedAlbum.data.id}`
-                    : `/walk/${selectedAlbum.data.id}`;
+                  const id = selectedAlbum.data.id;
+                  const type = selectedAlbum.data.exhibitionType;
+                  const route =
+                    type === "memorial"
+                      ? `/memorial/${id}`
+                      : type === "memorial_tape"
+                        ? `/vhs/${id}`
+                        : `/walk/${id}`;
                   router.push(route);
                 }
               }}

@@ -17,6 +17,7 @@ import Scene from "./scene/Scene";
 import { SEED, CAMERA_SPEED, getTextureConfig } from "./lib/constants";
 import { mulberry32, generatePlanes } from "./lib/planeGenerator";
 import { useRecordData } from "@/app/lib/useRecordData";
+import { isNativeApp } from "@/app/utils/platform";
 
 const T = {
   ko: {
@@ -112,6 +113,7 @@ function PlaybackControls({
   onToggleVideoPreview,
   videoMaxDuration,
   onVideoMaxDurationChange,
+  isApp,
   t,
 }) {
   const [showVideoOptions, setShowVideoOptions] = useState(false);
@@ -131,7 +133,7 @@ function PlaybackControls({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showVideoOptions]);
   return (
-    <div className="absolute top-[max(env(safe-area-inset-top),1rem)] left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm max-w-[calc(100vw-2rem)]">
+    <div className="absolute top-[max(env(safe-area-inset-top),0.75rem)] left-1/2 z-10 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-lg bg-black/60 px-3 py-2 backdrop-blur-sm">
       <Tooltip label={t.exit}>
         <button
           onClick={onExit}
@@ -283,20 +285,25 @@ function PlaybackControls({
         </>
       )}
 
-      <div className="h-6 w-px bg-white/20" />
+      {/* 앱(WebView)에서는 항상 전체화면이므로 전체화면 버튼 숨김 */}
+      {!isApp && (
+        <>
+          <div className="h-6 w-px bg-white/20" />
 
-      <Tooltip label={isFullscreen ? t.fullscreenOff : t.fullscreen}>
-        <button
-          onClick={onToggleFullscreen}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
-        >
-          {isFullscreen ? (
-            <Minimize2 className="h-5 w-5 text-white" />
-          ) : (
-            <Maximize2 className="h-5 w-5 text-white" />
-          )}
-        </button>
-      </Tooltip>
+          <Tooltip label={isFullscreen ? t.fullscreenOff : t.fullscreen}>
+            <button
+              onClick={onToggleFullscreen}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20 transition-colors hover:bg-white/30"
+            >
+              {isFullscreen ? (
+                <Minimize2 className="h-5 w-5 text-white" />
+              ) : (
+                <Maximize2 className="h-5 w-5 text-white" />
+              )}
+            </button>
+          </Tooltip>
+        </>
+      )}
     </div>
   );
 }
@@ -336,6 +343,41 @@ export default function DisplayScene({ recordId, locale }) {
   const [loadProgress, setLoadProgress] = useState({ loaded: 0, total: 0 });
   const [showControls, setShowControls] = useState(true);
   const idleTimerRef = useRef(null);
+
+  // 앱(Capacitor WebView) 여부 — 클라이언트에서만 판정(SSR 불일치 방지)
+  const [isApp, setIsApp] = useState(false);
+  useEffect(() => {
+    setIsApp(isNativeApp());
+  }, []);
+
+  // 앱/감상 화면에서 페이지 스크롤·오버스크롤을 잠가 항상 꽉 찬 전체화면 유지
+  // (위로 드래그 시 하단 여백이 생기는 문제 방지)
+  useEffect(() => {
+    const html = document.documentElement;
+    const body = document.body;
+    const prev = {
+      htmlOverflow: html.style.overflow,
+      overflow: body.style.overflow,
+      overscroll: body.style.overscrollBehavior,
+      position: body.style.position,
+      width: body.style.width,
+      height: body.style.height,
+    };
+    html.style.overflow = "hidden";
+    body.style.overflow = "hidden";
+    body.style.overscrollBehavior = "none";
+    body.style.position = "fixed";
+    body.style.width = "100%";
+    body.style.height = "100%";
+    return () => {
+      html.style.overflow = prev.htmlOverflow;
+      body.style.overflow = prev.overflow;
+      body.style.overscrollBehavior = prev.overscroll;
+      body.style.position = prev.position;
+      body.style.width = prev.width;
+      body.style.height = prev.height;
+    };
+  }, []);
 
   // Smooth progress animation state
   const [animatedPct, setAnimatedPct] = useState(0);
@@ -449,21 +491,56 @@ export default function DisplayScene({ recordId, locale }) {
     return () => document.removeEventListener("fullscreenchange", onChange);
   }, []);
 
-  // UI auto-hide: show on interaction, hide after 3s idle
+  // UI auto-hide (YouTube식): 탭하면 컨트롤 표시 후 3초 뒤 자동 숨김.
+  // 앞뒤 이동용 "드래그"는 컨트롤을 띄우지 않도록 탭과 구분한다.
   useEffect(() => {
-    const handleInteraction = () => {
+    const TAP_MOVE_THRESHOLD = 10; // px — 이 이상 움직이면 드래그로 간주
+    const IDLE_MS = 3000;
+
+    const showAndResetIdle = () => {
       setShowControls(true);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = setTimeout(() => setShowControls(false), 3000);
+      idleTimerRef.current = setTimeout(() => setShowControls(false), IDLE_MS);
     };
 
-    window.addEventListener("mousemove", handleInteraction);
-    window.addEventListener("touchstart", handleInteraction);
-    handleInteraction();
+    // ── 터치: 탭만 컨트롤 표시, 드래그는 제외 ──
+    let touchStart = null;
+    const onTouchStart = (e) => {
+      const tch = e.touches[0];
+      touchStart = tch
+        ? { x: tch.clientX, y: tch.clientY, moved: e.touches.length > 1 }
+        : null;
+    };
+    const onTouchMove = (e) => {
+      if (!touchStart) return;
+      const tch = e.touches[0];
+      if (!tch) return;
+      if (
+        Math.hypot(tch.clientX - touchStart.x, tch.clientY - touchStart.y) >
+        TAP_MOVE_THRESHOLD
+      ) {
+        touchStart.moved = true; // 드래그로 확정 → 컨트롤 표시 안 함
+      }
+    };
+    const onTouchEnd = () => {
+      if (touchStart && !touchStart.moved) showAndResetIdle(); // 탭
+      touchStart = null;
+    };
+
+    // ── 데스크톱: 마우스 이동 시 표시 ──
+    const onMouseMove = () => showAndResetIdle();
+
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: true });
+    window.addEventListener("touchend", onTouchEnd);
+    window.addEventListener("mousemove", onMouseMove);
+    showAndResetIdle(); // 진입 시 잠깐 표시
 
     return () => {
-      window.removeEventListener("mousemove", handleInteraction);
-      window.removeEventListener("touchstart", handleInteraction);
+      window.removeEventListener("touchstart", onTouchStart);
+      window.removeEventListener("touchmove", onTouchMove);
+      window.removeEventListener("touchend", onTouchEnd);
+      window.removeEventListener("mousemove", onMouseMove);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, []);
@@ -579,7 +656,10 @@ export default function DisplayScene({ recordId, locale }) {
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div
+      className="relative h-full w-full"
+      style={{ overscrollBehavior: "none" }}
+    >
       {/* Loading overlay — fades out when scene is ready, removed after transition */}
       {overlayVisible && (
         <LoadingOverlay
@@ -590,7 +670,7 @@ export default function DisplayScene({ recordId, locale }) {
       )}
 
       <div
-        className={`transition-opacity duration-500 ${!isFullscreen || showControls ? "opacity-100" : "pointer-events-none opacity-0"}`}
+        className={`transition-opacity duration-500 ${!(isApp || isFullscreen) || showControls ? "opacity-100" : "pointer-events-none opacity-0"}`}
       >
         {!overlayVisible && (
           <PlaybackControls
@@ -608,6 +688,7 @@ export default function DisplayScene({ recordId, locale }) {
             onToggleVideoPreview={() => setVideoPreviewEnabled((v) => !v)}
             videoMaxDuration={videoMaxDuration}
             onVideoMaxDurationChange={setVideoMaxDuration}
+            isApp={isApp}
             t={t}
           />
         )}
@@ -629,7 +710,7 @@ export default function DisplayScene({ recordId, locale }) {
             toneMapping: THREE.ACESFilmicToneMapping,
             toneMappingExposure: 0.85,
           }}
-          style={{ width: "100%", height: "100%" }}
+          style={{ width: "100%", height: "100%", touchAction: "none" }}
         >
           <Suspense fallback={null}>
             <Scene

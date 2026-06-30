@@ -132,7 +132,11 @@ export default function LocaleLoginPage() {
         setAuthRefreshToken(result.refreshToken);
         setStage("language");
       } else {
-        await signinWithToken(result.accessToken, result.user, result.refreshToken);
+        await signinWithToken(
+          result.accessToken,
+          result.user,
+          result.refreshToken,
+        );
         router.push(`/${selectedLocale}/library`);
       }
     } catch (e) {
@@ -250,7 +254,14 @@ export default function LocaleLoginPage() {
             {stage === "language" && (
               <SlideScreen key="stage-language">
                 <Header>{t.chooseLanguage}</Header>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                    marginTop: 8,
+                  }}
+                >
                   <button
                     onClick={() => handleSelectLanguage("ko")}
                     style={{
@@ -258,7 +269,10 @@ export default function LocaleLoginPage() {
                       height: 56,
                       border: "1px solid rgba(255,255,255,0.2)",
                       borderRadius: 12,
-                      background: selectedLocale === "ko" ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.07)",
+                      background:
+                        selectedLocale === "ko"
+                          ? "rgba(255,255,255,0.15)"
+                          : "rgba(255,255,255,0.07)",
                       color: "#fff",
                       fontSize: 16,
                       fontWeight: 600,
@@ -278,7 +292,10 @@ export default function LocaleLoginPage() {
                       height: 56,
                       border: "1px solid rgba(255,255,255,0.2)",
                       borderRadius: 12,
-                      background: selectedLocale === "en" ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.07)",
+                      background:
+                        selectedLocale === "en"
+                          ? "rgba(255,255,255,0.15)"
+                          : "rgba(255,255,255,0.07)",
                       color: "#fff",
                       fontSize: 16,
                       fontWeight: 600,

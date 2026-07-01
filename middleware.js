@@ -35,12 +35,16 @@ export async function middleware(request) {
 
   // If no locale in path and no cookie → detect by IP, set cookie, redirect
   if (!hasLocale && !hasCookie) {
-    // 1순위: 호스팅 플랫폼이 넣어주는 지오 헤더(외부 호출 없음, 즉시/무료)
-    //  - Vercel: x-vercel-ip-country / request.geo.country
-    //  - Cloudflare: cf-ipcountry
+    // 지오 헤더로 국가 판별(외부 호출 없음, 즉시/무료)
+    // ⚠️ 이 사이트는 Cloudflare(프록시) → Vercel(오리진) 구조라,
+    // Vercel은 실제 방문자가 아니라 Cloudflare IP를 봄. 따라서 실제 방문자
+    // 국가가 담긴 Cloudflare의 cf-ipcountry를 최우선으로 사용해야 함.
+    //  - Cloudflare: cf-ipcountry (실제 방문자 국가, 신뢰)
+    //  - Vercel: x-vercel-ip-country / request.geo.country (CF 뒤에선 부정확할 수 있음)
+    const cfCountry = request.headers.get("cf-ipcountry");
     const geoCountry =
+      (cfCountry && cfCountry !== "XX" ? cfCountry : "") ||
       request.headers.get("x-vercel-ip-country") ||
-      request.headers.get("cf-ipcountry") ||
       request.geo?.country ||
       "";
 

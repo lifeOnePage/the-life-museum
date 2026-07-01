@@ -91,10 +91,11 @@ export default function LocaleLoginPage() {
   const [authUser, setAuthUser] = useState(null);
   const [authRefreshToken, setAuthRefreshToken] = useState(null);
 
-  const canGoBack = stage !== "contact";
+  const canGoBack = true;
 
   const handleBack = () => {
     setError("");
+    if (stage === "contact") return router.push(`/${selectedLocale}`);
     if (stage === "otp") return setStage("contact");
     if (stage === "language") return setStage("otp");
     if (stage === "signup") return setStage("language");

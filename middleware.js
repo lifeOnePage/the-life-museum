@@ -4,13 +4,18 @@ import { NextResponse } from "next/server";
 
 const intlMiddleware = createMiddleware(routing);
 
+function localeFromCountry(country) {
+  return country?.trim().toUpperCase() === "KR" ? "ko" : "en";
+}
+
 async function detectLocaleByIP(ip) {
   try {
     const res = await fetch(`https://ipapi.co/${ip}/country/`, {
       signal: AbortSignal.timeout(2000),
     });
     const country = await res.text();
-    return country.trim() === "KR" ? "ko" : "en";
+    // ipapi 오류 응답(RateLimited 등)은 국가코드가 아니므로 en으로 처리됨
+    return localeFromCountry(country);
   } catch {
     return "en";
   }
@@ -30,14 +35,29 @@ export async function middleware(request) {
 
   // If no locale in path and no cookie → detect by IP, set cookie, redirect
   if (!hasLocale && !hasCookie) {
-    const forwarded = request.headers.get("x-forwarded-for");
-    const ip = forwarded
-      ? forwarded.split(",")[0].trim()
-      : request.headers.get("x-real-ip") || "";
+    // 1순위: 호스팅 플랫폼이 넣어주는 지오 헤더(외부 호출 없음, 즉시/무료)
+    //  - Vercel: x-vercel-ip-country / request.geo.country
+    //  - Cloudflare: cf-ipcountry
+    const geoCountry =
+      request.headers.get("x-vercel-ip-country") ||
+      request.headers.get("cf-ipcountry") ||
+      request.geo?.country ||
+      "";
 
-    const isLocalhost =
-      !ip || ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1";
-    const locale = isLocalhost ? "ko" : await detectLocaleByIP(ip);
+    let locale;
+    if (geoCountry) {
+      locale = localeFromCountry(geoCountry);
+    } else {
+      // 2순위: IP 기반 조회(로컬은 ko 기본)
+      const forwarded = request.headers.get("x-forwarded-for");
+      const ip = forwarded
+        ? forwarded.split(",")[0].trim()
+        : request.headers.get("x-real-ip") || "";
+
+      const isLocalhost =
+        !ip || ip === "127.0.0.1" || ip === "::1" || ip === "::ffff:127.0.0.1";
+      locale = isLocalhost ? "ko" : await detectLocaleByIP(ip);
+    }
 
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;

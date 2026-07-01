@@ -15,6 +15,7 @@ const T = {
     copy: "복사",
     share: "공유",
     close: "닫기",
+    trialLocked: "무료 체험 앨범은 공유할 수 없어요. 크레딧으로 잠금을 해제하면 공유링크가 활성화돼요.",
   },
   en: {
     title: "Visibility Settings",
@@ -22,10 +23,11 @@ const T = {
     copy: "Copy",
     share: "Share",
     close: "Close",
+    trialLocked: "Free trial albums can't be shared. Unlock with credits to enable the share link.",
   },
 };
 
-export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, onClose, locale }) {
+export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, isTrial = false, onClose, locale }) {
   const t = T[locale] || T.ko;
   const [isShared, setIsShared] = useState(initialIsPublic);
   const [copied, setCopied] = useState(false);
@@ -92,9 +94,17 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
         <h2 className="mb-1 text-lg font-semibold text-[#e8d5b7]">{t.title}</h2>
         <p className="mb-5 text-sm text-[#9b8b7a]">{albumTitle}</p>
 
+        {isTrial && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-[#c4b49a]/30 bg-[#c4b49a]/10 p-3 text-sm text-[#c4b49a]">
+            <Lock size={15} className="mt-0.5 shrink-0" />
+            <span>{t.trialLocked}</span>
+          </div>
+        )}
+
         {/* Public / Private 버튼 */}
-        <div className="flex gap-2">
+        <div className={`flex gap-2 ${isTrial ? "pointer-events-none opacity-40" : ""}`}>
           <button
+            disabled={isTrial}
             onClick={() => handleSetPublic(true)}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition ${
               isShared

@@ -7,8 +7,9 @@ import ShelfCanvas from "./components/ShelfCanvas";
 import InfoBlock from "./components/InfoBlock";
 import CreateAlbumModal from "./components/CreateAlbumModal";
 import ShareModal from "./components/ShareModal";
+import UnlockTrialModal from "./components/UnlockTrialModal";
 import Header from "../components/Header";
-import { Share2, Pencil, ArrowRight } from "lucide-react";
+import { Share2, Pencil, ArrowRight, Lock, Sparkles } from "lucide-react";
 import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 import { cachedAlbums, setCachedAlbums } from "./utils/albumListCache";
@@ -104,11 +105,15 @@ const T = {
     edit: "편집하기",
     view: "보러가기",
     share: "공유하기",
+    unlock: "잠금 해제",
+    buyCredits: "크레딧 구매",
   },
   en: {
     edit: "Edit",
     view: "View",
     share: "Share",
+    unlock: "Unlock",
+    buyCredits: "Buy Credits",
   },
 };
 
@@ -130,6 +135,7 @@ export default function MyShelfPage({ params }) {
   // 모달 상태
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
 
   // 필터 상태: 'all' | 'owner' | 'shared'
   const [filterType, setFilterType] = useState("all");
@@ -166,6 +172,9 @@ export default function MyShelfPage({ params }) {
             role: item.role || "owner",
             isPublic: item.isPublic ?? false,
             exhibitionType: item.exhibitionType ?? "walk",
+            isTrial: item.isTrial ?? false,
+            isExpired: item.isExpired ?? false,
+            trialExpiresAt: item.trialExpiresAt ?? null,
           }));
           setCachedAlbums(newAlbums);
           setAlbums(newAlbums);
@@ -270,9 +279,29 @@ export default function MyShelfPage({ params }) {
         backImage: null,
         edgeColor: null,
         role: newAlbum.role || "owner",
+        isPublic: newAlbum.isPublic ?? false,
+        isTrial: newAlbum.isTrial ?? false,
+        isExpired: newAlbum.isExpired ?? false,
+        trialExpiresAt: newAlbum.trialExpiresAt ?? null,
       },
     ]);
   }, []);
+
+  // 체험 앨범 잠금 해제 완료 — 해당 앨범의 체험 상태 해제
+  const handleUnlocked = useCallback(() => {
+    const id = selectedAlbum?.data?.id;
+    if (!id) return;
+    setAlbums((prev) =>
+      prev.map((a) =>
+        a.id === id ? { ...a, isTrial: false, isExpired: false, trialExpiresAt: null } : a,
+      ),
+    );
+    setSelectedAlbum((prev) =>
+      prev && prev.data?.id === id
+        ? { ...prev, data: { ...prev.data, isTrial: false, isExpired: false } }
+        : prev,
+    );
+  }, [selectedAlbum?.data?.id]);
 
   // 필터 적용
   const filteredAlbums =
@@ -282,6 +311,12 @@ export default function MyShelfPage({ params }) {
   const visibleAlbums = filteredAlbums.slice(0, 15);
 
   const selectedRole = selectedAlbum?.data?.role;
+  const selData = selectedAlbum?.data;
+  // 체험 앨범: 30일 경과 → 만료(잠금), 30일 이내 → 활성 체험(구매 유도)
+  const selExpiredTrial = !!(selData?.isTrial && selData?.isExpired);
+  const selActiveTrial = !!(selData?.isTrial && !selData?.isExpired);
+  // 진열대 전체에 체험(미만료) 앨범이 하나라도 있으면 구매 유도 노출
+  const hasActiveTrial = albums.some((a) => a.isTrial && !a.isExpired);
 
   return (
     <div
@@ -408,46 +443,69 @@ export default function MyShelfPage({ params }) {
             className="pointer-events-auto absolute left-1/2 flex -translate-x-1/2 items-center gap-2.5 whitespace-nowrap will-change-transform"
             style={{ top: "calc(50% + min(32.5vw, 32.5vh) + 40px)" }}
           >
-            {selectedRole === "owner" && (
+            {selExpiredTrial ? (
+              // 30일 경과한 무료 체험 앨범 → 열지 않고 결제(잠금 해제) 유도
               <button
-                onClick={() => {
-                  if (selectedAlbum.data?.id) {
-                    router.push(`library/edit/${selectedAlbum.data.id}`);
-                  }
-                }}
-                className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
+                onClick={() => setShowUnlockModal(true)}
+                className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#c4b49a] px-5 py-2 text-sm font-semibold text-[#1a1510] transition-colors duration-150 hover:bg-[#e8d5b7]"
               >
-                <Pencil size={14} />
-                {t.edit}
+                <Lock size={14} />
+                {t.unlock}
               </button>
-            )}
-            <button
-              onClick={() => {
-                if (selectedAlbum.data?.id) {
-                  const id = selectedAlbum.data.id;
-                  const type = selectedAlbum.data.exhibitionType;
-                  const route =
-                    type === "memorial"
-                      ? `/memorial/${id}`
-                      : type === "memorial_tape"
-                        ? `/vhs/${id}`
-                        : `/walk/${id}`;
-                  router.push(route);
-                }
-              }}
-              className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
-            >
-              <ArrowRight size={14} />
-              {t.view}
-            </button>
-            {selectedRole === "owner" && (
-              <button
-                onClick={() => setShowShareModal(true)}
-                className="flex shrink-0 items-center justify-center rounded-full bg-neutral-800/80 p-2.5 text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
-                title={t.share}
-              >
-                <Share2 size={16} />
-              </button>
+            ) : (
+              <>
+                {selectedRole === "owner" && (
+                  <button
+                    onClick={() => {
+                      if (selectedAlbum.data?.id) {
+                        router.push(`library/edit/${selectedAlbum.data.id}`);
+                      }
+                    }}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
+                  >
+                    <Pencil size={14} />
+                    {t.edit}
+                  </button>
+                )}
+                <button
+                  onClick={() => {
+                    if (selectedAlbum.data?.id) {
+                      const id = selectedAlbum.data.id;
+                      const type = selectedAlbum.data.exhibitionType;
+                      const route =
+                        type === "memorial"
+                          ? `/memorial/${id}`
+                          : type === "memorial_tape"
+                            ? `/vhs/${id}`
+                            : `/walk/${id}`;
+                      router.push(route);
+                    }
+                  }}
+                  className="flex shrink-0 items-center gap-1.5 rounded-full bg-neutral-800/80 px-5 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
+                >
+                  <ArrowRight size={14} />
+                  {t.view}
+                </button>
+                {selectedRole === "owner" && (
+                  <button
+                    onClick={() => setShowShareModal(true)}
+                    className="flex shrink-0 items-center justify-center rounded-full bg-neutral-800/80 p-2.5 text-white transition-colors duration-150 hover:bg-white hover:text-neutral-800"
+                    title={t.share}
+                  >
+                    <Share2 size={16} />
+                  </button>
+                )}
+                {selActiveTrial && (
+                  // 체험 기간(30일 이내) → 진열대에서 크레딧 구매 유도
+                  <button
+                    onClick={() => setShowUnlockModal(true)}
+                    className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#c4b49a] px-5 py-2 text-sm font-semibold text-[#1a1510] transition-colors duration-150 hover:bg-[#e8d5b7]"
+                  >
+                    <Sparkles size={14} />
+                    {t.buyCredits}
+                  </button>
+                )}
+              </>
             )}
           </div>
         )}
@@ -463,13 +521,37 @@ export default function MyShelfPage({ params }) {
         />
       )}
 
+      {/* 진열대 크레딧 구매 유도 (체험 앨범 보유 + 미선택 시) */}
+      {hasActiveTrial && !selectedAlbum && (
+        <button
+          onClick={() => router.push(`/${locale}/account`)}
+          className="pointer-events-auto absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#c4b49a] px-6 py-2.5 text-sm font-semibold text-[#1a1510] shadow-lg transition-colors duration-150 hover:bg-[#e8d5b7]"
+        >
+          <Sparkles size={15} />
+          {t.buyCredits}
+        </button>
+      )}
+
       {/* 공유 모달 */}
       {showShareModal && selectedAlbum?.data?.id && (
         <ShareModal
           albumId={selectedAlbum.data.id}
           albumTitle={selectedAlbum.data.title || ""}
           initialIsPublic={selectedAlbum.data.isPublic ?? false}
+          isTrial={selectedAlbum.data.isTrial ?? false}
           onClose={() => setShowShareModal(false)}
+          locale={locale}
+        />
+      )}
+
+      {/* 체험 앨범 잠금 해제 모달 */}
+      {showUnlockModal && selectedAlbum?.data?.id && (
+        <UnlockTrialModal
+          albumId={selectedAlbum.data.id}
+          albumTitle={selectedAlbum.data.title || ""}
+          expired={selExpiredTrial}
+          onUnlocked={handleUnlocked}
+          onClose={() => setShowUnlockModal(false)}
           locale={locale}
         />
       )}

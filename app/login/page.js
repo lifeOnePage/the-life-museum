@@ -356,7 +356,7 @@ export default function LoginPage() {
                 )} */}
 
                 {contactTab === "email" && (
-                  <>
+                  <SlideScreen key="stage-email">
                     <Header>{t.enterEmail}</Header>
                     <FieldBlock
                       value={email}
@@ -366,7 +366,7 @@ export default function LoginPage() {
                       autoFocus
                       onEnter={onSendCode}
                     />
-                  </>
+                  </SlideScreen>
                 )}
 
                 <PrimaryButton disabled={loading} onClick={onSendCode}>

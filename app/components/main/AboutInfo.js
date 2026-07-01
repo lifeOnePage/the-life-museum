@@ -37,7 +37,7 @@ export default function AboutInfo() {
           className={`m-0 text-center font-serif text-[clamp(56px,15vw,120px)] leading-[0.9] font-bold italic md:text-right ${appear} ${show} `}
           style={{ transitionDelay: "0ms" }}
         >
-          The Life <br /> Museum
+          <span style={{ fontFamily: "'Futura', 'Futura PT', sans-serif" }}>the<span style={{ fontSize: "1.25em" }}>LIFE</span><br />museum</span>
         </h1>
 
         {/* 설명: 모바일 가운데, 데스크탑 왼쪽 정렬 */}

@@ -20,6 +20,7 @@ import { calculateAge, getYear, toMonthDay } from "../../utils/dateUtils";
 import { norm360, wrapTo180, angDist } from "../../utils/mathUtils";
 import ControlButtons from "../../components/ControlButtons";
 import useIsMobile from "@/app/hooks/useIsMobile";
+import AppName from "@/app/components/AppName";
 
 export default function LifeRecordDesktop({
   width,
@@ -2219,7 +2220,7 @@ export default function LifeRecordDesktop({
       </div>
 
       <footer className="footer">
-        <div className="footer-logo">The Life Museum</div>
+        <div className="footer-logo"><AppName /></div>
         <div className="footer-copyright">
           Copyright 2025. Creative Computing Group. All rights reserved.
         </div>

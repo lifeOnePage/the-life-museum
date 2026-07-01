@@ -17,6 +17,7 @@ import {
   ensureMinimumTextures,
 } from "./utils/textureBuilder";
 import { getScene } from "./services/sceneService";
+import AppName from "@/app/components/AppName";
 
 export default function ViewPage() {
   const { id } = useParams();
@@ -1545,8 +1546,8 @@ export default function ViewPage() {
       <div className="from-black-100 via-black-200 to-black-300 flex h-full w-full flex-col bg-gradient-to-br pt-10 lg:hidden">
         {/* 상단 헤더 - The Life Museum + Login/Logout/Mypage */}
         <div className="z-30 flex items-center justify-between px-4 py-3">
-          <h1 className="font-serif text-xl font-bold tracking-tight text-white">
-            The Life Museum
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            <AppName />
           </h1>
           <div className="flex items-center gap-3">
             {user ? (
@@ -2055,8 +2056,8 @@ export default function ViewPage() {
             <div className="z-15 mt-20">
               {/* The Life Museum 텍스트 */}
               <div className="mb-4">
-                <h1 className="font-serif text-4xl font-bold text-white italic">
-                  The Life Museum
+                <h1 className="text-4xl font-bold text-white italic">
+                  <AppName />
                 </h1>
               </div>
 

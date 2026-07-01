@@ -14,6 +14,7 @@ import { FaAngleLeft, FaAngleRight } from "react-icons/fa6";
 import { IoMenu } from "react-icons/io5";
 
 import "../../styles/cardPage-mobile.css";
+import AppName from "@/app/components/AppName";
 
 const MONTHS = [
   "JAN",
@@ -2240,7 +2241,7 @@ export default function LifeRecordMobile({
       </nav>
 
       <footer className="lr-mobile-footer">
-        <div className="lr-mobile-footer-logo">The Life Museum</div>
+        <div className="lr-mobile-footer-logo"><AppName /></div>
         <div className="lr-mobile-footer-copyright">
           Copyright 2025. Creative Computing Group. <br />
           All rights reserved.

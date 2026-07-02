@@ -1,11 +1,15 @@
 "use client";
 
-import { useState, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImagePlus, RefreshCw, Upload, FolderOpen, X } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import ScrollToTopButton from "./ScrollToTopButton";
 
 const API_URL = "https://the-life-museum-backend-production.up.railway.app";
+
+// 사진이 이 수 이상이면 스크롤 부담이 커져 "맨 위로" 플로팅 버튼을 노출한다.
+const SCROLL_TOP_FAB_MIN_PHOTOS = 15;
 
 function LazyImage({ src, alt, className }) {
   const [loaded, setLoaded] = useState(false);
@@ -31,12 +35,14 @@ const T = {
     photodrive: "포토드라이브",
     selectPhoto: "사진을 선택하세요",
     noPhotos: "사용 가능한 사진이 없습니다.",
+    scrollTop: "맨 위로",
   },
   en: {
     deviceUpload: "Device Upload",
     photodrive: "Photo Drive",
     selectPhoto: "Select a photo",
     noPhotos: "No photos available.",
+    scrollTop: "Scroll to top",
   },
 };
 
@@ -59,6 +65,8 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
   const [showPhotodrive, setShowPhotodrive] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const [error, setError] = useState("");
+  // 포토드라이브 사진 목록 시작점 (맨 위로 버튼 스크롤 타겟)
+  const photodriveTopRef = useRef(null);
 
   // 저장용: 포토드라이브 → proxy URL, 디바이스 → File 객체
   const [saveUrl, setSaveUrl] = useState(null);
@@ -201,7 +209,7 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
             transition={{ duration: 0.2 }}
             className="overflow-hidden"
           >
-            <div className="pt-1">
+            <div className="pt-1" ref={photodriveTopRef}>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-[#9b8b7a]">{t.selectPhoto}</p>
                 <button
@@ -248,6 +256,12 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
                 </div>
               )}
             </div>
+
+            <ScrollToTopButton
+              enabled={photoMedia.length >= SCROLL_TOP_FAB_MIN_PHOTOS}
+              label={t.scrollTop}
+              targetRef={photodriveTopRef}
+            />
           </motion.div>
         )}
       </AnimatePresence>

@@ -539,6 +539,7 @@ export default function MyShelfPage({ params }) {
           albumTitle={selectedAlbum.data.title || ""}
           initialIsPublic={selectedAlbum.data.isPublic ?? false}
           isTrial={selectedAlbum.data.isTrial ?? false}
+          isExpired={selectedAlbum.data.isExpired ?? false}
           onClose={() => setShowShareModal(false)}
           locale={locale}
         />

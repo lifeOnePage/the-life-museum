@@ -377,12 +377,12 @@ const Index = ({ params }) => {
   const [backCoverImageUrl, setBackCoverImageUrl] = useState(null);
 
   // Collapsible sections
-  const [titleOpen, setTitleOpen] = useState(false);
-  const [coverOpen, setCoverOpen] = useState(false);
-  const [bgmOpen, setBgmOpen] = useState(false);
-  const [recordTypeOpen, setRecordTypeOpen] = useState(false);
+  const [titleOpen, setTitleOpen] = useState(true);
+  const [coverOpen, setCoverOpen] = useState(true);
+  const [bgmOpen, setBgmOpen] = useState(true);
+  const [recordTypeOpen, setRecordTypeOpen] = useState(true);
   const [recordType, setRecordType] = useState("exhibit");
-  const [themeOpen, setThemeOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(true);
 
   // VHS-specific settings
   const [vhsFilterOpen, setVhsFilterOpen] = useState(false);
@@ -394,8 +394,8 @@ const Index = ({ params }) => {
   const [vhsImageDuration, setVhsImageDuration] = useState(5);
   const [vhsVideoMode, setVhsVideoMode] = useState(0);
   const [backCoverImageOpen, setBackCoverImageOpen] = useState(true);
-  const [storyOpen, setStoryOpen] = useState(false);
-  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(true);
+  const [timelineOpen, setTimelineOpen] = useState(true);
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);

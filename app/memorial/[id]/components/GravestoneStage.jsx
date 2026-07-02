@@ -37,9 +37,14 @@ function SlideMedia({ item }) {
  * - phase "profile": 프로필 이미지가 크게 표시 (layoutId="mem-profile"로 좌상단 슬롯과 모핑 공유).
  * - phase "slideshow": 배경 미디어가 랜덤 크로스페이드.
  */
-export default function GravestoneStage({ phase, profileItem, slideItem, slideIndex }) {
+export default function GravestoneStage({
+  phase,
+  profileItem,
+  slideItem,
+  slideIndex,
+}) {
   return (
-    <div className="relative aspect-square w-full overflow-hidden rounded-md bg-black/50 shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
+    <div className="relative aspect-square w-full overflow-hidden bg-black/50 shadow-[0_8px_40px_rgba(0,0,0,0.6)]">
       {phase === "profile" && profileItem && (
         <motion.img
           layoutId="mem-profile"
@@ -61,7 +66,10 @@ export default function GravestoneStage({ phase, profileItem, slideItem, slideIn
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: SLIDE_CROSSFADE_MS / 1000, ease: "easeInOut" }}
+            transition={{
+              duration: SLIDE_CROSSFADE_MS / 1000,
+              ease: "easeInOut",
+            }}
           >
             <SlideMedia item={slideItem} />
           </motion.div>

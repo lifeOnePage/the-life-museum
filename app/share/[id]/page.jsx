@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
-import { X, Info } from "lucide-react";
+import { X, Info, Eye, ExternalLink } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useAuth } from "@/app/contexts/AuthContext";
 import SmartAppBanner from "@/app/components/SmartAppBanner";
@@ -44,7 +44,7 @@ const T = {
     linkError: "링크가 올바른지 확인해 주세요",
     privateAlbum: "비공개 앨범입니다",
     privateDesc: "앨범 소유자만 열람할 수 있어요",
-    gallery: "갤러리 보러가기",
+    gallery: "보러가기",
     externalLink: "외부 링크",
     signupPrompt: "나만의 앨범을 만들고 싶으신가요?",
     signupCta: "회원가입하고 편집하기",
@@ -53,7 +53,7 @@ const T = {
     linkError: "Please check if the link is correct",
     privateAlbum: "This album is private",
     privateDesc: "Only the album owner can view it",
-    gallery: "View Gallery",
+    gallery: "View",
     externalLink: "External Link",
     signupPrompt: "Want to create your own album?",
     signupCta: "Sign up and start editing",
@@ -605,7 +605,7 @@ export default function SharePage({ params }) {
             <Icon360 className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex flex-col items-center gap-3">
+        <div className="flex items-start justify-center gap-8">
           <button
             onClick={() => {
               const route = recordData?.exhibitionType === "memorial_tape"
@@ -613,18 +613,28 @@ export default function SharePage({ params }) {
                 : `/walk/${id}`;
               router.push(route);
             }}
-            className="rounded-full border border-white/25 bg-black/5 px-8 py-3 text-sm font-light tracking-[0.15em] text-white/70 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white"
+            className="group flex w-20 flex-col items-center gap-2 text-white/60 transition-colors duration-300 hover:text-white"
           >
-            {t.gallery}
+            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/50 group-hover:bg-white/10">
+              <Eye className="h-5 w-5" />
+            </span>
+            <span className="max-w-full truncate text-[11px] font-light tracking-[0.12em]">
+              {t.gallery}
+            </span>
           </button>
           {externalLinkUrl && (
             <a
               href={externalLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-black/5 p-1 text-xs font-medium tracking-[0.15em] text-white/40 underline underline-offset-4 backdrop-blur-sm transition-colors hover:text-white/70"
+              className="group flex w-20 flex-col items-center gap-2 text-white/60 transition-colors duration-300 hover:text-white"
             >
-              {externalLinkTitle || t.externalLink}
+              <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/50 group-hover:bg-white/10">
+                <ExternalLink className="h-5 w-5" />
+              </span>
+              <span className="max-w-full truncate text-[11px] font-light tracking-[0.12em]">
+                {externalLinkTitle || t.externalLink}
+              </span>
             </a>
           )}
         </div>

@@ -81,8 +81,10 @@ export default function LoginPage() {
 
   // "contact" | "otp" | "language" | "signup"
   const [stage, setStage] = useState("contact");
-  const [selectedLocale, setSelectedLocale] = useState(
-    () => (typeof window !== "undefined" ? localStorage.getItem("NEXT_LOCALE") || "ko" : "ko"),
+  const [selectedLocale, setSelectedLocale] = useState(() =>
+    typeof window !== "undefined"
+      ? localStorage.getItem("NEXT_LOCALE") || "ko"
+      : "ko",
   );
 
   const t = LANG[selectedLocale] || LANG.ko;
@@ -125,15 +127,25 @@ export default function LoginPage() {
       setLoading(true);
       if (contactTab === "phone") {
         const normalized = phone.replace(/\D/g, "");
-        if (!normalized) return setError(LANG[selectedLocale]?.errorPhone || "전화번호를 입력해주세요");
+        if (!normalized)
+          return setError(
+            LANG[selectedLocale]?.errorPhone || "전화번호를 입력해주세요",
+          );
         await sendPhoneCode(normalized, countryCode);
       } else {
-        if (!email.trim()) return setError(LANG[selectedLocale]?.errorEmail || "이메일을 입력해주세요");
+        if (!email.trim())
+          return setError(
+            LANG[selectedLocale]?.errorEmail || "이메일을 입력해주세요",
+          );
         await sendEmailCode(email.trim());
       }
       setStage("otp");
     } catch (e) {
-      setError(e.message || (LANG[selectedLocale]?.errorSendCode || "인증번호 전송에 실패했어요."));
+      setError(
+        e.message ||
+          LANG[selectedLocale]?.errorSendCode ||
+          "인증번호 전송에 실패했어요.",
+      );
     } finally {
       setLoading(false);
     }
@@ -142,7 +154,10 @@ export default function LoginPage() {
   // 2) Verify OTP → get tokens
   const onVerifyOtp = async () => {
     setError("");
-    if (!otp.trim()) return setError(LANG[selectedLocale]?.errorOtp || "인증번호를 입력해주세요");
+    if (!otp.trim())
+      return setError(
+        LANG[selectedLocale]?.errorOtp || "인증번호를 입력해주세요",
+      );
     try {
       setLoading(true);
       let result;
@@ -159,11 +174,17 @@ export default function LoginPage() {
         setAuthRefreshToken(result.refreshToken);
         setStage("language");
       } else {
-        await signinWithToken(result.accessToken, result.user, result.refreshToken);
+        await signinWithToken(
+          result.accessToken,
+          result.user,
+          result.refreshToken,
+        );
         router.push("/library");
       }
     } catch (e) {
-      setError(e.message || (LANG[selectedLocale]?.errorVerify || "인증에 실패했어요."));
+      setError(
+        e.message || LANG[selectedLocale]?.errorVerify || "인증에 실패했어요.",
+      );
     } finally {
       setLoading(false);
     }
@@ -172,7 +193,8 @@ export default function LoginPage() {
   // 3) Complete signup
   const onCompleteSignup = async () => {
     setError("");
-    if (!name.trim()) return setError(LANG[selectedLocale]?.errorName || "이름을 입력해주세요");
+    if (!name.trim())
+      return setError(LANG[selectedLocale]?.errorName || "이름을 입력해주세요");
     try {
       setLoading(true);
       const updatedUser = await completeSignup(authToken, name.trim());
@@ -373,7 +395,14 @@ export default function LoginPage() {
             {stage === "language" && (
               <SlideScreen key="stage-language">
                 <Header>{t.chooseLanguage}</Header>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 8 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 12,
+                    marginTop: 8,
+                  }}
+                >
                   <button
                     onClick={() => handleSelectLanguage("ko")}
                     style={{
@@ -381,7 +410,10 @@ export default function LoginPage() {
                       height: 56,
                       border: "1px solid rgba(255,255,255,0.2)",
                       borderRadius: 12,
-                      background: selectedLocale === "ko" ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.07)",
+                      background:
+                        selectedLocale === "ko"
+                          ? "rgba(255,255,255,0.15)"
+                          : "rgba(255,255,255,0.07)",
                       color: "#fff",
                       fontSize: 16,
                       fontWeight: 600,
@@ -401,7 +433,10 @@ export default function LoginPage() {
                       height: 56,
                       border: "1px solid rgba(255,255,255,0.2)",
                       borderRadius: 12,
-                      background: selectedLocale === "en" ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.07)",
+                      background:
+                        selectedLocale === "en"
+                          ? "rgba(255,255,255,0.15)"
+                          : "rgba(255,255,255,0.07)",
                       color: "#fff",
                       fontSize: 16,
                       fontWeight: 600,

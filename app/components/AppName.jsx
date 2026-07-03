@@ -13,7 +13,7 @@ export default function AppName({ className = "", style = {} }) {
       <span style={{ fontSize: "1.25em", textTransform: "uppercase" }}>
         LIFE
       </span>
-      museum
+      memory
     </span>
   );
 }

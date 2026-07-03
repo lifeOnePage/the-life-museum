@@ -13,29 +13,14 @@ const PACKAGE_PRICES = {
 const APP_SCHEME = "thelifemuseum";
 const WEB_ORIGIN = "https://the-life-museum.vercel.app";
 
-// ── PortOne V1 (국내 — 토스페이먼츠) ──────────────────
-const IMP_CODE = "imp22125511";
-const PG_DOMESTIC = "kginicis.INIpayTest";
-
-let scriptLoaded = false;
-
-function loadIamportScript() {
-  return new Promise((resolve, reject) => {
-    if (scriptLoaded && window.IMP) {
-      resolve(window.IMP);
-      return;
-    }
-    const script = document.createElement("script");
-    script.src = "https://cdn.iamport.kr/v1/iamport.js";
-    script.onload = () => {
-      scriptLoaded = true;
-      window.IMP.init(IMP_CODE);
-      resolve(window.IMP);
-    };
-    script.onerror = () => reject(new Error("Failed to load iamport SDK"));
-    document.head.appendChild(script);
-  });
-}
+// ── PortOne V2 채널 (이 스토어는 전부 V2 — V1 채널 없음) ──────────
+const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
+// KG이니시스 (국내). 실결제 전환 시 라이브 채널키로 교체:
+//   테스트:  channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f  (INIpayTest)
+//   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107)
+const KG_INICIS_CHANNEL_KEY = "channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f";
+// PayPal (해외)
+const PAYPAL_CHANNEL_KEY = "channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044";
 
 /**
  * 네이티브 앱 → 외부 브라우저에서 결제 페이지 열기
@@ -61,41 +46,40 @@ async function requestCreditPurchaseNative({ package: pkg, locale = "ko", method
 }
 
 /**
- * 국내 크레딧 결제 (PortOne V1 → 토스페이먼츠)
+ * 국내 크레딧 결제 (PortOne V2 → KG이니시스 카드)
  */
 async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale = "ko" }) {
   const pricing = PACKAGE_PRICES[pkg];
   if (!pricing) throw new Error(`Invalid package: ${pkg}`);
 
-  const IMP = await loadIamportScript();
-  const merchantUid = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+  const PortOne = await import("@portone/browser-sdk/v2");
+  const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
-  return new Promise((resolve, reject) => {
-    IMP.request_pay(
-      {
-        pg: PG_DOMESTIC,
-        pay_method: "card",
-        merchant_uid: merchantUid,
-        name: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
-        amount: pricing.krw,
-        buyer_name: userName || undefined,
-        buyer_email: userEmail || undefined,
-        m_redirect_url: `${window.location.origin}/payment/success?package=${pkg}`,
-      },
-      (rsp) => {
-        if (rsp.success) {
-          resolve(rsp);
-        } else {
-          reject(new Error(rsp.error_msg || "결제가 취소되었습니다."));
-        }
-      },
-    );
+  const response = await PortOne.requestPayment({
+    storeId: PORTONE_V2_STORE_ID,
+    channelKey: KG_INICIS_CHANNEL_KEY,
+    paymentId,
+    orderName: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
+    totalAmount: pricing.krw,
+    currency: "CURRENCY_KRW",
+    payMethod: "CARD",
+    customer: {
+      fullName: userName || undefined,
+      email: userEmail || undefined,
+    },
+    // 모바일은 리다이렉트 방식 — 완료 후 돌아올 URL
+    redirectUrl: `${window.location.origin}/payment/success?package=${pkg}`,
   });
-}
 
-// ── PortOne V2 (해외 — PayPal) ──────────────────
-const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
-const PAYPAL_CHANNEL_KEY = "channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044";
+  if (response.code) {
+    if (response.code === "PAY_PROCESS_CANCELED") {
+      throw new Error("결제를 취소하였습니다.");
+    }
+    throw new Error(response.message || "결제 중 오류가 발생했습니다.");
+  }
+
+  return { paymentId: response.paymentId, imp_uid: null };
+}
 
 /**
  * 해외 크레딧 결제 (PortOne V2 → PayPal)

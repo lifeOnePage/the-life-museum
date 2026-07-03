@@ -8,12 +8,12 @@ const APP_SCHEME = "thelifemuseum";
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
 
-// ── PortOne V1 ──
-const IMP_CODE = "imp22125511";
-const PG_DOMESTIC = "kginicis.INIpayTest";
-
-// ── PortOne V2 ──
+// ── PortOne V2 채널 (이 스토어는 전부 V2 — V1 채널 없음) ──
 const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
+// KG이니시스 (국내). 실결제 전환 시 라이브 채널키로 교체:
+//   테스트:  channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f  (INIpayTest)
+//   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107)
+const KG_INICIS_CHANNEL_KEY = "channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f";
 const PAYPAL_CHANNEL_KEY = "channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044";
 
 const PACKAGE_PRICES = {
@@ -62,40 +62,35 @@ function CheckoutContent() {
     }
 
     try {
-      // iamport SDK 로드
-      await new Promise((resolve, reject) => {
-        if (window.IMP) { resolve(); return; }
-        const script = document.createElement("script");
-        script.src = "https://cdn.iamport.kr/v1/iamport.js";
-        script.onload = resolve;
-        script.onerror = () => reject(new Error("SDK load failed"));
-        document.head.appendChild(script);
+      const PortOne = await import("@portone/browser-sdk/v2");
+      const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+
+      // 모바일 결제창은 리다이렉트 → complete 페이지에서 크레딧 충전
+      const redirectUrl = `${window.location.origin}/payment/checkout/complete?package=${pkg}&token=${encodeURIComponent(token)}&locale=${locale}&couponCode=${encodeURIComponent(couponCode)}`;
+
+      const response = await PortOne.requestPayment({
+        storeId: PORTONE_V2_STORE_ID,
+        channelKey: KG_INICIS_CHANNEL_KEY,
+        paymentId,
+        orderName: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
+        totalAmount: pricing.krw,
+        currency: "CURRENCY_KRW",
+        payMethod: "CARD",
+        redirectUrl,
       });
 
-      window.IMP.init(IMP_CODE);
-      const merchantUid = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+      // PC 환경에서는 여기서 resolve (모바일은 redirectUrl로 이동)
+      if (response.code) {
+        if (response.code === "PAY_PROCESS_CANCELED") {
+          returnToApp("fail", "결제를 취소하였습니다.");
+          return;
+        }
+        returnToApp("fail", response.message || "결제 중 오류가 발생했습니다.");
+        return;
+      }
 
-      // 결제 완료 후 리다이렉트될 URL (이 페이지의 success 핸들링)
-      const successUrl = `${window.location.origin}/payment/checkout/complete?package=${pkg}&token=${encodeURIComponent(token)}&locale=${locale}&couponCode=${encodeURIComponent(couponCode)}`;
-
-      window.IMP.request_pay(
-        {
-          pg: PG_DOMESTIC,
-          pay_method: "card",
-          merchant_uid: merchantUid,
-          name: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
-          amount: pricing.krw,
-          m_redirect_url: successUrl,
-        },
-        (rsp) => {
-          // PC 환경에서 콜백 (모바일은 m_redirect_url로 리다이렉트)
-          if (rsp.success) {
-            window.location.href = `${successUrl}&imp_uid=${rsp.imp_uid}&merchant_uid=${rsp.merchant_uid}`;
-          } else {
-            returnToApp("fail", rsp.error_msg || "결제가 취소되었습니다.");
-          }
-        },
-      );
+      // 국내 결제 성공 → 크레딧 충전 (PayPal과 동일 경로)
+      await confirmAndAddCredits({ pkg, token, couponCode, paymentId: response.paymentId });
     } catch (err) {
       setError(err.message);
     }

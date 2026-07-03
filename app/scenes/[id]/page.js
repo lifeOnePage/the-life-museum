@@ -763,7 +763,8 @@ export default function ViewPage() {
           !isTimelineScrollingRef.current
         ) {
           // 현재 leftIndex가 이미 해당 아이템의 범위 내에 있는지 확인
-          const isAlreadyInRange = leftIndex >= itemRange.start && leftIndex <= itemRange.end;
+          const isAlreadyInRange =
+            leftIndex >= itemRange.start && leftIndex <= itemRange.end;
 
           // 범위 밖에 있을 때만 start로 이동 (타임라인 스크롤로 인한 아이템 변경)
           // 범위 내에 있으면 현재 위치 유지 (링 드래그로 이미 해당 아이템 내부에 있음)
@@ -891,7 +892,7 @@ export default function ViewPage() {
         setTimeout(() => {
           isTimelineScrollingRef.current = false;
           // 플래그 해제 후 동기화를 위해 스크롤 이벤트 트리거
-          timelineElement.dispatchEvent(new Event('scroll'));
+          timelineElement.dispatchEvent(new Event("scroll"));
         }, 600);
       }
     }

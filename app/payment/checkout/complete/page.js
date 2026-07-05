@@ -48,6 +48,7 @@ function CompleteContent() {
     const impUid = searchParams.get("imp_uid");
     const merchantUid = searchParams.get("merchant_uid");
     const impSuccess = searchParams.get("imp_success");
+    const v2Code = searchParams.get("code"); // V2 리다이렉트 실패 시 존재
 
     const headers = {
       "Content-Type": "application/json",
@@ -55,9 +56,12 @@ function CompleteContent() {
     };
 
     try {
-      // PortOne 결제 실패 체크
-      if (impSuccess === "false") {
-        const msg = searchParams.get("error_msg") || "Payment cancelled";
+      // PortOne 결제 실패 체크 (V1: imp_success=false / V2: code 존재)
+      if (impSuccess === "false" || v2Code) {
+        const msg =
+          searchParams.get("error_msg") ||
+          searchParams.get("message") ||
+          "Payment cancelled";
         setStatus("error");
         setErrorMsg(msg);
         autoReturnToApp("fail", msg);

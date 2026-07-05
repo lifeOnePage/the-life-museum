@@ -21,7 +21,7 @@ const BackCoverPreview = ({
   const renderSplitView = () => (
     <div className="flex h-full">
       {/* STORY side */}
-      <div className="flex flex-1 flex-col px-6 pt-6 pb-4 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden px-6 pt-6 pb-4">
         <p
           className="mb-4 text-[10px] font-semibold tracking-[0.2em] uppercase"
           style={{ color: theme.year }}
@@ -54,12 +54,12 @@ const BackCoverPreview = ({
 
       {/* Divider */}
       <div
-        className="w-px self-stretch my-6"
+        className="my-6 w-px self-stretch"
         style={{ backgroundColor: theme.divider }}
       />
 
       {/* TIMELINE side */}
-      <div className="flex flex-1 flex-col px-6 pt-6 pb-4 overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden px-6 pt-6 pb-4">
         <p
           className="mb-4 text-[10px] font-semibold tracking-[0.2em] uppercase"
           style={{ color: theme.year }}
@@ -100,7 +100,7 @@ const BackCoverPreview = ({
   );
 
   const renderChronological = () => (
-    <div className="flex h-full flex-col px-6 pt-6 pb-4 overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden px-6 pt-6 pb-4">
       <p
         className="mb-4 text-[10px] font-semibold tracking-[0.2em] uppercase"
         style={{ color: theme.year }}
@@ -137,7 +137,10 @@ const BackCoverPreview = ({
         )}
       </div>
       {storyLines.length > 0 && (
-        <div className="mt-4 border-t pt-3" style={{ borderColor: theme.divider }}>
+        <div
+          className="mt-4 border-t pt-3"
+          style={{ borderColor: theme.divider }}
+        >
           <p
             className="mb-2 text-[10px] font-semibold tracking-[0.2em] uppercase"
             style={{ color: theme.year }}
@@ -159,14 +162,14 @@ const BackCoverPreview = ({
   );
 
   const renderPhotoGrid = () => (
-    <div className="flex h-full flex-col px-6 pt-6 pb-4 overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden px-6 pt-6 pb-4">
       <p
         className="mb-4 text-[10px] font-semibold tracking-[0.2em] uppercase"
         style={{ color: theme.year }}
       >
         HIGHLIGHTS
       </p>
-      <div className="grid grid-cols-2 gap-2 flex-1">
+      <div className="grid flex-1 grid-cols-2 gap-2">
         {timeline.slice(0, 4).map((item, i) => (
           <div
             key={i}
@@ -203,7 +206,7 @@ const BackCoverPreview = ({
       {storyLines.length > 0 && (
         <div className="mt-3">
           <p
-            className="text-[9px] leading-[1.6] line-clamp-3"
+            className="line-clamp-3 text-[9px] leading-[1.6]"
             style={{ color: theme.text }}
           >
             {bio}
@@ -241,12 +244,12 @@ const BackCoverPreview = ({
           <div className="flex-1 overflow-hidden">{renderLayout()}</div>
 
           {/* Bottom branding */}
-          <div className="flex items-center justify-center pb-4 pt-1">
+          <div className="flex items-center justify-center pt-1 pb-4">
             <span
               className="text-[7px] tracking-[0.3em] uppercase"
               style={{ color: theme.branding }}
             >
-              THE LIFE MUSEUM
+              THE LIFE MEMORY
             </span>
           </div>
         </div>

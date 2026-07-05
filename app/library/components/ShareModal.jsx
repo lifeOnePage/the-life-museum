@@ -34,10 +34,8 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
   const [isShared, setIsShared] = useState(initialIsPublic);
   const [copied, setCopied] = useState(false);
 
-  const shareLink =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/share/${albumId}`
-      : "";
+  // 공유 링크는 항상 프로덕션 도메인 기준 (네이티브 앱/로컬에선 origin이 다르므로 고정)
+  const shareLink = `https://www.thelifememory.com/share/${albumId}`;
 
   const handleSetPublic = async (value) => {
     if (value === isShared) return;

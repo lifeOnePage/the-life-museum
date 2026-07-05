@@ -36,42 +36,29 @@ function PaymentSuccessContent() {
 
   useEffect(() => {
     const pkg = searchParams.get("package") || "credit_1000";
-    // PortOne 모바일 리다이렉트 결과
-    const impUid = searchParams.get("imp_uid");
-    const merchantUid = searchParams.get("merchant_uid");
-    const impSuccess = searchParams.get("imp_success");
+    // PortOne V2 모바일 리다이렉트 결과
+    const paymentId = searchParams.get("paymentId");
+    const v2Code = searchParams.get("code"); // 결제 실패 시에만 존재
 
     async function confirmAndPurchase() {
       try {
-        // Step 1: PortOne 결제 검증
-        if (impUid && merchantUid) {
-          if (impSuccess === "false") {
-            setStatus("error");
-            setErrorMsg(searchParams.get("error_msg") || "Payment cancelled");
-            return;
-          }
-          const confirmRes = await authedFetch(`${BASE_URL}/payment/confirm`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ imp_uid: impUid, merchant_uid: merchantUid }),
-          });
-          if (!confirmRes.ok) {
-            const data = await confirmRes.json().catch(() => ({}));
-            setStatus("error");
-            setErrorMsg(data.message || data.detail || `Error ${confirmRes.status}`);
-            return;
-          }
-        } else if (!impUid) {
+        // 결제 실패/취소 (V2는 실패 시 code + message 를 붙여 리다이렉트)
+        if (v2Code) {
+          setStatus("error");
+          setErrorMsg(searchParams.get("message") || "Payment cancelled");
+          return;
+        }
+        if (!paymentId) {
           setStatus("error");
           setErrorMsg("Missing payment parameters");
           return;
         }
 
-        // Step 2: Add credits via backend
+        // 백엔드가 paymentId 로 PortOne V2 결제를 검증한 뒤 크레딧 충전
         const creditRes = await authedFetch(`${BASE_URL}/credit/purchase`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ package: pkg }),
+          body: JSON.stringify({ package: pkg, payment_id: paymentId }),
         });
 
         if (creditRes.ok) {

@@ -15,17 +15,17 @@ const WEB_ORIGIN = "https://the-life-museum.vercel.app";
 
 // ── PortOne V2 채널 (이 스토어는 전부 V2 — V1 채널 없음) ──────────
 const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
-// KG이니시스 (국내). 실결제 전환 시 라이브 채널키로 교체:
+// KG이니시스 (국내). 실결제 채널 (MID MOI6967107) 사용 중:
+//   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107) ← 현재
 //   테스트:  channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f  (INIpayTest)
-//   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107)
-const KG_INICIS_CHANNEL_KEY = "channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f";
+const KG_INICIS_CHANNEL_KEY = "channel-key-8365f96d-7754-4b0e-8364-72b98565054a";
 // PayPal (해외)
 const PAYPAL_CHANNEL_KEY = "channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044";
 
 /**
  * 네이티브 앱 → 외부 브라우저에서 결제 페이지 열기
  */
-async function requestCreditPurchaseNative({ package: pkg, userName, userEmail, userPhone, locale = "ko", method = "domestic", couponCode }) {
+async function requestCreditPurchaseNative({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko", method = "domestic", couponCode }) {
   const { Browser } = await import("@capacitor/browser");
 
   const token = localStorage.getItem("app_token") || "";
@@ -35,6 +35,7 @@ async function requestCreditPurchaseNative({ package: pkg, userName, userEmail, 
     method,
     token,
   });
+  if (userId) params.set("id", userId);
   if (couponCode) params.set("couponCode", couponCode);
   if (userName) params.set("name", userName);
   if (userEmail) params.set("email", userEmail);
@@ -72,6 +73,8 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
       phoneNumber: userPhone || "01000000000",
       ...(userEmail && { email: userEmail }),
     },
+    // 결제-유저 바인딩: 백엔드가 이 userId 를 로그인 유저와 대조해 도용 차단
+    customData: JSON.stringify({ userId: userId || "" }),
     // 모바일은 리다이렉트 방식 — 완료 후 돌아올 URL
     redirectUrl: `${window.location.origin}/payment/success?package=${pkg}`,
   });
@@ -105,6 +108,8 @@ async function requestCreditPurchasePayPal({ package: pkg, userId, userName, use
     totalAmount: pricing.usd,
     currency: "CURRENCY_USD",
     payMethod: "PAYPAL",
+    // 결제-유저 바인딩
+    customData: JSON.stringify({ userId: userId || "" }),
   });
 
   if (response.code) {
@@ -125,7 +130,7 @@ async function requestCreditPurchasePayPal({ package: pkg, userId, userName, use
  */
 export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko", method = "domestic", couponCode }) {
   if (isNativeApp()) {
-    return requestCreditPurchaseNative({ package: pkg, userName, userEmail, userPhone, locale, method, couponCode });
+    return requestCreditPurchaseNative({ package: pkg, userId, userName, userEmail, userPhone, locale, method, couponCode });
   }
   if (method === "domestic") {
     return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale });

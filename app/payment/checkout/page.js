@@ -10,10 +10,10 @@ const BASE_URL =
 
 // ── PortOne V2 채널 (이 스토어는 전부 V2 — V1 채널 없음) ──
 const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
-// KG이니시스 (국내). 실결제 전환 시 라이브 채널키로 교체:
+// KG이니시스 (국내). 실결제 채널 (MID MOI6967107) 사용 중:
+//   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107) ← 현재
 //   테스트:  channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f  (INIpayTest)
-//   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107)
-const KG_INICIS_CHANNEL_KEY = "channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f";
+const KG_INICIS_CHANNEL_KEY = "channel-key-8365f96d-7754-4b0e-8364-72b98565054a";
 const PAYPAL_CHANNEL_KEY = "channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044";
 
 const PACKAGE_PRICES = {
@@ -42,6 +42,7 @@ function CheckoutContent() {
   const method = searchParams.get("method") || "domestic";
   const token = searchParams.get("token") || "";
   const couponCode = searchParams.get("couponCode") || "";
+  const userId = searchParams.get("id") || "";
   const buyerName = searchParams.get("name") || "";
   const buyerEmail = searchParams.get("email") || "";
   const buyerPhone = searchParams.get("phone") || "";
@@ -85,6 +86,8 @@ function CheckoutContent() {
           phoneNumber: buyerPhone || "01000000000",
           ...(buyerEmail && { email: buyerEmail }),
         },
+        // 결제-유저 바인딩: 백엔드가 로그인 유저와 대조
+        customData: JSON.stringify({ userId }),
         redirectUrl,
       });
 
@@ -124,6 +127,8 @@ function CheckoutContent() {
         totalAmount: pricing.usd,
         currency: "CURRENCY_USD",
         payMethod: "PAYPAL",
+        // 결제-유저 바인딩
+        customData: JSON.stringify({ userId }),
       });
 
       if (response.code) {

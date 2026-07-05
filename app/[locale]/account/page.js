@@ -399,12 +399,13 @@ export default function AccountPage() {
         locale: currentLocale,
         method,
       });
-      if (rsp?.imp_uid || rsp?.paymentId) {
+      if (rsp?.paymentId) {
         const res = await authedFetch(`${BASE_URL}/credit/purchase`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             package: selectedPackage,
+            payment_id: rsp.paymentId,
             ...(couponDiscount?.code && { couponCode: couponDiscount.code }),
           }),
         });

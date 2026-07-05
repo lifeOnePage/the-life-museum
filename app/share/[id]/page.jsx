@@ -69,7 +69,10 @@ export default function SharePage({ params }) {
   const t = T[locale] || T.ko;
   const router = useRouter();
 
-  const { data: recordData, loading, error, mediaLoading } = useRecordData(id);
+  // 배경 포토 그리드는 이미지만 쓰므로 영상 제외로 요청 (프로빙/트랜스코딩 스킵 → 빠른 로딩)
+  const { data: recordData, loading, error, mediaLoading } = useRecordData(id, {
+    imagesOnly: true,
+  });
   const { token } = useAuth();
   const isLoggedIn = !!token;
   const [ready, setReady] = useState(false);
@@ -415,8 +418,9 @@ export default function SharePage({ params }) {
 
   const gridColumns = useMemo(() => {
     if (images.length === 0) return [];
+    // 배경 그리드는 400px 썸네일로 충분 — 원본(2000px)은 무거워 느리고 빈칸 유발
     const urls = images.map((img) =>
-      getProxiedUrl(img.original_url || img.thumbnail_url),
+      getProxiedUrl(img.thumbnail_url || img.original_url),
     );
     return Array.from({ length: GRID_COLS }, (_, colIdx) => {
       const colImages = [];
@@ -503,7 +507,6 @@ export default function SharePage({ params }) {
                         key={i}
                         src={url}
                         alt=""
-                        loading="lazy"
                         decoding="async"
                         className="w-full rounded-sm object-cover opacity-0 transition-opacity duration-[1200ms] ease-out"
                         style={{ aspectRatio: "1" }}

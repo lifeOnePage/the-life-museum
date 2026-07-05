@@ -608,8 +608,9 @@ export default function SharePage({ params }) {
         <div className="flex flex-col items-center gap-3">
           <button
             onClick={() => {
+              // ?share=1: 공유 감상 모드 — 소유자용 기능(액자 사진 바꾸기 등) 비활성화
               const route = recordData?.exhibitionType === "memorial_tape"
-                ? `/vhs/${id}`
+                ? `/vhs/${id}?share=1`
                 : `/walk/${id}`;
               router.push(route);
             }}

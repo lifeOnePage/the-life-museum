@@ -5,6 +5,7 @@ import {
   CROSSFADE_DURATION_MS,
   TV_SCREEN,
   FILTER_OVERLAYS,
+  STATIC_VIDEO_SRC,
 } from "./lib/constants";
 
 function generateKenBurnsParams() {
@@ -66,7 +67,7 @@ function KenBurnsWrapper({ duration, children }) {
   );
 }
 
-function MediaItem({ item, isPlaying, onVideoEnded, isFront }) {
+function MediaItem({ item, isPlaying, onVideoEnded, isFront, onVideoPlaying }) {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -111,6 +112,7 @@ function MediaItem({ item, isPlaying, onVideoEnded, isFront }) {
         playsInline
         preload="auto"
         onEnded={isFront ? onVideoEnded : undefined}
+        onPlaying={isFront ? onVideoPlaying : undefined}
         className="absolute inset-0 h-full w-full object-cover"
       />
     );
@@ -133,6 +135,15 @@ export default function TVMediaViewport({
 }) {
   const overlayColor = FILTER_OVERLAYS[colorFilter];
   const useKenBurns = transitionType === "kenburns";
+
+  // While the front video is buffering (advancing to a new video item), show the
+  // VHS static loop instead of a black gap. Cleared by the video's 'playing' event.
+  const [frontVideoReady, setFrontVideoReady] = useState(false);
+  useEffect(() => {
+    setFrontVideoReady(false);
+  }, [currentIndex, currentItem?.original_url]);
+  const showLoadingStatic =
+    currentItem?.type === "video" && !frontVideoReady;
 
   // Build layers keyed by slideshow index.
   // When nextIndex becomes currentIndex on the next render,
@@ -178,6 +189,9 @@ export default function TVMediaViewport({
             isPlaying={isPlaying}
             onVideoEnded={isFront ? onVideoEnded : undefined}
             isFront={isFront}
+            onVideoPlaying={
+              isFront ? () => setFrontVideoReady(true) : undefined
+            }
           />
         );
 
@@ -203,6 +217,20 @@ export default function TVMediaViewport({
           </div>
         );
       })}
+
+      {/* VHS static while the front video buffers (no black gap / no thumbnail) */}
+      {showLoadingStatic && (
+        <video
+          src={STATIC_VIDEO_SRC}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+          style={{ zIndex: 5 }}
+        />
+      )}
 
       {/* Color filter overlay */}
       {overlayColor && (

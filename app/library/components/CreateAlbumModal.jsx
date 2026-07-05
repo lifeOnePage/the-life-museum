@@ -3,6 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { useAuth } from "@/app/contexts/AuthContext";
+
+// 앨범 생성 비용 — 백엔드 COSTS["album_create"]와 동일. 첫 앨범(체험)은 무료.
+const ALBUM_COST = 900;
 
 const T = {
   ko: {
@@ -23,6 +27,11 @@ const T = {
     adding: "추가 중...",
     add: "추가하기",
     errorAdd: "공유 앨범 추가에 실패했습니다.",
+    creditCost: "필요 크레딧",
+    creditBalance: "보유 크레딧",
+    firstFree: "첫 앨범은 무료로 만들 수 있어요",
+    insufficient: "크레딧이 부족해요. 충전 후 다시 시도해 주세요.",
+    buyCredits: "크레딧 구매하기",
   },
   en: {
     tabNew: "New Album",
@@ -42,6 +51,11 @@ const T = {
     adding: "Adding...",
     add: "Add",
     errorAdd: "Failed to add shared album.",
+    creditCost: "Required",
+    creditBalance: "Your credits",
+    firstFree: "Your first album is free 🎉",
+    insufficient: "Not enough credits. Please top up and try again.",
+    buyCredits: "Buy credits",
   },
 };
 
@@ -67,7 +81,13 @@ export default function CreateAlbumModal({
 }) {
   const t = T[locale] || T.ko;
   const router = useRouter();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("new"); // 'new' | 'share'
+
+  // 크레딧: 첫 앨범(체험 미사용)은 무료, 이후는 900C 차감
+  const balance = user?.credits ?? 0;
+  const isFirstFree = !(user?.free_trial_used ?? false);
+  const canAfford = isFirstFree || balance >= ALBUM_COST;
 
   // 새 앨범 만들기 상태
   const [title, setTitle] = useState("");
@@ -83,6 +103,13 @@ export default function CreateAlbumModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // 크레딧 부족(무료 대상 아님) 시 생성 대신 충전 페이지로
+    if (!canAfford) {
+      router.push(`/${locale}/account`);
+      onClose();
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -249,6 +276,35 @@ export default function CreateAlbumModal({
               />
             </div>
 
+            {/* 크레딧 안내 */}
+            {isFirstFree ? (
+              <div className="rounded-xl border border-[#c4b49a]/30 bg-[#c4b49a]/10 p-3 text-center text-sm text-[#c4b49a]">
+                {t.firstFree}
+              </div>
+            ) : (
+              <div className="space-y-1.5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm">
+                <div className="flex justify-between text-[#9b8b7a]">
+                  <span>{t.creditCost}</span>
+                  <span className="text-[#e8d5b7]">
+                    {ALBUM_COST.toLocaleString()} C
+                  </span>
+                </div>
+                <div className="flex justify-between text-[#9b8b7a]">
+                  <span>{t.creditBalance}</span>
+                  <span
+                    className={canAfford ? "text-[#e8d5b7]" : "text-red-400"}
+                  >
+                    {balance.toLocaleString()} C
+                  </span>
+                </div>
+              </div>
+            )}
+            {!canAfford && (
+              <p className="text-center text-xs text-red-400">
+                {t.insufficient}
+              </p>
+            )}
+
             {/* 버튼 */}
             <div className="mt-2 flex gap-3">
               <button
@@ -263,7 +319,13 @@ export default function CreateAlbumModal({
                 disabled={submitting}
                 className="flex-1 rounded-lg bg-[#c4b49a] py-2 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
               >
-                {submitting ? t.creating : t.create}
+                {submitting
+                  ? t.creating
+                  : !canAfford
+                    ? t.buyCredits
+                    : isFirstFree
+                      ? t.create
+                      : `${t.create} (${ALBUM_COST.toLocaleString()} C)`}
               </button>
             </div>
           </form>

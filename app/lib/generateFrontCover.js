@@ -125,14 +125,29 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
   // Need either an image or a title to render anything
   if (!frontCoverImg && !title) return null;
 
-  const size = 1024;
+  // Text metrics/layout below are authored against this base design size.
+  const BASE_SIZE = 1024;
+  const MAX_SIZE = 2048;
+
+  // Render at the source's native square-crop resolution (capped) instead of a
+  // fixed 1024 upscale. This avoids the blurry upscale of small Google Photos
+  // covers and preserves detail from larger sources. Text is scaled to match the
+  // render size via ctx.scale, so the overlay looks identical at any resolution.
+  let size = BASE_SIZE;
+  if (frontCoverImg) {
+    const cropSide = Math.min(frontCoverImg.width, frontCoverImg.height);
+    if (cropSide > 0) size = Math.round(Math.min(cropSide, MAX_SIZE));
+  }
+
   const canvas = document.createElement("canvas");
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext("2d");
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
 
   if (frontCoverImg) {
-    // Draw cover image with cover-fit
+    // Draw cover image with square center-crop (cover-fit)
     const imgRatio = frontCoverImg.width / frontCoverImg.height;
     const boxRatio = 1; // square
     let sx, sy, sw, sh;
@@ -154,8 +169,13 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
     ctx.fillRect(0, 0, size, size);
   }
 
+  // Scale text so the fixed BASE_SIZE-based layout/metrics render proportionally
+  // regardless of the actual canvas resolution chosen above.
+  ctx.save();
+  ctx.scale(size / BASE_SIZE, size / BASE_SIZE);
+
   // Text overlay
-  const layout = getTextLayout(position || "bottom-center", size);
+  const layout = getTextLayout(position || "bottom-center", BASE_SIZE);
   const fontFamily = resolveFont(font || "Pretendard Variable");
 
   ctx.textAlign = layout.textAlign;
@@ -197,5 +217,7 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
     ctx.fillText(title, layout.x, layout.anchorY + 8);
   }
 
-  return canvas.toDataURL("image/jpeg", 0.92);
+  ctx.restore();
+
+  return canvas.toDataURL("image/jpeg", 0.95);
 }

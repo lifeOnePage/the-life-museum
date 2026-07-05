@@ -9,8 +9,6 @@ import {
   TV_KNOB_LOWER,
   CROSSFADE_DURATION_MS,
 } from "./lib/constants";
-import TVMediaViewport from "./TVMediaViewport";
-
 /**
  * Given container dimensions and image natural dimensions,
  * compute the actual rendered rect when using object-fit: contain.
@@ -53,19 +51,11 @@ function KnobButton({ bounds, onClick, label }) {
 export default function TVCloseup({
   visible,
   onClose,
-  currentItem,
-  nextItem,
-  currentIndex,
-  nextIndex,
-  transitioning,
-  isPlaying,
-  videoMode,
-  onVideoEnded,
-  colorFilter,
-  transitionType,
-  imageDuration,
   onAdvance,
   onRetreat,
+  // The shared slideshow viewport (portal host) attaches here — see VHSExhibition.
+  // Reusing the same DOM node keeps the video playing seamlessly across the zoom.
+  mediaMountRef,
 }) {
   const containerRef = useRef(null);
   const [fadeIn, setFadeIn] = useState(false);
@@ -206,6 +196,16 @@ export default function TVCloseup({
     setFrameNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
   }, []);
 
+  // The closeup frame PNG is preloaded on mount, so it is usually already cached
+  // when this overlay opens. Cached images don't reliably fire onLoad, which would
+  // leave screenBounds null and the media viewport unmounted (black gap). Reading
+  // the dimensions from the element the moment it attaches closes that window.
+  const handleFrameRef = useCallback((img) => {
+    if (img && img.complete && img.naturalWidth) {
+      setFrameNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
+    }
+  }, []);
+
   if (!visible && !fadeIn) return null;
 
   return (
@@ -232,24 +232,13 @@ export default function TVCloseup({
             zIndex: 1,
           }}
         >
-          <TVMediaViewport
-            currentItem={currentItem}
-            nextItem={nextItem}
-            currentIndex={currentIndex}
-            nextIndex={nextIndex}
-            transitioning={transitioning}
-            isPlaying={isPlaying}
-            videoMode={videoMode}
-            onVideoEnded={onVideoEnded}
-            colorFilter={colorFilter}
-            transitionType={transitionType}
-            imageDuration={imageDuration}
-          />
+          <div ref={mediaMountRef} className="absolute inset-0" />
         </div>
       )}
 
       {/* TV closeup frame PNG (transparent screen area) */}
       <img
+        ref={handleFrameRef}
         src={TV_CLOSEUP_IMAGE}
         alt=""
         className="absolute inset-0 h-full w-full object-contain"

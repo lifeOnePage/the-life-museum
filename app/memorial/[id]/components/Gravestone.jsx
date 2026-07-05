@@ -16,19 +16,28 @@ function mediaSrc(item) {
  * - 중앙: GravestoneStage (프로필 ↔ 랜덤 슬라이드쇼)
  * - 하단: 추모글 + 흰 국화
  */
-export default function Gravestone({ name, years, memorialText, profileItem, mediaList = [] }) {
+export default function Gravestone({
+  name,
+  years,
+  memorialText,
+  profileItem,
+  mediaList = [],
+}) {
   const slideCount = mediaList.length;
-  const { phase, slideIndex } = useGravestoneCycle({ slideCount, active: slideCount > 0 });
+  const { phase, slideIndex } = useGravestoneCycle({
+    slideCount,
+    active: slideCount > 0,
+  });
   const slideItem = slideCount > 0 ? mediaList[slideIndex % slideCount] : null;
   const [flowerOk, setFlowerOk] = useState(true);
 
   return (
     <LayoutGroup>
       <div
-        className="relative flex h-full flex-col items-center rounded-md px-[2.5%] pt-[2.5vh] pb-[2vh]"
+        className="relative flex h-full flex-col items-center px-[2.5%] pt-[2.5vh] pb-[2vh]"
         style={{
           background:
-            "linear-gradient(180deg, rgba(8,8,10,0) 0%, rgba(6,6,8,0.7) 18%, rgba(4,4,6,0.9) 60%, rgba(2,2,4,0.96) 100%)",
+            "linear-gradient(180deg, rgba(8,8,10,0.5) 10%, rgba(6,6,8,0.9) 18%, rgba(4,4,6,0.9) 60%, rgba(2,2,4,0.96) 100%)",
         }}
       >
         {/* ── 헤더: 프로필 슬롯 + 이름/생몰년 ── */}
@@ -40,8 +49,11 @@ export default function Gravestone({ name, years, memorialText, profileItem, med
               src={mediaSrc(profileItem)}
               alt=""
               draggable={false}
-              className="h-[7vh] w-[7vh] shrink-0 rounded-md object-cover shadow-lg"
-              transition={{ duration: MORPH_DURATION_MS / 1000, ease: "easeInOut" }}
+              className="h-[7vh] w-[7vh] shrink-0 object-cover shadow-lg"
+              transition={{
+                duration: MORPH_DURATION_MS / 1000,
+                ease: "easeInOut",
+              }}
             />
           )}
 

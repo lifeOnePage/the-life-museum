@@ -51,8 +51,14 @@ export default function Scene({
   onVideoBgmControl,
   videoPreviewEnabled,
   videoMaxDuration,
+  // Input listener scope:
+  //  - true (default): attach to window — full-page exhibition behavior.
+  //  - "scoped": attach to the canvas element only. Used by the edit-mode preview so
+  //    wheel/touch/keys work over the preview without hijacking page scroll or inputs.
+  //  - false: no listeners.
+  interactive = true,
 }) {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const controlsRef = useRef();
   const dirLightRef = useRef();
   const floorRef = useRef();
@@ -477,6 +483,16 @@ export default function Scene({
 
   // Event listeners for manual movement (always active — works both playing and paused)
   useEffect(() => {
+    if (!interactive) return;
+    const scoped = interactive === "scoped";
+    // scoped: listen on the canvas only (pointer must be over the preview); make it
+    // focusable so keyboard input works after a click without stealing page-wide keys.
+    const target = scoped ? gl.domElement : window;
+    if (scoped) {
+      gl.domElement.tabIndex = 0;
+      gl.domElement.style.outline = "none";
+    }
+
     const getTouchDistance = (t1, t2) => {
       const dx = t1.clientX - t2.clientX;
       const dy = t1.clientY - t2.clientY;
@@ -499,6 +515,8 @@ export default function Scene({
         }, 500);
         return;
       }
+      // scoped: consume the wheel so the surrounding page doesn't scroll
+      if (scoped) e.preventDefault();
       manualVelocityRef.current += e.deltaY * 0.8;
     };
     const onKeyDown = (e) => {
@@ -564,22 +582,22 @@ export default function Scene({
         touchRef.current.scrolling = false;
       }
     };
-    window.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("keydown", onKeyDown);
-    window.addEventListener("keyup", onKeyUp);
-    window.addEventListener("touchstart", onTouchStart, { passive: true });
-    window.addEventListener("touchmove", onTouchMove, { passive: true });
-    window.addEventListener("touchend", onTouchEnd);
+    target.addEventListener("wheel", onWheel, { passive: false });
+    target.addEventListener("keydown", onKeyDown);
+    target.addEventListener("keyup", onKeyUp);
+    target.addEventListener("touchstart", onTouchStart, { passive: true });
+    target.addEventListener("touchmove", onTouchMove, { passive: true });
+    target.addEventListener("touchend", onTouchEnd);
     return () => {
-      window.removeEventListener("wheel", onWheel);
-      window.removeEventListener("keydown", onKeyDown);
-      window.removeEventListener("keyup", onKeyUp);
-      window.removeEventListener("touchstart", onTouchStart);
-      window.removeEventListener("touchmove", onTouchMove);
-      window.removeEventListener("touchend", onTouchEnd);
+      target.removeEventListener("wheel", onWheel);
+      target.removeEventListener("keydown", onKeyDown);
+      target.removeEventListener("keyup", onKeyUp);
+      target.removeEventListener("touchstart", onTouchStart);
+      target.removeEventListener("touchmove", onTouchMove);
+      target.removeEventListener("touchend", onTouchEnd);
       if (fovRecoveryTimerRef.current) clearTimeout(fovRecoveryTimerRef.current);
     };
-  }, [onTogglePlay, onToggleFullscreen, camera]);
+  }, [onTogglePlay, onToggleFullscreen, camera, interactive, gl]);
 
   // Stop video playback when paused or unmounted
   useEffect(() => {

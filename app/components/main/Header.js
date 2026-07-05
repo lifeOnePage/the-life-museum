@@ -7,7 +7,10 @@ export default function Header({ page, login, logout, main, mypage }) {
   const { user, token, signout } = useAuth();
   console.log(page);
   return (
-    <div className="text-nav fixed top-0 z-1000 box-border w-screen bg-transparent p-3 pt-[max(env(safe-area-inset-top),12px)] text-white">
+    <div
+      className="text-nav fixed top-0 z-1000 box-border w-screen bg-transparent p-3 text-white"
+      style={{ paddingTop: "max(env(safe-area-inset-top), 12px)" }}
+    >
       <div className="flex h-full w-full items-center border-b border-white px-3 py-1 text-white">
         <div className="w-full flex-1"><AppName /></div>
         <div className="flex w-full flex-1">

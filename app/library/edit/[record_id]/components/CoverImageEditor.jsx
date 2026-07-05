@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, forwardRef, useImperativeHandle } from "react";
+import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Sparkles,
@@ -12,8 +12,12 @@ import {
 } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
 import CoverImageGenerator from "./CoverImageGenerator";
+import ScrollToTopButton from "./ScrollToTopButton";
 
 const API_URL = "https://the-life-museum-backend-production.up.railway.app";
+
+// 사진이 이 수 이상이면 스크롤 부담이 커져 "맨 위로" 플로팅 버튼을 노출한다.
+const SCROLL_TOP_FAB_MIN_PHOTOS = 15;
 
 function LazyImage({ src, alt, className }) {
   const [loaded, setLoaded] = useState(false);
@@ -36,10 +40,7 @@ function LazyImage({ src, alt, className }) {
 const T = {
   ko: {
     generate: "이미지 생성하기",
-    upload: "직접 업로드",
-    uploadHeader: "직접 업로드",
-    uploadDesc:
-      "디바이스에서 직접 업로드하거나, 포토드라이브에서 선택할 수 있습니다.",
+    generateDesc: "AI로 표지 만들기",
     deviceUpload: "디바이스 업로드",
     photodrive: "포토드라이브",
     photodriveDesc: "레코드 사진에서 선택",
@@ -48,12 +49,11 @@ const T = {
     noPhotos: "사용 가능한 사진이 없습니다.",
     saving: "저장 중...",
     imageLimit: "JPG, PNG 최대 10MB",
+    scrollTop: "맨 위로",
   },
   en: {
     generate: "Generate Image",
-    upload: "Upload",
-    uploadHeader: "Upload",
-    uploadDesc: "Upload from your device or choose from Photo Drive.",
+    generateDesc: "Create cover with AI",
     deviceUpload: "Device Upload",
     photodrive: "Photo Drive",
     photodriveDesc: "Choose from record photos",
@@ -63,6 +63,7 @@ const T = {
     noPhotos: "No photos available.",
     saving: "Saving...",
     imageLimit: "JPG, PNG up to 10MB",
+    scrollTop: "Scroll to top",
   },
 };
 
@@ -92,6 +93,8 @@ const CoverImageEditor = forwardRef(
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedImageUrl, setSelectedImageUrl] = useState(null);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
+    // 포토드라이브 사진 목록 시작점 (맨 위로 버튼의 스크롤 타겟)
+    const photodriveTopRef = useRef(null);
 
     useImperativeHandle(ref, () => ({
       save: async () => {
@@ -202,7 +205,7 @@ const CoverImageEditor = forwardRef(
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Two option cards */}
+              {/* 주요 옵션: 이미지 생성하기 / 포토드라이브 선택 (나란히) */}
               <div className="flex gap-4">
                 {/* AI Generate card */}
                 <button
@@ -215,66 +218,8 @@ const CoverImageEditor = forwardRef(
                   <span className="text-sm font-medium text-[#e8d5b7]">
                     {t.generate}
                   </span>
-                  <div className="h-5" />
+                  <p className="mt-1 text-xs text-[#9b8b7a]">{t.generateDesc}</p>
                 </button>
-
-                {/* Upload card */}
-                <button
-                  onClick={() => setView("upload")}
-                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
-                >
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                    <ImagePlus className="h-[18px] w-[18px] text-[#9b8b7a]" />
-                  </div>
-                  <span className="text-sm font-medium text-[#e8d5b7]">
-                    {t.upload}
-                  </span>
-                  <p className="mt-1 text-xs text-[#9b8b7a]">{t.imageLimit}</p>
-                </button>
-              </div>
-
-              {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
-            </motion.div>
-          )}
-
-          {view === "upload" && (
-            <motion.div
-              key="upload"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 10 }}
-              transition={{ duration: 0.2 }}
-            >
-              {/* Header with back arrow */}
-              <div className="mb-4">
-                <button
-                  onClick={() => setView("menu")}
-                  className="mb-2 flex items-center gap-2 text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
-                >
-                  <ChevronLeft className="h-[18px] w-[20px]" />
-                  <span className="text-base font-bold">{t.uploadHeader}</span>
-                </button>
-                <p className="text-xs text-[#9b8b7a]">{t.uploadDesc}</p>
-              </div>
-
-              {/* Two option cards */}
-              <div className="flex gap-4">
-                {/* Device upload card */}
-                <label className="flex flex-1 cursor-pointer flex-col items-center justify-center rounded-xl border border-white/15 bg-transparent px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={handleFileUpload}
-                  />
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                    <Upload className="h-[18px] w-[18px] text-[#9b8b7a]" />
-                  </div>
-                  <span className="text-sm font-medium text-[#e8d5b7]">
-                    {t.deviceUpload}
-                  </span>
-                  <p className="mt-1 text-xs text-[#9b8b7a]">{t.imageLimit}</p>
-                </label>
 
                 {/* Photo drive card */}
                 <button
@@ -296,12 +241,30 @@ const CoverImageEditor = forwardRef(
                   </p>
                 </button>
               </div>
+
+              {/* 대체 옵션: 디바이스 업로드 (하단, 보조 스타일) */}
+              <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 py-3 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+                <Upload className="h-4 w-4 text-[#9b8b7a]" />
+                <span className="text-sm font-medium text-[#9b8b7a]">
+                  {t.deviceUpload}
+                </span>
+                <span className="text-xs text-[#9b8b7a]/70">{t.imageLimit}</span>
+              </label>
+
+              {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
             </motion.div>
           )}
 
           {view === "photodrive" && (
             <motion.div
               key="photodrive"
+              ref={photodriveTopRef}
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 10 }}
@@ -311,7 +274,7 @@ const CoverImageEditor = forwardRef(
               <div className="sticky top-0 z-10 mb-4 bg-[#241f18] pb-2">
                 <div className="mb-2 flex items-center justify-between">
                   <button
-                    onClick={() => setView("upload")}
+                    onClick={() => setView("menu")}
                     className="flex items-center gap-2 text-[#9b8b7a] transition-colors hover:text-[#e8d5b7]"
                   >
                     <ChevronLeft className="h-[18px] w-[20px]" />
@@ -374,6 +337,12 @@ const CoverImageEditor = forwardRef(
                   </div>
                 </motion.div>
               )}
+
+              <ScrollToTopButton
+                enabled={photoMedia.length >= SCROLL_TOP_FAB_MIN_PHOTOS}
+                label={t.scrollTop}
+                targetRef={photodriveTopRef}
+              />
             </motion.div>
           )}
 

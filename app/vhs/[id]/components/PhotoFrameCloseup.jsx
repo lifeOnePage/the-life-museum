@@ -32,6 +32,8 @@ export default function PhotoFrameCloseup({
   onClose,
   visible,
   colorFilter = "none",
+  // false = 공유 감상 모드: 액자 크게 보기는 가능하되 사진 바꾸기는 비활성화
+  canChangePhoto = true,
 }) {
   const overlayColor = FILTER_OVERLAYS[colorFilter];
   const containerRef = useRef(null);
@@ -168,7 +170,7 @@ export default function PhotoFrameCloseup({
       )}
 
       {/* "사진 바꾸기" button inside the frame viewport, top-right */}
-      {viewportBounds && images && images.length > 1 && (
+      {canChangePhoto && viewportBounds && images && images.length > 1 && (
         <button
           onClick={() => setShowPicker(true)}
           className="absolute flex items-center gap-1.5 rounded-md bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur-sm transition-colors hover:bg-black/70"
@@ -194,7 +196,7 @@ export default function PhotoFrameCloseup({
       </button>
 
       {/* Thumbnail picker modal */}
-      {showPicker && (
+      {canChangePhoto && showPicker && (
         <div
           className="absolute inset-0 flex items-center justify-center"
           style={{ zIndex: 40 }}

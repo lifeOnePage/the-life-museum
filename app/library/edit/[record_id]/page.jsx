@@ -50,6 +50,9 @@ const AlbumPreview3D = dynamic(() => import("./components/AlbumPreview3D"), {
 const VHSPreview = dynamic(() => import("./components/VHSPreview"), {
   ssr: false,
 });
+const WalkPreview = dynamic(() => import("./components/WalkPreview"), {
+  ssr: false,
+});
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
@@ -57,6 +60,7 @@ import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 import AIConsentModal, { hasAIConsent } from "@/app/components/AIConsentModal";
+import { invalidateRecord } from "@/app/lib/useRecordData";
 
 const ADMIN_EMAILS = new Set([
   "goodchaeee@naver.com",
@@ -92,7 +96,7 @@ const T = {
     bgm: "배경음악",
     bgmSelected: "선택됨",
     recordType: "메모리 타입",
-    recordTypeExhibit: "Exhibit",
+    recordTypeExhibit: "Time Travel",
     recordTypeRetroTape: "Retro Tape",
     backCoverImage: "뒷면 이미지 설정하기",
     theme: "테마",
@@ -160,7 +164,7 @@ const T = {
     bgm: "Background Music",
     bgmSelected: "Selected",
     recordType: "Record Type",
-    recordTypeExhibit: "Exhibit",
+    recordTypeExhibit: "Time Travel",
     recordTypeRetroTape: "Retro Tape",
     backCoverImage: "Set Back Cover Image",
     theme: "Theme",
@@ -377,12 +381,12 @@ const Index = ({ params }) => {
   const [backCoverImageUrl, setBackCoverImageUrl] = useState(null);
 
   // Collapsible sections
-  const [titleOpen, setTitleOpen] = useState(false);
-  const [coverOpen, setCoverOpen] = useState(false);
-  const [bgmOpen, setBgmOpen] = useState(false);
-  const [recordTypeOpen, setRecordTypeOpen] = useState(false);
+  const [titleOpen, setTitleOpen] = useState(true);
+  const [coverOpen, setCoverOpen] = useState(true);
+  const [bgmOpen, setBgmOpen] = useState(true);
+  const [recordTypeOpen, setRecordTypeOpen] = useState(true);
   const [recordType, setRecordType] = useState("exhibit");
-  const [themeOpen, setThemeOpen] = useState(false);
+  const [themeOpen, setThemeOpen] = useState(true);
 
   // VHS-specific settings
   const [vhsFilterOpen, setVhsFilterOpen] = useState(false);
@@ -394,8 +398,8 @@ const Index = ({ params }) => {
   const [vhsImageDuration, setVhsImageDuration] = useState(5);
   const [vhsVideoMode, setVhsVideoMode] = useState(0);
   const [backCoverImageOpen, setBackCoverImageOpen] = useState(true);
-  const [storyOpen, setStoryOpen] = useState(false);
-  const [timelineOpen, setTimelineOpen] = useState(false);
+  const [storyOpen, setStoryOpen] = useState(true);
+  const [timelineOpen, setTimelineOpen] = useState(true);
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
@@ -854,6 +858,9 @@ const Index = ({ params }) => {
     );
     if (anySuccess) {
       setLastSavedAt(new Date());
+      // Bust the shared record cache so the /vhs and /walk viewers refetch and
+      // reflect this edit (e.g. VHS photo-frame) without an app restart.
+      invalidateRecord(record_id);
     }
 
     setIsSaving(false);
@@ -1386,6 +1393,14 @@ const Index = ({ params }) => {
               onImageDurationChange={setVhsImageDuration}
               videoMode={vhsVideoMode}
               onVideoModeChange={setVhsVideoMode}
+              frontCover={frontCover}
+              backCoverImageUrl={backCoverImageUrl}
+            />
+          ) : recordType === "exhibit" && activeTab === "gallery" ? (
+            <WalkPreview
+              photoMedia={photoDrive.photoMedia}
+              mediaLoading={photoDrive.isLoading}
+              title={albumTitle}
             />
           ) : (
             <AlbumPreview3D

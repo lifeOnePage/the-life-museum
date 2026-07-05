@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useVHSScene } from "./lib/useVHSScene";
@@ -22,6 +23,7 @@ import { useBGM } from "./lib/useBGM";
 import VHSTapeIntro from "./VHSTapeIntro";
 import TVInsertVideo from "./TVInsertVideo";
 import TVScene from "./TVScene";
+import TVMediaViewport from "./TVMediaViewport";
 import VHSControls from "./VHSControls";
 import PhotoFrameCloseup from "./PhotoFrameCloseup";
 import TVCloseup from "./TVCloseup";
@@ -38,6 +40,15 @@ export default function VHSExhibition({ recordId, locale }) {
   const [transitionType, setTransitionType] = useState(DEFAULT_TRANSITION);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
+
+  // 공유 감상 모드(share 링크 → /vhs/{id}?share=1): 소유자용 기능 비활성화.
+  // useSearchParams 대신 window 접근(useEffect)으로 static export 빌드 제약 회피.
+  const [isShareView, setIsShareView] = useState(false);
+  useEffect(() => {
+    setIsShareView(
+      new URLSearchParams(window.location.search).has("share"),
+    );
+  }, []);
 
   // BGM with fade in/out
   const bgmUrl = data?.bgmUrl || data?.bgm || null;
@@ -56,32 +67,71 @@ export default function VHSExhibition({ recordId, locale }) {
     if (!data) return;
     if (data.vhsFilter) setColorFilter(data.vhsFilter);
     if (data.vhsTransition) setTransitionType(data.vhsTransition);
-    if (data.vhsPhotoFrameIndex != null)
+    // 편집 페이지 저장 시 vhsPhotoFrameIndex가 항상 기록되므로(기본 0) null 체크만으로는
+    // "사용자가 고른 것"을 구분할 수 없다. 0은 기본값으로 보고 뒷면 커버 기본을 적용하고,
+    // 0보다 큰 값만 명시적 선택으로 취급한다.
+    if (data.vhsPhotoFrameIndex != null) {
       setPhotoFrameIndex(data.vhsPhotoFrameIndex);
+      setPhotoFrameExplicit(data.vhsPhotoFrameIndex > 0);
+    }
   }, [data]);
 
   // Photo frame closeup state
   const [photoFrameOpen, setPhotoFrameOpen] = useState(false);
   const [photoFrameIndex, setPhotoFrameIndex] = useState(0);
+  // Whether the user has explicitly chosen a frame photo. Until then, the frame
+  // defaults to the album's back cover (fallback: front cover).
+  const [photoFrameExplicit, setPhotoFrameExplicit] = useState(false);
 
   // TV closeup state
   const [tvCloseupOpen, setTvCloseupOpen] = useState(false);
 
+  // ── Single shared media viewport ─────────────────────────────────────────
+  // The slideshow is rendered ONCE into a stable detached host <div> (via portal),
+  // and that host is physically moved (appendChild) between the main TV screen and
+  // the closeup screen. Moving a DOM node does not reset <video> playback, so
+  // clicking the TV feels like the same screen simply enlarges — no re-buffering,
+  // no gap, no restart.
+  const [mediaHost] = useState(() => {
+    if (typeof document === "undefined") return null;
+    const el = document.createElement("div");
+    el.style.position = "absolute";
+    el.style.inset = "0";
+    return el;
+  });
+  const [tvMountEl, setTvMountEl] = useState(null);
+  const [closeupMountEl, setCloseupMountEl] = useState(null);
+
+  useEffect(() => {
+    if (!mediaHost) return;
+    const target = tvCloseupOpen && closeupMountEl ? closeupMountEl : tvMountEl;
+    if (target && mediaHost.parentElement !== target) {
+      target.appendChild(mediaHost);
+    }
+  }, [mediaHost, tvCloseupOpen, tvMountEl, closeupMountEl]);
+
   const idleTimerRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Filter media list for images and videos
+  // The Google Photos share page lists the album cover as its header image, so the
+  // backend's first scraped item is always the cover. The backend marks it with
+  // is_cover (og:image base match) — exclude it so playback starts from the first
+  // real album photo. (URL matching is impossible client-side: coverImage.url is an
+  // R2 re-upload while media URLs are googleusercontent.)
   const mediaList = useMemo(
     () =>
       (data?.mediaList ?? []).filter(
-        (m) => m.type === "image" || m.type === "video",
+        (m) => (m.type === "image" || m.type === "video") && !m.is_cover,
       ),
     [data],
   );
 
-  // Filter images only (for photo frame)
+  // Filter images only (for photo frame, excluding the cover)
   const imageList = useMemo(
-    () => (data?.mediaList ?? []).filter((m) => m.type === "image"),
+    () =>
+      (data?.mediaList ?? []).filter(
+        (m) => m.type === "image" && !m.is_cover,
+      ),
     [data],
   );
 
@@ -236,6 +286,29 @@ export default function VHSExhibition({ recordId, locale }) {
     setIsPlaying(true);
   }, []);
 
+  const handlePhotoFrameIndexChange = useCallback((i) => {
+    setPhotoFrameIndex(i);
+    setPhotoFrameExplicit(true);
+  }, []);
+
+  // Resolve the photo-frame image: an explicit user choice wins; otherwise default
+  // to the album back cover, falling back to the front cover, then the first image.
+  const photoFrameSrc = useMemo(() => {
+    if (photoFrameExplicit && imageList[photoFrameIndex]) {
+      return (
+        imageList[photoFrameIndex]?.original_url ||
+        imageList[photoFrameIndex]?.thumbnail_url
+      );
+    }
+    return (
+      data?.backCoverImageUrl ||
+      data?.coverImage?.url ||
+      imageList[0]?.original_url ||
+      imageList[0]?.thumbnail_url ||
+      undefined
+    );
+  }, [photoFrameExplicit, photoFrameIndex, imageList, data]);
+
   // TV closeup handlers
   const handleTVClick = useCallback(() => {
     setTvCloseupOpen(true);
@@ -316,43 +389,51 @@ export default function VHSExhibition({ recordId, locale }) {
       {(scene === "tvOff" || scene === "static" || scene === "playback") && (
         <TVScene
           scene={scene}
-          currentItem={slideshow.currentItem}
-          nextItem={slideshow.nextItem}
-          currentIndex={slideshow.currentIndex}
-          nextIndex={slideshow.nextIndex}
-          transitioning={slideshow.transitioning}
-          isPlaying={isPlaying}
-          videoMode={videoMode}
-          onVideoEnded={slideshow.advance}
           colorFilter={colorFilter}
-          transitionType={transitionType}
-          imageDuration={imageDuration}
           visible={scene !== "insert"}
           frameImage={TV_PLAYBACK_FRAME}
-          photoFrameImageSrc={
-            imageList.length > 0
-              ? imageList[photoFrameIndex]?.original_url ||
-                imageList[photoFrameIndex]?.thumbnail_url
-              : undefined
-          }
+          photoFrameImageSrc={photoFrameSrc}
           onPhotoFrameClick={
             imageList.length > 0 ? handlePhotoFrameClick : undefined
           }
           onTVClick={handleTVClick}
           onAdvance={slideshow.advance}
           onRetreat={slideshow.retreat}
+          mediaMountRef={setTvMountEl}
         />
       )}
+
+      {/* Shared slideshow viewport — rendered once, physically moved between the
+          main TV screen and the closeup screen (video never remounts) */}
+      {mediaHost &&
+        scene === "playback" &&
+        createPortal(
+          <TVMediaViewport
+            currentItem={slideshow.currentItem}
+            nextItem={slideshow.nextItem}
+            currentIndex={slideshow.currentIndex}
+            nextIndex={slideshow.nextIndex}
+            transitioning={slideshow.transitioning}
+            isPlaying={isPlaying}
+            videoMode={videoMode}
+            onVideoEnded={slideshow.advance}
+            colorFilter={colorFilter}
+            transitionType={transitionType}
+            imageDuration={imageDuration}
+          />,
+          mediaHost,
+        )}
 
       {/* Photo frame closeup overlay */}
       {scene === "playback" && (
         <PhotoFrameCloseup
           images={imageList}
           selectedIndex={photoFrameIndex}
-          onChangeIndex={setPhotoFrameIndex}
+          onChangeIndex={handlePhotoFrameIndexChange}
           onClose={handlePhotoFrameClose}
           visible={photoFrameOpen}
           colorFilter={colorFilter}
+          canChangePhoto={!isShareView}
         />
       )}
 
@@ -361,19 +442,9 @@ export default function VHSExhibition({ recordId, locale }) {
         <TVCloseup
           visible={tvCloseupOpen}
           onClose={handleTVCloseupClose}
-          currentItem={slideshow.currentItem}
-          nextItem={slideshow.nextItem}
-          currentIndex={slideshow.currentIndex}
-          nextIndex={slideshow.nextIndex}
-          transitioning={slideshow.transitioning}
-          isPlaying={isPlaying}
-          videoMode={videoMode}
-          onVideoEnded={slideshow.advance}
-          colorFilter={colorFilter}
-          transitionType={transitionType}
-          imageDuration={imageDuration}
           onAdvance={slideshow.advance}
           onRetreat={slideshow.retreat}
+          mediaMountRef={setCloseupMountEl}
         />
       )}
 

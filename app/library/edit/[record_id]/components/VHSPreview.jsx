@@ -179,6 +179,8 @@ export default function VHSPreview({
   onImageDurationChange,
   videoMode = 0,
   onVideoModeChange,
+  frontCover = null,
+  backCoverImageUrl = null,
 }) {
   const containerRef = useRef(null);
   const [screenBounds, setScreenBounds] = useState(null);
@@ -188,19 +190,26 @@ export default function VHSPreview({
   const [nextIndex, setNextIndex] = useState(null);
   const [transitioning, setTransitioning] = useState(false);
   const [showPicker, setShowPicker] = useState(false);
+  // Whether the user explicitly chose a frame photo this session. Until an explicit
+  // choice (here or a saved index > 0), the frame defaults to the album back cover.
+  const [userPickedFrame, setUserPickedFrame] = useState(false);
   const timerRef = useRef(null);
   const transitionTimerRef = useRef(null);
 
   const overlayColor = FILTER_OVERLAYS[colorFilter];
   const useKenBurns = transitionType === "kenburns";
 
+  // is_cover: 백엔드가 앨범 커버(og:image) 항목을 표시 — 감상 화면과 동일하게 제외
   const mediaList = useMemo(
-    () => (photoMedia ?? []).filter((m) => m.type === "image" || m.type === "video"),
+    () =>
+      (photoMedia ?? []).filter(
+        (m) => (m.type === "image" || m.type === "video") && !m.is_cover,
+      ),
     [photoMedia]
   );
 
   const imageList = useMemo(
-    () => (photoMedia ?? []).filter((m) => m.type === "image"),
+    () => (photoMedia ?? []).filter((m) => m.type === "image" && !m.is_cover),
     [photoMedia]
   );
 
@@ -315,12 +324,20 @@ export default function VHSPreview({
     return result;
   }, [currentItem, nextItem, currentIndex, nextIndex]);
 
-  // Photo frame image
-  const photoFrameImage = imageList[photoFrameIndex];
-  const photoFrameSrc = photoFrameImage?.original_url || photoFrameImage?.thumbnail_url;
+  // Photo frame image: an explicit choice (in-session pick or a saved index > 0)
+  // wins; otherwise default to the album back cover, then front cover.
+  const frameExplicit = userPickedFrame || (photoFrameIndex ?? 0) > 0;
+  const explicitFrameImage = frameExplicit ? imageList[photoFrameIndex] : null;
+  const photoFrameSrc =
+    explicitFrameImage?.original_url ||
+    explicitFrameImage?.thumbnail_url ||
+    backCoverImageUrl ||
+    frontCover ||
+    undefined;
 
   const handlePickPhoto = useCallback(
     (index) => {
+      setUserPickedFrame(true);
       onPhotoFrameIndexChange?.(index);
       setShowPicker(false);
     },

@@ -187,34 +187,38 @@ export default function LocaleLoginPage() {
   return (
     <div style={containerStyle}>
       <div style={sheetStyle}>
-        {canGoBack && (
-          <button
-            aria-label={t.back}
-            onClick={handleBack}
-            style={{
-              zIndex: 100,
-              width: "100%",
-              height: 36,
-              marginTop: 60,
-              border: "none",
-              background: "transparent",
-              cursor: "pointer",
-              display: "flex",
-              color: "#ababab",
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M15 18l-6-6 6-6"
-                stroke="#fff"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            {t.back}
-          </button>
-        )}
+        {/* 첫 화면(contact)에선 뒤로가기를 숨기되, 레이아웃 공간은 유지해
+            이메일/인증코드 화면의 상단 마진을 동일하게 맞춘다. */}
+        <button
+          aria-label={t.back}
+          onClick={handleBack}
+          tabIndex={canGoBack ? 0 : -1}
+          aria-hidden={!canGoBack}
+          style={{
+            zIndex: 100,
+            width: "100%",
+            height: 36,
+            marginTop: 60,
+            border: "none",
+            background: "transparent",
+            cursor: canGoBack ? "pointer" : "default",
+            display: "flex",
+            color: "#ababab",
+            visibility: canGoBack ? "visible" : "hidden",
+            pointerEvents: canGoBack ? "auto" : "none",
+          }}
+        >
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path
+              d="M15 18l-6-6 6-6"
+              stroke="#fff"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {t.back}
+        </button>
 
         <div style={{ padding: "4px 24px" }}>
           <AnimatePresence mode="wait" initial={false}>

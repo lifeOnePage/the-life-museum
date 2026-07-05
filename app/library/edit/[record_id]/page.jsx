@@ -324,14 +324,14 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove, t }) {
         <Input
           value={item.event}
           onChange={(e) =>
-            onUpdate(index, "event", e.target.value.slice(0, 20))
+            onUpdate(index, "event", e.target.value.slice(0, 25))
           }
           placeholder={t.eventPlaceholder}
-          maxLength={20}
+          maxLength={25}
           className="h-9 w-full rounded-[5px] border-white/10 bg-[#2e2720] pr-8 text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
         />
         <span className="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 text-[9px] text-[#9b8b7a]">
-          {item.event.length}/20
+          {item.event.length}/25
         </span>
       </div>
       <button
@@ -506,7 +506,7 @@ const Index = ({ params }) => {
           const data = result.data;
 
           const coverUrl = data.coverImage?.url || null;
-          const title = (data.title || "").slice(0, 14);
+          const title = (data.title || "").slice(0, 20);
           const subtitle = (data.subtitle || "").slice(0, 25);
           const bioContent = (data.lifestory?.content || "").slice(0, 250);
 
@@ -517,7 +517,7 @@ const Index = ({ params }) => {
               event:
                 `${event.title}${event.description ? ` - ${event.description}` : ""}`.slice(
                   0,
-                  20,
+                  25,
                 ),
             }));
           }
@@ -1064,6 +1064,14 @@ const Index = ({ params }) => {
     const finalIcloudUrl = selectedUrlType === "icloud" ? editUrlValue : "";
     const finalMyboxUrl = selectedUrlType === "mybox" ? editUrlValue : "";
 
+    // 외부 링크: 프로토콜 없으면 https:// 보정 후 저장 (공유 페이지에서 상대경로 에러 방지)
+    const trimmedExternalUrl = editExternalLinkUrl.trim();
+    const finalExternalLinkUrl = trimmedExternalUrl
+      ? /^https?:\/\//i.test(trimmedExternalUrl)
+        ? trimmedExternalUrl
+        : `https://${trimmedExternalUrl}`
+      : "";
+
     try {
       const response = await fetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
@@ -1079,7 +1087,7 @@ const Index = ({ params }) => {
             icloudUrl: finalIcloudUrl,
             myboxUrl: finalMyboxUrl,
             externalLinkTitle: editExternalLinkTitle,
-            externalLinkUrl: editExternalLinkUrl,
+            externalLinkUrl: finalExternalLinkUrl,
           }),
         },
       );
@@ -1094,7 +1102,8 @@ const Index = ({ params }) => {
       setIcloudUrl(finalIcloudUrl);
       setMyboxUrl(finalMyboxUrl);
       setExternalLinkTitle(editExternalLinkTitle);
-      setExternalLinkUrl(editExternalLinkUrl);
+      setExternalLinkUrl(finalExternalLinkUrl);
+      setEditExternalLinkUrl(finalExternalLinkUrl);
       setShowRecordEditDialog(false);
     } catch (err) {
       setRecordError(err.message);
@@ -1447,16 +1456,16 @@ const Index = ({ params }) => {
                             {t.titleLabel}
                           </label>
                           <span className="text-[10px] text-[#9b8b7a]">
-                            {albumTitle.length}/14
+                            {albumTitle.length}/20
                           </span>
                         </div>
                         <input
                           type="text"
                           value={albumTitle}
                           onChange={(e) =>
-                            setAlbumTitle(e.target.value.slice(0, 14))
+                            setAlbumTitle(e.target.value.slice(0, 20))
                           }
-                          maxLength={14}
+                          maxLength={20}
                           placeholder={t.titlePlaceholder}
                           className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
                         />

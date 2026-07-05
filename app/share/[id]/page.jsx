@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { getProxiedUrl } from "@/app/walk/[id]/components/lib/constants";
 import { DEFAULT_THEME } from "@/app/library/edit/[record_id]/themeConfig";
-import { X, Info, Eye, ExternalLink } from "lucide-react";
+import { X, Info, ExternalLink } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useAuth } from "@/app/contexts/AuthContext";
 import SmartAppBanner from "@/app/components/SmartAppBanner";
@@ -46,6 +46,8 @@ const T = {
     privateDesc: "앨범 소유자만 열람할 수 있어요",
     gallery: "보러가기",
     externalLink: "외부 링크",
+    info: "앨범정보",
+    flip: "돌려보기",
     signupPrompt: "나만의 앨범을 만들고 싶으신가요?",
     signupCta: "회원가입하고 편집하기",
   },
@@ -55,6 +57,8 @@ const T = {
     privateDesc: "Only the album owner can view it",
     gallery: "View",
     externalLink: "External Link",
+    info: "Info",
+    flip: "Flip",
     signupPrompt: "Want to create your own album?",
     signupCta: "Sign up and start editing",
   },
@@ -338,7 +342,13 @@ export default function SharePage({ params }) {
   const albumTitle = recordData?.title || "";
   const subtitle = recordData?.subtitle || "";
   const externalLinkTitle = recordData?.externalLinkTitle || "";
-  const externalLinkUrl = recordData?.externalLinkUrl || "";
+  const rawExternalLinkUrl = recordData?.externalLinkUrl || "";
+  // 프로토콜(http/https)이 없으면 상대경로로 처리돼 에러 → https:// 보정
+  const externalLinkUrl = rawExternalLinkUrl
+    ? /^https?:\/\//i.test(rawExternalLinkUrl)
+      ? rawExternalLinkUrl
+      : `https://${rawExternalLinkUrl}`
+    : "";
   const bio = recordData?.lifestory?.content || "";
   const selectedTheme = recordData?.theme || DEFAULT_THEME;
   const titleOverlayEnabled = recordData?.coverTitleVisible ?? false;
@@ -566,6 +576,51 @@ export default function SharePage({ params }) {
             {subtitle}
           </p>
         )}
+
+        {/* 앨범정보 · 뒤집기 · 링크 — 제목 아래 */}
+        <div
+          className={`pointer-events-auto mt-5 flex items-start justify-center gap-4 transition-all delay-300 duration-1000 ease-out ${
+            ready ? "opacity-100" : "translate-y-2 opacity-0"
+          }`}
+        >
+          <button
+            onClick={() => setIsInfoOpen(true)}
+            className="group flex w-16 flex-col items-center gap-1.5 text-white/50 transition-colors duration-300 hover:text-white"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/50 group-hover:bg-white/10">
+              <Info className="h-4 w-4" />
+            </span>
+            <span className="text-[10px] font-light tracking-[0.12em]">
+              {t.info}
+            </span>
+          </button>
+          <button
+            onClick={handleAlbumClick}
+            className="group flex w-16 flex-col items-center gap-1.5 text-white/50 transition-colors duration-300 hover:text-white"
+          >
+            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/50 group-hover:bg-white/10">
+              <Icon360 className="h-4 w-4" />
+            </span>
+            <span className="text-[10px] font-light tracking-[0.12em]">
+              {t.flip}
+            </span>
+          </button>
+          {externalLinkUrl && (
+            <a
+              href={externalLinkUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex w-16 flex-col items-center gap-1.5 text-white/50 transition-colors duration-300 hover:text-white"
+            >
+              <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/50 group-hover:bg-white/10">
+                <ExternalLink className="h-4 w-4" />
+              </span>
+              <span className="max-w-full truncate text-[10px] font-light tracking-[0.12em]">
+                {externalLinkTitle || t.externalLink}
+              </span>
+            </a>
+          )}
+        </div>
       </div>
 
       {/* 데스크탑 마우스 휠 힌트 — 앨범 오른쪽 중앙 */}
@@ -585,59 +640,72 @@ export default function SharePage({ params }) {
         </span>
       </div>
 
-      {/* 버튼 오버레이 — 하단 */}
+      {/* 보러가기 — 하단 */}
       <div
-        className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center gap-2 pt-4 pb-[max(env(safe-area-inset-bottom),10px)] transition-all delay-300 duration-1000 ease-out ${
+        className={`absolute inset-x-0 bottom-0 z-20 flex flex-col items-center pb-[max(env(safe-area-inset-bottom),10px)] transition-all delay-300 duration-1000 ease-out ${
           ready ? "-translate-y-20 opacity-100" : "translate-y-4 opacity-0"
         }`}
       >
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsInfoOpen(true)}
-            className="rounded-full border border-white/15 bg-black/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-          >
-            <Info className="h-4 w-4" />
-          </button>
-          <button
-            onClick={handleAlbumClick}
-            className="rounded-full border border-white/15 bg-black/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-          >
-            <Icon360 className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex items-start justify-center gap-8">
-          <button
-            onClick={() => {
-              const route = recordData?.exhibitionType === "memorial_tape"
+        <button
+          onClick={() => {
+            const route =
+              recordData?.exhibitionType === "memorial_tape"
                 ? `/vhs/${id}`
                 : `/walk/${id}`;
-              router.push(route);
-            }}
-            className="group flex w-20 flex-col items-center gap-2 text-white/60 transition-colors duration-300 hover:text-white"
+            router.push(route);
+          }}
+          aria-label={t.gallery}
+          className="group cursor-pointer transition-transform duration-150 ease-out active:scale-95"
+        >
+          {/* 재생 버튼 — 테두리 선형 그라데이션 (색/방향은 아래 stop에서 수정) */}
+          <svg
+            viewBox="0 0 318 135"
+            className="h-12 w-auto"
+            fill="none"
+            aria-hidden="true"
           >
-            <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/50 group-hover:bg-white/10">
-              <Eye className="h-5 w-5" />
-            </span>
-            <span className="max-w-full truncate text-[11px] font-light tracking-[0.12em]">
-              {t.gallery}
-            </span>
-          </button>
-          {externalLinkUrl && (
-            <a
-              href={externalLinkUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group flex w-20 flex-col items-center gap-2 text-white/60 transition-colors duration-300 hover:text-white"
-            >
-              <span className="flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-black/5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/50 group-hover:bg-white/10">
-                <ExternalLink className="h-5 w-5" />
-              </span>
-              <span className="max-w-full truncate text-[11px] font-light tracking-[0.12em]">
-                {externalLinkTitle || t.externalLink}
-              </span>
-            </a>
-          )}
-        </div>
+            {/* 호버 시 안쪽 채움 (페이드인) — 흰/회색 심플 */}
+            <rect
+              x="2.5"
+              y="2.5"
+              width="313"
+              height="130"
+              rx="44"
+              fill="rgba(255,255,255,0.15)"
+              className="opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+            />
+            <rect
+              x="2.5"
+              y="2.5"
+              width="313"
+              height="130"
+              rx="44"
+              stroke="url(#playBtnBorder)"
+              strokeWidth="6"
+            />
+            <path
+              d="M178 64.0359C180.667 65.5755 180.667 69.4245 178 70.9641L153.25 85.2535C150.583 86.7931 147.25 84.8686 147.25 81.7894L147.25 53.2106C147.25 50.1314 150.583 48.2069 153.25 49.7465L178 64.0359Z"
+              fill="#8D804B"
+              fillOpacity="0.85"
+            />
+            <defs>
+              <linearGradient
+                id="playBtnBorder"
+                x1="92.5"
+                y1="0"
+                x2="220.5"
+                y2="145.5"
+                gradientUnits="userSpaceOnUse"
+              >
+                <stop stopColor="#513262" />
+                <stop offset="0.235577" stopColor="#883654" />
+                <stop offset="0.557692" stopColor="#8D804B" />
+                <stop offset="0.769231" stopColor="#476224" />
+                <stop offset="1" stopColor="#244050" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </button>
       </div>
 
       {/* Info Popup */}
@@ -649,7 +717,7 @@ export default function SharePage({ params }) {
         >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-md" />
           <div
-            className="relative z-10 w-full max-w-40 overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl md:max-w-lg"
+            className="relative z-10 mx-6 w-full max-w-sm overflow-hidden rounded-2xl border border-white/20 bg-[#181818] shadow-2xl md:mx-0 md:max-w-lg"
             onClick={(e) => e.stopPropagation()}
             style={!isMobile ? { zoom: infoFontScale } : {}}
           >

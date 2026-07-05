@@ -24,9 +24,10 @@ export default function SmartAppBanner({ locale = "ko" }) {
 
   useEffect(() => {
     try {
-      if (localStorage.getItem(DISMISS_KEY) === "1") return;
+      // 세션 단위로만 닫힘 유지 — 나갔다 다시 링크를 열면(새 세션) 다시 노출
+      if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
     } catch {
-      /* localStorage 접근 불가(프라이빗 모드 등) → 무시하고 노출 시도 */
+      /* sessionStorage 접근 불가(프라이빗 모드 등) → 무시하고 노출 시도 */
     }
     if (!isMobileWebBrowser()) return;
 
@@ -52,7 +53,7 @@ export default function SmartAppBanner({ locale = "ko" }) {
 
   const handleDismiss = () => {
     try {
-      localStorage.setItem(DISMISS_KEY, "1");
+      sessionStorage.setItem(DISMISS_KEY, "1");
     } catch {
       /* ignore */
     }

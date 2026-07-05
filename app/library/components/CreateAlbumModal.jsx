@@ -29,7 +29,7 @@ const T = {
     errorAdd: "공유 앨범 추가에 실패했습니다.",
     creditCost: "필요 크레딧",
     creditBalance: "보유 크레딧",
-    firstFree: "첫 앨범은 무료로 만들 수 있어요 🎉",
+    firstFree: "첫 앨범은 무료로 만들 수 있어요",
     insufficient: "크레딧이 부족해요. 충전 후 다시 시도해 주세요.",
     buyCredits: "크레딧 구매하기",
   },
@@ -291,14 +291,18 @@ export default function CreateAlbumModal({
                 </div>
                 <div className="flex justify-between text-[#9b8b7a]">
                   <span>{t.creditBalance}</span>
-                  <span className={canAfford ? "text-[#e8d5b7]" : "text-red-400"}>
+                  <span
+                    className={canAfford ? "text-[#e8d5b7]" : "text-red-400"}
+                  >
                     {balance.toLocaleString()} C
                   </span>
                 </div>
               </div>
             )}
             {!canAfford && (
-              <p className="text-center text-xs text-red-400">{t.insufficient}</p>
+              <p className="text-center text-xs text-red-400">
+                {t.insufficient}
+              </p>
             )}
 
             {/* 버튼 */}

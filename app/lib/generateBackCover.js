@@ -262,7 +262,7 @@ function drawKitschLayout(
   // Title — center, large bold dark text with cyan stroke (A2G font)
   const kitschTitleFont = yangjinFontLoaded ? '"yangjin"' : bookkFont;
   if (albumTitle) {
-    ctx.font = `76px ${kitschTitleFont}`;
+    ctx.font = `56px ${kitschTitleFont}`;
     ctx.textAlign = "center";
     ctx.letterSpacing = "-3px";
     const titleLines = wrapText(ctx, albumTitle, size - margin * 2);
@@ -413,7 +413,7 @@ function drawIllustrationLayout(
   // Title — top center, white bold with drop shadow
   let cursorY = margin + 100;
   if (albumTitle) {
-    ctx.font = `64px ${yangjinFont}`;
+    ctx.font = `50px ${yangjinFont}`;
     ctx.textAlign = "center";
     ctx.letterSpacing = "4px";
     // Shadow
@@ -607,7 +607,7 @@ function drawMinimalistLayout(
   // Title — top center, black bold text (Escoredream)
   const escoredreamFont = escoredreamFontLoaded ? '"Escoredream"' : bookkFont;
   if (albumTitle) {
-    ctx.font = `700 54px ${escoredreamFont}`;
+    ctx.font = `700 44px ${escoredreamFont}`;
     ctx.fillStyle = theme.accent;
     ctx.textAlign = "center";
     ctx.letterSpacing = "0px";

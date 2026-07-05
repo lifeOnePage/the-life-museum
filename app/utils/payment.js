@@ -25,7 +25,7 @@ const PAYPAL_CHANNEL_KEY = "channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044";
 /**
  * 네이티브 앱 → 외부 브라우저에서 결제 페이지 열기
  */
-async function requestCreditPurchaseNative({ package: pkg, locale = "ko", method = "domestic", couponCode }) {
+async function requestCreditPurchaseNative({ package: pkg, userName, userEmail, userPhone, locale = "ko", method = "domestic", couponCode }) {
   const { Browser } = await import("@capacitor/browser");
 
   const token = localStorage.getItem("app_token") || "";
@@ -36,6 +36,9 @@ async function requestCreditPurchaseNative({ package: pkg, locale = "ko", method
     token,
   });
   if (couponCode) params.set("couponCode", couponCode);
+  if (userName) params.set("name", userName);
+  if (userEmail) params.set("email", userEmail);
+  if (userPhone) params.set("phone", userPhone);
 
   const url = `${WEB_ORIGIN}/payment/checkout?${params.toString()}`;
   await Browser.open({ url });
@@ -48,7 +51,7 @@ async function requestCreditPurchaseNative({ package: pkg, locale = "ko", method
 /**
  * 국내 크레딧 결제 (PortOne V2 → KG이니시스 카드)
  */
-async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale = "ko" }) {
+async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko" }) {
   const pricing = PACKAGE_PRICES[pkg];
   if (!pricing) throw new Error(`Invalid package: ${pkg}`);
 
@@ -63,9 +66,11 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
     totalAmount: pricing.krw,
     currency: "CURRENCY_KRW",
     payMethod: "CARD",
+    // KG이니시스 V2 일반결제는 fullName + phoneNumber 필수
     customer: {
-      fullName: userName || undefined,
-      email: userEmail || undefined,
+      fullName: userName || "회원",
+      phoneNumber: userPhone || "01000000000",
+      ...(userEmail && { email: userEmail }),
     },
     // 모바일은 리다이렉트 방식 — 완료 후 돌아올 URL
     redirectUrl: `${window.location.origin}/payment/success?package=${pkg}`,
@@ -118,12 +123,12 @@ async function requestCreditPurchasePayPal({ package: pkg, userId, userName, use
  * method ("domestic" | "international") 에 따라 결제 분기
  * 네이티브 앱이면 외부 브라우저로 결제 페이지 오픈
  */
-export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, locale = "ko", method = "domestic", couponCode }) {
+export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko", method = "domestic", couponCode }) {
   if (isNativeApp()) {
-    return requestCreditPurchaseNative({ package: pkg, locale, method, couponCode });
+    return requestCreditPurchaseNative({ package: pkg, userName, userEmail, userPhone, locale, method, couponCode });
   }
   if (method === "domestic") {
-    return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, locale });
+    return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale });
   } else {
     return requestCreditPurchasePayPal({ package: pkg, userId, userName, userEmail, locale });
   }

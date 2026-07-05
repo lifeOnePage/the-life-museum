@@ -42,6 +42,9 @@ function CheckoutContent() {
   const method = searchParams.get("method") || "domestic";
   const token = searchParams.get("token") || "";
   const couponCode = searchParams.get("couponCode") || "";
+  const buyerName = searchParams.get("name") || "";
+  const buyerEmail = searchParams.get("email") || "";
+  const buyerPhone = searchParams.get("phone") || "";
   const t = T[locale] || T.ko;
 
   const [error, setError] = useState("");
@@ -76,6 +79,12 @@ function CheckoutContent() {
         totalAmount: pricing.krw,
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
+        // KG이니시스 V2 일반결제는 fullName + phoneNumber 필수
+        customer: {
+          fullName: buyerName || "회원",
+          phoneNumber: buyerPhone || "01000000000",
+          ...(buyerEmail && { email: buyerEmail }),
+        },
         redirectUrl,
       });
 

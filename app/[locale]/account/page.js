@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { requestCreditPurchase } from "@/app/utils/payment";
+import { isNativeApp } from "@/app/utils/platform";
 import AppName from "@/app/components/AppName";
 
 // ── 크레딧 패키지 ──────────────────────────────
@@ -276,6 +277,14 @@ export default function AccountPage() {
   const [chargeCouponOpen, setChargeCouponOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // 결제(크레딧 충전) 노출 여부.
+  // Apple 심사(3.1.1) 대응 — 네이티브 앱에서는 외부 PG 결제 진입점을 숨긴다.
+  // fail-safe: 기본 false(숨김)로 두고, 웹으로 확인됐을 때만 노출 → 첫 렌더 깜빡임 방지.
+  const [showPurchase, setShowPurchase] = useState(false);
+  useEffect(() => {
+    setShowPurchase(!isNativeApp());
+  }, []);
+
   const t = T[currentLocale] || T.ko;
 
   // 프로필
@@ -386,6 +395,7 @@ export default function AccountPage() {
         userId: user?.id || "anonymous",
         userName: user?.name || "",
         userEmail: user?.email || "",
+        userPhone: user?.phone || "",
         locale: currentLocale,
         method,
       });
@@ -548,16 +558,21 @@ export default function AccountPage() {
   ];
 
   // ── 사이드바 메뉴 ──
+  // 네이티브 앱(showPurchase=false)에서는 결제/쿠폰 진입점 자체를 숨긴다.
   const MENU = [
     { key: "profile", label: t.profile, icon: <IconProfile /> },
-    {
-      key: "plan",
-      label: t.plan,
-      children: [
-        { key: "charge", label: t.charge, icon: <IconCredits /> },
-        { key: "coupon", label: t.coupon, icon: <IconCoupon /> },
-      ],
-    },
+    ...(showPurchase
+      ? [
+          {
+            key: "plan",
+            label: t.plan,
+            children: [
+              { key: "charge", label: t.charge, icon: <IconCredits /> },
+              { key: "coupon", label: t.coupon, icon: <IconCoupon /> },
+            ],
+          },
+        ]
+      : []),
   ];
 
   const handleNav = (key) => {
@@ -847,8 +862,8 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* ═══ 충전 섹션 ═══ */}
-          {section === "charge" && (
+          {/* ═══ 충전 섹션 ═══ (네이티브 앱에선 숨김 — Apple 3.1.1) */}
+          {showPurchase && section === "charge" && (
             <div>
               <h2 className="mb-6 text-xl font-semibold text-[#e8d5b7]">
                 {t.charge}
@@ -1200,8 +1215,8 @@ export default function AccountPage() {
             </div>
           )}
 
-          {/* ═══ 쿠폰 섹션 (보관함) ═══ */}
-          {section === "coupon" && (
+          {/* ═══ 쿠폰 섹션 (보관함) ═══ (네이티브 앱에선 숨김) */}
+          {showPurchase && section === "coupon" && (
             <div>
               <h2 className="mb-2 text-xl font-semibold text-[#e8d5b7]">
                 {t.couponTitle}

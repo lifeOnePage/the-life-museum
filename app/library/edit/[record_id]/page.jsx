@@ -2395,13 +2395,21 @@ const Index = ({ params }) => {
                   <label className="mb-2 block text-xs font-medium text-[#9b8b7a]">
                     {t.externalLink}
                   </label>
-                  <input
-                    type="text"
-                    value={editExternalLinkTitle}
-                    onChange={(e) => setEditExternalLinkTitle(e.target.value)}
-                    placeholder={t.externalLinkPlaceholder}
-                    className="mb-2 w-full rounded-md border border-white/15 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30"
-                  />
+                  <div className="relative mb-2">
+                    <input
+                      type="text"
+                      value={editExternalLinkTitle}
+                      onChange={(e) =>
+                        setEditExternalLinkTitle(e.target.value.slice(0, 10))
+                      }
+                      maxLength={10}
+                      placeholder={t.externalLinkPlaceholder}
+                      className="w-full rounded-md border border-white/15 bg-[#2e2720] px-3 py-2 pr-12 text-sm text-[#e8d5b7] outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#9b8b7a]/60">
+                      {editExternalLinkTitle.length}/10
+                    </span>
+                  </div>
                   <input
                     type="url"
                     value={editExternalLinkUrl}

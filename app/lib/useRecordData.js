@@ -22,7 +22,10 @@ const recordCache = new Map();
  * @param {string} id - record UUID
  */
 export function invalidateRecord(id) {
-  if (id) recordCache.delete(id);
+  if (!id) return;
+  // imagesOnly 변형 캐시 키까지 함께 무효화
+  recordCache.delete(id);
+  recordCache.delete(`${id}:img`);
 }
 
 /**
@@ -31,23 +34,26 @@ export function invalidateRecord(id) {
  * record 기본 데이터를 먼저 fetch한 뒤, media를 별도 엔드포인트에서 lazy fetch.
  *
  * @param {string} id - record UUID
- * @param {{ onMediaProgress?: (event: object) => void }} options
+ * @param {{ onMediaProgress?: (event: object) => void, imagesOnly?: boolean }} options
  *   onMediaProgress가 전달되면 Stage 2에서 SSE 스트림을 사용하여 진행 상황을 콜백으로 전달.
+ *   imagesOnly=true면 영상을 제외한 이미지만 요청 (프로빙/트랜스코딩 스킵 → 빠른 로딩).
  *
  * @returns {{ data: object|null, loading: boolean, error: string|null, mediaLoading: boolean }}
  */
-export function useRecordData(id, { onMediaProgress } = {}) {
-  const [data, setData] = useState(() => recordCache.get(id)?.data ?? null);
-  const [loading, setLoading] = useState(() => !recordCache.has(id));
+export function useRecordData(id, { onMediaProgress, imagesOnly = false } = {}) {
+  // imagesOnly는 미디어 구성이 다르므로 캐시 키를 분리 (walk 등과 충돌 방지)
+  const cacheKey = imagesOnly ? `${id}:img` : id;
+  const [data, setData] = useState(() => recordCache.get(cacheKey)?.data ?? null);
+  const [loading, setLoading] = useState(() => !recordCache.has(cacheKey));
   const [error, setError] = useState(null);
   const [mediaLoading, setMediaLoading] = useState(
-    () => !recordCache.has(id),
+    () => !recordCache.has(cacheKey),
   );
 
   useEffect(() => {
     if (!id) return;
 
-    const cached = recordCache.get(id);
+    const cached = recordCache.get(cacheKey);
     // Cache hit: paint instantly (no spinner) and revalidate the base record below.
     const hasStale = !!cached;
     if (hasStale) {
@@ -80,7 +86,7 @@ export function useRecordData(id, { onMediaProgress } = {}) {
             ...result.data,
             mediaList: cached.data.mediaList ?? [],
           };
-          recordCache.set(id, { data: merged, ts: Date.now() });
+          recordCache.set(cacheKey, { data: merged, ts: Date.now() });
           if (!cancelled) {
             setData(merged);
             setLoading(false);
@@ -98,7 +104,7 @@ export function useRecordData(id, { onMediaProgress } = {}) {
         if (onMediaProgress) {
           // SSE stream mode: consume /media/stream for progress events
           try {
-            const response = await fetch(`${API_BASE}/api/v1/record/${id}/media/stream`);
+            const response = await fetch(`${API_BASE}/api/v1/record/${id}/media/stream${imagesOnly ? "?images_only=true" : ""}`);
             if (!response.ok) throw new Error(`SSE stream failed (${response.status})`);
 
             const reader = response.body.getReader();
@@ -120,7 +126,7 @@ export function useRecordData(id, { onMediaProgress } = {}) {
                     if (!cancelled) onMediaProgress(event);
                   } else if (event.type === 'complete') {
                     const merged = { ...result.data, mediaList: event.mediaList ?? [] };
-                    recordCache.set(id, { data: merged, ts: Date.now() });
+                    recordCache.set(cacheKey, { data: merged, ts: Date.now() });
                     if (!cancelled) setData(merged);
                   }
                 } catch {
@@ -131,7 +137,7 @@ export function useRecordData(id, { onMediaProgress } = {}) {
           } catch {
             // SSE failed — fallback: cache record without media
             const merged = { ...result.data, mediaList: [] };
-            recordCache.set(id, { data: merged, ts: Date.now() });
+            recordCache.set(cacheKey, { data: merged, ts: Date.now() });
             if (!cancelled) setData(merged);
           } finally {
             if (!cancelled) setMediaLoading(false);
@@ -139,7 +145,7 @@ export function useRecordData(id, { onMediaProgress } = {}) {
         } else {
           // Legacy mode: single fetch to /media endpoint
           try {
-            const mediaRes = await fetch(`${API_BASE}/api/v1/record/${id}/media`);
+            const mediaRes = await fetch(`${API_BASE}/api/v1/record/${id}/media${imagesOnly ? "?images_only=true" : ""}`);
             if (mediaRes.ok) {
               const mediaResult = await mediaRes.json();
               if (mediaResult.ok && mediaResult.data) {
@@ -147,21 +153,21 @@ export function useRecordData(id, { onMediaProgress } = {}) {
                   ...result.data,
                   mediaList: mediaResult.data.mediaList ?? [],
                 };
-                recordCache.set(id, { data: merged, ts: Date.now() });
+                recordCache.set(cacheKey, { data: merged, ts: Date.now() });
                 if (!cancelled) setData(merged);
               } else {
                 const merged = { ...result.data, mediaList: [] };
-                recordCache.set(id, { data: merged, ts: Date.now() });
+                recordCache.set(cacheKey, { data: merged, ts: Date.now() });
                 if (!cancelled) setData(merged);
               }
             } else {
               const merged = { ...result.data, mediaList: [] };
-              recordCache.set(id, { data: merged, ts: Date.now() });
+              recordCache.set(cacheKey, { data: merged, ts: Date.now() });
               if (!cancelled) setData(merged);
             }
           } catch {
             const merged = { ...result.data, mediaList: [] };
-            recordCache.set(id, { data: merged, ts: Date.now() });
+            recordCache.set(cacheKey, { data: merged, ts: Date.now() });
             if (!cancelled) setData(merged);
           } finally {
             if (!cancelled) setMediaLoading(false);
@@ -180,7 +186,7 @@ export function useRecordData(id, { onMediaProgress } = {}) {
 
     fetchRecord();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, imagesOnly]);
 
   return { data, loading, error, mediaLoading };
 }

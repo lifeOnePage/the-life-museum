@@ -649,27 +649,12 @@ export default function SharePage({ params }) {
           ready ? "-translate-y-20 opacity-100" : "translate-y-4 opacity-0"
         }`}
       >
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setIsInfoOpen(true)}
-            className="rounded-full border border-white/15 bg-black/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-          >
-            <Info className="h-4 w-4" />
-          </button>
-          <button
-            onClick={handleAlbumClick}
-            className="rounded-full border border-white/15 bg-black/5 p-2.5 text-white/35 backdrop-blur-sm transition-all duration-300 hover:text-white/70"
-          >
-            <Icon360 className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="flex items-start justify-center gap-8">
-          <button
-            onClick={() => {
-              // ?share=1: 공유 감상 모드 — 소유자용 기능(액자 사진 바꾸기 등) 비활성화
-              const route = recordData?.exhibitionType === "memorial_tape"
-                ? `/vhs/${id}?share=1`
-                : `/walk/${id}`;
+        <button
+          onClick={() => {
+            // ?share=1: 공유 감상 모드 — 소유자용 기능(액자 사진 바꾸기 등) 비활성화
+            const route = recordData?.exhibitionType === "memorial_tape"
+              ? `/vhs/${id}?share=1`
+              : `/walk/${id}`;
             router.push(route);
           }}
           aria-label={t.gallery}

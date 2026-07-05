@@ -7,7 +7,23 @@ const API_BASE = "https://the-life-museum-backend-production.up.railway.app";
 // Module-level cache: record data persists across navigations within the session.
 // Once media is fetched it is merged into the cached object, so subsequent hits
 // return the full record+media payload without extra network calls.
+//
+// Entries are stored as { data, ts } and treated as stale-while-revalidate: a hit
+// paints instantly from cache (no spinner), but EVERY mount re-fetches the cheap
+// base record in the background and merges it with the cached mediaList — so edits
+// made elsewhere (e.g. the VHS photo-frame in the editor) show up on the next view
+// open without killing the app, and without re-running the expensive media scrape.
 const recordCache = new Map();
+
+/**
+ * Drop a record's cached entry so the next useRecordData mount refetches it.
+ * Call this after saving edits to that record so viewers pick up the change
+ * immediately instead of serving the stale in-memory copy.
+ * @param {string} id - record UUID
+ */
+export function invalidateRecord(id) {
+  if (id) recordCache.delete(id);
+}
 
 /**
  * 레코드 데이터를 API에서 가져온다. 세션 내 같은 id는 캐시에서 즉시 반환.
@@ -21,7 +37,7 @@ const recordCache = new Map();
  * @returns {{ data: object|null, loading: boolean, error: string|null, mediaLoading: boolean }}
  */
 export function useRecordData(id, { onMediaProgress } = {}) {
-  const [data, setData] = useState(() => recordCache.get(id) ?? null);
+  const [data, setData] = useState(() => recordCache.get(id)?.data ?? null);
   const [loading, setLoading] = useState(() => !recordCache.has(id));
   const [error, setError] = useState(null);
   const [mediaLoading, setMediaLoading] = useState(
@@ -30,14 +46,24 @@ export function useRecordData(id, { onMediaProgress } = {}) {
 
   useEffect(() => {
     if (!id) return;
-    if (recordCache.has(id)) return; // already cached (record + media merged)
+
+    const cached = recordCache.get(id);
+    // Cache hit: paint instantly (no spinner) and revalidate the base record below.
+    const hasStale = !!cached;
+    if (hasStale) {
+      setData(cached.data);
+      setLoading(false);
+      setMediaLoading(false);
+    }
 
     let cancelled = false;
 
     async function fetchRecord() {
       try {
-        setLoading(true);
-        setMediaLoading(true);
+        if (!hasStale) {
+          setLoading(true);
+          setMediaLoading(true);
+        }
         setError(null);
 
         // Stage 1: fetch record data (without mediaList)
@@ -46,6 +72,22 @@ export function useRecordData(id, { onMediaProgress } = {}) {
 
         const result = await res.json();
         if (!result.ok || !result.data) throw new Error("앨범 데이터가 없습니다");
+
+        // Revalidation path: merge the fresh base record with the cached mediaList
+        // (media rarely changes and re-scraping is expensive) and skip Stage 2.
+        if (hasStale) {
+          const merged = {
+            ...result.data,
+            mediaList: cached.data.mediaList ?? [],
+          };
+          recordCache.set(id, { data: merged, ts: Date.now() });
+          if (!cancelled) {
+            setData(merged);
+            setLoading(false);
+            setMediaLoading(false);
+          }
+          return;
+        }
 
         if (!cancelled) {
           setData(result.data);
@@ -78,7 +120,7 @@ export function useRecordData(id, { onMediaProgress } = {}) {
                     if (!cancelled) onMediaProgress(event);
                   } else if (event.type === 'complete') {
                     const merged = { ...result.data, mediaList: event.mediaList ?? [] };
-                    recordCache.set(id, merged);
+                    recordCache.set(id, { data: merged, ts: Date.now() });
                     if (!cancelled) setData(merged);
                   }
                 } catch {
@@ -89,7 +131,7 @@ export function useRecordData(id, { onMediaProgress } = {}) {
           } catch {
             // SSE failed — fallback: cache record without media
             const merged = { ...result.data, mediaList: [] };
-            recordCache.set(id, merged);
+            recordCache.set(id, { data: merged, ts: Date.now() });
             if (!cancelled) setData(merged);
           } finally {
             if (!cancelled) setMediaLoading(false);
@@ -105,21 +147,21 @@ export function useRecordData(id, { onMediaProgress } = {}) {
                   ...result.data,
                   mediaList: mediaResult.data.mediaList ?? [],
                 };
-                recordCache.set(id, merged);
+                recordCache.set(id, { data: merged, ts: Date.now() });
                 if (!cancelled) setData(merged);
               } else {
                 const merged = { ...result.data, mediaList: [] };
-                recordCache.set(id, merged);
+                recordCache.set(id, { data: merged, ts: Date.now() });
                 if (!cancelled) setData(merged);
               }
             } else {
               const merged = { ...result.data, mediaList: [] };
-              recordCache.set(id, merged);
+              recordCache.set(id, { data: merged, ts: Date.now() });
               if (!cancelled) setData(merged);
             }
           } catch {
             const merged = { ...result.data, mediaList: [] };
-            recordCache.set(id, merged);
+            recordCache.set(id, { data: merged, ts: Date.now() });
             if (!cancelled) setData(merged);
           } finally {
             if (!cancelled) setMediaLoading(false);
@@ -127,7 +169,9 @@ export function useRecordData(id, { onMediaProgress } = {}) {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err.message);
+          // Revalidation failure with a usable cached copy → keep showing the
+          // cache silently instead of replacing the view with an error screen.
+          if (!hasStale) setError(err.message);
           setLoading(false);
           setMediaLoading(false);
         }

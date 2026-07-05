@@ -10,8 +10,6 @@ import {
   CROSSFADE_DURATION_MS,
   FILTER_OVERLAYS,
 } from "./lib/constants";
-import TVMediaViewport from "./TVMediaViewport";
-
 /**
  * Given container dimensions and image natural dimensions,
  * compute the actual rendered rect when using object-fit: contain.
@@ -30,17 +28,7 @@ function getContainedImageBounds(containerW, containerH, imgNatW, imgNatH) {
 
 export default function TVScene({
   scene,
-  currentItem,
-  nextItem,
-  currentIndex,
-  nextIndex,
-  transitioning,
-  isPlaying,
-  videoMode,
-  onVideoEnded,
   colorFilter,
-  transitionType,
-  imageDuration,
   visible,
   frameImage: frameImageSrc,
   photoFrameImageSrc,
@@ -48,6 +36,8 @@ export default function TVScene({
   onTVClick,
   onAdvance,
   onRetreat,
+  // The shared slideshow viewport (portal host) attaches here — see VHSExhibition.
+  mediaMountRef,
 }) {
   const containerRef = useRef(null);
   const frameRef = useRef(null);
@@ -193,19 +183,7 @@ export default function TVScene({
           )}
 
           {scene === "playback" && (
-            <TVMediaViewport
-              currentItem={currentItem}
-              nextItem={nextItem}
-              currentIndex={currentIndex}
-              nextIndex={nextIndex}
-              transitioning={transitioning}
-              isPlaying={isPlaying}
-              videoMode={videoMode}
-              onVideoEnded={onVideoEnded}
-              colorFilter={colorFilter}
-              transitionType={transitionType}
-              imageDuration={imageDuration}
-            />
+            <div ref={mediaMountRef} className="absolute inset-0" />
           )}
         </div>
       )}

@@ -52,11 +52,11 @@ export const PHOTO_FRAME_CLOSEUP_VIEWPORT = {
 
 // TV closeup screen viewport coordinates (% of tv-closeup image, 1920x1280)
 export const TV_CLOSEUP_SCREEN = {
-  left: 0.13,
+  left: 0.155,
   top: 0.08,
-  width: 0.6,
-  height: 0.66,
-  borderRadius: "2%",
+  width: 0.56,
+  height: 0.8,
+  borderRadius: "0%",
 };
 
 // TV closeup knob positions (% of tv-closeup image)

@@ -11,7 +11,11 @@ import Header from "../components/Header";
 import { Share2, Pencil, ArrowRight } from "lucide-react";
 import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
-import { cachedAlbums, setCachedAlbums } from "./utils/albumListCache";
+import {
+  cachedAlbums,
+  setCachedAlbums,
+  coverCache,
+} from "./utils/albumListCache";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { hapticTap } from "@/app/utils/haptics";
 
@@ -43,6 +47,24 @@ function loadImage(src) {
     };
     img.src = src;
   });
+}
+
+// 합성 커버에 영향을 주는 필드들의 서명 — 같으면 coverCache의 합성본을 재사용
+function coverSignature(item) {
+  return JSON.stringify([
+    item.coverImage?.url ?? null,
+    item.backCoverImageUrl ?? null,
+    item.theme ?? null,
+    item.title ?? "",
+    item.subtitle ?? "",
+    item.lifestory?.content ?? "",
+    item.timeline?.events ?? null,
+    item.coverTitleVisible ?? false,
+    item.coverTitlePosition ?? null,
+    item.coverTitleFont ?? null,
+    item.coverTitleColor ?? null,
+    item.coverTitleBgColor ?? null,
+  ]);
 }
 
 async function generateAlbumCovers(item) {
@@ -153,45 +175,51 @@ export default function MyShelfPage({ params }) {
     if (!token) return;
     authedFetch(`${BASE_URL}/library`)
       .then((res) => res.json())
-      .then(async (json) => {
-        if (json.ok && Array.isArray(json.data)) {
-          // Set albums immediately (no backImage yet)
-          const newAlbums = json.data.map((item) => ({
+      .then((json) => {
+        if (!(json.ok && Array.isArray(json.data))) return;
+
+        // 1) 최신 메타데이터 즉시 반영. 커버 관련 필드가 안 바뀐 앨범은
+        //    coverCache의 합성본을 그대로 사용 → 재합성/플래시 없이 즉시 표시.
+        const newAlbums = json.data.map((item) => {
+          const sig = coverSignature(item);
+          const cached = coverCache.get(item.id);
+          const hit = cached && cached.sig === sig;
+          return {
             id: item.id,
             title: item.title,
             subtitle: item.subtitle,
-            frontImage: item.coverImage?.url ?? "#ffffff",
-            backImage: null,
+            frontImage: hit
+              ? cached.frontImage
+              : (item.coverImage?.url ?? "#ffffff"),
+            backImage: hit ? cached.backImage : null,
             edgeColor: item.bgColor || "#ffffff",
             role: item.role || "owner",
             isPublic: item.isPublic ?? false,
             exhibitionType: item.exhibitionType ?? "walk",
-          }));
-          setCachedAlbums(newAlbums);
-          setAlbums(newAlbums);
+          };
+        });
+        setCachedAlbums(newAlbums);
+        setAlbums(newAlbums);
 
-          // Generate themed covers async, then update
-          const covers = await Promise.all(
-            json.data.map(async (item) => ({
-              id: item.id,
-              ...(await generateAlbumCovers(item)),
-            })),
-          );
-          setAlbums((prev) => {
-            const updated = prev.map((album) => {
-              const match = covers.find((c) => c.id === album.id);
-              return match
-                ? {
-                    ...album,
-                    frontImage: match.frontImage,
-                    backImage: match.backImage,
-                  }
-                : album;
-            });
-            setCachedAlbums(updated);
-            return updated;
-          });
-        }
+        // 2) 변경(또는 미합성) 앨범만 재합성 — 전체 완료를 기다리지 않고
+        //    각 앨범이 끝나는 즉시 개별 반영 (편집한 앨범 하나면 그것만 빠르게).
+        json.data.forEach((item) => {
+          const sig = coverSignature(item);
+          const cached = coverCache.get(item.id);
+          if (cached && cached.sig === sig) return;
+          generateAlbumCovers(item)
+            .then(({ frontImage, backImage }) => {
+              coverCache.set(item.id, { sig, frontImage, backImage });
+              setAlbums((prev) => {
+                const updated = prev.map((a) =>
+                  a.id === item.id ? { ...a, frontImage, backImage } : a,
+                );
+                setCachedAlbums(updated);
+                return updated;
+              });
+            })
+            .catch(() => {});
+        });
       })
       .catch((err) => console.error("Failed to fetch library:", err));
   }, [token]);
@@ -215,6 +243,11 @@ export default function MyShelfPage({ params }) {
         const d = json.data;
 
         const { frontImage, backImage } = await generateAlbumCovers(d);
+        coverCache.set(albumData.id, {
+          sig: coverSignature(d),
+          frontImage,
+          backImage,
+        });
 
         setAlbums((prev) =>
           prev.map((a) =>

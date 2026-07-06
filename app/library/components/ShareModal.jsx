@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Globe, Lock, ExternalLink } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { hapticTap } from "@/app/utils/haptics";
+import { shareAlbumToKakao, pickKakaoImage } from "@/app/utils/kakaoShare";
 
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
@@ -14,6 +15,7 @@ const T = {
     copied: "복사됨",
     copy: "복사",
     share: "공유",
+    kakao: "카카오톡 공유",
     close: "닫기",
     trialLocked: "무료 체험 기간이 만료됐어요. 크레딧으로 잠금을 해제하면 공유링크가 다시 활성화돼요.",
   },
@@ -22,12 +24,13 @@ const T = {
     copied: "Copied",
     copy: "Copy",
     share: "Share",
+    kakao: "Share on KakaoTalk",
     close: "Close",
     trialLocked: "Your free trial has expired. Unlock with credits to re-enable the share link.",
   },
 };
 
-export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, isTrial = false, isExpired = false, onPublicChange, onClose, locale }) {
+export default function ShareModal({ albumId, albumTitle, subtitle = "", coverImageUrl = "", initialIsPublic = false, isTrial = false, isExpired = false, onPublicChange, onClose, locale }) {
   const t = T[locale] || T.ko;
   // 체험 기간(30일) 중엔 공유 가능, 만료된 체험 앨범만 잠금
   const locked = isTrial && isExpired;
@@ -67,6 +70,21 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
       setTimeout(() => setCopied(false), 1500);
     } catch (err) {
       console.error("Failed to copy:", err);
+    }
+  };
+
+  const handleKakaoShare = async () => {
+    hapticTap();
+    try {
+      await shareAlbumToKakao({
+        id: albumId,
+        title: albumTitle,
+        description: subtitle,
+        imageUrl: pickKakaoImage(coverImageUrl),
+        locale,
+      });
+    } catch (err) {
+      console.error("Kakao share failed:", err);
     }
   };
 
@@ -153,6 +171,19 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
               <ExternalLink size={16} />
             </button>
           </div>
+        )}
+
+        {/* 카카오톡 공유 */}
+        {isShared && (
+          <button
+            onClick={handleKakaoShare}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg bg-[#FEE500] py-2.5 text-sm font-semibold text-[#191600] transition hover:brightness-95"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+              <path d="M12 3C6.48 3 2 6.48 2 10.8c0 2.79 1.86 5.23 4.65 6.6-.15.53-.79 2.82-.83 3.01-.05.24.09.24.19.17.08-.05 2.86-1.94 4.06-2.76.62.09 1.26.13 1.93.13 5.52 0 10-3.48 10-7.75S17.52 3 12 3z" />
+            </svg>
+            {t.kakao}
+          </button>
         )}
 
         {/* 닫기 */}

@@ -167,6 +167,7 @@ export default function MyShelfPage({ params }) {
             title: item.title,
             subtitle: item.subtitle,
             frontImage: item.coverImage?.url ?? "#ffffff",
+            coverUrl: item.coverImage?.url ?? null, // 원본 R2 URL (카톡 공유용)
             backImage: null,
             edgeColor: item.bgColor || "#ffffff",
             role: item.role || "owner",
@@ -276,6 +277,7 @@ export default function MyShelfPage({ params }) {
         title: newAlbum.title,
         subtitle: newAlbum.subtitle,
         frontImage: newAlbum.coverImage?.url ?? null,
+        coverUrl: newAlbum.coverImage?.url ?? null,
         backImage: null,
         edgeColor: null,
         role: newAlbum.role || "owner",
@@ -558,6 +560,8 @@ export default function MyShelfPage({ params }) {
         <ShareModal
           albumId={selectedAlbum.data.id}
           albumTitle={selectedAlbum.data.title || ""}
+          subtitle={selectedAlbum.data.subtitle || ""}
+          coverImageUrl={selectedAlbum.data.coverUrl || ""}
           initialIsPublic={selectedAlbum.data.isPublic ?? false}
           isTrial={selectedAlbum.data.isTrial ?? false}
           isExpired={selectedAlbum.data.isExpired ?? false}

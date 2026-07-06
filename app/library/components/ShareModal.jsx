@@ -27,7 +27,7 @@ const T = {
   },
 };
 
-export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, isTrial = false, isExpired = false, onClose, locale }) {
+export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, isTrial = false, isExpired = false, onPublicChange, onClose, locale }) {
   const t = T[locale] || T.ko;
   // 체험 기간(30일) 중엔 공유 가능, 만료된 체험 앨범만 잠금
   const locked = isTrial && isExpired;
@@ -48,7 +48,11 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
         body: JSON.stringify({ isPublic: value }),
       });
       const json = await res.json();
-      if (!json.ok) setIsShared(!value); // 실패 시 롤백
+      if (!json.ok) {
+        setIsShared(!value); // 실패 시 롤백
+      } else {
+        onPublicChange?.(value); // 부모 상태 반영 (재오픈 시 최신값 유지)
+      }
     } catch (err) {
       console.error("Failed to update share status:", err);
       setIsShared(!value); // 실패 시 롤백

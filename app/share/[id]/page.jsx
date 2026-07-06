@@ -613,12 +613,12 @@ export default function SharePage({ params }) {
               href={externalLinkUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex w-16 flex-col items-center gap-1.5 text-white/50 transition-colors duration-300 hover:text-white"
+              className="group flex min-w-16 flex-col items-center gap-1.5 text-white/50 transition-colors duration-300 hover:text-white"
             >
               <span className="flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/5 backdrop-blur-sm transition-all duration-300 group-hover:border-white/50 group-hover:bg-white/10">
                 <ExternalLink className="h-4 w-4" />
               </span>
-              <span className="max-w-full truncate text-[10px] font-light tracking-[0.12em]">
+              <span className="whitespace-nowrap text-[10px] font-light tracking-[0.12em]">
                 {externalLinkTitle || t.externalLink}
               </span>
             </a>

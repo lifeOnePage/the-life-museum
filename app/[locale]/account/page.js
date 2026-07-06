@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { requestCreditPurchase } from "@/app/utils/payment";
-import { isNativeApp } from "@/app/utils/platform";
 import AppName from "@/app/components/AppName";
 
 // ── 크레딧 패키지 ──────────────────────────────
@@ -278,12 +277,9 @@ export default function AccountPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // 결제(크레딧 충전) 노출 여부.
-  // Apple 심사(3.1.1) 대응 — 네이티브 앱에서는 외부 PG 결제 진입점을 숨긴다.
-  // fail-safe: 기본 false(숨김)로 두고, 웹으로 확인됐을 때만 노출 → 첫 렌더 깜빡임 방지.
-  const [showPurchase, setShowPurchase] = useState(false);
-  useEffect(() => {
-    setShowPurchase(!isNativeApp());
-  }, []);
+  // 심사 통과 후 네이티브 앱에서도 결제를 노출하도록 항상 true.
+  // (필요 시 !isNativeApp()로 되돌리면 네이티브에서 다시 숨겨짐)
+  const showPurchase = true;
 
   const t = T[currentLocale] || T.ko;
 

@@ -402,9 +402,13 @@ const Index = ({ params }) => {
   const [vhsTransitionOpen, setVhsTransitionOpen] = useState(false);
   const [vhsTransition, setVhsTransition] = useState("fade");
   const [vhsPhotoFrameIndex, setVhsPhotoFrameIndex] = useState(0);
-  // VHS preview-only settings (not saved to DB)
+  // VHS 재생 설정 (record에 저장됨)
   const [vhsImageDuration, setVhsImageDuration] = useState(5);
   const [vhsVideoMode, setVhsVideoMode] = useState(0);
+  // Walk(Time Travel) 재생 설정 (record에 저장됨)
+  const [walkCameraSpeed, setWalkCameraSpeed] = useState(15);
+  const [walkVideoPreview, setWalkVideoPreview] = useState(false);
+  const [walkVideoMaxDuration, setWalkVideoMaxDuration] = useState(30);
   const [backCoverImageOpen, setBackCoverImageOpen] = useState(true);
   const [storyOpen, setStoryOpen] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(true);
@@ -581,6 +585,15 @@ const Index = ({ params }) => {
           if (data.vhsTransition) setVhsTransition(data.vhsTransition);
           if (data.vhsPhotoFrameIndex != null)
             setVhsPhotoFrameIndex(data.vhsPhotoFrameIndex);
+          if (data.vhsImageDuration != null)
+            setVhsImageDuration(data.vhsImageDuration);
+          if (data.vhsVideoMode != null) setVhsVideoMode(data.vhsVideoMode);
+          if (data.walkCameraSpeed != null)
+            setWalkCameraSpeed(data.walkCameraSpeed);
+          if (data.walkVideoPreview != null)
+            setWalkVideoPreview(data.walkVideoPreview);
+          if (data.walkVideoMaxDuration != null)
+            setWalkVideoMaxDuration(data.walkVideoMaxDuration);
 
           // Photo drive now auto-fetches on mount via useEffect
 
@@ -604,6 +617,11 @@ const Index = ({ params }) => {
             vhsFilter: data.vhsFilter || "none",
             vhsTransition: data.vhsTransition || "fade",
             vhsPhotoFrameIndex: data.vhsPhotoFrameIndex || 0,
+            vhsImageDuration: data.vhsImageDuration ?? 5,
+            vhsVideoMode: data.vhsVideoMode ?? 0,
+            walkCameraSpeed: data.walkCameraSpeed ?? 15,
+            walkVideoPreview: data.walkVideoPreview ?? false,
+            walkVideoMaxDuration: data.walkVideoMaxDuration ?? 30,
           };
         }
       } catch (error) {
@@ -654,6 +672,16 @@ const Index = ({ params }) => {
             recordType === "retro_tape" ? vhsTransition : undefined,
           vhsPhotoFrameIndex:
             recordType === "retro_tape" ? vhsPhotoFrameIndex : undefined,
+          vhsImageDuration:
+            recordType === "retro_tape" ? vhsImageDuration : undefined,
+          vhsVideoMode:
+            recordType === "retro_tape" ? vhsVideoMode : undefined,
+          walkCameraSpeed:
+            recordType === "exhibit" ? walkCameraSpeed : undefined,
+          walkVideoPreview:
+            recordType === "exhibit" ? walkVideoPreview : undefined,
+          walkVideoMaxDuration:
+            recordType === "exhibit" ? walkVideoMaxDuration : undefined,
         }),
       },
     );
@@ -767,7 +795,12 @@ const Index = ({ params }) => {
       recordType !== initialState.current.recordType ||
       vhsFilter !== initialState.current.vhsFilter ||
       vhsTransition !== initialState.current.vhsTransition ||
-      vhsPhotoFrameIndex !== initialState.current.vhsPhotoFrameIndex;
+      vhsPhotoFrameIndex !== initialState.current.vhsPhotoFrameIndex ||
+      vhsImageDuration !== initialState.current.vhsImageDuration ||
+      vhsVideoMode !== initialState.current.vhsVideoMode ||
+      walkCameraSpeed !== initialState.current.walkCameraSpeed ||
+      walkVideoPreview !== initialState.current.walkVideoPreview ||
+      walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration;
 
     if (
       !isCoverDirty &&
@@ -864,6 +897,11 @@ const Index = ({ params }) => {
           initialState.current.vhsFilter = vhsFilter;
           initialState.current.vhsTransition = vhsTransition;
           initialState.current.vhsPhotoFrameIndex = vhsPhotoFrameIndex;
+          initialState.current.vhsImageDuration = vhsImageDuration;
+          initialState.current.vhsVideoMode = vhsVideoMode;
+          initialState.current.walkCameraSpeed = walkCameraSpeed;
+          initialState.current.walkVideoPreview = walkVideoPreview;
+          initialState.current.walkVideoMaxDuration = walkVideoMaxDuration;
         }
       }
     }
@@ -955,7 +993,12 @@ const Index = ({ params }) => {
     recordType !== initialState.current.recordType ||
     vhsFilter !== initialState.current.vhsFilter ||
     vhsTransition !== initialState.current.vhsTransition ||
-    vhsPhotoFrameIndex !== initialState.current.vhsPhotoFrameIndex;
+    vhsPhotoFrameIndex !== initialState.current.vhsPhotoFrameIndex ||
+    vhsImageDuration !== initialState.current.vhsImageDuration ||
+    vhsVideoMode !== initialState.current.vhsVideoMode ||
+    walkCameraSpeed !== initialState.current.walkCameraSpeed ||
+    walkVideoPreview !== initialState.current.walkVideoPreview ||
+    walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration;
 
   const handleExit = () => {
     router.push("/library");
@@ -1474,6 +1517,12 @@ const Index = ({ params }) => {
               photoMedia={photoDrive.photoMedia}
               mediaLoading={photoDrive.isLoading}
               title={albumTitle}
+              cameraSpeed={walkCameraSpeed}
+              onCameraSpeedChange={setWalkCameraSpeed}
+              videoPreviewEnabled={walkVideoPreview}
+              onVideoPreviewChange={setWalkVideoPreview}
+              videoMaxDuration={walkVideoMaxDuration}
+              onVideoMaxDurationChange={setWalkVideoMaxDuration}
             />
           ) : (
             <AlbumPreview3D

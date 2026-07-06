@@ -333,6 +333,18 @@ export default function DisplayScene({ recordId, locale }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [videoPreviewEnabled, setVideoPreviewEnabled] = useState(false);
   const [videoMaxDuration, setVideoMaxDuration] = useState(30);
+
+  // 편집 페이지에서 저장한 재생 설정을 초기값으로 적용
+  // (감상 중 컨트롤로 바꾸는 것은 세션 한정 — 저장되지 않음)
+  useEffect(() => {
+    if (!recordData) return;
+    if (recordData.walkCameraSpeed != null)
+      setCameraSpeed(recordData.walkCameraSpeed);
+    if (recordData.walkVideoPreview != null)
+      setVideoPreviewEnabled(recordData.walkVideoPreview);
+    if (recordData.walkVideoMaxDuration != null)
+      setVideoMaxDuration(recordData.walkVideoMaxDuration);
+  }, [recordData]);
   const bgmRef = useRef(null);
   const bgmMutedByVideoRef = useRef(false);
   const textureConfig = useMemo(() => getTextureConfig(), []);

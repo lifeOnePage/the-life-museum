@@ -17,6 +17,7 @@ import {
   ensureMinimumTextures,
 } from "./utils/textureBuilder";
 import { getScene } from "./services/sceneService";
+import AppName from "@/app/components/AppName";
 
 export default function ViewPage() {
   const { id } = useParams();
@@ -762,7 +763,8 @@ export default function ViewPage() {
           !isTimelineScrollingRef.current
         ) {
           // 현재 leftIndex가 이미 해당 아이템의 범위 내에 있는지 확인
-          const isAlreadyInRange = leftIndex >= itemRange.start && leftIndex <= itemRange.end;
+          const isAlreadyInRange =
+            leftIndex >= itemRange.start && leftIndex <= itemRange.end;
 
           // 범위 밖에 있을 때만 start로 이동 (타임라인 스크롤로 인한 아이템 변경)
           // 범위 내에 있으면 현재 위치 유지 (링 드래그로 이미 해당 아이템 내부에 있음)
@@ -890,7 +892,7 @@ export default function ViewPage() {
         setTimeout(() => {
           isTimelineScrollingRef.current = false;
           // 플래그 해제 후 동기화를 위해 스크롤 이벤트 트리거
-          timelineElement.dispatchEvent(new Event('scroll'));
+          timelineElement.dispatchEvent(new Event("scroll"));
         }, 600);
       }
     }
@@ -1545,8 +1547,8 @@ export default function ViewPage() {
       <div className="from-black-100 via-black-200 to-black-300 flex h-full w-full flex-col bg-gradient-to-br pt-10 lg:hidden">
         {/* 상단 헤더 - The Life Museum + Login/Logout/Mypage */}
         <div className="z-30 flex items-center justify-between px-4 py-3">
-          <h1 className="font-serif text-xl font-bold tracking-tight text-white">
-            The Life Museum
+          <h1 className="text-xl font-bold tracking-tight text-white">
+            <AppName />
           </h1>
           <div className="flex items-center gap-3">
             {user ? (
@@ -2055,8 +2057,8 @@ export default function ViewPage() {
             <div className="z-15 mt-20">
               {/* The Life Museum 텍스트 */}
               <div className="mb-4">
-                <h1 className="font-serif text-4xl font-bold text-white italic">
-                  The Life Museum
+                <h1 className="text-4xl font-bold text-white italic">
+                  <AppName />
                 </h1>
               </div>
 

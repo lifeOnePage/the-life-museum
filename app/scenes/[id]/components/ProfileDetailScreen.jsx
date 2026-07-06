@@ -1,6 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
+import AppName from "@/app/components/AppName";
 
 export default function ProfileDetailScreen({ profile, isDarkMode = true, isFullScreen = false, isMobile = false }) {
   // console.group("profile")
@@ -47,8 +48,8 @@ export default function ProfileDetailScreen({ profile, isDarkMode = true, isFull
           transition={{ duration: 2, ease: "easeOut", delay: 0.4 }}
           className={`absolute top-0 left-0 right-0 flex justify-center ${isMobile ? 'pt-8 px-4' : 'pt-12'}`}
         >
-          <h2 className={`font-serif font-bold text-white tracking-tight ${isMobile ? 'text-5xl' : 'text-8xl'}`}>
-            The Life Museum
+          <h2 className={`font-bold text-white tracking-tight ${isMobile ? 'text-5xl' : 'text-8xl'}`}>
+            <AppName />
           </h2>
         </motion.div>
 

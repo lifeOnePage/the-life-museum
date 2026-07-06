@@ -15,6 +15,7 @@ const T = {
     copy: "복사",
     share: "공유",
     close: "닫기",
+    trialLocked: "무료 체험 기간이 만료됐어요. 크레딧으로 잠금을 해제하면 공유링크가 다시 활성화돼요.",
   },
   en: {
     title: "Visibility Settings",
@@ -22,18 +23,19 @@ const T = {
     copy: "Copy",
     share: "Share",
     close: "Close",
+    trialLocked: "Your free trial has expired. Unlock with credits to re-enable the share link.",
   },
 };
 
-export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, onClose, locale }) {
+export default function ShareModal({ albumId, albumTitle, initialIsPublic = false, isTrial = false, isExpired = false, onClose, locale }) {
   const t = T[locale] || T.ko;
+  // 체험 기간(30일) 중엔 공유 가능, 만료된 체험 앨범만 잠금
+  const locked = isTrial && isExpired;
   const [isShared, setIsShared] = useState(initialIsPublic);
   const [copied, setCopied] = useState(false);
 
-  const shareLink =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/share/${albumId}`
-      : "";
+  // 공유 링크는 항상 프로덕션 도메인 기준 (네이티브 앱/로컬에선 origin이 다르므로 고정)
+  const shareLink = `https://www.thelifememory.com/share/${albumId}`;
 
   const handleSetPublic = async (value) => {
     if (value === isShared) return;
@@ -92,9 +94,17 @@ export default function ShareModal({ albumId, albumTitle, initialIsPublic = fals
         <h2 className="mb-1 text-lg font-semibold text-[#e8d5b7]">{t.title}</h2>
         <p className="mb-5 text-sm text-[#9b8b7a]">{albumTitle}</p>
 
+        {locked && (
+          <div className="mb-4 flex items-start gap-2 rounded-lg border border-[#c4b49a]/30 bg-[#c4b49a]/10 p-3 text-sm text-[#c4b49a]">
+            <Lock size={15} className="mt-0.5 shrink-0" />
+            <span>{t.trialLocked}</span>
+          </div>
+        )}
+
         {/* Public / Private 버튼 */}
-        <div className="flex gap-2">
+        <div className={`flex gap-2 ${locked ? "pointer-events-none opacity-40" : ""}`}>
           <button
+            disabled={locked}
             onClick={() => handleSetPublic(true)}
             className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2.5 text-sm font-medium transition ${
               isShared

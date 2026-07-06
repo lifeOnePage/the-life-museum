@@ -112,7 +112,15 @@ function getTextLayout(position, size) {
  * @returns {string|null} data URL or null if no text to render
  */
 export function generateFrontCoverDataUrl(frontCoverImg, config) {
-  const { title, subtitle, position, font, color, stroke, strokeOpacity = 100 } = config;
+  const {
+    title,
+    subtitle,
+    position,
+    font,
+    color,
+    stroke,
+    strokeOpacity = 100,
+  } = config;
 
   // Need either an image or a title to render anything
   if (!frontCoverImg && !title) return null;
@@ -175,7 +183,7 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
 
   // Title only (subtitle is not rendered on front cover)
   if (title) {
-    ctx.font = `bold 65px ${fontFamily}`;
+    ctx.font = `bold 50px ${fontFamily}`;
     const bgColor =
       stroke === "white"
         ? "#ffffff"
@@ -187,7 +195,7 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
     if (bgColor) {
       const metrics = ctx.measureText(title);
       const textWidth = metrics.width;
-      const textHeight = 55;
+      const textHeight = 50;
       const padX = 16;
       const padY = 10;
       let rectX;

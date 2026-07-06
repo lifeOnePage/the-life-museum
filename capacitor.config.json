@@ -1,6 +1,6 @@
 {
   "appId": "com.lifeonepage.museum",
-  "appName": "The Life Museum",
+  "appName": "theLIFEMemory",
   "webDir": "out",
   "server": {
     "url": "https://the-life-museum.vercel.app",

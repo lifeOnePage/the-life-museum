@@ -228,7 +228,7 @@ function ImageRing() {
  */
 function RadialTextRing({ discRadius }) {
   const texts = [
-    "THE LIFE MUSEUM",
+    "THE LIFE MEMORY",
     "ARCHIVE YOUR STORY",
     "PRESERVE YOUR MEMORIES",
     "CHRONICLE YOUR JOURNEY",

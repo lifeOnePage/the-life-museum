@@ -45,9 +45,8 @@ function CompleteContent() {
     const pkg = searchParams.get("package") || "credit_1000";
     const token = searchParams.get("token") || "";
     const couponCode = searchParams.get("couponCode") || "";
-    const impUid = searchParams.get("imp_uid");
-    const merchantUid = searchParams.get("merchant_uid");
-    const impSuccess = searchParams.get("imp_success");
+    const paymentId = searchParams.get("paymentId"); // PortOne V2 결제 ID
+    const v2Code = searchParams.get("code"); // V2 리다이렉트 실패 시 존재
 
     const headers = {
       "Content-Type": "application/json",
@@ -55,38 +54,28 @@ function CompleteContent() {
     };
 
     try {
-      // PortOne 결제 실패 체크
-      if (impSuccess === "false") {
-        const msg = searchParams.get("error_msg") || "Payment cancelled";
+      // PortOne V2 결제 실패/취소 체크 (실패 시 code + message)
+      if (v2Code) {
+        const msg = searchParams.get("message") || "Payment cancelled";
         setStatus("error");
         setErrorMsg(msg);
         autoReturnToApp("fail", msg);
         return;
       }
-
-      // Step 1: PortOne 결제 검증
-      if (impUid && merchantUid) {
-        const confirmRes = await fetch(`${BASE_URL}/payment/confirm`, {
-          method: "POST",
-          headers,
-          body: JSON.stringify({ imp_uid: impUid, merchant_uid: merchantUid }),
-        });
-        if (!confirmRes.ok) {
-          const data = await confirmRes.json().catch(() => ({}));
-          const msg = data.message || data.detail || `Error ${confirmRes.status}`;
-          setStatus("error");
-          setErrorMsg(msg);
-          autoReturnToApp("fail", msg);
-          return;
-        }
+      if (!paymentId) {
+        setStatus("error");
+        setErrorMsg("Missing payment parameters");
+        autoReturnToApp("fail", "Missing payment parameters");
+        return;
       }
 
-      // Step 2: 크레딧 충전
+      // 백엔드가 paymentId 로 PortOne V2 결제를 검증한 뒤 크레딧 충전
       const creditRes = await fetch(`${BASE_URL}/credit/purchase`, {
         method: "POST",
         headers,
         body: JSON.stringify({
           package: pkg,
+          payment_id: paymentId,
           ...(couponCode && { couponCode }),
         }),
       });

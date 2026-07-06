@@ -17,12 +17,18 @@ export function AuthProvider({ children }) {
 
   const refreshCredits = useCallback(async () => {
     try {
-      const res = await authedFetch(`${BASE_URL}/credit/balance`);
+      // /users/me로 최신 credits + free_trial_used 동기화
+      // (/credit/balance는 credits만 반환해 free_trial_used가 갱신되지 않음)
+      const res = await authedFetch(`${BASE_URL}/users/me`);
       if (res.ok) {
         const data = await res.json();
         setUser((prev) => {
           if (!prev) return prev;
-          const updated = { ...prev, credits: data.credits };
+          const updated = {
+            ...prev,
+            credits: data.credits,
+            free_trial_used: data.free_trial_used,
+          };
           localStorage.setItem("app_user", JSON.stringify(updated));
           return updated;
         });

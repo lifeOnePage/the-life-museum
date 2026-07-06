@@ -19,8 +19,10 @@ const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
 //   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107) ← 현재
 //   테스트:  channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f  (INIpayTest)
 const KG_INICIS_CHANNEL_KEY = "channel-key-8365f96d-7754-4b0e-8364-72b98565054a";
-// PayPal (해외)
-const PAYPAL_CHANNEL_KEY = "channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044";
+// PayPal (해외) — 실결제(라이브) 채널
+//   라이브:  channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054 ← 현재
+//   테스트:  channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044
+const PAYPAL_CHANNEL_KEY = "channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054";
 
 /**
  * 네이티브 앱 → 외부 브라우저에서 결제 페이지 열기

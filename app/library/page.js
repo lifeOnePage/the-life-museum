@@ -12,7 +12,13 @@ import Header from "../components/Header";
 import { Share2, Pencil, ArrowRight, Lock, Sparkles } from "lucide-react";
 import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
-import { cachedAlbums, setCachedAlbums } from "./utils/albumListCache";
+import {
+  cachedAlbums,
+  setCachedAlbums,
+  coverCache,
+  getOptimisticCover,
+  clearOptimisticCover,
+} from "./utils/albumListCache";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { hapticTap } from "@/app/utils/haptics";
 
@@ -46,6 +52,24 @@ function loadImage(src) {
   });
 }
 
+// 합성 커버에 영향을 주는 필드들의 서명 — 같으면 coverCache의 합성본을 재사용
+function coverSignature(item) {
+  return JSON.stringify([
+    item.coverImage?.url ?? null,
+    item.backCoverImageUrl ?? null,
+    item.theme ?? null,
+    item.title ?? "",
+    item.subtitle ?? "",
+    item.lifestory?.content ?? "",
+    item.timeline?.events ?? null,
+    item.coverTitleVisible ?? false,
+    item.coverTitlePosition ?? null,
+    item.coverTitleFont ?? null,
+    item.coverTitleColor ?? null,
+    item.coverTitleBgColor ?? null,
+  ]);
+}
+
 async function generateAlbumCovers(item) {
   const themeKey = item.theme || "minimalist";
   const bio = item.lifestory?.content || "";
@@ -76,9 +100,12 @@ async function generateAlbumCovers(item) {
     themeStickerImg,
   );
 
-  // Front cover with title overlay
+  // Front cover composite — 오버레이 OFF여도 합성본(정사각 크롭)을 사용한다.
+  // raw URL을 쓰면 (a) 편집 프리뷰·낙관 캐시(합성본)와 모습이 달라 저장 후
+  // 복귀 시 원본이 노출된 것처럼 보이고, (b) 정사각 면에 원본이 늘어나 왜곡된다.
+  // (영상 커버는 frontCoverImg가 null이라 raw URL 유지 → 비디오 텍스처 경로)
   let frontImage = item.coverImage?.url ?? "#ffffff";
-  if (item.coverTitleVisible && frontCoverImg) {
+  if (frontCoverImg) {
     let stroke = item.coverTitleBgColor ?? false;
     let strokeOpacity = 100;
     if (stroke && typeof stroke === "string" && stroke.startsWith("#") && stroke.length === 9) {
@@ -86,7 +113,7 @@ async function generateAlbumCovers(item) {
       stroke = stroke.slice(0, 7);
     }
     const frontDataUrl = generateFrontCoverDataUrl(frontCoverImg, {
-      title: item.title || "",
+      title: item.coverTitleVisible ? item.title || "" : "",
       subtitle: "",
       position: item.coverTitlePosition || "bottom-center",
       font: item.coverTitleFont || "Pretendard Variable",
@@ -159,15 +186,44 @@ export default function MyShelfPage({ params }) {
     if (!token) return;
     authedFetch(`${BASE_URL}/library`)
       .then((res) => res.json())
-      .then(async (json) => {
-        if (json.ok && Array.isArray(json.data)) {
-          // Set albums immediately (no backImage yet)
-          const newAlbums = json.data.map((item) => ({
+      .then((json) => {
+        if (!(json.ok && Array.isArray(json.data))) return;
+
+        // 1) 최신 메타데이터 즉시 반영. 커버 관련 필드가 안 바뀐 앨범은
+        //    coverCache의 합성본을 그대로 사용 → 재합성/플래시 없이 즉시 표시.
+        const prevAlbums = cachedAlbums;
+        const newAlbums = json.data.map((item) => {
+          const sig = coverSignature(item);
+          // optimistic: 편집 페이지가 저장 시 심어둔 합성본(메모리 + sessionStorage,
+          // 리로드 생존) — 즉시 표시하되 아래 2)에서 서버 기준 재합성으로 확정.
+          const cached = coverCache.get(item.id) ?? getOptimisticCover(item.id);
+          const hit = cached && (cached.sig === sig || cached.optimistic);
+          // 마지막 안전망: 캐시가 전부 비어도(리로드 등) 직전 화면이 합성본
+          // (data:/blob:)을 보여주고 있었다면 raw 대신 그것을 유지 — 어떤 경우에도
+          // 세션 중간에 원본(raw)이 화면에 노출되지 않게 한다.
+          const prev = prevAlbums.find((a) => a.id === item.id);
+          const prevComposite =
+            typeof prev?.frontImage === "string" &&
+            (prev.frontImage.startsWith("data:") ||
+              prev.frontImage.startsWith("blob:"))
+              ? prev.frontImage
+              : null;
+          if (!hit) {
+            // eslint-disable-next-line no-console
+            console.debug(
+              "[cover-sync] map miss:",
+              item.id.slice(0, 8),
+              { hasEntry: !!cached, prevComposite: !!prevComposite },
+            );
+          }
+          return {
             id: item.id,
             title: item.title,
             subtitle: item.subtitle,
-            frontImage: item.coverImage?.url ?? "#ffffff",
-            backImage: null,
+            frontImage: hit
+              ? cached.frontImage
+              : (prevComposite ?? item.coverImage?.url ?? "#ffffff"),
+            backImage: hit ? cached.backImage : (prev?.backImage ?? null),
             edgeColor: item.bgColor || "#ffffff",
             role: item.role || "owner",
             isPublic: item.isPublic ?? false,
@@ -175,32 +231,33 @@ export default function MyShelfPage({ params }) {
             isTrial: item.isTrial ?? false,
             isExpired: item.isExpired ?? false,
             trialExpiresAt: item.trialExpiresAt ?? null,
-          }));
-          setCachedAlbums(newAlbums);
-          setAlbums(newAlbums);
+          };
+        });
+        setCachedAlbums(newAlbums);
+        setAlbums(newAlbums);
 
-          // Generate themed covers async, then update
-          const covers = await Promise.all(
-            json.data.map(async (item) => ({
-              id: item.id,
-              ...(await generateAlbumCovers(item)),
-            })),
-          );
-          setAlbums((prev) => {
-            const updated = prev.map((album) => {
-              const match = covers.find((c) => c.id === album.id);
-              return match
-                ? {
-                    ...album,
-                    frontImage: match.frontImage,
-                    backImage: match.backImage,
-                  }
-                : album;
-            });
-            setCachedAlbums(updated);
-            return updated;
-          });
-        }
+        // 2) 변경(또는 미합성) 앨범만 재합성 — 전체 완료를 기다리지 않고
+        //    각 앨범이 끝나는 즉시 개별 반영 (편집한 앨범 하나면 그것만 빠르게).
+        json.data.forEach((item) => {
+          const sig = coverSignature(item);
+          const cached = coverCache.get(item.id);
+          if (cached && cached.sig === sig) return;
+          generateAlbumCovers(item)
+            .then(({ frontImage, backImage }) => {
+              coverCache.set(item.id, { sig, frontImage, backImage });
+              clearOptimisticCover(item.id);
+              // eslint-disable-next-line no-console
+              console.debug("[cover-sync] regen done:", item.id.slice(0, 8));
+              setAlbums((prev) => {
+                const updated = prev.map((a) =>
+                  a.id === item.id ? { ...a, frontImage, backImage } : a,
+                );
+                setCachedAlbums(updated);
+                return updated;
+              });
+            })
+            .catch(() => {});
+        });
       })
       .catch((err) => console.error("Failed to fetch library:", err));
   }, [token]);
@@ -224,6 +281,11 @@ export default function MyShelfPage({ params }) {
         const d = json.data;
 
         const { frontImage, backImage } = await generateAlbumCovers(d);
+        coverCache.set(albumData.id, {
+          sig: coverSignature(d),
+          frontImage,
+          backImage,
+        });
 
         setAlbums((prev) =>
           prev.map((a) =>

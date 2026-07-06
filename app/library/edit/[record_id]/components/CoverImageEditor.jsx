@@ -235,7 +235,9 @@ const CoverImageEditor = forwardRef(
                   onClick={() => {
                     setView("photodrive");
                     setSelectedPhotoIndex(-1);
-                    preloadBlobs();
+                    // preloadBlobs() 제거: 앨범 전체 원본을 프록시로 일괄 다운로드하면
+                    // 그 대기열에 선택한 사진의 로드까지 갇혀 프리뷰 반영이 수십 초
+                    // 지연된다. 선택 시 해당 사진만 온디맨드로 가져온다.
                   }}
                   className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >

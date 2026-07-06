@@ -184,9 +184,10 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
 
         <button
           onClick={() => {
-            const next = !showPhotodrive;
-            setShowPhotodrive(next);
-            if (next) preloadBlobs();
+            // preloadBlobs() 제거: 앨범 전체 원본을 프록시로 일괄 다운로드하면
+            // 그 대기열에 선택한 사진의 로드까지 갇혀 프리뷰 반영이 수십 초
+            // 지연된다. 선택 시 해당 사진만 온디맨드로 가져온다(아래 handleSelectPhoto).
+            setShowPhotodrive(!showPhotodrive);
           }}
           className={`flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border py-5 transition-all ${
             showPhotodrive

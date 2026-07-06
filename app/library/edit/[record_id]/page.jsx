@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { use, useState, useEffect, useRef } from "react";
+import { use, useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -61,6 +61,14 @@ import { usePhotoDrive } from "./components/usePhotoDrive";
 import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 import AIConsentModal, { hasAIConsent } from "@/app/components/AIConsentModal";
 import { invalidateRecord } from "@/app/lib/useRecordData";
+import {
+  cachedAlbums,
+  setCachedAlbums,
+  coverCache,
+  setOptimisticCover,
+} from "@/app/library/utils/albumListCache";
+import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
+import { loadCachedImage } from "@/app/lib/loadCachedImage";
 
 const ADMIN_EMAILS = new Set([
   "goodchaeee@naver.com",
@@ -730,6 +738,13 @@ const Index = ({ params }) => {
     return data;
   };
 
+  // AlbumPreview3D가 만들어 둔 최신 합성 커버(dataURL) — 저장 시 라이브러리
+  // 캐시에 심어 복귀 즉시 최종 모습이 보이게 한다.
+  const latestCompositesRef = useRef({ frontImage: null, backImage: null });
+  const handleCoversComposited = useCallback((covers) => {
+    latestCompositesRef.current = covers;
+  }, []);
+
   const handleSaveAll = async () => {
     const isCoverDirty = frontCover !== initialState.current.frontCover;
     const isBackCoverDirty =
@@ -861,6 +876,61 @@ const Index = ({ params }) => {
       // Bust the shared record cache so the /vhs and /walk viewers refetch and
       // reflect this edit (e.g. VHS photo-frame) without an app restart.
       invalidateRecord(record_id);
+
+      // 라이브러리 캐시 낙관적 갱신: 저장 직후 라이브러리로 돌아갈 때 이 앨범이
+      // 수정 전 모습/원본으로 잠깐이라도 보이지 않도록, "타이틀 오버레이까지
+      // 입힌 최종 합성 커버"를 여기서 직접 생성해 심는다. 프리뷰의 디바운스된
+      // 합성본(ref)은 저장 타이밍에 따라 한 박자 늦을 수 있으므로 폴백으로만 쓴다.
+      // 이미지 로더는 프리뷰와 캐시를 공유하므로 이 생성은 사실상 즉시 끝난다.
+      // sig 없이 optimistic 플래그로 저장 → 라이브러리는 이 합성본을 즉시
+      // 표시하되, fetch 후 서버 데이터 기준으로 백그라운드 재합성해 확정한다.
+      let optimisticFront = null;
+      try {
+        const frontImg = await loadCachedImage(frontCover);
+        if (frontImg) {
+          optimisticFront = generateFrontCoverDataUrl(frontImg, {
+            title: titleOverlayEnabled ? albumTitle || "" : "",
+            subtitle: "",
+            position: titlePosition || "bottom-center",
+            font: titleFont || "Pretendard Variable",
+            color: titleColor || "#000000",
+            stroke: titleStroke ?? false,
+            strokeOpacity: titleStrokeOpacity ?? 100,
+          });
+        }
+      } catch {
+        // 합성 실패 시 아래 폴백 사용
+      }
+      optimisticFront =
+        optimisticFront ||
+        latestCompositesRef.current.frontImage ||
+        frontCover ||
+        null;
+      const optimisticBack = latestCompositesRef.current.backImage || null;
+      // eslint-disable-next-line no-console
+      console.debug(
+        "[cover-sync] save:",
+        record_id.slice(0, 8),
+        "front=",
+        optimisticFront ? optimisticFront.slice(0, 24) : null,
+      );
+      setOptimisticCover(record_id, {
+        frontImage: optimisticFront,
+        backImage: optimisticBack,
+      });
+      setCachedAlbums(
+        cachedAlbums.map((a) =>
+          a.id === record_id
+            ? {
+                ...a,
+                title: albumTitle,
+                subtitle: albumSubtitle,
+                frontImage: optimisticFront || a.frontImage,
+                backImage: optimisticBack,
+              }
+            : a,
+        ),
+      );
     }
 
     setIsSaving(false);
@@ -1160,6 +1230,9 @@ const Index = ({ params }) => {
       if (!response.ok) {
         throw new Error(data.error || t.errorDelete);
       }
+      // 삭제된 앨범이 라이브러리 복귀 직후 캐시로 잠깐 보이지 않도록 제거
+      coverCache.delete(record_id);
+      setCachedAlbums(cachedAlbums.filter((a) => a.id !== record_id));
       router.push("/library");
     } catch (err) {
       setRecordError(err.message);
@@ -1418,6 +1491,7 @@ const Index = ({ params }) => {
               titleStroke={titleStroke}
               titleStrokeOpacity={titleStrokeOpacity}
               flipped={activeTab === "back"}
+              onCoversComposited={handleCoversComposited}
             />
           )}
         </div>

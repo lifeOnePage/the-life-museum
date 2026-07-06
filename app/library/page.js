@@ -303,6 +303,27 @@ export default function MyShelfPage({ params }) {
     );
   }, [selectedAlbum?.data?.id]);
 
+  // 공유 모달에서 공개/비공개 전환 시 로컬 상태 반영 (재오픈 시 최신값 유지)
+  const handlePublicChange = useCallback(
+    (isPublic) => {
+      const id = selectedAlbum?.data?.id;
+      if (!id) return;
+      setAlbums((prev) => {
+        const updated = prev.map((a) =>
+          a.id === id ? { ...a, isPublic } : a,
+        );
+        setCachedAlbums(updated); // 캐시도 동기화 (재마운트 시 stale 방지)
+        return updated;
+      });
+      setSelectedAlbum((prev) =>
+        prev && prev.data?.id === id
+          ? { ...prev, data: { ...prev.data, isPublic } }
+          : prev,
+      );
+    },
+    [selectedAlbum?.data?.id],
+  );
+
   // 필터 적용
   const filteredAlbums =
     filterType === "all" ? albums : albums.filter((a) => a.role === filterType);
@@ -540,6 +561,7 @@ export default function MyShelfPage({ params }) {
           initialIsPublic={selectedAlbum.data.isPublic ?? false}
           isTrial={selectedAlbum.data.isTrial ?? false}
           isExpired={selectedAlbum.data.isExpired ?? false}
+          onPublicChange={handlePublicChange}
           onClose={() => setShowShareModal(false)}
           locale={locale}
         />

@@ -67,6 +67,9 @@ export default function VHSExhibition({ recordId, locale }) {
     if (!data) return;
     if (data.vhsFilter) setColorFilter(data.vhsFilter);
     if (data.vhsTransition) setTransitionType(data.vhsTransition);
+    // 저장된 재생 설정: 사진 표시 시간(초), 영상 재생 방식(0=전체, N=짧게 N초)
+    if (data.vhsImageDuration != null) setImageDuration(data.vhsImageDuration);
+    if (data.vhsVideoMode != null) setVideoMode(data.vhsVideoMode);
     // 편집 페이지 저장 시 vhsPhotoFrameIndex가 항상 기록되므로(기본 0) null 체크만으로는
     // "사용자가 고른 것"을 구분할 수 없다. 0은 기본값으로 보고 뒷면 커버 기본을 적용하고,
     // 0보다 큰 값만 명시적 선택으로 취급한다.

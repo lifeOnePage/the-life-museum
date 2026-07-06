@@ -154,7 +154,11 @@ const CoverImageEditor = forwardRef(
       }
     };
 
+    // 연속 클릭 시 늦게 끝난 이전 선택이 최신 선택을 덮어쓰지 않도록 하는 토큰
+    const selectSeqRef = useRef(0);
+
     const handleSelectPhoto = async (index) => {
+      const seq = ++selectSeqRef.current;
       setSelectedPhotoIndex(index);
       const media = photoMedia[index];
       if (!media) return;
@@ -163,9 +167,9 @@ const CoverImageEditor = forwardRef(
       setSelectedImageUrl(proxyUrl);
       setSelectedFile(null);
 
-      // Show preview immediately
-      const previewUrl = photoBlobUrls[index] || proxyUrl;
-      onImageGenerated(previewUrl);
+      // 1) 즉시 반영: 프리로드된 blob이 있으면 그것, 없으면 작은 썸네일(400px)로
+      //    프리뷰부터 교체 — 원본(2000px) 프록시 다운로드를 기다리지 않는다.
+      onImageGenerated(photoBlobUrls[index] || media.thumbnail_url || proxyUrl);
 
       // Convert to File for upload via /cover/temp (same as device upload)
       try {
@@ -175,13 +179,18 @@ const CoverImageEditor = forwardRef(
         } else {
           blob = await fetch(proxyUrl).then((r) => r.blob());
         }
+        if (seq !== selectSeqRef.current) return; // 더 최신 선택이 있음 — 무시
         const ext = blob.type === "image/png" ? "png" : "jpg";
         const file = new File([blob], `photo-drive.${ext}`, {
           type: blob.type,
         });
         setSelectedFile(file);
         setSelectedImageUrl(null);
+        // 2) 원본 화질로 업그레이드 — 방금 받은 blob을 그대로 사용해
+        //    프리뷰가 같은 바이트를 다시 다운로드하지 않게 한다.
+        onImageGenerated(URL.createObjectURL(blob));
       } catch (e) {
+        if (seq !== selectSeqRef.current) return;
         console.error("Photo drive file conversion failed:", e);
         setSelectedImageUrl(rawUrl);
         setSelectedFile(null);
@@ -226,7 +235,9 @@ const CoverImageEditor = forwardRef(
                   onClick={() => {
                     setView("photodrive");
                     setSelectedPhotoIndex(-1);
-                    preloadBlobs();
+                    // preloadBlobs() 제거: 앨범 전체 원본을 프록시로 일괄 다운로드하면
+                    // 그 대기열에 선택한 사진의 로드까지 갇혀 프리뷰 반영이 수십 초
+                    // 지연된다. 선택 시 해당 사진만 온디맨드로 가져온다.
                   }}
                   className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
@@ -328,7 +339,9 @@ const CoverImageEditor = forwardRef(
                         }`}
                       >
                         <LazyImage
-                          src={media.original_url || media.thumbnail_url}
+                          // 그리드는 썸네일(400px)로 — 목록이 빨라지고, 선택 시
+                          // 즉시 프리뷰에 쓰는 썸네일이 브라우저 캐시에 미리 올라감
+                          src={media.thumbnail_url || media.original_url}
                           alt={`사진 ${i + 1}`}
                           className="h-full w-full object-cover"
                         />

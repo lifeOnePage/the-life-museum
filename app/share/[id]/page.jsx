@@ -559,6 +559,17 @@ export default function SharePage({ params }) {
         />
       </div>
 
+      {/* 나가기 — 로그인 유저는 라이브러리로, 아니면 랜딩으로 */}
+      <button
+        onClick={() => router.push(isLoggedIn ? "/library" : "/")}
+        aria-label="나가기"
+        className={`absolute top-[max(env(safe-area-inset-top),1.25rem)] left-4 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-white/20 bg-black/20 text-white/60 backdrop-blur-sm transition-all duration-300 hover:border-white/50 hover:bg-white/10 hover:text-white ${
+          ready ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        <X className="h-4 w-4" />
+      </button>
+
       {/* 타이틀 오버레이 — 상단 */}
       <div
         className={`pointer-events-none absolute inset-x-0 top-0 z-20 pt-[max(env(safe-area-inset-top),2.5rem)] text-center transition-all duration-1000 ease-out ${

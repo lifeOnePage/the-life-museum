@@ -1501,6 +1501,7 @@ const Index = ({ params }) => {
           {recordType === "retro_tape" && activeTab === "gallery" ? (
             <VHSPreview
               photoMedia={photoDrive.photoMedia}
+              mediaLoading={photoDrive.isLoading}
               colorFilter={vhsFilter}
               transitionType={vhsTransition}
               photoFrameIndex={vhsPhotoFrameIndex}

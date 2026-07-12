@@ -3,6 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/app/contexts/AuthContext";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useVHSScene } from "./lib/useVHSScene";
 import { useMediaSlideshow } from "./lib/useMediaSlideshow";
@@ -277,6 +278,12 @@ export default function VHSExhibition({ recordId, locale }) {
     router.back();
   }, [router]);
 
+  // 인트로 나가기 — 로그인 유저는 라이브러리로, 아니면 랜딩으로
+  const { token } = useAuth();
+  const handleIntroExit = useCallback(() => {
+    router.push(token ? "/library" : "/");
+  }, [router, token]);
+
   // Photo frame handlers
   const handlePhotoFrameClick = useCallback(() => {
     if (imageList.length === 0) return;
@@ -378,6 +385,7 @@ export default function VHSExhibition({ recordId, locale }) {
           title={title}
           lifestory={lifestory}
           onPlay={handlePlay}
+          onExit={handleIntroExit}
           visible={scene === "intro"}
         />
       )}

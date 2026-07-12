@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, useEffect, useCallback } from "react";
+import { X } from "lucide-react";
 import {
   VHS_TAPE_IMAGE,
   TAPE_LABEL,
@@ -24,6 +25,7 @@ export default function VHSTapeIntro({
   title,
   lifestory,
   onPlay,
+  onExit,
   visible,
 }) {
   const containerRef = useRef(null);
@@ -80,6 +82,17 @@ export default function VHSTapeIntro({
         onLoad={handleImgLoad}
         draggable={false}
       />
+
+      {/* 나가기 — 로그인 유저는 라이브러리로, 아니면 랜딩으로 (VHSExhibition에서 결정) */}
+      {onExit && (
+        <button
+          onClick={onExit}
+          aria-label="나가기"
+          className="absolute top-[max(env(safe-area-inset-top),1.25rem)] left-4 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-black/40 text-white/70 backdrop-blur-sm transition-colors hover:bg-black/60 hover:text-white"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
 
       {labelBounds && (
         <>

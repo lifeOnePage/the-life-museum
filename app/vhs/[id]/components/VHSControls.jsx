@@ -42,7 +42,7 @@ export default function VHSControls({
 }) {
   return (
     <div
-      className="absolute top-4 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm transition-opacity duration-300 max-w-[calc(100vw-2rem)]"
+      className="absolute top-[max(env(safe-area-inset-top),1.5rem)] left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm transition-opacity duration-300 max-w-[calc(100vw-2rem)]"
       style={{
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? "auto" : "none",

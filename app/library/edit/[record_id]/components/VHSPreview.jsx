@@ -171,6 +171,7 @@ function MediaItem({ item, videoMode, onVideoEnded, isFront }) {
 
 export default function VHSPreview({
   photoMedia,
+  mediaLoading = false,
   colorFilter = "none",
   transitionType = "fade",
   photoFrameIndex = 0,
@@ -371,7 +372,9 @@ export default function VHSPreview({
         >
           {count === 0 ? (
             <div className="flex h-full w-full items-center justify-center bg-neutral-900">
-              <span className="text-xs text-white/40">미디어 없음</span>
+              <span className="text-xs text-white/40">
+                {mediaLoading ? "미디어 불러오는 중..." : "미디어 없음"}
+              </span>
             </div>
           ) : (
             <>

@@ -15,18 +15,23 @@ const DEFAULT_VOLUME = 0.4;
 export function useBGM(bgmUrl) {
   const audioRef = useRef(null);
   const fadeRef = useRef(null);
+  const pauseTimerRef = useRef(null);
   const [isMuted, setIsMuted] = useState(false);
   const [bgmStarted, setBgmStarted] = useState(false);
   const isDuckedRef = useRef(false);
   const isPlayingRef = useRef(true);
+  // iOS Safari/WKWebView ignores HTMLMediaElement.volume (always reads 1),
+  // so volume fades are silent no-ops there — duck/unduck must pause/resume instead.
+  const canControlVolumeRef = useRef(true);
 
   // Initialize audio element
   useEffect(() => {
     if (!bgmUrl) return;
     const audio = new Audio(bgmUrl);
     audio.loop = true;
-    audio.volume = 0;
     audio.preload = "auto";
+    audio.volume = 0;
+    canControlVolumeRef.current = audio.volume === 0;
     audioRef.current = audio;
 
     return () => {
@@ -35,6 +40,14 @@ export function useBGM(bgmUrl) {
       audioRef.current = null;
     };
   }, [bgmUrl]);
+
+  // Cancel a pause scheduled by duck()/setBgmPlaying(false)
+  const clearPendingPause = useCallback(() => {
+    if (pauseTimerRef.current) {
+      clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+  }, []);
 
   // Clear any running fade interval
   const clearFade = useCallback(() => {
@@ -85,11 +98,13 @@ export function useBGM(bgmUrl) {
     if (!audio || bgmStarted) return;
 
     audio.volume = 0;
-    audio.play().catch(() => {
+    audio.play().catch((err) => {
+      // AbortError: pause() landed while play() was pending (e.g. duck on iOS) — not a block
+      if (err?.name !== "NotAllowedError") return;
       // Autoplay blocked — mute and retry
       audio.muted = true;
       setIsMuted(true);
-      audio.play().catch(() => {});
+      if (!isDuckedRef.current) audio.play().catch(() => {});
     });
     setBgmStarted(true);
 
@@ -97,20 +112,42 @@ export function useBGM(bgmUrl) {
     fadeTo(DEFAULT_VOLUME);
   }, [bgmStarted, fadeTo]);
 
-  // Duck (fade out) — call when a video starts playing
+  // Duck — call when a video with audio starts playing.
+  // Fade out then pause; without volume control (iOS) pause immediately,
+  // otherwise the OS lets the video's audio forcibly interrupt the BGM element.
   const duck = useCallback(() => {
     isDuckedRef.current = true;
-    fadeTo(0);
-  }, [fadeTo]);
+    const audio = audioRef.current;
+    if (!audio) return;
+    clearPendingPause();
 
-  // Unduck (fade in) — call when a video stops/ends
+    if (!canControlVolumeRef.current) {
+      clearFade();
+      audio.pause();
+      return;
+    }
+
+    fadeTo(0);
+    pauseTimerRef.current = setTimeout(() => {
+      pauseTimerRef.current = null;
+      if (isDuckedRef.current && audioRef.current) {
+        audioRef.current.pause();
+      }
+    }, FADE_DURATION_MS + 50);
+  }, [fadeTo, clearFade, clearPendingPause]);
+
+  // Unduck — call when a video stops/ends. Resumes playback (the element may be
+  // paused by duck() or by the OS when another media element took over the audio).
   const unduck = useCallback(() => {
     isDuckedRef.current = false;
     const audio = audioRef.current;
     if (!audio || !bgmStarted) return;
-    if (audio.muted || !isPlayingRef.current) return;
+    clearPendingPause();
+    if (!isPlayingRef.current) return;
+    if (audio.paused) audio.play().catch(() => {});
+    if (audio.muted) return;
     fadeTo(DEFAULT_VOLUME);
-  }, [fadeTo, bgmStarted]);
+  }, [fadeTo, bgmStarted, clearPendingPause]);
 
   // Pause/resume BGM with the global play state
   const setBgmPlaying = useCallback(
@@ -120,20 +157,29 @@ export function useBGM(bgmUrl) {
       if (!audio || !bgmStarted) return;
 
       if (playing) {
+        // While ducked, stay paused — unduck() resumes when the video ends
+        if (isDuckedRef.current) return;
+        clearPendingPause();
         audio.play().catch(() => {});
-        if (!isDuckedRef.current && !audio.muted) {
+        if (!audio.muted) {
           fadeTo(DEFAULT_VOLUME);
         }
       } else {
+        clearPendingPause();
+        if (!canControlVolumeRef.current) {
+          audio.pause();
+          return;
+        }
         fadeTo(0, 400);
-        setTimeout(() => {
+        pauseTimerRef.current = setTimeout(() => {
+          pauseTimerRef.current = null;
           if (!isPlayingRef.current && audioRef.current) {
             audioRef.current.pause();
           }
         }, 450);
       }
     },
-    [bgmStarted, fadeTo]
+    [bgmStarted, fadeTo, clearPendingPause]
   );
 
   // Toggle mute
@@ -145,6 +191,7 @@ export function useBGM(bgmUrl) {
 
       audio.muted = next;
       if (!next && bgmStarted && isPlayingRef.current && !isDuckedRef.current) {
+        if (audio.paused) audio.play().catch(() => {});
         fadeTo(DEFAULT_VOLUME);
       }
       return next;
@@ -155,8 +202,9 @@ export function useBGM(bgmUrl) {
   useEffect(() => {
     return () => {
       clearFade();
+      clearPendingPause();
     };
-  }, [clearFade]);
+  }, [clearFade, clearPendingPause]);
 
   return {
     isMuted,

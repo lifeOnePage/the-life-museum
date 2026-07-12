@@ -48,3 +48,15 @@ export function getMobileBrowserOS() {
 export function isMobileWebBrowser() {
   return !isNativeApp() && getMobileBrowserOS() !== null;
 }
+
+/**
+ * 카카오톡 인앱 브라우저 여부.
+ * 카카오톡 웹뷰는 보안 정책상 커스텀 URL 스킴(thelifemuseum://) 이동을 차단하므로,
+ * 커스텀 스킴을 직접 쏘면 항상 실패 → openInApp의 스토어 fallback이 매번 발동한다.
+ * 반드시 카카오톡 자체 탈출 스킴(kakaotalk://web/openExternal)으로 먼저
+ * 기본 브라우저를 띄운 뒤, 그 브라우저에서 커스텀 스킴을 시도해야 한다.
+ */
+export function isKakaoInAppBrowser() {
+  if (typeof navigator === "undefined") return false;
+  return /KAKAOTALK/i.test(navigator.userAgent || "");
+}

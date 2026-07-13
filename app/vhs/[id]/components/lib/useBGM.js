@@ -31,7 +31,14 @@ export function useBGM(bgmUrl) {
     audio.loop = true;
     audio.preload = "auto";
     audio.volume = 0;
-    canControlVolumeRef.current = audio.volume === 0;
+    // iOS ignores HTMLMediaElement volume *audibly*, but modern WebKit still
+    // reads back the value you set — write-and-read-back detection false-positives.
+    // Detect the platform instead (iPadOS reports as MacIntel + multi-touch).
+    const isIOS =
+      typeof navigator !== "undefined" &&
+      (/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1));
+    canControlVolumeRef.current = !isIOS && audio.volume === 0;
     audioRef.current = audio;
 
     return () => {
@@ -92,25 +99,40 @@ export function useBGM(bgmUrl) {
     [clearFade]
   );
 
-  // Start BGM playback (call on user interaction to satisfy autoplay policy)
-  const startBGM = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio || bgmStarted) return;
+  // Start BGM playback (call on user interaction to satisfy autoplay policy).
+  // With { ducked: true } the element is only unlocked — play() then pause()
+  // synchronously inside the gesture — and stays silent until unduck().
+  // Use this when a video with its own audio follows immediately (VHS insert
+  // scene): no platform emits audible BGM, even where volume control is ignored.
+  const startBGM = useCallback(
+    ({ ducked = false } = {}) => {
+      const audio = audioRef.current;
+      if (!audio || bgmStarted) return;
+      setBgmStarted(true);
 
-    audio.volume = 0;
-    audio.play().catch((err) => {
-      // AbortError: pause() landed while play() was pending (e.g. duck on iOS) — not a block
-      if (err?.name !== "NotAllowedError") return;
-      // Autoplay blocked — mute and retry
-      audio.muted = true;
-      setIsMuted(true);
-      if (!isDuckedRef.current) audio.play().catch(() => {});
-    });
-    setBgmStarted(true);
+      audio.volume = 0;
 
-    // Fade in
-    fadeTo(DEFAULT_VOLUME);
-  }, [bgmStarted, fadeTo]);
+      if (ducked) {
+        isDuckedRef.current = true;
+        audio.play().catch(() => {});
+        audio.pause();
+        return;
+      }
+
+      audio.play().catch((err) => {
+        // AbortError: pause() landed while play() was pending (e.g. duck on iOS) — not a block
+        if (err?.name !== "NotAllowedError") return;
+        // Autoplay blocked — mute and retry
+        audio.muted = true;
+        setIsMuted(true);
+        if (!isDuckedRef.current) audio.play().catch(() => {});
+      });
+
+      // Fade in
+      fadeTo(DEFAULT_VOLUME);
+    },
+    [bgmStarted, fadeTo]
+  );
 
   // Duck — call when a video with audio starts playing.
   // Fade out then pause; without volume control (iOS) pause immediately,

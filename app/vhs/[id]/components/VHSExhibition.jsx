@@ -233,9 +233,11 @@ export default function VHSExhibition({ recordId, locale }) {
       document.removeEventListener("fullscreenchange", handleFsChange);
   }, []);
 
-  // Handle play button on intro — also starts BGM (satisfies autoplay policy via user gesture)
+  // Handle play button on intro — unlock BGM inside the user gesture but keep it
+  // silent (ducked) so it can't collide with the insert video's audio; it starts
+  // audibly when the scene reaches tvOff and unduck() fires.
   const handlePlay = useCallback(() => {
-    startBGM();
+    startBGM({ ducked: true });
     startInsert();
   }, [startInsert, startBGM]);
 

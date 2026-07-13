@@ -71,6 +71,8 @@ export default function AlbumPreview3D({
   bio,
   timeline,
   selectedTheme,
+  stickers,
+  onBackCoverDataUrlChange,
   albumTitle,
   albumSubTitle,
   titleOverlayEnabled,
@@ -104,6 +106,7 @@ export default function AlbumPreview3D({
   const [extractedColors, setExtractedColors] = useState(null);
   const [themeBgImg, setThemeBgImg] = useState(null);
   const [themeStickerImg, setThemeStickerImg] = useState(null);
+  const [stickerImages, setStickerImages] = useState({});
 
   // Update zoom config on resize (mobile <-> desktop)
   useEffect(() => {
@@ -213,6 +216,37 @@ export default function AlbumPreview3D({
       cancelled = true;
     };
   }, [frontCover, backCoverImageUrl, selectedTheme]);
+
+  // Preload user-placed sticker images (from the back theme editor) so the
+  // canvas can draw them synchronously once loaded.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!stickers || stickers.length === 0) {
+      setStickerImages({});
+      return;
+    }
+    let cancelled = false;
+    const uniqueSrcs = [...new Set(stickers.map((s) => s.src))];
+
+    Promise.all(
+      uniqueSrcs.map(
+        (src) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve([src, img]);
+            img.onerror = () => resolve([src, null]);
+            img.src = src;
+          }),
+      ),
+    ).then((pairs) => {
+      if (cancelled) return;
+      setStickerImages(Object.fromEntries(pairs));
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [stickers]);
 
   // Sync with external flipped prop (tab switch)
   useEffect(() => {
@@ -429,19 +463,21 @@ export default function AlbumPreview3D({
     if (typeof document === "undefined") return;
     const imgForBack = backCoverImg || frontCoverImg;
     const t = setTimeout(() => {
-      setBackCoverDataUrl(
-        generateBackCoverDataUrl(
-          themeKey,
-          bio || "",
-          timeline || [],
-          imgForBack,
-          albumTitle || "",
-          albumSubTitle || "",
-          extractedColors,
-          themeBgImg,
-          themeStickerImg,
-        ),
+      const dataUrl = generateBackCoverDataUrl(
+        themeKey,
+        bio || "",
+        timeline || [],
+        imgForBack,
+        albumTitle || "",
+        albumSubTitle || "",
+        extractedColors,
+        themeBgImg,
+        themeStickerImg,
+        stickers || [],
+        stickerImages,
       );
+      setBackCoverDataUrl(dataUrl);
+      onBackCoverDataUrlChange?.(dataUrl);
     }, 200);
     return () => clearTimeout(t);
   }, [
@@ -455,6 +491,9 @@ export default function AlbumPreview3D({
     extractedColors,
     themeBgImg,
     themeStickerImg,
+    stickers,
+    stickerImages,
+    onBackCoverDataUrlChange,
   ]);
 
   return (

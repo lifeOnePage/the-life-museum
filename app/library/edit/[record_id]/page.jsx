@@ -54,11 +54,15 @@ const WalkPreview = dynamic(() => import("./components/WalkPreview"), {
   ssr: false,
 });
 import TutorialOverlay from "./components/TutorialOverlay";
-import ThemeSelector from "./components/ThemeSelector";
+import BackThemeEditorModal from "./components/BackThemeEditorModal";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
-import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
+import {
+  UNIFIED_THEMES,
+  DEFAULT_THEME,
+  DEFAULT_OWNED_PACK_IDS,
+} from "./themeConfig";
 import AIConsentModal, { hasAIConsent } from "@/app/components/AIConsentModal";
 import { invalidateRecord } from "@/app/lib/useRecordData";
 
@@ -368,6 +372,12 @@ const Index = ({ params }) => {
   // Tab & Theme & Layout state
   const [activeTab, setActiveTab] = useState("front");
   const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
+  const [stickers, setStickers] = useState([]);
+  const [showBackThemeModal, setShowBackThemeModal] = useState(false);
+  const [bakedBackCoverUrl, setBakedBackCoverUrl] = useState(null);
+  // 팝업에서 테마를 고르는 즉시 미리보기에 반영하되, 저장 전까지는
+  // selectedTheme(실제 적용값)은 건드리지 않는다 — 취소 시 되돌리기 위함.
+  const [livePreviewTheme, setLivePreviewTheme] = useState(null);
 
   // Title overlay state
   const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
@@ -609,11 +619,6 @@ const Index = ({ params }) => {
       fetchRecord();
     }
   }, [record_id]);
-
-  // Apply theme change
-  const handleThemeChange = (themeKey) => {
-    setSelectedTheme(themeKey);
-  };
 
   const saveRecordColors = async () => {
     const theme =
@@ -1408,7 +1413,9 @@ const Index = ({ params }) => {
               backCoverImageUrl={backCoverImageUrl}
               bio={bio}
               timeline={timeline}
-              selectedTheme={selectedTheme}
+              selectedTheme={livePreviewTheme || selectedTheme}
+              stickers={stickers}
+              onBackCoverDataUrlChange={setBakedBackCoverUrl}
               albumTitle={albumTitle}
               albumSubTitle={albumSubtitle}
               titleOverlayEnabled={titleOverlayEnabled}
@@ -1724,11 +1731,36 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <ThemeSelector
-                                selectedTheme={selectedTheme}
-                                onThemeChange={handleThemeChange}
-                                locale={locale}
-                              />
+                              <div className="mb-3 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                <div
+                                  className="h-8 w-8 shrink-0 rounded-full border border-white/15"
+                                  style={{
+                                    background: (
+                                      UNIFIED_THEMES[selectedTheme] ||
+                                      UNIFIED_THEMES[DEFAULT_THEME]
+                                    ).bg,
+                                  }}
+                                />
+                                <p className="text-sm font-medium text-[#e8d5b7]">
+                                  {
+                                    (
+                                      UNIFIED_THEMES[selectedTheme] ||
+                                      UNIFIED_THEMES[DEFAULT_THEME]
+                                    ).name
+                                  }
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowBackThemeModal(true)}
+                                className="w-full border-white/15 text-[#9b8b7a] hover:border-[#c4b49a]/60 hover:text-[#e8d5b7]"
+                              >
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                {locale === "en"
+                                  ? "Edit back theme & stickers"
+                                  : "뒷면 테마 편집하기"}
+                              </Button>
                             </div>
                           </motion.div>
                         )}
@@ -2324,6 +2356,27 @@ const Index = ({ params }) => {
           </motion.div>
         </div>
       </div>
+
+      {/* Back Theme + Sticker Editor Modal */}
+      <BackThemeEditorModal
+        isOpen={showBackThemeModal}
+        onClose={() => {
+          setShowBackThemeModal(false);
+          setLivePreviewTheme(null);
+        }}
+        locale={locale}
+        theme={selectedTheme}
+        stickers={stickers}
+        previewImageUrl={bakedBackCoverUrl}
+        onThemePreview={setLivePreviewTheme}
+        // TODO: 실제 구매/소유 데이터가 생기면 사용자별 소유 팩 목록으로 교체
+        ownedPackIds={DEFAULT_OWNED_PACK_IDS}
+        onSave={(nextTheme, nextStickers) => {
+          setSelectedTheme(nextTheme);
+          setStickers(nextStickers);
+          setLivePreviewTheme(null);
+        }}
+      />
 
       {/* Exit Dialog */}
       <AnimatePresence>

@@ -1,6 +1,8 @@
 // Asset paths
 export const VHS_BACKGROUND = "/vhs/vhs-gallery-background-desktop.png";
 export const VHS_TAPE_IMAGE = "/vhs/vhs-tape-detail-no-title-desktop.png";
+export const VHS_TAPE_IMAGE_MOBILE =
+  "/vhs/vhs-tape-detail-no-title-mobile-portrait.png";
 export const INSERT_VIDEO_SRC = "/vhs/tv-vhs-insert-animation.mp4";
 export const TV_OFF_IMAGE = "/vhs/tv-off-desktop.png";
 export const TV_PLAYBACK_FRAME = "/vhs/tv-room-desktop.png";
@@ -78,6 +80,37 @@ export const TAPE_LABEL = {
   top: 0.35,
   width: 0.34,
   height: 0.35,
+};
+
+// Mobile portrait tape (941×1672): label text-safe zone (% of image).
+// Strictly inside the paper's blank area — below the top ornament (~y790),
+// above the printed "THE LIFE GALLERY" (~y922); the thin ruled line at ~y885
+// reads as an underline beneath the text.
+export const TAPE_LABEL_MOBILE = {
+  left: 0.329,
+  top: 0.476,
+  width: 0.351,
+  height: 0.072,
+};
+
+// Intro overlay layout (% of rendered tape image) per orientation.
+// Mobile portrait: lifestory sits in the empty space above the tape
+// (tape top ≈ 0.353), play button below it (tape bottom ≈ 0.643).
+export const TAPE_INTRO_LAYOUT = {
+  desktop: {
+    storyLeft: 0.25,
+    storyTop: 0.05,
+    storyWidth: 0.5,
+    storyMaxHeight: null,
+    btnTop: 0.88,
+  },
+  mobile: {
+    storyLeft: 0.14,
+    storyTop: 0.11,
+    storyWidth: 0.72,
+    storyMaxHeight: 0.22,
+    btnTop: 0.72,
+  },
 };
 
 // Image display duration options

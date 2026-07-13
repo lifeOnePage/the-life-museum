@@ -4,7 +4,10 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { X } from "lucide-react";
 import {
   VHS_TAPE_IMAGE,
+  VHS_TAPE_IMAGE_MOBILE,
   TAPE_LABEL,
+  TAPE_LABEL_MOBILE,
+  TAPE_INTRO_LAYOUT,
   CROSSFADE_DURATION_MS,
 } from "./lib/constants";
 
@@ -31,26 +34,47 @@ export default function VHSTapeIntro({
   const containerRef = useRef(null);
   const [labelBounds, setLabelBounds] = useState(null);
   const [imgNatSize, setImgNatSize] = useState(null);
+  const [isPortrait, setIsPortrait] = useState(() =>
+    typeof window !== "undefined"
+      ? window.innerHeight > window.innerWidth
+      : false,
+  );
+
+  const tapeSrc = isPortrait ? VHS_TAPE_IMAGE_MOBILE : VHS_TAPE_IMAGE;
+
+  // Asset switch → previous measurements are for the other image; wait for onLoad
+  useEffect(() => {
+    setImgNatSize(null);
+    setLabelBounds(null);
+  }, [tapeSrc]);
 
   const recalculate = useCallback(() => {
     if (!containerRef.current || !imgNatSize) return;
     const cw = containerRef.current.clientWidth;
     const ch = containerRef.current.clientHeight;
     const img = getContainedImageBounds(cw, ch, imgNatSize.w, imgNatSize.h);
+    const label = isPortrait ? TAPE_LABEL_MOBILE : TAPE_LABEL;
+    const layout = isPortrait
+      ? TAPE_INTRO_LAYOUT.mobile
+      : TAPE_INTRO_LAYOUT.desktop;
 
     setLabelBounds({
-      left: img.x + img.width * TAPE_LABEL.left,
-      top: img.y + img.height * TAPE_LABEL.top,
-      width: img.width * TAPE_LABEL.width,
-      height: img.height * TAPE_LABEL.height,
-      // play button: below tape center
-      btnTop: img.y + img.height * 0.88,
+      left: img.x + img.width * label.left,
+      top: img.y + img.height * label.top,
+      width: img.width * label.width,
+      height: img.height * label.height,
+      // play button: below tape
+      btnTop: img.y + img.height * layout.btnTop,
       // lifestory: above tape
-      storyTop: img.y + img.height * 0.05,
-      storyWidth: img.width * 0.5,
-      storyLeft: img.x + img.width * 0.25,
+      storyTop: img.y + img.height * layout.storyTop,
+      storyWidth: img.width * layout.storyWidth,
+      storyLeft: img.x + img.width * layout.storyLeft,
+      // hard cap so the story block can never reach the tape body
+      storyMaxHeight: layout.storyMaxHeight
+        ? img.height * layout.storyMaxHeight
+        : undefined,
     });
-  }, [imgNatSize]);
+  }, [imgNatSize, isPortrait]);
 
   useEffect(() => {
     if (!imgNatSize) return;
@@ -58,6 +82,14 @@ export default function VHSTapeIntro({
     window.addEventListener("resize", recalculate);
     return () => window.removeEventListener("resize", recalculate);
   }, [imgNatSize, recalculate]);
+
+  // Orientation watcher — switches between desktop/mobile portrait assets
+  useEffect(() => {
+    const onResize = () =>
+      setIsPortrait(window.innerHeight > window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const handleImgLoad = useCallback((e) => {
     setImgNatSize({ w: e.target.naturalWidth, h: e.target.naturalHeight });
@@ -76,7 +108,7 @@ export default function VHSTapeIntro({
     >
       {/* Tape image fills the entire screen */}
       <img
-        src={VHS_TAPE_IMAGE}
+        src={tapeSrc}
         alt=""
         className="absolute inset-0 h-full w-full object-contain"
         onLoad={handleImgLoad}
@@ -99,12 +131,16 @@ export default function VHSTapeIntro({
           {/* Lifestory text above tape */}
           {lifestory && (
             <p
-              className="absolute line-clamp-3 text-center text-sm leading-relaxed text-white/70"
+              className={`absolute text-center leading-relaxed text-white/70 ${
+                isPortrait ? "line-clamp-4 text-[13px]" : "line-clamp-3 text-sm"
+              }`}
               style={{
                 fontFamily: "serif",
                 left: labelBounds.storyLeft,
                 top: labelBounds.storyTop,
                 width: labelBounds.storyWidth,
+                maxHeight: labelBounds.storyMaxHeight,
+                overflow: "hidden",
               }}
             >
               {lifestory}
@@ -123,18 +159,26 @@ export default function VHSTapeIntro({
               }}
             >
               <span
-                className="line-clamp-2 text-center font-bold text-neutral-800"
+                className={`${
+                  isPortrait ? "line-clamp-1" : "line-clamp-2"
+                } text-center font-bold text-neutral-800`}
                 style={{
-                  fontSize: "clamp(0.75rem, 2vw, 1.4rem)",
-                  lineHeight: 2.0,
+                  fontSize: isPortrait
+                    ? "clamp(0.8rem, 3.6vw, 1.05rem)"
+                    : "clamp(0.75rem, 2vw, 1.4rem)",
+                  lineHeight: isPortrait ? 1.35 : 2.0,
                 }}
               >
                 {title}
               </span>
               <span
-                className="line-clamp-2 text-center text-neutral-800"
+                className={`${
+                  isPortrait ? "line-clamp-1" : "line-clamp-2"
+                } text-center text-neutral-800`}
                 style={{
-                  fontSize: "clamp(0.75rem, 1.5vw, 1.0rem)",
+                  fontSize: isPortrait
+                    ? "clamp(0.65rem, 2.8vw, 0.85rem)"
+                    : "clamp(0.75rem, 1.5vw, 1.0rem)",
                   lineHeight: 1.3,
                 }}
               >

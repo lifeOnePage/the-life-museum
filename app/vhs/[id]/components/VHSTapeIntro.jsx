@@ -41,11 +41,20 @@ export default function VHSTapeIntro({
   );
 
   const tapeSrc = isPortrait ? VHS_TAPE_IMAGE_MOBILE : VHS_TAPE_IMAGE;
+  const imgRef = useRef(null);
 
-  // Asset switch → previous measurements are for the other image; wait for onLoad
+  // Asset switch → previous measurements are for the other image. A cached image
+  // can fire onLoad BEFORE this reset effect runs (which would wipe the size and
+  // never re-fire), so re-measure synchronously from the element when it's
+  // already complete.
   useEffect(() => {
-    setImgNatSize(null);
-    setLabelBounds(null);
+    const img = imgRef.current;
+    if (img && img.complete && img.naturalWidth > 0) {
+      setImgNatSize({ w: img.naturalWidth, h: img.naturalHeight });
+    } else {
+      setImgNatSize(null);
+      setLabelBounds(null);
+    }
   }, [tapeSrc]);
 
   const recalculate = useCallback(() => {
@@ -108,6 +117,7 @@ export default function VHSTapeIntro({
     >
       {/* Tape image fills the entire screen */}
       <img
+        ref={imgRef}
         src={tapeSrc}
         alt=""
         className="absolute inset-0 h-full w-full object-contain"

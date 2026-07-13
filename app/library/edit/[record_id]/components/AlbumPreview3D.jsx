@@ -9,6 +9,7 @@ import { UNIFIED_THEMES } from "../themeConfig";
 import { extractColors } from "extract-colors";
 import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
+import { loadCachedImage } from "@/app/lib/loadCachedImage";
 
 function Icon360({ className }) {
   return (
@@ -33,6 +34,11 @@ const ALBUM_CONFIG = {
   thickness: 0.03,
   tiltAngle: 0,
 };
+
+// 이미지 로드 캐시 — 공유 유틸 사용. 앞표지 하나 바꿀 때마다 뒷면 커버(R2:
+// 프록시 재시도)와 테마 이미지가 매번 재다운로드되어 Promise.all 배리어 전체가
+// 수 초 걸리던 문제를 없앤다. 캐시되면 이후 선택은 "새 앞면 이미지 1장"만 기다린다.
+const loadImg = loadCachedImage;
 
 const ZOOM_STEP = 0.25;
 
@@ -90,6 +96,9 @@ export default function AlbumPreview3D({
   onExpand,
   onFlipChange,
   expanded,
+  // 최신 합성 커버(dataURL)를 부모로 전달 — 편집 페이지가 저장 시
+  // 라이브러리 캐시에 심어 복귀 즉시 최종 모습이 보이게 하는 용도
+  onCoversComposited,
 }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const toggleFlip = () => {
@@ -127,37 +136,6 @@ export default function AlbumPreview3D({
   useEffect(() => {
     if (typeof document === "undefined") return;
     let cancelled = false;
-
-    function loadImg(src, crossOrigin = true) {
-      if (!src) return Promise.resolve(null);
-      const lower = src.toLowerCase().split("?")[0];
-      if (
-        lower.endsWith(".mp4") ||
-        lower.endsWith(".webm") ||
-        lower.endsWith(".mov")
-      ) {
-        return Promise.resolve(null);
-      }
-      const isBlobOrData = src.startsWith("blob:") || src.startsWith("data:");
-      return new Promise((resolve) => {
-        const img = new Image();
-        if (crossOrigin && !isBlobOrData) img.crossOrigin = "anonymous";
-        img.onload = () => resolve(img);
-        img.onerror = () => {
-          // CORS 실패 시 백엔드 프록시로 재시도 (R2 버킷 CORS 미설정 대응)
-          if (crossOrigin && !isBlobOrData) {
-            const proxy = new Image();
-            proxy.crossOrigin = "anonymous";
-            proxy.onload = () => resolve(proxy);
-            proxy.onerror = () => resolve(null);
-            proxy.src = `https://the-life-museum-backend-production.up.railway.app/api/v1/scraper/proxy/image?url=${encodeURIComponent(src)}`;
-          } else {
-            resolve(null);
-          }
-        };
-        img.src = src;
-      });
-    }
 
     async function loadAll() {
       const key = selectedTheme || "minimalist";
@@ -495,6 +473,14 @@ export default function AlbumPreview3D({
     stickerImages,
     onBackCoverDataUrlChange,
   ]);
+
+  // 합성 커버가 갱신될 때마다 부모에 최신본 전달 (라이브러리 캐시 낙관 갱신용)
+  useEffect(() => {
+    onCoversComposited?.({
+      frontImage: frontCoverDataUrl || frontCover || null,
+      backImage: backCoverDataUrl || null,
+    });
+  }, [frontCoverDataUrl, backCoverDataUrl, frontCover, onCoversComposited]);
 
   return (
     <div className="relative h-full w-full">

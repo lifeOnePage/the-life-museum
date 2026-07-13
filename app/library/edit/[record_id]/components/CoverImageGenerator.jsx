@@ -502,7 +502,8 @@ export default function CoverImageGenerator({
             </label>
             <button
               onClick={() => {
-                preloadBlobs();
+                // preloadBlobs() 제거: 전체 원본 일괄 다운로드가 프록시 대기열을
+                // 정체시켜 다른 사진 로드까지 수십 초 지연시킴 (선택 시 온디맨드 로드)
                 setView("ref-photodrive");
               }}
               className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors"

@@ -131,23 +131,33 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
     setSelectedPhotoIndex(index);
     const media = photoMedia[index];
     if (!media) return;
-    const rawUrl = media.original_url || media.thumbnail_url;
-    const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
-    setSaveUrl(proxyUrl);
-    setLocalFile(null);
+    setSaveUrl(null);
+    setError("");
 
-    // blob URL 우선 사용 (canvas CORS 호환)
-    const existingBlob = photoBlobUrls[index];
-    if (existingBlob) {
-      onUrlChange(existingBlob);
-      return;
-    }
+    // 포토드라이브(iCloud/Google 등) 원본 URL은 서명·세션 기반이라 시간이
+    // 지나면 만료된다. proxy URL을 그대로 저장하면 나중에(다른 세션·공유
+    // 페이지에서) 이미지가 깨지므로, 선택 즉시 blob으로 받아 File로 만들어
+    // 디바이스 업로드와 동일하게 R2에 영구 업로드한다.
     try {
-      const res = await fetch(proxyUrl);
-      const blob = await res.blob();
+      const existingBlob = photoBlobUrls[index];
+      const blob = existingBlob
+        ? await (await fetch(existingBlob)).blob()
+        : await (
+            await fetch(
+              `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(
+                media.original_url || media.thumbnail_url,
+              )}`,
+            )
+          ).blob();
+      const ext = (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
+      const file = new File([blob], `photodrive-${index}.${ext}`, {
+        type: blob.type || "image/jpeg",
+      });
+      setLocalFile(file);
       onUrlChange(URL.createObjectURL(blob));
     } catch {
-      onUrlChange(proxyUrl);
+      setLocalFile(null);
+      setError("사진을 불러오지 못했습니다.");
     }
   };
 

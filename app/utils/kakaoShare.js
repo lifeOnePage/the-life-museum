@@ -27,15 +27,11 @@ function loadKakaoSdk() {
   return loadingPromise;
 }
 
-// 카톡 미리보기에서 이모지가 깨져 "&#..." 로 나오는 문제 방지 —
-// 이모지 및 잘린 HTML 숫자 엔티티를 제거하고 공백 정리.
-const EMOJI_RE =
-  /[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE00}-\u{FE0F}\u{1F1E6}-\u{1F1FF}\u{200D}\u{20E3}]/gu;
-
+// 카톡 미리보기에서 잘린 HTML 숫자 엔티티("&#...")가 그대로 노출되는 문제 방지 —
+// 엔티티만 제거하고 이모지는 그대로 유지, 공백만 정리.
 function sanitizeForKakao(str = "") {
   return str
     .replace(/&#x?[0-9a-f]+;?/gi, "") // HTML 숫자 엔티티(및 잘린 &#) 제거
-    .replace(EMOJI_RE, "") // 이모지 제거
     .replace(/\s+/g, " ")
     .trim();
 }

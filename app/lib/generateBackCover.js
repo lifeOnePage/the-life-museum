@@ -819,6 +819,31 @@ function drawMinimalistLayout(
   }
 }
 
+// ─── User-placed stickers (from the back theme editor) ───
+// stickers: [{ src, x, y, rotation, scale }] with x/y normalized to 0..1
+// stickerImages: { [src]: HTMLImageElement }
+function drawUserStickers(ctx, size, stickers, stickerImages) {
+  if (!stickers || stickers.length === 0) return;
+  for (const sticker of stickers) {
+    const img = stickerImages?.[sticker.src];
+    if (!img) continue;
+    const baseW = size * 0.16;
+    const baseH = baseW * (img.height / img.width);
+    ctx.save();
+    ctx.translate(sticker.x * size, sticker.y * size);
+    ctx.rotate(((sticker.rotation || 0) * Math.PI) / 180);
+    const scale = sticker.scale || 1;
+    ctx.drawImage(
+      img,
+      (-baseW / 2) * scale,
+      (-baseH / 2) * scale,
+      baseW * scale,
+      baseH * scale,
+    );
+    ctx.restore();
+  }
+}
+
 export function generateBackCoverDataUrl(
   themeKey,
   bio,
@@ -829,6 +854,8 @@ export function generateBackCoverDataUrl(
   extractedColors,
   themeBgImg,
   themeStickerImg,
+  stickers,
+  stickerImages,
 ) {
   const size = 1024; // 드로잉 좌표계 (변경 불필요)
   const resolution = 2048; // 실제 캔버스 픽셀 — 2x로 Retina 화질 확보
@@ -886,6 +913,8 @@ export function generateBackCoverDataUrl(
       );
       break;
   }
+
+  drawUserStickers(ctx, size, stickers, stickerImages);
 
   return canvas.toDataURL("image/jpeg", 0.95);
 }

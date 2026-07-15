@@ -54,11 +54,15 @@ const WalkPreview = dynamic(() => import("./components/WalkPreview"), {
   ssr: false,
 });
 import TutorialOverlay from "./components/TutorialOverlay";
-import ThemeSelector from "./components/ThemeSelector";
+import BackThemeEditorModal from "./components/BackThemeEditorModal";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
-import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
+import {
+  UNIFIED_THEMES,
+  DEFAULT_THEME,
+  DEFAULT_OWNED_PACK_IDS,
+} from "./themeConfig";
 import AIConsentModal, { hasAIConsent } from "@/app/components/AIConsentModal";
 import { invalidateRecord } from "@/app/lib/useRecordData";
 import {
@@ -376,6 +380,12 @@ const Index = ({ params }) => {
   // Tab & Theme & Layout state
   const [activeTab, setActiveTab] = useState("front");
   const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
+  const [stickers, setStickers] = useState([]);
+  const [showBackThemeModal, setShowBackThemeModal] = useState(false);
+  const [bakedBackCoverUrl, setBakedBackCoverUrl] = useState(null);
+  // 팝업에서 테마를 고르는 즉시 미리보기에 반영하되, 저장 전까지는
+  // selectedTheme(실제 적용값)은 건드리지 않는다 — 취소 시 되돌리기 위함.
+  const [livePreviewTheme, setLivePreviewTheme] = useState(null);
 
   // Title overlay state
   const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
@@ -636,11 +646,6 @@ const Index = ({ params }) => {
     }
   }, [record_id]);
 
-  // Apply theme change
-  const handleThemeChange = (themeKey) => {
-    setSelectedTheme(themeKey);
-  };
-
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
@@ -749,23 +754,6 @@ const Index = ({ params }) => {
     return data;
   };
 
-  const saveBackCoverImage = async (url) => {
-    const response = await fetch(
-      `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-        },
-        body: JSON.stringify({ backCoverImageUrl: url }),
-      },
-    );
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || t.errorSaveBackCover);
-    return data;
-  };
-
   // AlbumPreview3D가 만들어 둔 최신 합성 커버(dataURL) — 저장 시 라이브러리
   // 캐시에 심어 복귀 즉시 최종 모습이 보이게 한다.
   const latestCompositesRef = useRef({ frontImage: null, backImage: null });
@@ -828,10 +816,29 @@ const Index = ({ params }) => {
       const doSaveBackCover = async () => {
         let finalUrl = backCoverImageUrl;
         if (backCoverRef.current) {
+          // backCoverRef.save()가 새 사진이 있으면 업로드 + DB 저장까지
+          // 끝낸다. 사진을 "제거"한 경우(finalUrl null)만 여기서 별도로
+          // 반영한다 — save()는 업로드할 파일이 없으면 아무 요청도 보내지
+          // 않기 때문. (과거엔 매번 두 번째 PATCH를 중복 호출했음)
           const uploadedUrl = await backCoverRef.current.save();
-          if (uploadedUrl !== null) finalUrl = uploadedUrl;
+          if (uploadedUrl !== null) {
+            finalUrl = uploadedUrl;
+          } else if (!backCoverImageUrl) {
+            const response = await fetch(
+              `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+              {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+                },
+                body: JSON.stringify({ backCoverImageUrl: null }),
+              },
+            );
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || t.errorSaveBackCover);
+          }
         }
-        await saveBackCoverImage(finalUrl);
         return { editor: "backCover", success: true, url: finalUrl };
       };
       promises.push(
@@ -1531,7 +1538,9 @@ const Index = ({ params }) => {
               backCoverImageUrl={backCoverImageUrl}
               bio={bio}
               timeline={timeline}
-              selectedTheme={selectedTheme}
+              selectedTheme={livePreviewTheme || selectedTheme}
+              stickers={stickers}
+              onBackCoverDataUrlChange={setBakedBackCoverUrl}
               albumTitle={albumTitle}
               albumSubTitle={albumSubtitle}
               titleOverlayEnabled={titleOverlayEnabled}
@@ -1848,11 +1857,36 @@ const Index = ({ params }) => {
                             className="overflow-hidden"
                           >
                             <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <ThemeSelector
-                                selectedTheme={selectedTheme}
-                                onThemeChange={handleThemeChange}
-                                locale={locale}
-                              />
+                              <div className="mb-3 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
+                                <div
+                                  className="h-8 w-8 shrink-0 rounded-full border border-white/15"
+                                  style={{
+                                    background: (
+                                      UNIFIED_THEMES[selectedTheme] ||
+                                      UNIFIED_THEMES[DEFAULT_THEME]
+                                    ).bg,
+                                  }}
+                                />
+                                <p className="text-sm font-medium text-[#e8d5b7]">
+                                  {
+                                    (
+                                      UNIFIED_THEMES[selectedTheme] ||
+                                      UNIFIED_THEMES[DEFAULT_THEME]
+                                    ).name
+                                  }
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setShowBackThemeModal(true)}
+                                className="w-full border-white/15 text-[#9b8b7a] hover:border-[#c4b49a]/60 hover:text-[#e8d5b7]"
+                              >
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                {locale === "en"
+                                  ? "Edit back theme & stickers"
+                                  : "뒷면 테마 편집하기"}
+                              </Button>
                             </div>
                           </motion.div>
                         )}
@@ -2448,6 +2482,27 @@ const Index = ({ params }) => {
           </motion.div>
         </div>
       </div>
+
+      {/* Back Theme + Sticker Editor Modal */}
+      <BackThemeEditorModal
+        isOpen={showBackThemeModal}
+        onClose={() => {
+          setShowBackThemeModal(false);
+          setLivePreviewTheme(null);
+        }}
+        locale={locale}
+        theme={selectedTheme}
+        stickers={stickers}
+        previewImageUrl={bakedBackCoverUrl}
+        onThemePreview={setLivePreviewTheme}
+        // TODO: 실제 구매/소유 데이터가 생기면 사용자별 소유 팩 목록으로 교체
+        ownedPackIds={DEFAULT_OWNED_PACK_IDS}
+        onSave={(nextTheme, nextStickers) => {
+          setSelectedTheme(nextTheme);
+          setStickers(nextStickers);
+          setLivePreviewTheme(null);
+        }}
+      />
 
       {/* Exit Dialog */}
       <AnimatePresence>

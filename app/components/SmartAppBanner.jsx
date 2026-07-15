@@ -2,9 +2,14 @@
 // 모바일 웹 브라우저에서 공개 공유 페이지를 열었을 때 상단에 노출되는 스마트 배너.
 // "앱으로 열기"(딥링크 시도 + 미설치 시 스토어 fallback) / "웹으로 보기"(닫기, 영속).
 import { useEffect, useState } from "react";
-import { isMobileWebBrowser, getMobileBrowserOS } from "@/app/utils/platform";
+import {
+  isMobileWebBrowser,
+  getMobileBrowserOS,
+  isKakaoInAppBrowser,
+} from "@/app/utils/platform";
 import {
   openInApp,
+  buildKakaoEscapeUrl,
   IOS_APP_STORE_URL,
   ANDROID_STORE_ENABLED,
   ANDROID_STORE_URL,
@@ -42,6 +47,13 @@ export default function SmartAppBanner({ locale = "ko" }) {
   if (!show) return null;
 
   const handleOpen = () => {
+    // 카카오톡 인앱 브라우저는 커스텀 스킴 이동을 차단 → 항상 스토어로 튕겨나감.
+    // 카카오톡 탈출 스킴으로 먼저 기본 브라우저를 띄운 뒤, 그 브라우저에서
+    // 다시 "앱으로 열기"를 눌러야 딥링크가 정상 동작한다.
+    if (isKakaoInAppBrowser()) {
+      window.location.href = buildKakaoEscapeUrl(window.location.href);
+      return;
+    }
     const storeUrl =
       os === "ios"
         ? IOS_APP_STORE_URL

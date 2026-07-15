@@ -33,6 +33,16 @@ export function buildUniversalUrl(pathname) {
 }
 
 /**
+ * 카카오톡 인앱 브라우저 탈출 URL.
+ * 카카오톡 웹뷰는 커스텀 스킴 이동을 차단하므로, 이 스킴으로 먼저
+ * 기본 브라우저(Safari/Chrome)에 대상 URL을 열게 한 뒤 그 브라우저에서
+ * 다시 "앱으로 열기"를 시도해야 커스텀 스킴 딥링크가 정상 동작한다.
+ */
+export function buildKakaoEscapeUrl(url) {
+  return `kakaotalk://web/openExternal?url=${encodeURIComponent(url)}`;
+}
+
+/**
  * iOS deferred deep link.
  * 같은 도메인 JS에서는 Universal Link가 안정적으로 안 열리므로 커스텀 스킴으로
  * 앱 호출을 시도하고, 일정 시간 내 백그라운드 전환(=앱 열림)이 없으면 스토어로 fallback.

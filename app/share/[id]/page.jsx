@@ -96,7 +96,22 @@ export default function SharePage({ params }) {
   const [flipProgress, setFlipProgress] = useState(0);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [infoFontScale, setInfoFontScale] = useState(1);
-  const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(
+    () =>
+      typeof window !== "undefined" &&
+      Math.min(window.innerWidth, window.screen.width) < 768,
+  );
+  useEffect(() => {
+    // 모바일 사파리는 최초 렌더 시 뷰포트 메타 적용 전이라 innerWidth가
+    // 데스크탑 기본값(980px)으로 잡히는 경우가 있어 screen.width도 함께 확인한다.
+    const checkMobile = () => {
+      const width = Math.min(window.innerWidth, window.screen.width);
+      setIsMobile(width < 768);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
   useEffect(() => {
     if (!isInfoOpen) setInfoFontScale(1);
   }, [isInfoOpen]);
@@ -472,8 +487,8 @@ export default function SharePage({ params }) {
       style={{ height: "100dvh" }}
     >
       <SmartAppBanner locale={locale} />
-      {/* Background: Concave cylindrical photo grid */}
-      {images.length > 0 && (
+      {/* Background: Concave cylindrical photo grid (데스크탑 전용) */}
+      {images.length > 0 && !isMobile && (
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 z-[1] bg-gradient-to-b from-black/50 via-black/20 to-black/80" />
           <div className="absolute inset-0 z-[1] bg-gradient-to-r from-black/60 via-transparent to-black/60" />
@@ -842,7 +857,7 @@ export default function SharePage({ params }) {
                 onClick={() =>
                   setInfoFontScale((s) => Math.max(0.7, +(s - 0.1).toFixed(1)))
                 }
-                className="flex h-6 w-6 items-center justify-center rounded text-[13px] font-light text-white/30 transition-colors hover:text-white/70"
+                className="flex h-9 w-9 items-center justify-center rounded text-[17px] font-light text-white/30 transition-colors hover:text-white/70 sm:h-6 sm:w-6 sm:text-[13px]"
               >
                 A-
               </button>
@@ -850,15 +865,15 @@ export default function SharePage({ params }) {
                 onClick={() =>
                   setInfoFontScale((s) => Math.min(1.7, +(s + 0.1).toFixed(1)))
                 }
-                className="flex h-6 w-6 items-center justify-center rounded text-[15px] font-light text-white/30 transition-colors hover:text-white/70"
+                className="flex h-9 w-9 items-center justify-center rounded text-[19px] font-light text-white/30 transition-colors hover:text-white/70 sm:h-6 sm:w-6 sm:text-[15px]"
               >
                 A+
               </button>
               <button
                 onClick={() => setIsInfoOpen(false)}
-                className="ml-1 text-white/25 transition-colors hover:text-white/60"
+                className="ml-1 flex h-9 w-9 items-center justify-center text-white/25 transition-colors hover:text-white/60 sm:h-auto sm:w-auto"
               >
-                <X className="h-4 w-4" />
+                <X className="h-5 w-5 sm:h-4 sm:w-4" />
               </button>
             </div>
           </div>

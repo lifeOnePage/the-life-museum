@@ -754,23 +754,6 @@ const Index = ({ params }) => {
     return data;
   };
 
-  const saveBackCoverImage = async (url) => {
-    const response = await fetch(
-      `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-      {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-        },
-        body: JSON.stringify({ backCoverImageUrl: url }),
-      },
-    );
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || t.errorSaveBackCover);
-    return data;
-  };
-
   // AlbumPreview3D가 만들어 둔 최신 합성 커버(dataURL) — 저장 시 라이브러리
   // 캐시에 심어 복귀 즉시 최종 모습이 보이게 한다.
   const latestCompositesRef = useRef({ frontImage: null, backImage: null });
@@ -833,10 +816,29 @@ const Index = ({ params }) => {
       const doSaveBackCover = async () => {
         let finalUrl = backCoverImageUrl;
         if (backCoverRef.current) {
+          // backCoverRef.save()가 새 사진이 있으면 업로드 + DB 저장까지
+          // 끝낸다. 사진을 "제거"한 경우(finalUrl null)만 여기서 별도로
+          // 반영한다 — save()는 업로드할 파일이 없으면 아무 요청도 보내지
+          // 않기 때문. (과거엔 매번 두 번째 PATCH를 중복 호출했음)
           const uploadedUrl = await backCoverRef.current.save();
-          if (uploadedUrl !== null) finalUrl = uploadedUrl;
+          if (uploadedUrl !== null) {
+            finalUrl = uploadedUrl;
+          } else if (!backCoverImageUrl) {
+            const response = await fetch(
+              `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
+              {
+                method: "PATCH",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${localStorage.getItem("app_token")}`,
+                },
+                body: JSON.stringify({ backCoverImageUrl: null }),
+              },
+            );
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || t.errorSaveBackCover);
+          }
         }
-        await saveBackCoverImage(finalUrl);
         return { editor: "backCover", success: true, url: finalUrl };
       };
       promises.push(

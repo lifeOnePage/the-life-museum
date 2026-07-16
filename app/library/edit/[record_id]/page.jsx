@@ -761,6 +761,12 @@ const Index = ({ params }) => {
     latestCompositesRef.current = covers;
   }, []);
 
+  // 헤더 메뉴의 "저장"은 완료를 기다리지 않고 바로 실행되는데, 그 직후
+  // "나가기"를 누르면 뒷면 사진 등 저장이 DB에 반영되기 전에 라이브러리로
+  // 이동해 반영 안 된 것처럼 보일 수 있다. 진행 중인 저장을 추적해두었다가
+  // 나가기 시점에 끝날 때까지 기다린다.
+  const pendingSaveRef = useRef(null);
+
   const handleSaveAll = async () => {
     const isCoverDirty = frontCover !== initialState.current.frontCover;
     const isBackCoverDirty =
@@ -1007,7 +1013,14 @@ const Index = ({ params }) => {
     walkVideoPreview !== initialState.current.walkVideoPreview ||
     walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration;
 
-  const handleExit = () => {
+  const handleExit = async () => {
+    if (pendingSaveRef.current) {
+      try {
+        await pendingSaveRef.current;
+      } catch {
+        // 저장 실패해도 사용자가 나가기를 선택했으므로 그대로 진행
+      }
+    }
     router.push("/library");
   };
 
@@ -1354,7 +1367,9 @@ const Index = ({ params }) => {
                     </button>
                     <button
                       onClick={() => {
-                        handleSaveAll();
+                        pendingSaveRef.current = handleSaveAll().finally(() => {
+                          pendingSaveRef.current = null;
+                        });
                         setShowHeaderMenu(false);
                       }}
                       disabled={isSaving || !isDirty}

@@ -81,7 +81,9 @@ async function generateAlbumCovers(item) {
   const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg] =
     await Promise.all([
       loadImage(item.coverImage?.url),
-      loadImage(item.backCoverImageUrl || null),
+      // 뒷면 사진을 아직 저장 안 한 옛 앨범은 편집/공유 페이지와 동일하게
+      // 앞면 커버로 대체 표시한다 (영상 커버는 대체 불가라 그대로 null).
+      loadImage(item.backCoverImageUrl || item.coverImage?.url || null),
       loadImage(THEME_BG_MAP[themeKey] || null),
       themeKey === "kitsch"
         ? loadImage("/images/albumtheme/kitsch 2.png")
@@ -344,6 +346,7 @@ export default function MyShelfPage({ params }) {
         coverUrl: newAlbum.coverImage?.url ?? null,
         backImage: null,
         edgeColor: null,
+        exhibitionType: newAlbum.exhibitionType ?? "walk",
         role: newAlbum.role || "owner",
         isPublic: newAlbum.isPublic ?? false,
         isTrial: newAlbum.isTrial ?? false,

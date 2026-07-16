@@ -119,12 +119,15 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-    setLocalFile(file);
-    setSaveUrl(null);
-    setSelectedPhotoIndex(-1);
-    setShowPhotodrive(false);
-    onUrlChange(URL.createObjectURL(file));
+    if (file) {
+      setLocalFile(file);
+      setSaveUrl(null);
+      setSelectedPhotoIndex(-1);
+      setShowPhotodrive(false);
+      onUrlChange(URL.createObjectURL(file));
+    }
+    // 같은 파일을 다시 선택해도 change 이벤트가 재발생하도록 값 초기화
+    e.target.value = "";
   };
 
   const handleSelectPhoto = async (index) => {

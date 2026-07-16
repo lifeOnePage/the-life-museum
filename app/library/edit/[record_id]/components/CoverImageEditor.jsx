@@ -152,6 +152,8 @@ const CoverImageEditor = forwardRef(
         const url = URL.createObjectURL(file);
         onImageGenerated(url);
       }
+      // 같은 파일을 다시 선택해도 change 이벤트가 재발생하도록 값 초기화
+      e.target.value = "";
     };
 
     // 연속 클릭 시 늦게 끝난 이전 선택이 최신 선택을 덮어쓰지 않도록 하는 토큰

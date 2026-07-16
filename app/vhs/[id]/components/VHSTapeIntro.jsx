@@ -67,6 +67,12 @@ export default function VHSTapeIntro({
       ? TAPE_INTRO_LAYOUT.mobile
       : TAPE_INTRO_LAYOUT.desktop;
 
+    // Cap the story block's height so it can never reach the tape body —
+    // use the explicit layout value if set, otherwise fall back to the
+    // actual gap between storyTop and the label (works for desktop too).
+    const storyCapFraction =
+      layout.storyMaxHeight ?? Math.max(0, label.top - layout.storyTop);
+
     setLabelBounds({
       left: img.x + img.width * label.left,
       top: img.y + img.height * label.top,
@@ -78,10 +84,7 @@ export default function VHSTapeIntro({
       storyTop: img.y + img.height * layout.storyTop,
       storyWidth: img.width * layout.storyWidth,
       storyLeft: img.x + img.width * layout.storyLeft,
-      // hard cap so the story block can never reach the tape body
-      storyMaxHeight: layout.storyMaxHeight
-        ? img.height * layout.storyMaxHeight
-        : undefined,
+      storyMaxHeight: storyCapFraction ? img.height * storyCapFraction : undefined,
     });
   }, [imgNatSize, isPortrait]);
 
@@ -103,6 +106,32 @@ export default function VHSTapeIntro({
   const handleImgLoad = useCallback((e) => {
     setImgNatSize({ w: e.target.naturalWidth, h: e.target.naturalHeight });
   }, []);
+
+  // Lifestory text — no "..." truncation, but must never overlap the tape
+  // body. Instead of clamping lines, shrink the font until it fits the
+  // reserved area (storyMaxHeight); floors out at a still-readable size.
+  const storyRef = useRef(null);
+  const [storyFontPx, setStoryFontPx] = useState(null);
+  const baseStoryFontSize = isPortrait
+    ? "clamp(0.65rem, 2.8vw, 0.85rem)"
+    : "clamp(0.75rem, 1.5vw, 1.0rem)";
+
+  useEffect(() => {
+    const el = storyRef.current;
+    if (!el || !lifestory || !labelBounds?.storyMaxHeight) {
+      setStoryFontPx(null);
+      return;
+    }
+    el.style.fontSize = baseStoryFontSize;
+    const basePx = parseFloat(getComputedStyle(el).fontSize);
+    let size = basePx;
+    const minSize = Math.max(9, basePx * 0.55);
+    while (el.scrollHeight > labelBounds.storyMaxHeight && size > minSize) {
+      size -= 0.5;
+      el.style.fontSize = `${size}px`;
+    }
+    setStoryFontPx(size);
+  }, [lifestory, labelBounds, baseStoryFontSize]);
 
   return (
     <div
@@ -141,16 +170,14 @@ export default function VHSTapeIntro({
           {/* Lifestory text above tape */}
           {lifestory && (
             <p
-              className={`absolute text-center leading-relaxed text-white/70 ${
-                isPortrait ? "line-clamp-4 text-[13px]" : "line-clamp-3 text-sm"
-              }`}
+              ref={storyRef}
+              className="absolute text-center leading-relaxed text-white/70"
               style={{
                 fontFamily: "serif",
+                fontSize: storyFontPx ? `${storyFontPx}px` : baseStoryFontSize,
                 left: labelBounds.storyLeft,
                 top: labelBounds.storyTop,
                 width: labelBounds.storyWidth,
-                maxHeight: labelBounds.storyMaxHeight,
-                overflow: "hidden",
               }}
             >
               {lifestory}

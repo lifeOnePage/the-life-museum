@@ -346,6 +346,7 @@ export default function MyShelfPage({ params }) {
         coverUrl: newAlbum.coverImage?.url ?? null,
         backImage: null,
         edgeColor: null,
+        exhibitionType: newAlbum.exhibitionType ?? "walk",
         role: newAlbum.role || "owner",
         isPublic: newAlbum.isPublic ?? false,
         isTrial: newAlbum.isTrial ?? false,

@@ -16,6 +16,9 @@ import {
 } from "@/app/utils/deeplink";
 
 const DISMISS_KEY = "smart_banner_dismissed";
+// 카카오톡 탈출 스킴으로 넘어온 페이지인지 표시하는 마커 — 이 마커가 있으면
+// 사용자가 다시 탭할 필요 없이 도착 즉시 앱 딥링크를 자동 시도한다.
+const KAKAO_ESCAPE_PARAM = "kakao_escape";
 
 const T = {
   ko: { title: "앱에서 더 생생하게 감상하세요", open: "앱으로 열기", web: "웹으로 보기" },
@@ -28,19 +31,35 @@ export default function SmartAppBanner({ locale = "ko" }) {
   const t = T[locale] || T.ko;
 
   useEffect(() => {
+    if (!isMobileWebBrowser()) return;
+
+    const detected = getMobileBrowserOS();
+    // Android는 Play Store 미출시 → 게이팅(노출 안 함)
+    if (detected === "android" && !ANDROID_STORE_ENABLED) return;
+    setOS(detected);
+
+    // 카카오톡 탈출 스킴을 거쳐 방금 막 도착한 페이지면, 사용자가 다시 탭하지
+    // 않아도 되도록 즉시 딥링크를 자동 시도한다. 마커는 재진입/뒤로가기 시
+    // 반복 트리거되지 않도록 URL에서 바로 지운다.
+    const url = new URL(window.location.href);
+    if (url.searchParams.get(KAKAO_ESCAPE_PARAM) === "1") {
+      url.searchParams.delete(KAKAO_ESCAPE_PARAM);
+      window.history.replaceState(null, "", url.toString());
+      const storeUrl =
+        detected === "ios"
+          ? IOS_APP_STORE_URL
+          : ANDROID_STORE_ENABLED
+            ? ANDROID_STORE_URL
+            : null;
+      openInApp(window.location.pathname, { os: detected, storeUrl });
+    }
+
     try {
       // 세션 단위로만 닫힘 유지 — 나갔다 다시 링크를 열면(새 세션) 다시 노출
       if (sessionStorage.getItem(DISMISS_KEY) === "1") return;
     } catch {
       /* sessionStorage 접근 불가(프라이빗 모드 등) → 무시하고 노출 시도 */
     }
-    if (!isMobileWebBrowser()) return;
-
-    const detected = getMobileBrowserOS();
-    // Android는 Play Store 미출시 → 게이팅(노출 안 함)
-    if (detected === "android" && !ANDROID_STORE_ENABLED) return;
-
-    setOS(detected);
     setShow(true);
   }, []);
 
@@ -48,10 +67,12 @@ export default function SmartAppBanner({ locale = "ko" }) {
 
   const handleOpen = () => {
     // 카카오톡 인앱 브라우저는 커스텀 스킴 이동을 차단 → 항상 스토어로 튕겨나감.
-    // 카카오톡 탈출 스킴으로 먼저 기본 브라우저를 띄운 뒤, 그 브라우저에서
-    // 다시 "앱으로 열기"를 눌러야 딥링크가 정상 동작한다.
+    // 카카오톡 탈출 스킴으로 먼저 기본 브라우저를 띄운 뒤, 도착 페이지가 마커를
+    // 보고 자동으로 딥링크를 시도한다(사용자가 다시 탭할 필요 없음).
     if (isKakaoInAppBrowser()) {
-      window.location.href = buildKakaoEscapeUrl(window.location.href);
+      const escapeTarget = new URL(window.location.href);
+      escapeTarget.searchParams.set(KAKAO_ESCAPE_PARAM, "1");
+      window.location.href = buildKakaoEscapeUrl(escapeTarget.toString());
       return;
     }
     const storeUrl =

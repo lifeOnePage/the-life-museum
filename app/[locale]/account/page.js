@@ -6,6 +6,8 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { requestCreditPurchase } from "@/app/utils/payment";
 import AppName from "@/app/components/AppName";
+import Footer from "@/app/components/Footer";
+import LegalModal from "@/app/components/LegalModal";
 
 // ── 크레딧 패키지 ──────────────────────────────
 const CREDIT_PACKAGES = [
@@ -76,15 +78,6 @@ const T = {
     paymentSuccess: "크레딧이 충전되었습니다!",
     free: "무료",
     paymentErrorMsg: "결제 요청 중 오류가 발생했습니다.",
-    creditUsageTitle: "크레딧 소모 기준",
-    creditUsageActivity: "활동 항목",
-    creditUsageAmount: "소모 크레딧",
-    creditUsageNote: "비고",
-    creditUsageRows: [
-      ["신규 앨범 생성", "900 크레딧 /회", "1회 생성 기준"],
-      ["일반 유료 아이템 구매", "100 크레딧 /회", "앨범 커버 테마 구매 등"],
-      ["한정판 아이템 구매", "200 크레딧 /회", "시즌/특별 한정판 등"],
-    ],
     couponPlaceholder: "쿠폰 코드 입력",
     couponApply: "적용",
     couponApplying: "확인 중...",
@@ -109,6 +102,11 @@ const T = {
       "계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.",
     deleteConfirm: "삭제",
     deleting: "삭제 중...",
+    purchaseAgreeLabel: "[필수] 구매 조건 및 결제 진행 동의",
+    purchaseAgreeViewDetail: "약관 보기",
+    purchaseAgreeModalTitle: "구매 조건 및 환불 규정",
+    purchaseAgreeModalBody:
+      "충전 후 사용하지 않은 크레딧은 결제일로부터 7일 이내 환불 가능하며, 일부 사용 시 잔여 크레딧의 10%가 수수료로 공제됩니다. 크레딧으로 구매한 디지털 앨범 생성 서비스 및 꾸미기 아이템(디지털 콘텐츠)은 구매 즉시 또는 사용 개시 이후 환불이 제한됩니다.",
   },
   en: {
     profile: "Profile",
@@ -134,15 +132,6 @@ const T = {
     paymentSuccess: "Credits have been added!",
     free: "Free",
     paymentErrorMsg: "An error occurred while requesting payment.",
-    creditUsageTitle: "Credit Usage",
-    creditUsageActivity: "Activity",
-    creditUsageAmount: "Credits Used",
-    creditUsageNote: "Note",
-    creditUsageRows: [
-      ["Create new album", "900 Credits /ea", "Per generation"],
-      ["Standard item purchase", "100 Credits /ea", "Album cover themes, etc."],
-      ["Limited edition purchase", "200 Credits /ea", "Seasonal/special editions"],
-    ],
     couponPlaceholder: "Enter coupon code",
     couponApply: "Apply",
     couponApplying: "Checking...",
@@ -167,6 +156,11 @@ const T = {
       "Deleting your account will permanently remove all your data and cannot be undone.",
     deleteConfirm: "Delete",
     deleting: "Deleting...",
+    purchaseAgreeLabel: "[Required] I agree to the purchase terms and refund policy",
+    purchaseAgreeViewDetail: "View details",
+    purchaseAgreeModalTitle: "Purchase Terms & Refund Policy",
+    purchaseAgreeModalBody:
+      "Unused credits may be refunded within 7 days of payment. If a portion of the credits has been used, a 10% fee will be deducted from the remaining balance upon refund. Digital albums and decoration items purchased with credits cannot be refunded once purchased or used.",
   },
 };
 
@@ -301,6 +295,9 @@ export default function AccountPage() {
   const [purchasing, setPurchasing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [paymentSuccess, setPaymentSuccess] = useState(false);
+  // 결제 직전 구매 조건(환불 규정 등) 동의 — 이니시스 심사 요건
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [showAgreeModal, setShowAgreeModal] = useState(false);
 
   // 쿠폰
   const [couponCode, setCouponCode] = useState("");
@@ -382,7 +379,7 @@ export default function AccountPage() {
 
   // ── 결제 핸들러 ──
   const handlePurchase = async (method) => {
-    if (selectedPackage === "free") return;
+    if (selectedPackage === "free" || !agreedToTerms) return;
     setPurchasing(true);
     setPaymentError("");
     try {
@@ -1099,6 +1096,34 @@ export default function AccountPage() {
                 </div>
               )}
 
+              {/* 구매 조건 동의 (결제 직전 필수 체크) */}
+              {!paymentSuccess && (
+                <label className="mb-4 flex items-start gap-2.5 text-sm text-[#9b8b7a]">
+                  <input
+                    type="checkbox"
+                    checked={agreedToTerms}
+                    onChange={(e) => {
+                      setAgreedToTerms(e.target.checked);
+                      if (e.target.checked) setPaymentError("");
+                    }}
+                    className="mt-0.5 h-4 w-4 shrink-0 accent-[#c4b49a]"
+                  />
+                  <span>
+                    {t.purchaseAgreeLabel}{" "}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setShowAgreeModal(true);
+                      }}
+                      className="underline underline-offset-2 text-[#c4b49a] transition hover:text-[#e8d5b7]"
+                    >
+                      {t.purchaseAgreeViewDetail}
+                    </button>
+                  </span>
+                </label>
+              )}
+
               {/* 구매 버튼 */}
               {paymentSuccess ? (
                 <div className="flex flex-col items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/5 py-6">
@@ -1129,7 +1154,9 @@ export default function AccountPage() {
                         currency === "KRW" ? "domestic" : "international",
                       )
                     }
-                    disabled={purchasing || selectedPackage === "free"}
+                    disabled={
+                      purchasing || selectedPackage === "free" || !agreedToTerms
+                    }
                     className="flex w-full flex-col items-center gap-2 rounded-xl bg-[#c4b49a] py-4 transition hover:bg-[#e8d5b7] disabled:opacity-40"
                   >
                     <div className="flex items-center gap-2">
@@ -1179,35 +1206,6 @@ export default function AccountPage() {
                   )}
                 </>
               )}
-
-              {/* 크레딧 소모 기준 */}
-              <div className="mt-8 overflow-hidden rounded-xl border border-white/10">
-                <div className="px-4 py-3">
-                  <span className="text-sm font-medium text-[#9b8b7a]">
-                    {t.creditUsageTitle}
-                  </span>
-                </div>
-                <div className="border-t border-white/8">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b border-white/8 bg-white/5">
-                        <th className="px-4 py-2 text-left font-medium text-[#9b8b7a]">{t.creditUsageActivity}</th>
-                        <th className="px-4 py-2 text-center font-medium text-[#9b8b7a]">{t.creditUsageAmount}</th>
-                        <th className="px-4 py-2 text-right font-medium text-[#9b8b7a]">{t.creditUsageNote}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {t.creditUsageRows.map((row, i) => (
-                        <tr key={i} className={i > 0 ? "border-t border-white/8" : ""}>
-                          <td className="px-4 py-2.5 text-[#c4b49a]">{row[0]}</td>
-                          <td className="px-4 py-2.5 text-center text-[#c4b49a]">{row[1]}</td>
-                          <td className="px-4 py-2.5 text-right text-[#9b8b7a]">{row[2]}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
 
             </div>
           )}
@@ -1307,7 +1305,16 @@ export default function AccountPage() {
             </div>
           )}
         </div>
+        <Footer locale={currentLocale} />
       </main>
+      {showAgreeModal && (
+        <LegalModal
+          title={t.purchaseAgreeModalTitle}
+          onClose={() => setShowAgreeModal(false)}
+        >
+          {t.purchaseAgreeModalBody}
+        </LegalModal>
+      )}
     </div>
   );
 }

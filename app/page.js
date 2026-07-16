@@ -5,6 +5,7 @@ import AboutDetail from "@/app/components/main/AboutDetail";
 import AboutInfo from "@/app/components/main/AboutInfo";
 import Header from "@/app/components/main/Header";
 import Landing from "@/app/components/main/Landing";
+import Footer from "@/app/components/Footer";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./contexts/AuthContext";
 export default function Home() {
@@ -34,6 +35,7 @@ export default function Home() {
       <Landing />
       {/* <AboutInfo /> */}
       {/* <AboutDetail /> */}
+      <Footer />
     </div>
   );
 }

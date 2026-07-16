@@ -7,6 +7,7 @@ import HorizontalThumbs from "../components/HorizontalThumbs";
 import IdentifierModal from "../components/IdentifierModal";
 import ItemActionModal from "../components/ItemActionModal";
 import PlanPlaceholder from "../components/PlanPlaceholder";
+import CouponCard from "../components/CouponCard";
 
 export default function DesktopLayout({
   user,
@@ -111,7 +112,9 @@ export default function DesktopLayout({
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.2 }}
+              style={{ display: "grid", gap: 18 }}
             >
+              <CouponCard />
               <PlanPlaceholder />
             </motion.div>
           )}

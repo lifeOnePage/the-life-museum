@@ -6,6 +6,7 @@ import HorizontalThumbs from "../components/HorizontalThumbs";
 import IdentifierModal from "../components/IdentifierModal";
 import ItemActionModal from "../components/ItemActionModal";
 import PlanPlaceholder from "../components/PlanPlaceholder";
+import CouponCard from "../components/CouponCard";
 import TabPlanePictogram from "@/app/components/TabPlanePictogram";
 import RingPictogram from "@/app/components/RingPictogram";
 
@@ -141,8 +142,9 @@ export default function MobileLayout({
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -12 }}
             transition={{ duration: 0.18 }}
-            style={{ marginTop: 12 }}
+            style={{ marginTop: 12, display: "grid", gap: 12 }}
           >
+            <CouponCard />
             <PlanPlaceholder size={100} />
           </motion.div>
         )}

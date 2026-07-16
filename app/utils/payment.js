@@ -5,8 +5,8 @@ import { isNativeApp } from "./platform";
 // ── 크레딧 패키지 가격표 ──────────────────────────────
 const PACKAGE_PRICES = {
   credit_1000: { krw: 10000, usd: 999, label: "1,000 Credits" },
-  credit_3900: { krw: 29000, usd: 2499, label: "3,900 Credits" },
-  credit_9900: { krw: 59000, usd: 4999, label: "9,900 Credits" },
+  credit_3000: { krw: 24000, usd: 2099, label: "3,000 Credits" },
+  credit_6000: { krw: 39000, usd: 3399, label: "6,000 Credits" },
 };
 
 // ── 앱 딥링크 & 웹 URL ──────────────────────────────

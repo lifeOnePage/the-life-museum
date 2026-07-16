@@ -81,5 +81,5 @@ export const config = {
   // .well-known: AASA(apple-app-site-association)는 확장자가 없어 .*\..* 예외에
   // 안 걸리므로 명시적으로 제외해야 함. 누락 시 /ko/.well-known/...로 308 리다이렉트되어
   // Apple이 AASA를 거부 → Universal Links 전체 실패.
-  matcher: ["/((?!api|payment|_next/static|_next/image|favicon.ico|images|\\.well-known|.*\\..*).*)",],
+  matcher: ["/((?!api|payment|coupon-admin|_next/static|_next/image|favicon.ico|images|\\.well-known|.*\\..*).*)",],
 };

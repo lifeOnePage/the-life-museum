@@ -223,6 +223,9 @@ export default function MyShelfPage({ params }) {
             frontImage: hit
               ? cached.frontImage
               : (prevComposite ?? item.coverImage?.url ?? "#ffffff"),
+            // 원본 R2 URL (카톡 공유용) — frontImage는 캐시된 합성본(data:/blob:)일
+            // 수 있어 공유에 못 쓰므로 별도로 보관한다.
+            coverUrl: item.coverImage?.url ?? null,
             backImage: hit ? cached.backImage : (prev?.backImage ?? null),
             edgeColor: item.bgColor || "#ffffff",
             role: item.role || "owner",

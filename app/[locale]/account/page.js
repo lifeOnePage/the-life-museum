@@ -89,7 +89,7 @@ const T = {
     expectedCredits: "충전 후 예상 보유 크레딧",
     totalPayment: "총 결제 금액",
     couponTitle: "쿠폰 보관함",
-    couponDesc: "쿠폰 코드를 등록하면 충전 시 사용할 수 있습니다.",
+    couponDesc: "쿠폰 코드를 등록하세요. 크레딧 쿠폰은 즉시 지급되고, 할인 쿠폰은 충전 시 사용할 수 있습니다.",
     couponHistory: "적용된 쿠폰",
     noCoupons: "등록된 쿠폰이 없습니다.",
     couponRegister: "등록",
@@ -143,7 +143,7 @@ const T = {
     expectedCredits: "Expected credits after purchase",
     totalPayment: "Total payment",
     couponTitle: "Coupon Wallet",
-    couponDesc: "Register coupon codes to use when purchasing credits.",
+    couponDesc: "Register coupon codes. Credit coupons are granted instantly; discount coupons can be used when purchasing credits.",
     couponHistory: "Applied Coupons",
     noCoupons: "No coupons registered.",
     couponRegister: "Register",
@@ -308,6 +308,7 @@ export default function AccountPage() {
   const [saveCouponCode, setSaveCouponCode] = useState("");
   const [saveCouponValidating, setSaveCouponValidating] = useState(false);
   const [saveCouponError, setSaveCouponError] = useState("");
+  const [saveCouponSuccess, setSaveCouponSuccess] = useState("");
 
   useEffect(() => {
     const locale = getStoredLocale();
@@ -484,44 +485,79 @@ export default function AccountPage() {
     setCouponError("");
   };
 
-  // 쿠폰 보관함에 저장
+  // 쿠폰 등록: 할인 쿠폰(하드코딩)은 보관함에 저장, 그 외에는 크레딧 쿠폰으로 서버 등록(즉시 지급)
   const handleSaveCoupon = async () => {
     if (!saveCouponCode.trim()) return;
     setSaveCouponValidating(true);
     setSaveCouponError("");
+    setSaveCouponSuccess("");
 
-    // TODO: 임시 — 쿠폰 코드별 저장
-    await new Promise((r) => setTimeout(r, 500));
-    const code = saveCouponCode.trim().toLowerCase();
+    const rawCode = saveCouponCode.trim();
+    const code = rawCode.toLowerCase();
     const COUPON_MAP = {
       manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
       "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
       "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
     };
     const match = COUPON_MAP[code];
-    if (!match) {
-      setSaveCouponError(currentLocale === "ko" ? "유효하지 않은 쿠폰 코드입니다." : "Invalid coupon code.");
+    if (match) {
+      const newCoupon = {
+        type: "amount",
+        value: match.value,
+        code: rawCode,
+        groupName: match.groupName,
+        couponName: match.couponName,
+      };
+
+      // 중복 체크
+      if (savedCoupons.some((c) => c.code === newCoupon.code)) {
+        setSaveCouponError(currentLocale === "ko" ? "이미 등록된 쿠폰입니다." : "Coupon already registered.");
+        setSaveCouponValidating(false);
+        return;
+      }
+
+      setSavedCoupons((prev) => [...prev, newCoupon]);
+      setSaveCouponCode("");
       setSaveCouponValidating(false);
       return;
     }
-    const newCoupon = {
-      type: "amount",
-      value: match.value,
-      code: saveCouponCode.trim(),
-      groupName: match.groupName,
-      couponName: match.couponName,
-    };
 
-    // 중복 체크
-    if (savedCoupons.some((c) => c.code === newCoupon.code)) {
-      setSaveCouponError(currentLocale === "ko" ? "이미 등록된 쿠폰입니다." : "Coupon already registered.");
+    // 크레딧 쿠폰 — 서버에서 검증 후 크레딧 즉시 지급
+    try {
+      const res = await authedFetch(`${BASE_URL}/coupon/redeem`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: rawCode }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const msg =
+          currentLocale === "ko"
+            ? data.detail || "유효하지 않은 쿠폰 코드입니다."
+            : res.status === 409
+              ? "This coupon has already been used."
+              : "Invalid coupon code.";
+        setSaveCouponError(msg);
+        return;
+      }
+      const merged = { ...user, credits: data.credits };
+      setUser(merged);
+      localStorage.setItem("app_user", JSON.stringify(merged));
+      setSaveCouponSuccess(
+        currentLocale === "ko"
+          ? `${data.added.toLocaleString()} 크레딧이 지급되었습니다. (보유 ${data.credits.toLocaleString()} 크레딧)`
+          : `${data.added.toLocaleString()} credits added. (Balance: ${data.credits.toLocaleString()})`,
+      );
+      setSaveCouponCode("");
+    } catch {
+      setSaveCouponError(
+        currentLocale === "ko"
+          ? "쿠폰 등록 중 오류가 발생했어요. 잠시 후 다시 시도해주세요."
+          : "Failed to register coupon. Please try again.",
+      );
+    } finally {
       setSaveCouponValidating(false);
-      return;
     }
-
-    setSavedCoupons((prev) => [...prev, newCoupon]);
-    setSaveCouponCode("");
-    setSaveCouponValidating(false);
   };
 
   const handleRemoveSavedCoupon = (code) => {
@@ -1227,6 +1263,7 @@ export default function AccountPage() {
                     onChange={(e) => {
                       setSaveCouponCode(e.target.value);
                       setSaveCouponError("");
+                      setSaveCouponSuccess("");
                     }}
                     placeholder={t.couponPlaceholder}
                     className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 outline-none transition focus:border-[#c4b49a]"
@@ -1241,6 +1278,9 @@ export default function AccountPage() {
                 </div>
                 {saveCouponError && (
                   <p className="mt-2 text-xs text-red-400/80">{saveCouponError}</p>
+                )}
+                {saveCouponSuccess && (
+                  <p className="mt-2 text-xs text-green-400/80">{saveCouponSuccess}</p>
                 )}
               </div>
 

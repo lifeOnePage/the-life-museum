@@ -12,6 +12,7 @@ import Header from "../components/Header";
 import { Share2, Pencil, ArrowRight, Lock, Sparkles } from "lucide-react";
 import { generateBackCoverDataUrl } from "@/app/lib/generateBackCover";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
+import { getProxiedUrl } from "@/app/lib/proxy";
 import {
   cachedAlbums,
   setCachedAlbums,
@@ -43,7 +44,8 @@ function loadImage(src) {
         proxy.crossOrigin = "anonymous";
         proxy.onload = () => resolve(proxy);
         proxy.onerror = () => resolve(null);
-        proxy.src = `https://the-life-museum-backend-production.up.railway.app/api/v1/scraper/proxy/image?url=${encodeURIComponent(src)}`;
+        // 직접 로드가 실패한 폴백 — R2 URL이라도 프록시로 강제 재시도
+        proxy.src = getProxiedUrl(src, { force: true });
       } else {
         resolve(null);
       }

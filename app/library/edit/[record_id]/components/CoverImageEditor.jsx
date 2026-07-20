@@ -11,6 +11,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { getProxiedUrl } from "@/app/lib/proxy";
 import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
 import CoverImageGenerator from "./CoverImageGenerator";
 import ScrollToTopButton from "./ScrollToTopButton";
@@ -170,7 +171,7 @@ const CoverImageEditor = forwardRef(
       const media = photoMedia[index];
       if (!media) return;
       const rawUrl = media.original_url || media.thumbnail_url;
-      const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+      const proxyUrl = getProxiedUrl(rawUrl);
       setSelectedImageUrl(proxyUrl);
       setSelectedFile(null);
 

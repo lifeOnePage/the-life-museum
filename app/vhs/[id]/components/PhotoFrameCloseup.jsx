@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { X, ImageIcon } from "lucide-react";
+import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
 import {
   PHOTO_FRAME_CLOSEUP,
   PHOTO_FRAME_CLOSEUP_VIEWPORT,
@@ -110,6 +111,13 @@ export default function PhotoFrameCloseup({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [visible, showPicker, onClose]);
+
+  // 썸네일 그리드 청크 마운트 — 수천 장 앨범에서 전량 마운트 방지
+  const {
+    visibleCount: gridCount,
+    sentinelRef: gridSentinelRef,
+    hasMore: gridHasMore,
+  } = useChunkedGrid(images?.length ?? 0);
 
   if (!visible && !fadeIn) return null;
 
@@ -226,7 +234,7 @@ export default function PhotoFrameCloseup({
               className="grid grid-cols-3 gap-2 overflow-y-auto p-4 sm:grid-cols-4"
               style={{ maxHeight: "calc(70vh - 52px)" }}
             >
-              {images.map((img, idx) => {
+              {images.slice(0, gridCount).map((img, idx) => {
                 const thumb = img.thumbnail_url || img.original_url;
                 const isSelected = idx === selectedIndex;
                 return (
@@ -242,6 +250,8 @@ export default function PhotoFrameCloseup({
                     <img
                       src={thumb}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       draggable={false}
                     />
@@ -251,6 +261,9 @@ export default function PhotoFrameCloseup({
                   </button>
                 );
               })}
+              {gridHasMore && (
+                <div ref={gridSentinelRef} className="col-span-full h-6" />
+              )}
             </div>
           </div>
         </div>

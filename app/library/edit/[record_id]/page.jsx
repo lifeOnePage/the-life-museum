@@ -1771,11 +1771,9 @@ const Index = ({ params }) => {
                                   initialState.current.frontCover
                                 }
                                 photoMedia={photoDrive.photoMedia}
-                                photoBlobUrls={photoDrive.photoBlobUrls}
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 isLoading={photoDrive.isLoading}
-                                preloadBlobs={photoDrive.preloadBlobs}
                                 locale={locale}
                                 isAdmin={isAdmin}
                                 onRequestAIConsent={(type) => {
@@ -1831,11 +1829,9 @@ const Index = ({ params }) => {
                                 backCoverImageUrl={backCoverImageUrl}
                                 onUrlChange={setBackCoverImageUrl}
                                 photoMedia={photoDrive.photoMedia}
-                                photoBlobUrls={photoDrive.photoBlobUrls}
                                 onRefreshPhotos={photoDrive.refresh}
                                 isRefreshing={photoDrive.isRefreshing}
                                 isLoading={photoDrive.isLoading}
-                                preloadBlobs={photoDrive.preloadBlobs}
                                 locale={locale}
                               />
                             </div>

@@ -11,6 +11,7 @@ import {
   FolderOpen,
 } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
 import CoverImageGenerator from "./CoverImageGenerator";
 import ScrollToTopButton from "./ScrollToTopButton";
 
@@ -75,11 +76,9 @@ const CoverImageEditor = forwardRef(
       initialFrontCover,
       record_id,
       photoMedia,
-      photoBlobUrls,
       onRefreshPhotos,
       isRefreshing,
       isLoading,
-      preloadBlobs,
       locale,
       onRequestAIConsent,
       isAdmin = false,
@@ -93,6 +92,12 @@ const CoverImageEditor = forwardRef(
     const [selectedFile, setSelectedFile] = useState(null);
     const [selectedImageUrl, setSelectedImageUrl] = useState(null);
     const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
+    // 포토드라이브 그리드 청크 마운트 — 수천 장 앨범에서 DOM 전량 마운트 방지
+    const {
+      visibleCount: gridCount,
+      sentinelRef: gridSentinelRef,
+      hasMore: gridHasMore,
+    } = useChunkedGrid(photoMedia?.length ?? 0);
     // 포토드라이브 사진 목록 시작점 (맨 위로 버튼의 스크롤 타겟)
     const photodriveTopRef = useRef(null);
 
@@ -169,18 +174,13 @@ const CoverImageEditor = forwardRef(
       setSelectedImageUrl(proxyUrl);
       setSelectedFile(null);
 
-      // 1) 즉시 반영: 프리로드된 blob이 있으면 그것, 없으면 작은 썸네일(400px)로
-      //    프리뷰부터 교체 — 원본(2000px) 프록시 다운로드를 기다리지 않는다.
-      onImageGenerated(photoBlobUrls[index] || media.thumbnail_url || proxyUrl);
+      // 1) 즉시 반영: 작은 썸네일(400px)로 프리뷰부터 교체 —
+      //    원본(2000px) 프록시 다운로드를 기다리지 않는다.
+      onImageGenerated(media.thumbnail_url || proxyUrl);
 
       // Convert to File for upload via /cover/temp (same as device upload)
       try {
-        let blob;
-        if (photoBlobUrls[index]) {
-          blob = await fetch(photoBlobUrls[index]).then((r) => r.blob());
-        } else {
-          blob = await fetch(proxyUrl).then((r) => r.blob());
-        }
+        const blob = await fetch(proxyUrl).then((r) => r.blob());
         if (seq !== selectSeqRef.current) return; // 더 최신 선택이 있음 — 무시
         const ext = blob.type === "image/png" ? "png" : "jpg";
         const file = new File([blob], `photo-drive.${ext}`, {
@@ -235,11 +235,9 @@ const CoverImageEditor = forwardRef(
                 {/* Photo drive card */}
                 <button
                   onClick={() => {
+                    // 사진은 선택 시 해당 1장만 온디맨드로 가져온다 (전량 프리로드 금지)
                     setView("photodrive");
                     setSelectedPhotoIndex(-1);
-                    // preloadBlobs() 제거: 앨범 전체 원본을 프록시로 일괄 다운로드하면
-                    // 그 대기열에 선택한 사진의 로드까지 갇혀 프리뷰 반영이 수십 초
-                    // 지연된다. 선택 시 해당 사진만 온디맨드로 가져온다.
                   }}
                   className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
                 >
@@ -330,7 +328,7 @@ const CoverImageEditor = forwardRef(
                   animate={{ opacity: 1, y: 0 }}
                 >
                   <div className="grid grid-cols-3 gap-3">
-                    {photoMedia.map((media, i) => (
+                    {photoMedia.slice(0, gridCount).map((media, i) => (
                       <button
                         key={i}
                         onClick={() => handleSelectPhoto(i)}
@@ -349,6 +347,9 @@ const CoverImageEditor = forwardRef(
                         />
                       </button>
                     ))}
+                    {gridHasMore && (
+                      <div ref={gridSentinelRef} className="col-span-full h-6" />
+                    )}
                   </div>
                 </motion.div>
               )}
@@ -375,11 +376,9 @@ const CoverImageEditor = forwardRef(
                 onBack={() => setView("menu")}
                 initialFrontCover={initialFrontCover}
                 photoMedia={photoMedia}
-                photoBlobUrls={photoBlobUrls}
                 onRefreshPhotos={onRefreshPhotos}
                 isRefreshing={isRefreshing}
                 isLoading={isLoading}
-                preloadBlobs={preloadBlobs}
                 locale={locale}
                 onRequestAIConsent={onRequestAIConsent}
                 isAdmin={isAdmin}

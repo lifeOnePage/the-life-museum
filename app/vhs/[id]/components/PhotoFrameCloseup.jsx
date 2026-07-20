@@ -193,11 +193,14 @@ export default function PhotoFrameCloseup({
         </button>
       )}
 
-      {/* Close button */}
+      {/* Close button — 모바일 노치/상태바를 피하도록 safe-area 상단 여백 적용 */}
       <button
         onClick={onClose}
-        className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
-        style={{ zIndex: 10 }}
+        className="absolute right-6 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+        style={{
+          zIndex: 10,
+          top: "max(1.5rem, calc(env(safe-area-inset-top) + 0.75rem))",
+        }}
         aria-label="닫기"
       >
         <X className="h-5 w-5" />

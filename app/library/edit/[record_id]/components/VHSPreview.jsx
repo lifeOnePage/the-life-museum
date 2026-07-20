@@ -193,7 +193,6 @@ export default function VHSPreview({
   const [showPicker, setShowPicker] = useState(false);
   // Whether the user explicitly chose a frame photo this session. Until an explicit
   // choice (here or a saved index > 0), the frame defaults to the album back cover.
-  const [userPickedFrame, setUserPickedFrame] = useState(false);
   const timerRef = useRef(null);
   const transitionTimerRef = useRef(null);
 
@@ -325,20 +324,17 @@ export default function VHSPreview({
     return result;
   }, [currentItem, nextItem, currentIndex, nextIndex]);
 
-  // Photo frame image: an explicit choice (in-session pick or a saved index > 0)
-  // wins; otherwise default to the album back cover, then front cover.
-  const frameExplicit = userPickedFrame || (photoFrameIndex ?? 0) > 0;
-  const explicitFrameImage = frameExplicit ? imageList[photoFrameIndex] : null;
+  // Photo frame image — 감상 화면(VHSExhibition)과 동일 규칙: 액자는 항상
+  // imageList[index]에서 가져온다 (기본 0 — is_cover 제외 목록이라 앨범 커버와
+  // 안 겹침). 커버 URL(backCover/frontCover)은 동영상(mp4)일 수 있고, 감상
+  // 화면의 확대 뷰와 다른 사진을 보여주게 되므로 기본값으로 쓰지 않는다.
+  const frameIdx = imageList[photoFrameIndex ?? 0] ? (photoFrameIndex ?? 0) : 0;
+  const frameItem = imageList[frameIdx];
   const photoFrameSrc =
-    explicitFrameImage?.original_url ||
-    explicitFrameImage?.thumbnail_url ||
-    backCoverImageUrl ||
-    frontCover ||
-    undefined;
+    frameItem?.original_url || frameItem?.thumbnail_url || undefined;
 
   const handlePickPhoto = useCallback(
     (index) => {
-      setUserPickedFrame(true);
       onPhotoFrameIndexChange?.(index);
       setShowPicker(false);
     },
@@ -547,7 +543,7 @@ export default function VHSPreview({
             >
               {imageList.map((img, idx) => {
                 const thumb = img.thumbnail_url || img.original_url;
-                const isSelected = idx === photoFrameIndex;
+                const isSelected = idx === frameIdx;
                 return (
                   <button
                     key={img.id ?? idx}
@@ -561,6 +557,8 @@ export default function VHSPreview({
                     <img
                       src={thumb}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       draggable={false}
                     />

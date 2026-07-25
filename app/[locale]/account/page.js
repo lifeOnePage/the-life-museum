@@ -1,10 +1,13 @@
 "use client";
 
-import { Fragment, useState, useEffect } from "react";
+import { Fragment, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
-import { requestCreditPurchase } from "@/app/utils/payment";
+import {
+  requestCreditPurchase,
+  applyCouponDiscount,
+} from "@/app/utils/payment";
 import AppName from "@/app/components/AppName";
 import Footer from "@/app/components/Footer";
 import LegalModal from "@/app/components/LegalModal";
@@ -177,11 +180,6 @@ function setLocaleCookie(locale) {
   localStorage.setItem("NEXT_LOCALE", locale);
 }
 
-const COUPON_GROUP_STYLE = {
-  "와디즈 쿠폰": { border: "border-l-[#c4b49a]", badge: "bg-[#c4b49a]/15 text-[#c4b49a]", text: "text-[#c4b49a]/70" },
-  "카톡이벤트":  { border: "border-l-[#fee500]", badge: "bg-[#fee500]/15 text-[#fee500]", text: "text-[#fee500]/70" },
-};
-const DEFAULT_COUPON_STYLE = { border: "border-l-white/20", badge: "bg-white/10 text-white/50", text: "text-white/50" };
 
 function formatPrice(price, locale) {
   if (price === 0) return locale === "ko" ? "₩0" : "$0";
@@ -300,11 +298,10 @@ export default function AccountPage() {
   const [showAgreeModal, setShowAgreeModal] = useState(false);
 
   // 쿠폰
-  const [couponCode, setCouponCode] = useState("");
+  // 적용 중인 할인 쿠폰: { code, discountPercent, maxDiscountKrw }
   const [couponDiscount, setCouponDiscount] = useState(null);
-  const [couponValidating, setCouponValidating] = useState(false);
-  const [couponError, setCouponError] = useState("");
-  const [savedCoupons, setSavedCoupons] = useState([]);
+  // 서버 보관함의 미사용 할인 쿠폰 목록
+  const [myCoupons, setMyCoupons] = useState([]);
   const [saveCouponCode, setSaveCouponCode] = useState("");
   const [saveCouponValidating, setSaveCouponValidating] = useState(false);
   const [saveCouponError, setSaveCouponError] = useState("");
@@ -392,6 +389,9 @@ export default function AccountPage() {
         userPhone: user?.phone || "",
         locale: currentLocale,
         method,
+        // 할인 쿠폰: 결제 금액에 즉시 반영 + 네이티브 흐름엔 코드로 전달
+        coupon: couponDiscount || undefined,
+        couponCode: couponDiscount?.code,
       });
       if (rsp?.paymentId) {
         const res = await authedFetch(`${BASE_URL}/credit/purchase`, {
@@ -409,6 +409,11 @@ export default function AccountPage() {
           setUser(merged);
           localStorage.setItem("app_user", JSON.stringify(merged));
           setPaymentSuccess(true);
+          // 사용된 할인 쿠폰 정리 + 보관함 목록 갱신
+          if (couponDiscount) {
+            setCouponDiscount(null);
+            fetchMyCoupons();
+          }
         } else {
           const data = await res.json().catch(() => ({}));
           setPaymentError(data.message || data.detail || t.paymentError);
@@ -422,70 +427,38 @@ export default function AccountPage() {
   };
 
   // ── 쿠폰 핸들러 ──
-  const handleCouponApply = async () => {
-    if (!couponCode.trim()) return;
-    setCouponValidating(true);
-    setCouponError("");
-    setCouponDiscount(null);
-
-    // TODO: 임시 — 쿠폰 코드별 할인
-    await new Promise((r) => setTimeout(r, 500));
-    const code = couponCode.trim().toLowerCase();
-    const COUPON_MAP = {
-      manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
-      "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
-      "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
-    };
-    const match = COUPON_MAP[code];
-    if (!match) {
-      setCouponError(t.couponInvalid);
-      setCouponValidating(false);
-      return;
-    }
-    setCouponDiscount({
-      type: "amount",
-      value: match.value,
-      code: couponCode.trim(),
-      groupName: match.groupName,
-      couponName: match.couponName,
-    });
-    setCouponValidating(false);
-    return;
-
+  // 서버 보관함의 미사용 할인 쿠폰 목록 조회 (충전 탭 리스트의 데이터 원천)
+  const fetchMyCoupons = useCallback(async () => {
     try {
-      const res = await authedFetch(`${BASE_URL}/coupon/validate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          code: couponCode.trim(),
-          package: selectedPackage,
-        }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCouponDiscount({
-          type: data.type,
-          value: data.value,
-          code: couponCode.trim(),
-        });
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setCouponError(data.message || data.detail || t.couponInvalid);
-      }
+      const res = await authedFetch(`${BASE_URL}/coupon/my`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setMyCoupons(
+        (data.items || []).map((c) => ({
+          code: c.code,
+          discountPercent: c.discount_percent,
+          maxDiscountKrw: c.max_discount_krw,
+        })),
+      );
     } catch {
-      setCouponError(t.couponInvalid);
-    } finally {
-      setCouponValidating(false);
+      // 목록 조회 실패는 조용히 무시 (쿠폰 없음으로 표시)
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (showPurchase) fetchMyCoupons();
+  }, [showPurchase, fetchMyCoupons]);
 
   const handleCouponRemove = () => {
-    setCouponCode("");
     setCouponDiscount(null);
-    setCouponError("");
   };
 
-  // 쿠폰 등록: 할인 쿠폰(하드코딩)은 보관함에 저장, 그 외에는 크레딧 쿠폰으로 서버 등록(즉시 지급)
+  const handleApplySavedCoupon = (coupon) => {
+    setCouponDiscount(coupon);
+  };
+
+  // 쿠폰 코드 등록 (보관함 탭): 서버가 타입을 판별해
+  // credit → 즉시 크레딧 지급, discount → 보관함 등록
   const handleSaveCoupon = async () => {
     if (!saveCouponCode.trim()) return;
     setSaveCouponValidating(true);
@@ -493,36 +466,6 @@ export default function AccountPage() {
     setSaveCouponSuccess("");
 
     const rawCode = saveCouponCode.trim();
-    const code = rawCode.toLowerCase();
-    const COUPON_MAP = {
-      manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
-      "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
-      "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
-    };
-    const match = COUPON_MAP[code];
-    if (match) {
-      const newCoupon = {
-        type: "amount",
-        value: match.value,
-        code: rawCode,
-        groupName: match.groupName,
-        couponName: match.couponName,
-      };
-
-      // 중복 체크
-      if (savedCoupons.some((c) => c.code === newCoupon.code)) {
-        setSaveCouponError(currentLocale === "ko" ? "이미 등록된 쿠폰입니다." : "Coupon already registered.");
-        setSaveCouponValidating(false);
-        return;
-      }
-
-      setSavedCoupons((prev) => [...prev, newCoupon]);
-      setSaveCouponCode("");
-      setSaveCouponValidating(false);
-      return;
-    }
-
-    // 크레딧 쿠폰 — 서버에서 검증 후 크레딧 즉시 지급
     try {
       const res = await authedFetch(`${BASE_URL}/coupon/redeem`, {
         method: "POST",
@@ -540,6 +483,20 @@ export default function AccountPage() {
         setSaveCouponError(msg);
         return;
       }
+
+      if (data.type === "discount") {
+        const c = data.coupon || {};
+        setSaveCouponSuccess(
+          currentLocale === "ko"
+            ? `${c.discountPercent}% 할인 쿠폰이 보관함에 등록되었습니다. 크레딧 충전 시 사용할 수 있어요.`
+            : `A ${c.discountPercent}% discount coupon was added to your wallet. Use it when purchasing credits.`,
+        );
+        setSaveCouponCode("");
+        fetchMyCoupons();
+        return;
+      }
+
+      // credit 타입 — 즉시 지급
       const merged = { ...user, credits: data.credits };
       setUser(merged);
       localStorage.setItem("app_user", JSON.stringify(merged));
@@ -560,23 +517,15 @@ export default function AccountPage() {
     }
   };
 
-  const handleRemoveSavedCoupon = (code) => {
-    setSavedCoupons((prev) => prev.filter((c) => c.code !== code));
-    if (couponDiscount?.code === code) {
-      handleCouponRemove();
-    }
-  };
-
-  const handleApplySavedCoupon = (coupon) => {
-    setCouponDiscount(coupon);
-    setCouponCode(coupon.code);
-  };
-
+  // 결제 요약 표시용 할인가 — 실제 청구액(payment.js applyCouponDiscount)과
+  // 동일한 수식을 사용해 표시가와 청구가가 어긋나지 않게 한다.
   const calcDiscountedPrice = (price) => {
-    if (!couponDiscount) return price;
-    if (couponDiscount.type === "percent")
-      return Math.round(price * (1 - couponDiscount.value / 100));
-    return Math.max(0, price - couponDiscount.value);
+    if (!couponDiscount || !selectedPkg) return price;
+    const discounted = applyCouponDiscount(
+      { krw: selectedPkg.priceKRW, usd: selectedPkg.priceUSD },
+      couponDiscount,
+    );
+    return currency === "KRW" ? discounted.krw : discounted.usd;
   };
 
   const selectedPkg = CREDIT_PACKAGES.find((p) => p.key === selectedPackage);
@@ -1013,9 +962,12 @@ export default function AccountPage() {
                               <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                             <span className="text-sm font-medium text-green-400">
-                              {couponDiscount.type === "percent"
-                                ? `${couponDiscount.value}% ${t.discountLabel}`
-                                : `${formatPrice(couponDiscount.value, currency === "KRW" ? "ko" : "en")} ${t.discountLabel}`}
+                              {`${couponDiscount.discountPercent}% ${t.discountLabel}`}
+                            </span>
+                            <span className="text-xs text-green-400/70">
+                              {currentLocale === "ko"
+                                ? `(최대 ₩${(couponDiscount.maxDiscountKrw || 0).toLocaleString()})`
+                                : `(up to ₩${(couponDiscount.maxDiscountKrw || 0).toLocaleString()})`}
                             </span>
                           </div>
                           <button
@@ -1025,71 +977,38 @@ export default function AccountPage() {
                             {t.couponRemove}
                           </button>
                         </div>
-                        {(couponDiscount.groupName || couponDiscount.couponName) && (() => {
-                          const gs = COUPON_GROUP_STYLE[couponDiscount.groupName] || DEFAULT_COUPON_STYLE;
-                          return (
-                            <div className="mt-2 flex flex-col gap-0.5 pl-6 text-xs">
-                              {couponDiscount.groupName && <span className={gs.text}>{couponDiscount.groupName}</span>}
-                              {couponDiscount.couponName && <span className="text-green-400/70">{couponDiscount.couponName}</span>}
+                      </div>
+                    ) : myCoupons.length > 0 ? (
+                      /* 보유 할인 쿠폰 리스트에서 선택 */
+                      <div className="flex flex-col gap-2">
+                        {myCoupons.map((coupon) => (
+                          <button
+                            key={coupon.code}
+                            onClick={() => handleApplySavedCoupon(coupon)}
+                            className="flex items-center justify-between rounded-lg border border-white/10 border-l-[3px] border-l-[#c4b49a]/60 px-4 py-3 text-left transition hover:bg-white/5"
+                          >
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-sm font-medium text-[#e8d5b7]">
+                                {`${coupon.discountPercent}% ${t.discountLabel}`}
+                              </span>
+                              <span className="text-xs text-[#9b8b7a]">
+                                {coupon.code}
+                              </span>
                             </div>
-                          );
-                        })()}
+                            <span className="text-xs text-[#c4b49a]">
+                              {currentLocale === "ko"
+                                ? `최대 ₩${(coupon.maxDiscountKrw || 0).toLocaleString()}`
+                                : `up to ₩${(coupon.maxDiscountKrw || 0).toLocaleString()}`}
+                            </span>
+                          </button>
+                        ))}
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-3">
-                        {/* 보관함 쿠폰 선택 */}
-                        {savedCoupons.length > 0 && (
-                          <div className="flex flex-col gap-2">
-                            {savedCoupons.map((coupon) => {
-                              const gs = COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
-                              return (
-                                <button
-                                  key={coupon.code}
-                                  onClick={() => handleApplySavedCoupon(coupon)}
-                                  className={`flex items-center justify-between rounded-lg border border-white/10 border-l-[3px] ${gs.border} px-4 py-3 text-left transition hover:bg-white/5`}
-                                >
-                                  <div className="flex flex-col gap-0.5">
-                                    {coupon.groupName && (
-                                      <span className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}>{coupon.groupName}</span>
-                                    )}
-                                    <span className="text-sm text-[#e8d5b7]">
-                                      {coupon.couponName || coupon.code}
-                                    </span>
-                                  </div>
-                                  <span className="text-xs text-[#c4b49a]">
-                                    {coupon.type === "percent"
-                                      ? `${coupon.value}%`
-                                      : formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")}
-                                  </span>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                        {/* 직접 입력 */}
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            value={couponCode}
-                            onChange={(e) => {
-                              setCouponCode(e.target.value);
-                              setCouponError("");
-                            }}
-                            placeholder={t.couponPlaceholder}
-                            className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 outline-none transition focus:border-[#c4b49a]"
-                          />
-                          <button
-                            onClick={handleCouponApply}
-                            disabled={couponValidating || !couponCode.trim()}
-                            className="rounded-lg bg-[#c4b49a] px-4 py-2.5 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
-                          >
-                            {couponValidating ? t.couponApplying : t.couponApply}
-                          </button>
-                        </div>
-                        {couponError && (
-                          <p className="mt-2 text-xs text-red-400/80">{couponError}</p>
-                        )}
-                      </div>
+                      <p className="py-1 text-xs text-[#9b8b7a]">
+                        {currentLocale === "ko"
+                          ? "보유한 할인 쿠폰이 없습니다. 쿠폰 보관함에서 코드를 등록하세요."
+                          : "No discount coupons. Register a code in the Coupon Wallet."}
+                      </p>
                     )}
                   </div>
                 )}
@@ -1288,30 +1207,28 @@ export default function AccountPage() {
               <h3 className="mb-3 text-sm font-medium text-[#9b8b7a]">
                 {t.savedCoupons}
               </h3>
-              {savedCoupons.length === 0 ? (
+              {myCoupons.length === 0 ? (
                 <div className="rounded-xl border border-white/10 bg-[#1e1a14] px-5 py-8 text-center text-sm text-[#9b8b7a]">
                   {t.noCoupons}
                 </div>
               ) : (
                 <div className="overflow-hidden rounded-xl border border-white/10">
-                  {savedCoupons.map((coupon, idx) => {
-                    const gs = COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
-                    return (
+                  {myCoupons.map((coupon, idx) => (
                     <div
                       key={coupon.code}
-                      className={`flex items-center justify-between bg-[#1e1a14] px-5 py-4 border-l-[3px] ${gs.border} ${idx > 0 ? "border-t border-white/8" : ""}`}
+                      className={`flex items-center justify-between bg-[#1e1a14] px-5 py-4 border-l-[3px] border-l-[#c4b49a]/60 ${idx > 0 ? "border-t border-white/8" : ""}`}
                     >
                       <div className="flex flex-col gap-0.5">
-                        {coupon.groupName && (
-                          <span className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}>{coupon.groupName}</span>
-                        )}
                         <span className="text-sm font-medium text-[#e8d5b7]">
-                          {coupon.couponName || coupon.code}
+                          {`${coupon.discountPercent}% ${t.discountLabel}`}
+                        </span>
+                        <span className="text-xs text-[#9b8b7a]">
+                          {coupon.code}
                         </span>
                         <span className="text-xs text-[#c4b49a]">
-                          {coupon.type === "percent"
-                            ? `${coupon.value}% ${t.discountLabel}`
-                            : `${formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")} ${t.discountLabel}`}
+                          {currentLocale === "ko"
+                            ? `최대 ₩${(coupon.maxDiscountKrw || 0).toLocaleString()}`
+                            : `up to ₩${(coupon.maxDiscountKrw || 0).toLocaleString()}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1330,16 +1247,9 @@ export default function AccountPage() {
                             {t.couponUse}
                           </button>
                         )}
-                        <button
-                          onClick={() => handleRemoveSavedCoupon(coupon.code)}
-                          className="text-xs text-white/30 transition hover:text-white/50"
-                        >
-                          ✕
-                        </button>
                       </div>
                     </div>
-                    );
-                  })}
+                  ))}
                 </div>
               )}
             </div>

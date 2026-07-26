@@ -8,6 +8,7 @@ import { requestCreditPurchase } from "@/app/utils/payment";
 import AppName from "@/app/components/AppName";
 import Footer from "@/app/components/Footer";
 import LegalModal from "@/app/components/LegalModal";
+import { getPlatform } from "@/app/utils/platform";
 
 // ── 크레딧 패키지 ──────────────────────────────
 const CREDIT_PACKAGES = [
@@ -271,9 +272,13 @@ export default function AccountPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // 결제(크레딧 충전) 노출 여부.
-  // 심사 통과 후 네이티브 앱에서도 결제를 노출하도록 항상 true.
-  // (필요 시 !isNativeApp()로 되돌리면 네이티브에서 다시 숨겨짐)
-  const showPurchase = true;
+  // iOS는 심사 통과 후 노출 중이지만, Android는 아직 Play 스토어 심사 전이라
+  // 외부 결제 수단(카드/카카오페이/PayPal 등) 노출이 정책 위반이 될 수 있어 숨긴다.
+  // 서버 렌더링 시엔 항상 web으로 잡히므로 useEffect에서 클라이언트 기준으로 보정한다.
+  const [showPurchase, setShowPurchase] = useState(true);
+  useEffect(() => {
+    setShowPurchase(getPlatform() !== "android");
+  }, []);
 
   const t = T[currentLocale] || T.ko;
 

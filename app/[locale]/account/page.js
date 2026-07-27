@@ -90,7 +90,8 @@ const T = {
     expectedCredits: "충전 후 예상 보유 크레딧",
     totalPayment: "총 결제 금액",
     couponTitle: "쿠폰 보관함",
-    couponDesc: "쿠폰 코드를 등록하세요. 크레딧 쿠폰은 즉시 지급되고, 할인 쿠폰은 충전 시 사용할 수 있습니다.",
+    couponDesc:
+      "쿠폰 코드를 등록하세요. 크레딧 쿠폰은 즉시 지급되고, 할인 쿠폰은 충전 시 사용할 수 있습니다.",
     couponHistory: "적용된 쿠폰",
     noCoupons: "등록된 쿠폰이 없습니다.",
     couponRegister: "등록",
@@ -144,7 +145,8 @@ const T = {
     expectedCredits: "Expected credits after purchase",
     totalPayment: "Total payment",
     couponTitle: "Coupon Wallet",
-    couponDesc: "Register coupon codes. Credit coupons are granted instantly; discount coupons can be used when purchasing credits.",
+    couponDesc:
+      "Register coupon codes. Credit coupons are granted instantly; discount coupons can be used when purchasing credits.",
     couponHistory: "Applied Coupons",
     noCoupons: "No coupons registered.",
     couponRegister: "Register",
@@ -157,7 +159,8 @@ const T = {
       "Deleting your account will permanently remove all your data and cannot be undone.",
     deleteConfirm: "Delete",
     deleting: "Deleting...",
-    purchaseAgreeLabel: "[Required] I agree to the purchase terms and refund policy",
+    purchaseAgreeLabel:
+      "[Required] I agree to the purchase terms and refund policy",
     purchaseAgreeViewDetail: "View details",
     purchaseAgreeModalTitle: "Purchase Terms & Refund Policy",
     purchaseAgreeModalBody:
@@ -179,10 +182,22 @@ function setLocaleCookie(locale) {
 }
 
 const COUPON_GROUP_STYLE = {
-  "와디즈 쿠폰": { border: "border-l-[#c4b49a]", badge: "bg-[#c4b49a]/15 text-[#c4b49a]", text: "text-[#c4b49a]/70" },
-  "카톡이벤트":  { border: "border-l-[#fee500]", badge: "bg-[#fee500]/15 text-[#fee500]", text: "text-[#fee500]/70" },
+  "와디즈 쿠폰": {
+    border: "border-l-[#c4b49a]",
+    badge: "bg-[#c4b49a]/15 text-[#c4b49a]",
+    text: "text-[#c4b49a]/70",
+  },
+  카톡이벤트: {
+    border: "border-l-[#fee500]",
+    badge: "bg-[#fee500]/15 text-[#fee500]",
+    text: "text-[#fee500]/70",
+  },
 };
-const DEFAULT_COUPON_STYLE = { border: "border-l-white/20", badge: "bg-white/10 text-white/50", text: "text-white/50" };
+const DEFAULT_COUPON_STYLE = {
+  border: "border-l-white/20",
+  badge: "bg-white/10 text-white/50",
+  text: "text-white/50",
+};
 
 function formatPrice(price, locale) {
   if (price === 0) return locale === "ko" ? "₩0" : "$0";
@@ -447,9 +462,21 @@ export default function AccountPage() {
     await new Promise((r) => setTimeout(r, 500));
     const code = couponCode.trim().toLowerCase();
     const COUPON_MAP = {
-      manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
-      "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
-      "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
+      manwon: {
+        value: 10000,
+        groupName: "와디즈 쿠폰",
+        couponName: "10,000원 할인권",
+      },
+      "2manwon": {
+        value: 20000,
+        groupName: "카톡이벤트",
+        couponName: "팔로워 20,000원 할인권",
+      },
+      "3manwon": {
+        value: 30000,
+        groupName: "와디즈 쿠폰",
+        couponName: "오픈 이벤트 30,000원 할인권",
+      },
     };
     const match = COUPON_MAP[code];
     if (!match) {
@@ -510,9 +537,21 @@ export default function AccountPage() {
     const rawCode = saveCouponCode.trim();
     const code = rawCode.toLowerCase();
     const COUPON_MAP = {
-      manwon: { value: 10000, groupName: "와디즈 쿠폰", couponName: "10,000원 할인권" },
-      "2manwon": { value: 20000, groupName: "카톡이벤트", couponName: "팔로워 20,000원 할인권" },
-      "3manwon": { value: 30000, groupName: "와디즈 쿠폰", couponName: "오픈 이벤트 30,000원 할인권" },
+      manwon: {
+        value: 10000,
+        groupName: "와디즈 쿠폰",
+        couponName: "10,000원 할인권",
+      },
+      "2manwon": {
+        value: 20000,
+        groupName: "카톡이벤트",
+        couponName: "팔로워 20,000원 할인권",
+      },
+      "3manwon": {
+        value: 30000,
+        groupName: "와디즈 쿠폰",
+        couponName: "오픈 이벤트 30,000원 할인권",
+      },
     };
     const match = COUPON_MAP[code];
     if (match) {
@@ -526,7 +565,11 @@ export default function AccountPage() {
 
       // 중복 체크
       if (savedCoupons.some((c) => c.code === newCoupon.code)) {
-        setSaveCouponError(currentLocale === "ko" ? "이미 등록된 쿠폰입니다." : "Coupon already registered.");
+        setSaveCouponError(
+          currentLocale === "ko"
+            ? "이미 등록된 쿠폰입니다."
+            : "Coupon already registered.",
+        );
         setSaveCouponValidating(false);
         return;
       }
@@ -641,7 +684,7 @@ export default function AccountPage() {
             <IconBack />
             {t.back}
           </button>
-          <h1 className="mb-4 text-lg font-semibold text-[#e8d5b7]">
+          <h1 className="mb-4 text-lg text-[#e8d5b7]">
             <AppName />
           </h1>
 
@@ -943,9 +986,7 @@ export default function AccountPage() {
                       key={pkg.key}
                       onClick={() => setSelectedPackage(pkg.key)}
                       className={`flex w-full items-center gap-3 px-4 py-4 transition ${
-                        isSelected
-                          ? "bg-[#c4b49a]/10"
-                          : "hover:bg-white/5"
+                        isSelected ? "bg-[#c4b49a]/10" : "hover:bg-white/5"
                       } ${idx > 0 ? "border-t border-white/8" : ""}`}
                     >
                       {/* 라디오 */}
@@ -972,10 +1013,14 @@ export default function AccountPage() {
                         <span className="text-[#e8d5b7]">
                           {formatPrice(price, currency === "KRW" ? "ko" : "en")}
                         </span>
-                        {(currency === "KRW" ? pkg.originalPriceKRW : pkg.originalPriceUSD) && (
+                        {(currency === "KRW"
+                          ? pkg.originalPriceKRW
+                          : pkg.originalPriceUSD) && (
                           <span className="text-[#9b8b7a]/50 line-through">
                             {formatPrice(
-                              currency === "KRW" ? pkg.originalPriceKRW : pkg.originalPriceUSD,
+                              currency === "KRW"
+                                ? pkg.originalPriceKRW
+                                : pkg.originalPriceUSD,
                               currency === "KRW" ? "ko" : "en",
                             )}
                           </span>
@@ -1009,7 +1054,11 @@ export default function AccountPage() {
                     stroke="currentColor"
                     strokeWidth={1.5}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                    />
                   </svg>
                 </button>
                 {chargeCouponOpen && (
@@ -1025,7 +1074,11 @@ export default function AccountPage() {
                               stroke="currentColor"
                               strokeWidth={2}
                             >
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                              />
                             </svg>
                             <span className="text-sm font-medium text-green-400">
                               {couponDiscount.type === "percent"
@@ -1040,15 +1093,27 @@ export default function AccountPage() {
                             {t.couponRemove}
                           </button>
                         </div>
-                        {(couponDiscount.groupName || couponDiscount.couponName) && (() => {
-                          const gs = COUPON_GROUP_STYLE[couponDiscount.groupName] || DEFAULT_COUPON_STYLE;
-                          return (
-                            <div className="mt-2 flex flex-col gap-0.5 pl-6 text-xs">
-                              {couponDiscount.groupName && <span className={gs.text}>{couponDiscount.groupName}</span>}
-                              {couponDiscount.couponName && <span className="text-green-400/70">{couponDiscount.couponName}</span>}
-                            </div>
-                          );
-                        })()}
+                        {(couponDiscount.groupName ||
+                          couponDiscount.couponName) &&
+                          (() => {
+                            const gs =
+                              COUPON_GROUP_STYLE[couponDiscount.groupName] ||
+                              DEFAULT_COUPON_STYLE;
+                            return (
+                              <div className="mt-2 flex flex-col gap-0.5 pl-6 text-xs">
+                                {couponDiscount.groupName && (
+                                  <span className={gs.text}>
+                                    {couponDiscount.groupName}
+                                  </span>
+                                )}
+                                {couponDiscount.couponName && (
+                                  <span className="text-green-400/70">
+                                    {couponDiscount.couponName}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })()}
                       </div>
                     ) : (
                       <div className="flex flex-col gap-3">
@@ -1056,16 +1121,22 @@ export default function AccountPage() {
                         {savedCoupons.length > 0 && (
                           <div className="flex flex-col gap-2">
                             {savedCoupons.map((coupon) => {
-                              const gs = COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
+                              const gs =
+                                COUPON_GROUP_STYLE[coupon.groupName] ||
+                                DEFAULT_COUPON_STYLE;
                               return (
                                 <button
                                   key={coupon.code}
                                   onClick={() => handleApplySavedCoupon(coupon)}
-                                  className={`flex items-center justify-between rounded-lg border border-white/10 border-l-[3px] ${gs.border} px-4 py-3 text-left transition hover:bg-white/5`}
+                                  className={`flex items-center justify-between rounded-lg border border-l-[3px] border-white/10 ${gs.border} px-4 py-3 text-left transition hover:bg-white/5`}
                                 >
                                   <div className="flex flex-col gap-0.5">
                                     {coupon.groupName && (
-                                      <span className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}>{coupon.groupName}</span>
+                                      <span
+                                        className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}
+                                      >
+                                        {coupon.groupName}
+                                      </span>
                                     )}
                                     <span className="text-sm text-[#e8d5b7]">
                                       {coupon.couponName || coupon.code}
@@ -1074,7 +1145,10 @@ export default function AccountPage() {
                                   <span className="text-xs text-[#c4b49a]">
                                     {coupon.type === "percent"
                                       ? `${coupon.value}%`
-                                      : formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")}
+                                      : formatPrice(
+                                          coupon.value,
+                                          currency === "KRW" ? "ko" : "en",
+                                        )}
                                   </span>
                                 </button>
                               );
@@ -1091,18 +1165,22 @@ export default function AccountPage() {
                               setCouponError("");
                             }}
                             placeholder={t.couponPlaceholder}
-                            className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 outline-none transition focus:border-[#c4b49a]"
+                            className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 transition outline-none focus:border-[#c4b49a]"
                           />
                           <button
                             onClick={handleCouponApply}
                             disabled={couponValidating || !couponCode.trim()}
                             className="rounded-lg bg-[#c4b49a] px-4 py-2.5 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
                           >
-                            {couponValidating ? t.couponApplying : t.couponApply}
+                            {couponValidating
+                              ? t.couponApplying
+                              : t.couponApply}
                           </button>
                         </div>
                         {couponError && (
-                          <p className="mt-2 text-xs text-red-400/80">{couponError}</p>
+                          <p className="mt-2 text-xs text-red-400/80">
+                            {couponError}
+                          </p>
                         )}
                       </div>
                     )}
@@ -1116,10 +1194,13 @@ export default function AccountPage() {
                   <div className="flex justify-between py-1">
                     <span className="text-[#9b8b7a]">{t.expectedCredits}</span>
                     <span className="font-semibold text-[#e8d5b7]">
-                      {((user?.credits ?? 0) + selectedPkg.credits).toLocaleString()} {t.creditUnit}
+                      {(
+                        (user?.credits ?? 0) + selectedPkg.credits
+                      ).toLocaleString()}{" "}
+                      {t.creditUnit}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between border-t border-white/10 pt-2 mt-2">
+                  <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
                     <span className="text-[#9b8b7a]">{t.totalPayment}</span>
                     <span className="flex items-center gap-2">
                       <span className="font-bold text-[#e8d5b7]">
@@ -1132,16 +1213,24 @@ export default function AccountPage() {
                           currency === "KRW" ? "ko" : "en",
                         )}
                       </span>
-                      {couponDiscount && calcDiscountedPrice(
-                        currency === "KRW" ? selectedPkg.priceKRW : selectedPkg.priceUSD
-                      ) !== (currency === "KRW" ? selectedPkg.priceKRW : selectedPkg.priceUSD) && (
-                        <span className="text-[#9b8b7a]/50 line-through">
-                          {formatPrice(
-                            currency === "KRW" ? selectedPkg.priceKRW : selectedPkg.priceUSD,
-                            currency === "KRW" ? "ko" : "en",
-                          )}
-                        </span>
-                      )}
+                      {couponDiscount &&
+                        calcDiscountedPrice(
+                          currency === "KRW"
+                            ? selectedPkg.priceKRW
+                            : selectedPkg.priceUSD,
+                        ) !==
+                          (currency === "KRW"
+                            ? selectedPkg.priceKRW
+                            : selectedPkg.priceUSD) && (
+                          <span className="text-[#9b8b7a]/50 line-through">
+                            {formatPrice(
+                              currency === "KRW"
+                                ? selectedPkg.priceKRW
+                                : selectedPkg.priceUSD,
+                              currency === "KRW" ? "ko" : "en",
+                            )}
+                          </span>
+                        )}
                     </span>
                   </div>
                 </div>
@@ -1167,7 +1256,7 @@ export default function AccountPage() {
                         e.preventDefault();
                         setShowAgreeModal(true);
                       }}
-                      className="underline underline-offset-2 text-[#c4b49a] transition hover:text-[#e8d5b7]"
+                      className="text-[#c4b49a] underline underline-offset-2 transition hover:text-[#e8d5b7]"
                     >
                       {t.purchaseAgreeViewDetail}
                     </button>
@@ -1257,7 +1346,6 @@ export default function AccountPage() {
                   )}
                 </>
               )}
-
             </div>
           )}
 
@@ -1281,21 +1369,27 @@ export default function AccountPage() {
                       setSaveCouponSuccess("");
                     }}
                     placeholder={t.couponPlaceholder}
-                    className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 outline-none transition focus:border-[#c4b49a]"
+                    className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 transition outline-none focus:border-[#c4b49a]"
                   />
                   <button
                     onClick={handleSaveCoupon}
                     disabled={saveCouponValidating || !saveCouponCode.trim()}
                     className="rounded-lg bg-[#c4b49a] px-4 py-2.5 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
                   >
-                    {saveCouponValidating ? t.couponRegistering : t.couponRegister}
+                    {saveCouponValidating
+                      ? t.couponRegistering
+                      : t.couponRegister}
                   </button>
                 </div>
                 {saveCouponError && (
-                  <p className="mt-2 text-xs text-red-400/80">{saveCouponError}</p>
+                  <p className="mt-2 text-xs text-red-400/80">
+                    {saveCouponError}
+                  </p>
                 )}
                 {saveCouponSuccess && (
-                  <p className="mt-2 text-xs text-green-400/80">{saveCouponSuccess}</p>
+                  <p className="mt-2 text-xs text-green-400/80">
+                    {saveCouponSuccess}
+                  </p>
                 )}
               </div>
 
@@ -1310,49 +1404,55 @@ export default function AccountPage() {
               ) : (
                 <div className="overflow-hidden rounded-xl border border-white/10">
                   {savedCoupons.map((coupon, idx) => {
-                    const gs = COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
+                    const gs =
+                      COUPON_GROUP_STYLE[coupon.groupName] ||
+                      DEFAULT_COUPON_STYLE;
                     return (
-                    <div
-                      key={coupon.code}
-                      className={`flex items-center justify-between bg-[#1e1a14] px-5 py-4 border-l-[3px] ${gs.border} ${idx > 0 ? "border-t border-white/8" : ""}`}
-                    >
-                      <div className="flex flex-col gap-0.5">
-                        {coupon.groupName && (
-                          <span className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}>{coupon.groupName}</span>
-                        )}
-                        <span className="text-sm font-medium text-[#e8d5b7]">
-                          {coupon.couponName || coupon.code}
-                        </span>
-                        <span className="text-xs text-[#c4b49a]">
-                          {coupon.type === "percent"
-                            ? `${coupon.value}% ${t.discountLabel}`
-                            : `${formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")} ${t.discountLabel}`}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {couponDiscount?.code === coupon.code ? (
-                          <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-400">
-                            {t.couponApplied}
+                      <div
+                        key={coupon.code}
+                        className={`flex items-center justify-between border-l-[3px] bg-[#1e1a14] px-5 py-4 ${gs.border} ${idx > 0 ? "border-t border-white/8" : ""}`}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          {coupon.groupName && (
+                            <span
+                              className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}
+                            >
+                              {coupon.groupName}
+                            </span>
+                          )}
+                          <span className="text-sm font-medium text-[#e8d5b7]">
+                            {coupon.couponName || coupon.code}
                           </span>
-                        ) : (
+                          <span className="text-xs text-[#c4b49a]">
+                            {coupon.type === "percent"
+                              ? `${coupon.value}% ${t.discountLabel}`
+                              : `${formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")} ${t.discountLabel}`}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {couponDiscount?.code === coupon.code ? (
+                            <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-400">
+                              {t.couponApplied}
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => {
+                                handleApplySavedCoupon(coupon);
+                                setSection("charge");
+                              }}
+                              className="rounded-lg border border-[#c4b49a]/30 px-3 py-1 text-xs text-[#c4b49a] transition hover:bg-[#c4b49a]/10"
+                            >
+                              {t.couponUse}
+                            </button>
+                          )}
                           <button
-                            onClick={() => {
-                              handleApplySavedCoupon(coupon);
-                              setSection("charge");
-                            }}
-                            className="rounded-lg border border-[#c4b49a]/30 px-3 py-1 text-xs text-[#c4b49a] transition hover:bg-[#c4b49a]/10"
+                            onClick={() => handleRemoveSavedCoupon(coupon.code)}
+                            className="text-xs text-white/30 transition hover:text-white/50"
                           >
-                            {t.couponUse}
+                            ✕
                           </button>
-                        )}
-                        <button
-                          onClick={() => handleRemoveSavedCoupon(coupon.code)}
-                          className="text-xs text-white/30 transition hover:text-white/50"
-                        >
-                          ✕
-                        </button>
+                        </div>
                       </div>
-                    </div>
                     );
                   })}
                 </div>

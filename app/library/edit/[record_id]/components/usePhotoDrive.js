@@ -19,7 +19,7 @@ export function usePhotoDrive(record_id) {
     (async () => {
       try {
         const response = await authedFetch(
-          `${API_URL}/api/v1/record/${record_id}/media`,
+          `${API_URL}/api/v1/record/${record_id}/media?images_only=true`,
         );
         const result = await response.json();
         if (result.ok && result.data) {
@@ -40,7 +40,7 @@ export function usePhotoDrive(record_id) {
     setIsRefreshing(true);
     try {
       const response = await authedFetch(
-        `${API_URL}/api/v1/record/${record_id}/media`,
+        `${API_URL}/api/v1/record/${record_id}/media?images_only=true`,
       );
       const result = await response.json();
       if (result.ok && result.data) {

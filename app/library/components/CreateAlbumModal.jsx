@@ -106,7 +106,7 @@ export default function CreateAlbumModal({
 
     // 크레딧 부족(무료 대상 아님) 시 생성 대신 충전 페이지로
     if (!canAfford) {
-      router.push(`/${locale}/account`);
+      router.push(`/${locale}/account?section=charge`);
       onClose();
       return;
     }

@@ -1,11 +1,21 @@
 "use client";
 
-import Image from "next/image";
-import AboutDetail from "@/app/components/main/AboutDetail";
-import AboutInfo from "@/app/components/main/AboutInfo";
 import Header from "@/app/components/main/Header";
 import Landing from "@/app/components/main/Landing";
 import Footer from "@/app/components/Footer";
+import SectionStory from "@/app/components/main/landing/SectionStory";
+import SectionManifesto from "@/app/components/main/landing/SectionManifesto";
+import SectionNotAlbum from "@/app/components/main/landing/SectionNotAlbum";
+import SectionGallery from "@/app/components/main/landing/SectionGallery";
+import SectionOneLink from "@/app/components/main/landing/SectionOneLink";
+import SectionHowItWorks from "@/app/components/main/landing/SectionHowItWorks";
+import SectionMakeAlbum from "@/app/components/main/landing/SectionMakeAlbum";
+import SectionThemes from "@/app/components/main/landing/SectionThemes";
+import SectionShare from "@/app/components/main/landing/SectionShare";
+import SectionComparison from "@/app/components/main/landing/SectionComparison";
+import SectionPricing from "@/app/components/main/landing/SectionPricing";
+import SectionFAQ from "@/app/components/main/landing/SectionFAQ";
+import SectionFinalCTA from "@/app/components/main/landing/SectionFinalCTA";
 import { useRouter } from "next/navigation";
 import { useAuth } from "./contexts/AuthContext";
 export default function Home() {
@@ -33,8 +43,19 @@ export default function Home() {
     >
       <Header page="main" mypage={mypage} login={login} logout={logout} />
       <Landing />
-      {/* <AboutInfo /> */}
-      {/* <AboutDetail /> */}
+      <SectionStory />
+      <SectionManifesto />
+      <SectionNotAlbum />
+      <SectionGallery />
+      <SectionOneLink />
+      <SectionHowItWorks />
+      <SectionMakeAlbum />
+      <SectionThemes />
+      <SectionShare />
+      <SectionComparison />
+      <SectionPricing />
+      <SectionFAQ />
+      <SectionFinalCTA />
       <Footer />
     </div>
   );

@@ -29,6 +29,14 @@ export default function CouponCard() {
       if (!res.ok) {
         throw new Error(json?.detail || "쿠폰 등록에 실패했어요.");
       }
+      if (json.type === "discount") {
+        setMessage({
+          type: "ok",
+          text: `${json.coupon?.discountPercent}% 할인 쿠폰이 보관함에 등록되었어요! 크레딧 충전 시 사용할 수 있어요.`,
+        });
+        setCode("");
+        return;
+      }
       setMessage({
         type: "ok",
         text: `${json.added.toLocaleString()} 크레딧이 지급되었어요! (보유: ${json.credits.toLocaleString()})`,

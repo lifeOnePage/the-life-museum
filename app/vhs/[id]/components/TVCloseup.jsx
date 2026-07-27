@@ -9,6 +9,7 @@ import {
   TV_KNOB_LOWER,
   CROSSFADE_DURATION_MS,
 } from "./lib/constants";
+import ReplayOverlay from "./ReplayOverlay";
 /**
  * Given container dimensions and image natural dimensions,
  * compute the actual rendered rect when using object-fit: contain.
@@ -56,6 +57,8 @@ export default function TVCloseup({
   // The shared slideshow viewport (portal host) attaches here — see VHSExhibition.
   // Reusing the same DOM node keeps the video playing seamlessly across the zoom.
   mediaMountRef,
+  ended = false,
+  onReplay,
 }) {
   const containerRef = useRef(null);
   const [fadeIn, setFadeIn] = useState(false);
@@ -262,6 +265,15 @@ export default function TVCloseup({
           onWheel={handleWheel}
           onTouchStart={handleTouchStart}
           onTouchEnd={handleTouchEnd}
+        />
+      )}
+
+      {/* 재생 종료(루프 off) 시 다시 재생 버튼 — 클릭 캡처 레이어 위 */}
+      {screenBounds && ended && (
+        <ReplayOverlay
+          bounds={screenBounds}
+          onReplay={onReplay}
+          borderRadius={TV_CLOSEUP_SCREEN.borderRadius}
         />
       )}
 

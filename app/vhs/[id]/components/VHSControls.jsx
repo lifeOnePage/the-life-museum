@@ -1,6 +1,6 @@
 "use client";
 
-import { Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
+import { Maximize2, Minimize2, Volume2, VolumeX, Repeat } from "lucide-react";
 import { SlLogout } from "react-icons/sl";
 import {
   CROSSFADE_DURATION_MS,
@@ -39,6 +39,8 @@ export default function VHSControls({
   isMuted,
   onToggleMute,
   hasBgm,
+  loop,
+  onToggleLoop,
 }) {
   return (
     <div
@@ -104,6 +106,21 @@ export default function VHSControls({
           </button>
         </Tooltip>
       )}
+
+      {/* Loop toggle */}
+      <Tooltip label={loop ? "반복 끄기" : "반복 켜기"}>
+        <button
+          onClick={onToggleLoop}
+          aria-pressed={loop}
+          className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${
+            loop
+              ? "bg-white text-black hover:bg-white/90"
+              : "bg-white/20 text-white hover:bg-white/30"
+          }`}
+        >
+          <Repeat className="h-5 w-5" />
+        </button>
+      </Tooltip>
 
       <div className="h-6 w-px bg-white/20" />
 

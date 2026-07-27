@@ -174,8 +174,10 @@ body {
   padding: 0;
   min-height: 100%;
   overscroll-behavior-y: none;
-  overflow-x: hidden;
-  overflow-y: auto;
+  /* overflow-x는 clip으로 가로 스크롤만 차단(스크롤 컨테이너를 만들지 않음).
+     overflow-y는 visible로 두어 body가 스크롤 트랩이 되지 않고 뷰포트(문서)가 단일 스크롤러가 되게 함.
+     (기존 overflow-y:auto는 body를 스크롤 컨테이너로 만들어 WebKit에서 휠이 문서로 체이닝되지 않는 버그를 유발) */
+  overflow-x: clip;
 }
 
 /* 스크롤바 숨기기 유틸리티 */

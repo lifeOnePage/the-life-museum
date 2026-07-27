@@ -35,6 +35,8 @@ export default function VHSExhibition({ recordId, locale }) {
   const { scene, startInsert, onInsertEnded } = useVHSScene();
 
   const [isPlaying, setIsPlaying] = useState(true);
+  // 반복 재생 토글: ON = 무한 루프, OFF = 전체 1회 재생 후 리플레이 대기
+  const [loop, setLoop] = useState(true);
   const [imageDuration, setImageDuration] = useState(DEFAULT_IMAGE_DURATION);
   const [videoMode, setVideoMode] = useState(DEFAULT_VIDEO_MODE);
   const [colorFilter, setColorFilter] = useState(DEFAULT_FILTER);
@@ -138,6 +140,7 @@ export default function VHSExhibition({ recordId, locale }) {
     imageDuration,
     videoMode,
     active: scene === "playback",
+    loop,
   });
 
   // Preload assets on mount
@@ -402,6 +405,8 @@ export default function VHSExhibition({ recordId, locale }) {
           onAdvance={slideshow.advance}
           onRetreat={slideshow.retreat}
           mediaMountRef={setTvMountEl}
+          ended={slideshow.ended}
+          onReplay={slideshow.restart}
         />
       )}
 
@@ -447,6 +452,8 @@ export default function VHSExhibition({ recordId, locale }) {
           onAdvance={slideshow.advance}
           onRetreat={slideshow.retreat}
           mediaMountRef={setCloseupMountEl}
+          ended={slideshow.ended}
+          onReplay={slideshow.restart}
         />
       )}
 
@@ -469,6 +476,8 @@ export default function VHSExhibition({ recordId, locale }) {
           isMuted={bgmMuted}
           onToggleMute={bgmToggleMute}
           hasBgm={hasBgm}
+          loop={loop}
+          onToggleLoop={() => setLoop((v) => !v)}
         />
       )}
 

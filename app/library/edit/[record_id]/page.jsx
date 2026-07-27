@@ -410,11 +410,11 @@ const Index = ({ params }) => {
   const [vhsFilterOpen, setVhsFilterOpen] = useState(false);
   const [vhsFilter, setVhsFilter] = useState("none");
   const [vhsTransitionOpen, setVhsTransitionOpen] = useState(false);
-  const [vhsTransition, setVhsTransition] = useState("fade");
+  const [vhsTransition, setVhsTransition] = useState("kenburns");
   const [vhsPhotoFrameIndex, setVhsPhotoFrameIndex] = useState(0);
   // VHS 재생 설정 (record에 저장됨)
-  const [vhsImageDuration, setVhsImageDuration] = useState(5);
-  const [vhsVideoMode, setVhsVideoMode] = useState(0);
+  const [vhsImageDuration, setVhsImageDuration] = useState(3);
+  const [vhsVideoMode, setVhsVideoMode] = useState(10);
   // Walk(Time Travel) 재생 설정 (record에 저장됨)
   const [walkCameraSpeed, setWalkCameraSpeed] = useState(15);
   const [walkVideoPreview, setWalkVideoPreview] = useState(false);
@@ -625,10 +625,10 @@ const Index = ({ params }) => {
             backCoverImageUrl: data.backCoverImageUrl || coverUrl,
             recordType: data.recordType || "exhibit",
             vhsFilter: data.vhsFilter || "none",
-            vhsTransition: data.vhsTransition || "fade",
+            vhsTransition: data.vhsTransition || "kenburns",
             vhsPhotoFrameIndex: data.vhsPhotoFrameIndex || 0,
-            vhsImageDuration: data.vhsImageDuration ?? 5,
-            vhsVideoMode: data.vhsVideoMode ?? 0,
+            vhsImageDuration: data.vhsImageDuration ?? 3,
+            vhsVideoMode: data.vhsVideoMode ?? 10,
             walkCameraSpeed: data.walkCameraSpeed ?? 15,
             walkVideoPreview: data.walkVideoPreview ?? false,
             walkVideoMaxDuration: data.walkVideoMaxDuration ?? 30,

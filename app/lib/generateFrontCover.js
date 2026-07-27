@@ -48,6 +48,174 @@ if (typeof document !== "undefined") {
   ).then(() => {
     fontsReady = true;
   });
+
+  // Escoredream — used by the memorial front-cover layout (매칭: generateBackCover.js)
+  const escoredreamWeights = [
+    ["400", "S-CoreDream-4Regular"],
+    ["700", "S-CoreDream-7ExtraBold"],
+  ];
+  Promise.all(
+    escoredreamWeights.map(([weight, file]) => {
+      const face = new FontFace(
+        "Escoredream",
+        `url(https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/${file}.woff)`,
+        { weight },
+      );
+      return face.load().then((f) => document.fonts.add(f));
+    }),
+  )
+    .then(() => {
+      fontMap["Escoredream"] = true;
+    })
+    .catch(() => {});
+}
+
+function wrapText(ctx, text, maxWidth) {
+  const lines = [];
+  const paragraphs = text.split("\n");
+  for (const paragraph of paragraphs) {
+    let line = "";
+    for (const char of paragraph) {
+      const testLine = line + char;
+      if (ctx.measureText(testLine).width > maxWidth && line) {
+        lines.push(line);
+        line = char;
+      } else {
+        line = testLine;
+      }
+    }
+    if (line) lines.push(line);
+  }
+  return lines;
+}
+
+const MEMORIAL_TEXT = {
+  ko: { headline: "사랑과 존경을 기억합니다.", label: "MEMORY ALBUM" },
+  en: { headline: "In loving memory and respect.", label: "MEMORY ALBUM" },
+};
+
+// ─── Memorial front cover: oval-framed photo + flower + name ───
+// (뒷면 memorial_light/memorial_dark와 동일한 팔레트를 사용)
+function drawMemorialFrontLayout(
+  ctx,
+  size,
+  isDark,
+  sourceImg,
+  albumTitle,
+  flowerImg,
+  locale,
+) {
+  const bg = isDark ? "#141414" : "#ece7df";
+  const textMain = isDark ? "#e8d5b7" : "#3a352e";
+  const textMuted = isDark ? "#a89d89" : "#8a8478";
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  const font = resolveFont("Escoredream");
+  const copy = MEMORIAL_TEXT[locale] || MEMORIAL_TEXT.ko;
+
+  // Headline
+  ctx.font = `500 26px ${font}`;
+  ctx.fillStyle = textMain;
+  ctx.textAlign = "center";
+  ctx.letterSpacing = "1px";
+  ctx.fillText(copy.headline, size / 2, 95);
+  ctx.letterSpacing = "0px";
+
+  // Oval photo frame
+  const ovalCx = size / 2;
+  const ovalCy = size * 0.41;
+  const ovalRx = size * 0.26;
+  const ovalRy = size * 0.273;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(ovalCx, ovalCy, ovalRx, ovalRy, 0, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = isDark ? "#2a2a2a" : "#d8d2c4";
+  ctx.fillRect(ovalCx - ovalRx, ovalCy - ovalRy, ovalRx * 2, ovalRy * 2);
+  if (sourceImg) {
+    const imgRatio = sourceImg.width / sourceImg.height;
+    const boxRatio = ovalRx / ovalRy;
+    let sx, sy, sw, sh;
+    if (imgRatio > boxRatio) {
+      sh = sourceImg.height;
+      sw = sh * boxRatio;
+      sx = (sourceImg.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = sourceImg.width;
+      sh = sw / boxRatio;
+      sx = 0;
+      sy = (sourceImg.height - sh) / 2;
+    }
+    ctx.drawImage(
+      sourceImg,
+      sx,
+      sy,
+      sw,
+      sh,
+      ovalCx - ovalRx,
+      ovalCy - ovalRy,
+      ovalRx * 2,
+      ovalRy * 2,
+    );
+  }
+  ctx.restore();
+
+  // Oval border
+  ctx.strokeStyle = textMuted;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(ovalCx, ovalCy, ovalRx, ovalRy, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Flower — centered just below the oval
+  let cursorY = ovalCy + ovalRy + 20;
+  if (flowerImg) {
+    const flowerW = size * 0.09;
+    const flowerH = flowerW * (flowerImg.height / flowerImg.width);
+    ctx.drawImage(flowerImg, ovalCx - flowerW / 2, cursorY, flowerW, flowerH);
+    cursorY += flowerH + 25;
+  } else {
+    cursorY += 35;
+  }
+
+  // Divider lines flanking the "MEMORY ALBUM" label
+  const lineY = cursorY;
+  const gap = 70;
+  ctx.strokeStyle = textMuted;
+  ctx.globalAlpha = 0.6;
+  ctx.beginPath();
+  ctx.moveTo(size * 0.22, lineY);
+  ctx.lineTo(size / 2 - gap, lineY);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(size / 2 + gap, lineY);
+  ctx.lineTo(size * 0.78, lineY);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // "MEMORY ALBUM" label
+  ctx.font = `600 15px ${font}`;
+  ctx.fillStyle = textMuted;
+  ctx.letterSpacing = "4px";
+  ctx.fillText(copy.label, size / 2, lineY + 6);
+  ctx.letterSpacing = "0px";
+
+  // Name
+  if (albumTitle) {
+    ctx.font = `700 32px ${font}`;
+    ctx.fillStyle = textMain;
+    const lines = wrapText(ctx, albumTitle, size * 0.7).slice(0, 2);
+    let ny = lineY + 55;
+    for (const line of lines) {
+      ctx.fillText(line, size / 2, ny);
+      ny += 40;
+    }
+  }
+
+  ctx.textAlign = "left";
 }
 
 function resolveFont(family) {
@@ -120,7 +288,36 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
     color,
     stroke,
     strokeOpacity = 100,
+    themeKey,
+    albumTitle,
+    flowerImg,
+    locale,
   } = config;
+
+  // 추모 테마는 뒷면과 짝을 이루는 고정 레이아웃(오벌 프레임 + 이름)을 쓴다 —
+  // 수동 타이틀 오버레이(title/position/stroke 등)는 이 레이아웃에서는 무시된다.
+  if (themeKey === "memorial_light" || themeKey === "memorial_dark") {
+    if (!frontCoverImg && !albumTitle) return null;
+    const size = 1024;
+    const resolution = 2048;
+    const canvas = document.createElement("canvas");
+    canvas.width = resolution;
+    canvas.height = resolution;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(resolution / size, resolution / size);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    drawMemorialFrontLayout(
+      ctx,
+      size,
+      themeKey === "memorial_dark",
+      frontCoverImg,
+      albumTitle,
+      flowerImg,
+      locale,
+    );
+    return canvas.toDataURL("image/jpeg", 0.95);
+  }
 
   // Need either an image or a title to render anything
   if (!frontCoverImg && !title) return null;

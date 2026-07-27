@@ -571,6 +571,7 @@ export default function SharePage({ params }) {
           cameraOffset={panOffset}
           cursorTipIcon={<Icon360 className="h-4 w-4 text-white/70" />}
           onExpand={handleAlbumClick}
+          locale={locale}
         />
       </div>
 

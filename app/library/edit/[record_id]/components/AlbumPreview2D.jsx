@@ -12,6 +12,9 @@ import { loadCachedImage } from "@/app/lib/loadCachedImage";
 const STICKER_BASE_SIZE = 64;
 const STICKER_CORNER_DIST = (STICKER_BASE_SIZE / 2) * Math.SQRT2;
 
+const ZOOM_MIN = 1;
+const ZOOM_MAX = 2.5;
+
 // 이미지 로드 캐시 — 공유 유틸 사용. 앞표지 하나 바꿀 때마다 뒷면 커버(R2:
 // 프록시 재시도)와 테마 이미지가 매번 재다운로드되어 Promise.all 배리어 전체가
 // 수 초 걸리던 문제를 없앤다. 캐시되면 이후 선택은 "새 앞면 이미지 1장"만 기다린다.
@@ -37,6 +40,7 @@ export default function AlbumPreview2D({
   titleStrokeOpacity,
   flipped,
   onFlipChange,
+  locale,
   // 최신 합성 커버(dataURL)를 부모로 전달 — 편집 페이지가 저장 시
   // 라이브러리 캐시에 심어 복귀 즉시 최종 모습이 보이게 하는 용도
   onCoversComposited,
@@ -62,6 +66,7 @@ export default function AlbumPreview2D({
   const [extractedColors, setExtractedColors] = useState(null);
   const [themeBgImg, setThemeBgImg] = useState(null);
   const [themeStickerImg, setThemeStickerImg] = useState(null);
+  const [themeFlowerImg, setThemeFlowerImg] = useState(null);
   const [stickerImages, setStickerImages] = useState({});
 
   // Load all images in parallel + extract colors — single effect to avoid
@@ -80,13 +85,17 @@ export default function AlbumPreview2D({
         backCoverImageUrl && backCoverImageUrl !== frontCover
           ? backCoverImageUrl
           : null;
+      const isMemorialTheme = key === "memorial_light" || key === "memorial_dark";
 
-      const [frontImg, backImg, bgImg, stickerImg] = await Promise.all([
+      const [frontImg, backImg, bgImg, stickerImg, flowerImg] = await Promise.all([
         loadImg(frontCover),
         loadImg(backSrc),
         loadImg(bgMap[key] || null, false),
         key === "kitsch"
           ? loadImg("/images/albumtheme/kitsch 2.png", false)
+          : Promise.resolve(null),
+        isMemorialTheme
+          ? loadImg("/stickers/memorial/image 406.svg", false)
           : Promise.resolve(null),
       ]);
 
@@ -119,6 +128,7 @@ export default function AlbumPreview2D({
       setBackCoverImg(backImg);
       setThemeBgImg(bgImg);
       setThemeStickerImg(stickerImg);
+      setThemeFlowerImg(flowerImg);
       setExtractedColors(colors);
     }
 
@@ -180,6 +190,10 @@ export default function AlbumPreview2D({
           color: titleColor || "#000000",
           stroke: titleStroke ?? false,
           strokeOpacity: titleStrokeOpacity ?? 100,
+          themeKey,
+          albumTitle: albumTitle || "",
+          flowerImg: themeFlowerImg,
+          locale,
         }),
       );
     }, 200);
@@ -193,6 +207,9 @@ export default function AlbumPreview2D({
     titleColor,
     titleStroke,
     titleStrokeOpacity,
+    themeKey,
+    themeFlowerImg,
+    locale,
   ]);
 
   // Debounced back cover canvas: coalesces rapid sequential updates (image loads,
@@ -355,6 +372,72 @@ export default function AlbumPreview2D({
     dragRef.current = null;
   };
 
+  // ─── 데스크탑 스크롤 / 모바일 핀치로 프리뷰 확대·축소 ───
+  const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(1);
+  const zoomContainerRef = useRef(null);
+  const pinchStartDist = useRef(null);
+  const pinchStartZoom = useRef(null);
+
+  useEffect(() => {
+    const el = zoomContainerRef.current;
+    if (!el) return;
+
+    const onWheel = (e) => {
+      e.preventDefault();
+      const next = Math.max(
+        ZOOM_MIN,
+        Math.min(ZOOM_MAX, zoomRef.current - e.deltaY * 0.003),
+      );
+      zoomRef.current = next;
+      setZoom(next);
+    };
+
+    const onTouchStart = (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        pinchStartDist.current = Math.hypot(dx, dy);
+        pinchStartZoom.current = zoomRef.current;
+      }
+    };
+
+    const onTouchMove = (e) => {
+      if (e.touches.length === 2 && pinchStartDist.current !== null) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - e.touches[1].clientX;
+        const dy = e.touches[0].clientY - e.touches[1].clientY;
+        const dist = Math.hypot(dx, dy);
+        const scale = dist / pinchStartDist.current;
+        const next = Math.max(
+          ZOOM_MIN,
+          Math.min(ZOOM_MAX, pinchStartZoom.current * scale),
+        );
+        zoomRef.current = next;
+        setZoom(next);
+      }
+    };
+
+    const onTouchEnd = (e) => {
+      if (e.touches.length < 2) {
+        pinchStartDist.current = null;
+        pinchStartZoom.current = null;
+      }
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("touchstart", onTouchStart, { passive: false });
+    el.addEventListener("touchmove", onTouchMove, { passive: false });
+    el.addEventListener("touchend", onTouchEnd);
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("touchstart", onTouchStart);
+      el.removeEventListener("touchmove", onTouchMove);
+      el.removeEventListener("touchend", onTouchEnd);
+    };
+  }, []);
+
   return (
     <div className="relative h-full w-full">
       <div className="absolute top-2 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-black/40 px-3 py-1.5 backdrop-blur-sm">
@@ -367,18 +450,23 @@ export default function AlbumPreview2D({
       </div>
 
       <div
-        className="absolute inset-0 flex items-center justify-center p-6"
+        ref={zoomContainerRef}
+        className="absolute inset-0 flex touch-none items-center justify-center overflow-hidden p-6"
         style={{ perspective: "1600px" }}
       >
         <div
-          className="relative aspect-square w-full max-w-[420px] cursor-pointer"
-          style={{
-            transformStyle: "preserve-3d",
-            transition: "transform 0.5s ease",
-            transform: `rotateY(${isFlipped ? 180 : 0}deg)`,
-          }}
-          onClick={stickersEditable ? undefined : toggleFlip}
+          className="w-full max-w-[420px]"
+          style={{ transform: `scale(${zoom})` }}
         >
+          <div
+            className="relative aspect-square w-full cursor-pointer"
+            style={{
+              transformStyle: "preserve-3d",
+              transition: "transform 0.5s ease",
+              transform: `rotateY(${isFlipped ? 180 : 0}deg)`,
+            }}
+            onClick={stickersEditable ? undefined : toggleFlip}
+          >
           {/* Front face */}
           <div
             className="absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl"
@@ -483,6 +571,7 @@ export default function AlbumPreview2D({
                   </div>
                 );
               })}
+            </div>
           </div>
         </div>
       </div>

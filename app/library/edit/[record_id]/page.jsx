@@ -21,6 +21,11 @@ import {
   MoreVertical,
   BookOpen,
   Loader2,
+  Type,
+  Image as ImageIcon,
+  ImagePlus,
+  Palette,
+  History,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -44,7 +49,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import CoverImageEditor from "./components/CoverImageEditor";
 import TitleOverlayEditor from "./components/TitleOverlayEditor";
-const AlbumPreview3D = dynamic(() => import("./components/AlbumPreview3D"), {
+const AlbumPreview2D = dynamic(() => import("./components/AlbumPreview2D"), {
   ssr: false,
 });
 const VHSPreview = dynamic(() => import("./components/VHSPreview"), {
@@ -54,15 +59,11 @@ const WalkPreview = dynamic(() => import("./components/WalkPreview"), {
   ssr: false,
 });
 import TutorialOverlay from "./components/TutorialOverlay";
-import BackThemeEditorModal from "./components/BackThemeEditorModal";
+import ThemeStickerPanel from "./components/ThemeStickerPanel";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
-import {
-  UNIFIED_THEMES,
-  DEFAULT_THEME,
-  DEFAULT_OWNED_PACK_IDS,
-} from "./themeConfig";
+import { UNIFIED_THEMES, DEFAULT_THEME } from "./themeConfig";
 import AIConsentModal, { hasAIConsent } from "@/app/components/AIConsentModal";
 import { invalidateRecord } from "@/app/lib/useRecordData";
 import {
@@ -95,9 +96,14 @@ const T = {
     tutorial: "튜토리얼",
     exit: "나가기",
     lastSaved: "마지막 저장",
-    tabFront: "앞면",
-    tabBack: "뒷면",
-    tabMemory: "메모리",
+    tabCover: "앨범 커버",
+    tabMemory: "앨범 메모리",
+    railText: "텍스트",
+    railCover: "표지",
+    railBackPhoto: "뒷면 사진",
+    railTheme: "테마",
+    railStory: "스토리",
+    railTimeline: "타임라인",
     titleLabel: "제목",
     subtitleLabel: "부제목",
     titlePlaceholder: "앨범 제목을 입력하세요",
@@ -163,9 +169,14 @@ const T = {
     tutorial: "Tutorial",
     exit: "Exit",
     lastSaved: "Last saved",
-    tabFront: "Front",
-    tabBack: "Back",
-    tabMemory: "Record",
+    tabCover: "Album Cover",
+    tabMemory: "Album Memory",
+    railText: "Text",
+    railCover: "Cover",
+    railBackPhoto: "Back Photo",
+    railTheme: "Theme",
+    railStory: "Story",
+    railTimeline: "Timeline",
     titleLabel: "Title",
     subtitleLabel: "Subtitle",
     titlePlaceholder: "Enter album title",
@@ -378,14 +389,12 @@ const Index = ({ params }) => {
   const [showExitDialog, setShowExitDialog] = useState(false);
 
   // Tab & Theme & Layout state
-  const [activeTab, setActiveTab] = useState("front");
+  const [activeTab, setActiveTab] = useState("cover");
+  // 2D 미리보기의 앞/뒷면 상태 — 좌측 섹션을 열면 자동 전환되고, 미리보기의
+  // flip 버튼으로도 언제든 수동 전환 가능.
+  const [previewFlipped, setPreviewFlipped] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
   const [stickers, setStickers] = useState([]);
-  const [showBackThemeModal, setShowBackThemeModal] = useState(false);
-  const [bakedBackCoverUrl, setBakedBackCoverUrl] = useState(null);
-  // 팝업에서 테마를 고르는 즉시 미리보기에 반영하되, 저장 전까지는
-  // selectedTheme(실제 적용값)은 건드리지 않는다 — 취소 시 되돌리기 위함.
-  const [livePreviewTheme, setLivePreviewTheme] = useState(null);
 
   // Title overlay state
   const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
@@ -398,13 +407,14 @@ const Index = ({ params }) => {
   // Back cover image URL (defaults to front cover URL from API)
   const [backCoverImageUrl, setBackCoverImageUrl] = useState(null);
 
-  // Collapsible sections
-  const [titleOpen, setTitleOpen] = useState(true);
-  const [coverOpen, setCoverOpen] = useState(true);
+  // "앨범 커버" 탭 좌측 레일에서 선택된 패널
+  // "text" | "cover" | "backPhoto" | "theme" | "story" | "timeline"
+  const [coverPanel, setCoverPanel] = useState("text");
+
+  // Collapsible sections (앨범 메모리 탭)
   const [bgmOpen, setBgmOpen] = useState(true);
   const [recordTypeOpen, setRecordTypeOpen] = useState(true);
   const [recordType, setRecordType] = useState("exhibit");
-  const [themeOpen, setThemeOpen] = useState(true);
 
   // VHS-specific settings
   const [vhsFilterOpen, setVhsFilterOpen] = useState(false);
@@ -419,9 +429,6 @@ const Index = ({ params }) => {
   const [walkCameraSpeed, setWalkCameraSpeed] = useState(15);
   const [walkVideoPreview, setWalkVideoPreview] = useState(false);
   const [walkVideoMaxDuration, setWalkVideoMaxDuration] = useState(30);
-  const [backCoverImageOpen, setBackCoverImageOpen] = useState(true);
-  const [storyOpen, setStoryOpen] = useState(true);
-  const [timelineOpen, setTimelineOpen] = useState(true);
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
@@ -754,7 +761,7 @@ const Index = ({ params }) => {
     return data;
   };
 
-  // AlbumPreview3D가 만들어 둔 최신 합성 커버(dataURL) — 저장 시 라이브러리
+  // AlbumPreview2D가 만들어 둔 최신 합성 커버(dataURL) — 저장 시 라이브러리
   // 캐시에 심어 복귀 즉시 최종 모습이 보이게 한다.
   const latestCompositesRef = useRef({ frontImage: null, backImage: null });
   const handleCoversComposited = useCallback((covers) => {
@@ -1312,6 +1319,16 @@ const Index = ({ params }) => {
     );
   }
 
+  // "앨범 커버" 탭 좌측 레일 항목 — side: 미리보기가 자동으로 전환될 면
+  const RAIL_ITEMS = [
+    { key: "text", label: t.railText, icon: Type, side: "front" },
+    { key: "cover", label: t.railCover, icon: ImageIcon, side: "front" },
+    { key: "backPhoto", label: t.railBackPhoto, icon: ImagePlus, side: "back" },
+    { key: "theme", label: t.railTheme, icon: Palette, side: "back" },
+    { key: "story", label: t.railStory, icon: BookOpen, side: "back" },
+    { key: "timeline", label: t.railTimeline, icon: History, side: "back" },
+  ];
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#1e1a14]">
       {/* Header - Mobile */}
@@ -1520,7 +1537,7 @@ const Index = ({ params }) => {
           className="h-[45vh] shrink-0 bg-[#1a1510] lg:order-2 lg:h-auto lg:flex-1"
           data-tutorial="preview"
         >
-          {recordType === "retro_tape" && activeTab === "gallery" ? (
+          {recordType === "retro_tape" && activeTab === "memory" ? (
             <VHSPreview
               photoMedia={photoDrive.photoMedia}
               mediaLoading={photoDrive.isLoading}
@@ -1535,7 +1552,7 @@ const Index = ({ params }) => {
               frontCover={frontCover}
               backCoverImageUrl={backCoverImageUrl}
             />
-          ) : recordType === "exhibit" && activeTab === "gallery" ? (
+          ) : recordType === "exhibit" && activeTab === "memory" ? (
             <WalkPreview
               photoMedia={photoDrive.photoMedia}
               mediaLoading={photoDrive.isLoading}
@@ -1548,14 +1565,15 @@ const Index = ({ params }) => {
               onVideoMaxDurationChange={setWalkVideoMaxDuration}
             />
           ) : (
-            <AlbumPreview3D
+            <AlbumPreview2D
               frontCover={frontCover}
               backCoverImageUrl={backCoverImageUrl}
               bio={bio}
               timeline={timeline}
-              selectedTheme={livePreviewTheme || selectedTheme}
+              selectedTheme={selectedTheme}
               stickers={stickers}
-              onBackCoverDataUrlChange={setBakedBackCoverUrl}
+              onStickersChange={setStickers}
+              stickersEditable={coverPanel === "theme"}
               albumTitle={albumTitle}
               albumSubTitle={albumSubtitle}
               titleOverlayEnabled={titleOverlayEnabled}
@@ -1564,7 +1582,8 @@ const Index = ({ params }) => {
               titleColor={titleColor}
               titleStroke={titleStroke}
               titleStrokeOpacity={titleStrokeOpacity}
-              flipped={activeTab === "back"}
+              flipped={previewFlipped}
+              onFlipChange={setPreviewFlipped}
               onCoversComposited={handleCoversComposited}
             />
           )}
@@ -1584,33 +1603,53 @@ const Index = ({ params }) => {
             >
               <TabsList className="flex h-auto w-full shrink-0 rounded-none border-b border-white/10 bg-transparent p-0">
                 <TabsTrigger
-                  value="front"
+                  value="cover"
                   className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
-                  {t.tabFront}
+                  {t.tabCover}
                 </TabsTrigger>
                 <TabsTrigger
-                  value="back"
-                  className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
-                >
-                  {t.tabBack}
-                </TabsTrigger>
-                <TabsTrigger
-                  value="gallery"
+                  value="memory"
                   className="relative flex-1 rounded-none border-b-2 border-transparent bg-transparent pt-4 pb-[18px] text-xs font-bold text-[#9b8b7a] transition-colors hover:text-[#c4a882] data-[state=active]:border-[#c4b49a] data-[state=active]:bg-transparent data-[state=active]:text-[#c4b49a] data-[state=active]:shadow-none"
                 >
                   {t.tabMemory}
                 </TabsTrigger>
               </TabsList>
 
-              {/* Scrollable editor content */}
-              <div className="scrollbar-accent min-h-0 flex-1 overflow-y-auto">
-                <TabsContent
-                  className="px-4 pt-5 data-[state=inactive]:hidden sm:px-5"
-                  value="front"
-                  forceMount
-                >
-                  <div className="space-y-5 pb-10">
+              <TabsContent
+                value="cover"
+                forceMount
+                className="min-h-0 flex-1 overflow-hidden data-[state=inactive]:hidden"
+              >
+                <div className="flex h-full flex-col lg:flex-row">
+                  {/* Rail */}
+                  <div className="scrollbar-hide flex shrink-0 gap-1 overflow-x-auto border-b border-white/10 p-2 lg:w-20 lg:flex-col lg:overflow-x-visible lg:overflow-y-auto lg:border-r lg:border-b-0">
+                    {RAIL_ITEMS.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = coverPanel === item.key;
+                      return (
+                        <button
+                          key={item.key}
+                          onClick={() => {
+                            setCoverPanel(item.key);
+                            setPreviewFlipped(item.side === "back");
+                          }}
+                          className={`flex shrink-0 flex-col items-center gap-1 rounded-lg px-3 py-2.5 text-[11px] font-medium transition-colors lg:w-full ${
+                            isActive
+                              ? "bg-[#c4b49a]/15 text-[#c4b49a]"
+                              : "text-[#9b8b7a] hover:bg-white/5 hover:text-[#e8d5b7]"
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                          {item.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Detail panel */}
+                  <div className="scrollbar-accent min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-10 sm:px-5">
+                    <div className={coverPanel === "text" ? "space-y-5" : "hidden"}>
                     {/* Title / Subtitle inputs (always visible) */}
                     <div className="space-y-3">
                       <div>
@@ -1655,25 +1694,12 @@ const Index = ({ params }) => {
                       </div>
                     </div>
 
-                    {/* Title Overlay Section - Collapsible with toggle */}
+                    {/* Title Overlay Section - on/off switch, no separate collapse */}
                     <div className="rounded-lg border border-white/10">
                       <div className="flex items-center justify-between px-4 py-3">
-                        <button
-                          onClick={() =>
-                            titleOverlayEnabled && setTitleOpen(!titleOpen)
-                          }
-                          className="flex items-center gap-2"
-                        >
-                          <span className="text-sm font-semibold text-[#e8d5b7]">
-                            {t.showTitle}
-                          </span>
-                          {titleOverlayEnabled &&
-                            (titleOpen ? (
-                              <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                            ))}
-                        </button>
+                        <span className="text-sm font-semibold text-[#e8d5b7]">
+                          {t.showTitle}
+                        </span>
                         <button
                           type="button"
                           role="switch"
@@ -1681,7 +1707,7 @@ const Index = ({ params }) => {
                           onClick={() => {
                             const next = !titleOverlayEnabled;
                             setTitleOverlayEnabled(next);
-                            if (next) setTitleOpen(true);
+                            if (next) setPreviewFlipped(false);
                           }}
                           className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
                             titleOverlayEnabled
@@ -1699,70 +1725,40 @@ const Index = ({ params }) => {
                         </button>
                       </div>
 
-                      <AnimatePresence initial={false}>
-                        {titleOverlayEnabled && titleOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <TitleOverlayEditor
-                                position={titlePosition}
-                                font={titleFont}
-                                color={titleColor}
-                                stroke={titleStroke}
-                                strokeOpacity={titleStrokeOpacity}
-                                onPositionChange={setTitlePosition}
-                                onFontChange={setTitleFont}
-                                onColorChange={setTitleColor}
-                                onStrokeChange={setTitleStroke}
-                                onStrokeOpacityChange={setTitleStrokeOpacity}
-                                locale={locale}
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {titleOverlayEnabled && (
+                        <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                          <TitleOverlayEditor
+                            position={titlePosition}
+                            font={titleFont}
+                            color={titleColor}
+                            stroke={titleStroke}
+                            strokeOpacity={titleStrokeOpacity}
+                            onPositionChange={setTitlePosition}
+                            onFontChange={setTitleFont}
+                            onColorChange={setTitleColor}
+                            onStrokeChange={setTitleStroke}
+                            onStrokeOpacityChange={setTitleStrokeOpacity}
+                            locale={locale}
+                          />
+                        </div>
+                      )}
+                    </div>
                     </div>
 
-                    {/* Cover Design Section - Collapsible */}
+                    {/* Cover Design panel */}
                     <div
                       data-tutorial="cover-editor"
-                      className="rounded-lg border border-white/10"
+                      className={coverPanel === "cover" ? "space-y-3" : "hidden"}
                     >
-                      <button
-                        onClick={() => setCoverOpen(!coverOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#e8d5b7]">
-                            {t.coverDesign}
-                          </span>
-                          <span className="text-[11px] text-[#9b8b7a]">
-                            {t.coverDesignSub}
-                          </span>
-                        </div>
-                        {coverOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-
-                      <AnimatePresence initial={false}>
-                        {coverOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <CoverImageEditor
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[#e8d5b7]">
+                          {t.coverDesign}
+                        </span>
+                        <span className="text-[11px] text-[#9b8b7a]">
+                          {t.coverDesignSub}
+                        </span>
+                      </div>
+                      <CoverImageEditor
                                 ref={coverRef}
                                 record_id={record_id}
                                 onImageGenerated={setFrontCover}
@@ -1787,167 +1783,62 @@ const Index = ({ params }) => {
                                   });
                                 }}
                               />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </div>
-                </TabsContent>
-
-                {/* Back tab */}
-                <TabsContent className="px-4 pt-5 sm:px-5" value="back">
-                  <div className="space-y-5 pb-10">
-                    {/* Back Cover Image Section - collapsible */}
-                    <div className="rounded-lg border border-white/10">
-                      <button
-                        onClick={() =>
-                          setBackCoverImageOpen(!backCoverImageOpen)
-                        }
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <span className="text-sm font-semibold text-[#e8d5b7]">
-                          {t.backCoverImage}
-                        </span>
-                        {backCoverImageOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {backCoverImageOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <BackCoverUpload
-                                ref={backCoverRef}
-                                record_id={record_id}
-                                backCoverImageUrl={backCoverImageUrl}
-                                onUrlChange={setBackCoverImageUrl}
-                                photoMedia={photoDrive.photoMedia}
-                                photoBlobUrls={photoDrive.photoBlobUrls}
-                                onRefreshPhotos={photoDrive.refresh}
-                                isRefreshing={photoDrive.isRefreshing}
-                                isLoading={photoDrive.isLoading}
-                                preloadBlobs={photoDrive.preloadBlobs}
-                                locale={locale}
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </div>
 
-                    {/* Theme Section - collapsible */}
+                    {/* Back Cover Image panel */}
+                    <div className={coverPanel === "backPhoto" ? "space-y-3" : "hidden"}>
+                      <span className="text-sm font-semibold text-[#e8d5b7]">
+                        {t.backCoverImage}
+                      </span>
+                      <BackCoverUpload
+                        ref={backCoverRef}
+                        record_id={record_id}
+                        backCoverImageUrl={backCoverImageUrl}
+                        onUrlChange={setBackCoverImageUrl}
+                        photoMedia={photoDrive.photoMedia}
+                        photoBlobUrls={photoDrive.photoBlobUrls}
+                        onRefreshPhotos={photoDrive.refresh}
+                        isRefreshing={photoDrive.isRefreshing}
+                        isLoading={photoDrive.isLoading}
+                        preloadBlobs={photoDrive.preloadBlobs}
+                        locale={locale}
+                      />
+                    </div>
+
+                    {/* Theme panel */}
                     <div
                       data-tutorial="theme"
-                      className="rounded-lg border border-white/10"
+                      className={coverPanel === "theme" ? "space-y-5" : "hidden"}
                     >
-                      <button
-                        onClick={() => setThemeOpen(!themeOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <span className="text-sm font-semibold text-[#e8d5b7]">
-                          {t.theme}
-                        </span>
-                        {themeOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {themeOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <div className="mb-3 flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-2.5">
-                                <div
-                                  className="h-8 w-8 shrink-0 rounded-full border border-white/15"
-                                  style={{
-                                    background: (
-                                      UNIFIED_THEMES[selectedTheme] ||
-                                      UNIFIED_THEMES[DEFAULT_THEME]
-                                    ).bg,
-                                  }}
-                                />
-                                <p className="text-sm font-medium text-[#e8d5b7]">
-                                  {
-                                    (
-                                      UNIFIED_THEMES[selectedTheme] ||
-                                      UNIFIED_THEMES[DEFAULT_THEME]
-                                    ).name
-                                  }
-                                </p>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => setShowBackThemeModal(true)}
-                                className="w-full border-white/15 text-[#9b8b7a] hover:border-[#c4b49a]/60 hover:text-[#e8d5b7]"
-                              >
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                {locale === "en"
-                                  ? "Edit back theme & stickers"
-                                  : "뒷면 테마 편집하기"}
-                              </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* Guide text */}
-                    <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#2a2318] px-4 py-3.5">
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c4b49a]/10">
-                        <BookOpen className="h-3.5 w-3.5 text-[#c4b49a]" />
+                      <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#2a2318] px-4 py-3.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c4b49a]/10">
+                          <BookOpen className="h-3.5 w-3.5 text-[#c4b49a]" />
+                        </div>
+                        <p className="pt-0.5 text-xs leading-relaxed text-[#9b8b7a]">
+                          {t.backCoverGuide}
+                        </p>
                       </div>
-                      <p className="pt-0.5 text-xs leading-relaxed text-[#9b8b7a]">
-                        {t.backCoverGuide}
-                      </p>
+
+                      {coverPanel === "theme" && (
+                        <ThemeStickerPanel
+                          locale={locale}
+                          theme={selectedTheme}
+                          onThemeChange={setSelectedTheme}
+                          stickers={stickers}
+                          onStickersChange={setStickers}
+                        />
+                      )}
                     </div>
 
-                    {/* Story Section - Collapsible */}
+                    {/* Story panel */}
                     <div
                       data-tutorial="story"
-                      className="rounded-lg border border-white/10"
+                      className={coverPanel === "story" ? "space-y-3" : "hidden"}
                     >
-                      <button
-                        onClick={() => setStoryOpen(!storyOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <span className="text-sm font-semibold text-[#e8d5b7]">
-                          {t.story}
-                        </span>
-                        {storyOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-
-                      <AnimatePresence initial={false}>
-                        {storyOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="space-y-3 border-t border-white/8 px-4 pt-3 pb-4">
-                              {/* Keyword chips section */}
+                      <span className="text-sm font-semibold text-[#e8d5b7]">
+                        {t.story}
+                      </span>
+                      {/* Keyword chips section */}
                               <div>
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-xs font-medium text-[#9b8b7a]">
@@ -2120,100 +2011,72 @@ const Index = ({ params }) => {
                                   </>
                                 )}
                               </Button>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
                     </div>
 
-                    {/* Timeline Section - Collapsible */}
+                    {/* Timeline panel */}
                     <div
                       data-tutorial="timeline"
-                      className="rounded-lg border border-white/10"
+                      className={coverPanel === "timeline" ? "space-y-2" : "hidden"}
                     >
-                      <button
-                        onClick={() => setTimelineOpen(!timelineOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
+                      <span className="text-sm font-semibold text-[#e8d5b7]">
+                        {t.timeline}
+                      </span>
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
                       >
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-sm font-semibold text-[#e8d5b7]">
-                            {t.timeline}
-                          </span>
-                        </div>
-                        {timelineOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
+                        <SortableContext
+                          items={timelineIdsRef.current}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          {timeline.map((item, index) => (
+                            <SortableTimelineItem
+                              key={timelineIdsRef.current[index]}
+                              id={timelineIdsRef.current[index]}
+                              item={item}
+                              index={index}
+                              onUpdate={updateTimelineItem}
+                              onRemove={removeTimelineItem}
+                              t={t}
+                            />
+                          ))}
+                        </SortableContext>
+                      </DndContext>
+
+                      <button
+                        onClick={addTimelineItem}
+                        disabled={timeline.length >= 10}
+                        className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
+                      >
+                        <Plus className="h-3 w-3" />{" "}
+                        {t.addItem(timeline.length)}
                       </button>
 
-                      <AnimatePresence initial={false}>
-                        {timelineOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="space-y-2 border-t border-white/8 px-4 pt-3 pb-4">
-                              <DndContext
-                                sensors={sensors}
-                                collisionDetection={closestCenter}
-                                onDragEnd={handleDragEnd}
-                                ㅇ
-                              >
-                                <SortableContext
-                                  items={timelineIdsRef.current}
-                                  strategy={verticalListSortingStrategy}
-                                >
-                                  {timeline.map((item, index) => (
-                                    <SortableTimelineItem
-                                      key={timelineIdsRef.current[index]}
-                                      id={timelineIdsRef.current[index]}
-                                      item={item}
-                                      index={index}
-                                      onUpdate={updateTimelineItem}
-                                      onRemove={removeTimelineItem}
-                                      t={t}
-                                    />
-                                  ))}
-                                </SortableContext>
-                              </DndContext>
+                      {timeline.length === 0 && (
+                        <div className="py-4 text-center">
+                          <p className="text-xs text-[#9b8b7a]">
+                            {t.emptyTimeline}
+                          </p>
+                        </div>
+                      )}
 
-                              <button
-                                onClick={addTimelineItem}
-                                disabled={timeline.length >= 10}
-                                className="flex h-8 w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-[#c4b49a] text-xs text-[#c4b49a] transition-colors hover:border-solid hover:bg-[#c4b49a] hover:text-[#1a1510] disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#c4b49a]"
-                              >
-                                <Plus className="h-3 w-3" />{" "}
-                                {t.addItem(timeline.length)}
-                              </button>
-
-                              {timeline.length === 0 && (
-                                <div className="py-4 text-center">
-                                  <p className="text-xs text-[#9b8b7a]">
-                                    {t.emptyTimeline}
-                                  </p>
-                                </div>
-                              )}
-
-                              {timelineError && (
-                                <p className="text-xs text-red-500">
-                                  {timelineError}
-                                </p>
-                              )}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                      {timelineError && (
+                        <p className="text-xs text-red-500">
+                          {timelineError}
+                        </p>
+                      )}
                     </div>
                   </div>
-                </TabsContent>
+                </div>
+              </TabsContent>
 
-                {/* Gallery tab */}
-                <TabsContent className="px-4 pt-5 sm:px-5" value="gallery">
-                  <div className="space-y-5 pb-10">
+              {/* Memory tab */}
+              <TabsContent
+                value="memory"
+                className="scrollbar-accent min-h-0 flex-1 overflow-y-auto px-4 pt-5 sm:px-5 data-[state=inactive]:hidden"
+              >
+                <div className="space-y-5 pb-10">
                     {/* Record Type Section */}
                     <div className="rounded-lg border border-white/10">
                       <button
@@ -2490,34 +2353,12 @@ const Index = ({ params }) => {
                         </div>
                       </>
                     )}
-                  </div>
-                </TabsContent>
-              </div>
+                </div>
+              </TabsContent>
             </Tabs>
           </motion.div>
         </div>
       </div>
-
-      {/* Back Theme + Sticker Editor Modal */}
-      <BackThemeEditorModal
-        isOpen={showBackThemeModal}
-        onClose={() => {
-          setShowBackThemeModal(false);
-          setLivePreviewTheme(null);
-        }}
-        locale={locale}
-        theme={selectedTheme}
-        stickers={stickers}
-        previewImageUrl={bakedBackCoverUrl}
-        onThemePreview={setLivePreviewTheme}
-        // TODO: 실제 구매/소유 데이터가 생기면 사용자별 소유 팩 목록으로 교체
-        ownedPackIds={DEFAULT_OWNED_PACK_IDS}
-        onSave={(nextTheme, nextStickers) => {
-          setSelectedTheme(nextTheme);
-          setStickers(nextStickers);
-          setLivePreviewTheme(null);
-        }}
-      />
 
       {/* Exit Dialog */}
       <AnimatePresence>
@@ -2777,6 +2618,8 @@ const Index = ({ params }) => {
         onClose={() => setShowTutorial(false)}
         activeTab={activeTab}
         setActiveTab={setActiveTab}
+        coverPanel={coverPanel}
+        setCoverPanel={setCoverPanel}
         locale={locale}
       />
 

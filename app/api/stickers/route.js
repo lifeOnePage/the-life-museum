@@ -9,8 +9,9 @@ const IMAGE_EXTENSIONS = new Set([".svg", ".png", ".jpg", ".jpeg", ".webp"]);
 // public/stickers/<packId>/ 아래 폴더 이름과 표시용 라벨이 다른 경우 여기에 추가.
 // 등록 안 된 packId는 폴더명을 그대로 Title Case로 보여준다.
 const PACK_LABELS = {
-  kitsch: { name: "키치", nameEn: "Kitsch" },
+  kitsch: { name: "기본", nameEn: "Basic" },
   retro: { name: "레트로", nameEn: "Retro" },
+  memorial: { name: "추모", nameEn: "Memorial" },
 };
 
 function toTitleCase(id) {

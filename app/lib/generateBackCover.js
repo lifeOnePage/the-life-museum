@@ -819,6 +819,275 @@ function drawMinimalistLayout(
   }
 }
 
+// ─── Memorial themes: shared two-column timeline helper ───
+// (year, event)를 가로 한 줄로 좌/우 두 컬럼에 나눠 그린다.
+function drawMemorialTwoColumnTimeline(
+  ctx,
+  timeline,
+  { left, right, top, colGap, rowHeight, yearFont, eventFont, yearColor, eventColor, maxRows },
+) {
+  const items = timeline.slice(0, maxRows * 2);
+  if (items.length === 0) return top;
+  const leftItems = items.slice(0, maxRows);
+  const rightItems = items.slice(maxRows, maxRows * 2);
+  const colWidth = (right - left - colGap) / 2;
+  const leftX = left;
+  const rightX = left + colWidth + colGap;
+  const rowCount = Math.max(leftItems.length, rightItems.length);
+
+  const renderCol = (colItems, colX) => {
+    ctx.textAlign = "left";
+    colItems.forEach((item, i) => {
+      const y = top + i * rowHeight;
+      ctx.font = yearFont;
+      ctx.fillStyle = yearColor;
+      ctx.fillText(item.year, colX, y);
+      const yearWidth = ctx.measureText(item.year).width;
+      ctx.font = eventFont;
+      ctx.fillStyle = eventColor;
+      ctx.fillText(item.event, colX + yearWidth + 24, y);
+    });
+  };
+  renderCol(leftItems, leftX);
+  renderCol(rightItems, rightX);
+
+  // Vertical divider between columns
+  if (rightItems.length > 0) {
+    ctx.strokeStyle = eventColor;
+    ctx.globalAlpha = 0.25;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(left + colWidth + colGap / 2, top - 24);
+    ctx.lineTo(left + colWidth + colGap / 2, top + (rowCount - 1) * rowHeight + 8);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+
+  ctx.textAlign = "left";
+  return top + (rowCount - 1) * rowHeight;
+}
+
+// ─── Memorial (Light) layout ───
+// 크림 배경 · 상단 원형 사진 · 2단 타임라인 · 하단 인용구
+function drawMemorialLightLayout(
+  ctx,
+  size,
+  bio,
+  timeline,
+  albumTitle,
+  albumSubTitle,
+) {
+  const bg = "#ece7df";
+  const textDark = "#3a352e";
+  const textMuted = "#8a8478";
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  const font = escoredreamFontLoaded ? '"Escoredream"' : "serif";
+  const margin = 90;
+  let cursorY = 130;
+
+  // Title
+  if (albumTitle) {
+    ctx.font = `700 40px ${font}`;
+    ctx.fillStyle = textDark;
+    ctx.textAlign = "center";
+    const titleLines = wrapText(ctx, albumTitle, size - margin * 2).slice(0, 2);
+    for (const line of titleLines) {
+      cursorY += 44;
+      ctx.fillText(line, size / 2, cursorY);
+    }
+    cursorY += 12;
+  }
+
+  // Subtitle (연도)
+  if (albumSubTitle) {
+    ctx.font = `400 24px ${font}`;
+    ctx.fillStyle = textMuted;
+    ctx.textAlign = "center";
+    ctx.fillText(albumSubTitle, size / 2, cursorY + 26);
+    cursorY += 60;
+  }
+
+  // Short divider
+  ctx.strokeStyle = textMuted;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(size / 2 - 28, cursorY + 18);
+  ctx.lineTo(size / 2 + 28, cursorY + 18);
+  ctx.stroke();
+  cursorY += 55;
+
+  // Two-column timeline
+  if (timeline.length > 0) {
+    cursorY = drawMemorialTwoColumnTimeline(ctx, timeline, {
+      left: margin + 10,
+      right: size - margin - 10,
+      top: cursorY + 40,
+      colGap: 60,
+      rowHeight: 58,
+      yearFont: `700 22px ${font}`,
+      eventFont: `400 20px ${font}`,
+      yearColor: textDark,
+      eventColor: textMuted,
+      maxRows: 6,
+    });
+    cursorY += 45;
+  }
+
+  // Full-width divider
+  ctx.strokeStyle = textMuted;
+  ctx.globalAlpha = 0.35;
+  ctx.beginPath();
+  ctx.moveTo(margin, cursorY);
+  ctx.lineTo(size - margin, cursorY);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  cursorY += 55;
+
+  // Quote (bio)
+  if (bio) {
+    ctx.font = `italic 400 22px ${font}`;
+    ctx.fillStyle = textDark;
+    ctx.textAlign = "center";
+    const quoteLines = wrapText(ctx, `"${bio}"`, size - margin * 2 - 60).slice(
+      0,
+      3,
+    );
+    for (const line of quoteLines) {
+      ctx.fillText(line, size / 2, cursorY);
+      cursorY += 32;
+    }
+  }
+
+  // Bottom decorative dot
+  ctx.fillStyle = textMuted;
+  ctx.beginPath();
+  ctx.arc(size / 2, size - 55, 3, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.textAlign = "left";
+}
+
+// ─── Memorial (Dark) layout ───
+// 검정 배경 · 2단 타임라인 · 하단 "THANK YOU FOR YOUR LOVE"
+function drawMemorialDarkLayout(
+  ctx,
+  size,
+  bio,
+  timeline,
+  albumTitle,
+  albumSubTitle,
+) {
+  const bg = "#141414";
+  const textLight = "#e8d5b7";
+  const textMuted = "#a89d89";
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  const font = escoredreamFontLoaded ? '"Escoredream"' : "serif";
+  const margin = 90;
+  let cursorY = 130;
+
+  // Title
+  if (albumTitle) {
+    ctx.font = `700 40px ${font}`;
+    ctx.fillStyle = textLight;
+    ctx.textAlign = "center";
+    const titleLines = wrapText(ctx, albumTitle, size - margin * 2).slice(0, 2);
+    for (const line of titleLines) {
+      cursorY += 44;
+      ctx.fillText(line, size / 2, cursorY);
+    }
+    cursorY += 12;
+  }
+
+  // Subtitle
+  if (albumSubTitle) {
+    ctx.font = `400 24px ${font}`;
+    ctx.fillStyle = textMuted;
+    ctx.textAlign = "center";
+    ctx.fillText(albumSubTitle, size / 2, cursorY + 26);
+    cursorY += 55;
+  }
+
+  // Short divider
+  ctx.strokeStyle = textMuted;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(size / 2 - 28, cursorY + 18);
+  ctx.lineTo(size / 2 + 28, cursorY + 18);
+  ctx.stroke();
+  cursorY += 50;
+
+  // Full-width divider
+  ctx.strokeStyle = textMuted;
+  ctx.globalAlpha = 0.3;
+  ctx.beginPath();
+  ctx.moveTo(margin, cursorY);
+  ctx.lineTo(size - margin, cursorY);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+  cursorY += 55;
+
+  // Two-column timeline
+  if (timeline.length > 0) {
+    cursorY = drawMemorialTwoColumnTimeline(ctx, timeline, {
+      left: margin + 10,
+      right: size - margin - 10,
+      top: cursorY + 30,
+      colGap: 60,
+      rowHeight: 58,
+      yearFont: `700 22px ${font}`,
+      eventFont: `400 20px ${font}`,
+      yearColor: textLight,
+      eventColor: textMuted,
+      maxRows: 6,
+    });
+  }
+
+  // Quote (bio) — centered, above the bottom band
+  if (bio) {
+    ctx.font = `italic 400 22px ${font}`;
+    ctx.fillStyle = textLight;
+    ctx.textAlign = "center";
+    const quoteLines = wrapText(ctx, `"${bio}"`, size - margin * 2 - 60).slice(
+      0,
+      3,
+    );
+    let qy = Math.max(cursorY + 70, size - 200);
+    for (const line of quoteLines) {
+      ctx.fillText(line, size / 2, qy);
+      qy += 32;
+    }
+  }
+
+  // Bottom: lines flanking "THANK YOU FOR YOUR LOVE"
+  const bottomY = size - 70;
+  ctx.font = `600 13px ${font}`;
+  ctx.fillStyle = textMuted;
+  ctx.textAlign = "center";
+  ctx.letterSpacing = "3px";
+  const label = "THANK YOU FOR YOUR LOVE";
+  const labelWidth = ctx.measureText(label).width;
+  ctx.fillText(label, size / 2, bottomY);
+  ctx.letterSpacing = "0px";
+
+  ctx.strokeStyle = textMuted;
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(margin, bottomY - 4);
+  ctx.lineTo(size / 2 - labelWidth / 2 - 20, bottomY - 4);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(size / 2 + labelWidth / 2 + 20, bottomY - 4);
+  ctx.lineTo(size - margin, bottomY - 4);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.textAlign = "left";
+}
+
 // ─── User-placed stickers (from the back theme editor) ───
 // stickers: [{ src, x, y, rotation, scale }] with x/y normalized to 0..1
 // stickerImages: { [src]: HTMLImageElement }
@@ -898,6 +1167,12 @@ export function generateBackCoverDataUrl(
         albumSubTitle,
         themeBgImg,
       );
+      break;
+    case "memorial_light":
+      drawMemorialLightLayout(ctx, size, bio, timeline, albumTitle, albumSubTitle);
+      break;
+    case "memorial_dark":
+      drawMemorialDarkLayout(ctx, size, bio, timeline, albumTitle, albumSubTitle);
       break;
     case "minimalist":
     default:

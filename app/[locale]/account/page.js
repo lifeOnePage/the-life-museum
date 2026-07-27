@@ -271,6 +271,16 @@ export default function AccountPage() {
   const [chargeCouponOpen, setChargeCouponOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // /library 등에서 "?section=charge"로 들어오면 바로 충전 탭을 열어준다.
+  // useSearchParams 대신 window 접근(useEffect)으로 static export 빌드 제약 회피.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("section");
+    if (requested === "charge" || requested === "coupon") {
+      setSection(requested);
+    }
+  }, []);
+
   // 결제(크레딧 충전) 노출 여부.
   // iOS는 심사 통과 후 노출 중이지만, Android는 아직 Play 스토어 심사 전이라
   // 외부 결제 수단(카드/카카오페이/PayPal 등) 노출이 정책 위반이 될 수 있어 숨긴다.

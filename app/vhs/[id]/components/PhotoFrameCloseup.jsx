@@ -2,6 +2,7 @@
 
 import { useRef, useState, useEffect, useCallback } from "react";
 import { X, ImageIcon } from "lucide-react";
+import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
 import {
   PHOTO_FRAME_CLOSEUP,
   PHOTO_FRAME_CLOSEUP_VIEWPORT,
@@ -111,6 +112,13 @@ export default function PhotoFrameCloseup({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [visible, showPicker, onClose]);
 
+  // 썸네일 그리드 청크 마운트 — 수천 장 앨범에서 전량 마운트 방지
+  const {
+    visibleCount: gridCount,
+    sentinelRef: gridSentinelRef,
+    hasMore: gridHasMore,
+  } = useChunkedGrid(images?.length ?? 0);
+
   if (!visible && !fadeIn) return null;
 
   const currentImage = images?.[selectedIndex];
@@ -185,11 +193,14 @@ export default function PhotoFrameCloseup({
         </button>
       )}
 
-      {/* Close button */}
+      {/* Close button — 모바일 노치/상태바를 피하도록 safe-area 상단 여백 적용 */}
       <button
         onClick={onClose}
-        className="absolute top-6 right-6 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
-        style={{ zIndex: 10 }}
+        className="absolute right-6 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition-colors hover:bg-black/70"
+        style={{
+          zIndex: 10,
+          top: "max(1.5rem, calc(env(safe-area-inset-top) + 0.75rem))",
+        }}
         aria-label="닫기"
       >
         <X className="h-5 w-5" />
@@ -226,7 +237,7 @@ export default function PhotoFrameCloseup({
               className="grid grid-cols-3 gap-2 overflow-y-auto p-4 sm:grid-cols-4"
               style={{ maxHeight: "calc(70vh - 52px)" }}
             >
-              {images.map((img, idx) => {
+              {images.slice(0, gridCount).map((img, idx) => {
                 const thumb = img.thumbnail_url || img.original_url;
                 const isSelected = idx === selectedIndex;
                 return (
@@ -242,6 +253,8 @@ export default function PhotoFrameCloseup({
                     <img
                       src={thumb}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition-transform group-hover:scale-105"
                       draggable={false}
                     />
@@ -251,6 +264,9 @@ export default function PhotoFrameCloseup({
                   </button>
                 );
               })}
+              {gridHasMore && (
+                <div ref={gridSentinelRef} className="col-span-full h-6" />
+              )}
             </div>
           </div>
         </div>

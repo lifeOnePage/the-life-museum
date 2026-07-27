@@ -257,7 +257,9 @@ export default function AlbumCover3D({
   const [hovered, setHovered] = useState(false);
 
   // 텍스처
-  const frontTexture = useAlbumTexture(frontImage);
+  // cover=true: 비정사각 원본이 합성본 도착 전 잠깐 표시될 때 늘어나지 않고
+  // 중앙 크롭으로 보이게 (합성본은 정사각이라 no-op)
+  const frontTexture = useAlbumTexture(frontImage, true);
   const backTexture = useAlbumTexture(backImage, true);
 
   // 플레이스홀더 텍스처 (이미지가 없을 때)

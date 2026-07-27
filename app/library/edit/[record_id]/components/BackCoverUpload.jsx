@@ -4,6 +4,7 @@ import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImagePlus, RefreshCw, Upload, FolderOpen, X } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
 import ScrollToTopButton from "./ScrollToTopButton";
 
 const API_URL = "https://the-life-museum-backend-production.up.railway.app";
@@ -52,11 +53,9 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
     backCoverImageUrl,
     onUrlChange,
     photoMedia,
-    photoBlobUrls,
     onRefreshPhotos,
     isRefreshing,
     isLoading,
-    preloadBlobs,
     locale,
   },
   ref,
@@ -65,6 +64,12 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
   const [showPhotodrive, setShowPhotodrive] = useState(false);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(-1);
   const [error, setError] = useState("");
+  // 포토드라이브 그리드 청크 마운트 — 수천 장 앨범에서 DOM 전량 마운트 방지
+  const {
+    visibleCount: gridCount,
+    sentinelRef: gridSentinelRef,
+    hasMore: gridHasMore,
+  } = useChunkedGrid(photoMedia?.length ?? 0);
   // 포토드라이브 사진 목록 시작점 (맨 위로 버튼 스크롤 타겟)
   const photodriveTopRef = useRef(null);
 
@@ -142,16 +147,13 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
     // 페이지에서) 이미지가 깨지므로, 선택 즉시 blob으로 받아 File로 만들어
     // 디바이스 업로드와 동일하게 R2에 영구 업로드한다.
     try {
-      const existingBlob = photoBlobUrls[index];
-      const blob = existingBlob
-        ? await (await fetch(existingBlob)).blob()
-        : await (
-            await fetch(
-              `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(
-                media.original_url || media.thumbnail_url,
-              )}`,
-            )
-          ).blob();
+      const blob = await (
+        await fetch(
+          `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(
+            media.original_url || media.thumbnail_url,
+          )}`,
+        )
+      ).blob();
       const ext = (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
       const file = new File([blob], `photodrive-${index}.${ext}`, {
         type: blob.type || "image/jpeg",
@@ -197,9 +199,7 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
 
         <button
           onClick={() => {
-            // preloadBlobs() 제거: 앨범 전체 원본을 프록시로 일괄 다운로드하면
-            // 그 대기열에 선택한 사진의 로드까지 갇혀 프리뷰 반영이 수십 초
-            // 지연된다. 선택 시 해당 사진만 온디맨드로 가져온다(아래 handleSelectPhoto).
+            // 사진은 선택 시 해당 1장만 온디맨드로 가져온다 (전량 프리로드 금지)
             setShowPhotodrive(!showPhotodrive);
           }}
           className={`flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border py-5 transition-all ${
@@ -250,7 +250,7 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
                 </div>
               ) : (
                 <div className="grid grid-cols-3 gap-2">
-                  {photoMedia.map((media, i) => (
+                  {photoMedia.slice(0, gridCount).map((media, i) => (
                     <button
                       key={i}
                       onClick={() => handleSelectPhoto(i)}
@@ -261,12 +261,16 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
                       }`}
                     >
                       <LazyImage
-                        src={media.original_url || media.thumbnail_url}
+                        // 그리드는 썸네일(400px)로 — 원본(2000px) 대비 대역폭 절감
+                        src={media.thumbnail_url || media.original_url}
                         alt={`사진 ${i + 1}`}
                         className="h-full w-full object-cover"
                       />
                     </button>
                   ))}
+                  {gridHasMore && (
+                    <div ref={gridSentinelRef} className="col-span-full h-6" />
+                  )}
                 </div>
               )}
             </div>

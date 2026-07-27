@@ -13,6 +13,7 @@ import {
   Film,
   Image as ImageIcon,
 } from "lucide-react";
+import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
 import { authedFetch } from "@/app/utils/authedFetch";
 import ScrollToTopButton from "./ScrollToTopButton";
 
@@ -112,11 +113,9 @@ export default function CoverImageGenerator({
   onBack,
   initialFrontCover,
   photoMedia,
-  photoBlobUrls,
   onRefreshPhotos,
   isRefreshing,
   isLoading,
-  preloadBlobs,
   locale,
   onRequestAIConsent,
   isAdmin = false,
@@ -124,6 +123,12 @@ export default function CoverImageGenerator({
   const t = T[locale] || T.ko;
   const STYLES = locale === "en" ? STYLES_EN : STYLES_KO;
   const [view, setView] = useState("generate"); // "generate" | "ref-photodrive"
+  // 포토드라이브 그리드 청크 마운트 — 수천 장 앨범에서 DOM 전량 마운트 방지
+  const {
+    visibleCount: gridCount,
+    sentinelRef: gridSentinelRef,
+    hasMore: gridHasMore,
+  } = useChunkedGrid(photoMedia?.length ?? 0);
   const [selectedStyle, setSelectedStyle] = useState("minimal");
   const [imageRefPreviews, setImageRefPreviews] = useState([]);
   const [imageRefFiles, setImageRefFiles] = useState([]);
@@ -287,12 +292,7 @@ export default function CoverImageGenerator({
     const rawUrl = media.original_url || media.thumbnail_url;
     const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
     try {
-      let blob;
-      if (photoBlobUrls[index]) {
-        blob = await fetch(photoBlobUrls[index]).then((r) => r.blob());
-      } else {
-        blob = await fetch(proxyUrl).then((r) => r.blob());
-      }
+      const blob = await fetch(proxyUrl).then((r) => r.blob());
       const ext = blob.type === "image/png" ? "png" : "jpg";
       const file = new File([blob], `ref-photo-${index}.${ext}`, {
         type: blob.type,
@@ -367,7 +367,7 @@ export default function CoverImageGenerator({
               animate={{ opacity: 1, y: 0 }}
             >
               <div className="grid grid-cols-3 gap-3">
-                {photoMedia.map((media, i) => (
+                {photoMedia.slice(0, gridCount).map((media, i) => (
                   <button
                     key={i}
                     onClick={() => handleRefPhotoSelect(i)}
@@ -375,12 +375,16 @@ export default function CoverImageGenerator({
                     className="aspect-square overflow-hidden rounded-md transition-all hover:opacity-80 disabled:opacity-50"
                   >
                     <LazyImage
-                      src={media.original_url || media.thumbnail_url}
+                      // 그리드는 썸네일(400px)로 — 원본(2000px) 대비 대역폭 절감
+                      src={media.thumbnail_url || media.original_url}
                       alt={`사진 ${i + 1}`}
                       className="h-full w-full object-cover"
                     />
                   </button>
                 ))}
+                {gridHasMore && (
+                  <div ref={gridSentinelRef} className="col-span-full h-6" />
+                )}
               </div>
             </motion.div>
           )}
@@ -502,8 +506,7 @@ export default function CoverImageGenerator({
             </label>
             <button
               onClick={() => {
-                // preloadBlobs() 제거: 전체 원본 일괄 다운로드가 프록시 대기열을
-                // 정체시켜 다른 사진 로드까지 수십 초 지연시킴 (선택 시 온디맨드 로드)
+                // 사진은 선택 시 해당 1장만 온디맨드로 가져온다 (전량 프리로드 금지)
                 setView("ref-photodrive");
               }}
               className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors"

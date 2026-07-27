@@ -121,6 +121,25 @@ function drawFrame(ctx, frame, canvasW, canvasH) {
 }
 
 // 정적 이미지 텍스처 훅 (모듈-레벨 캐시 사용 — 라우트 전환 후에도 재로드 없음)
+// 비정사각 이미지를 정사각 면에 늘리지 않고 중앙 크롭(cover-fit)으로 표시.
+// 합성 커버(1024×1024 정사각)는 no-op — 합성본 도착 전에 원본 커버가 잠깐
+// 표시될 때 "찌그러졌다가 다시 펴지는" 현상을 없앤다.
+function applyCoverCrop(texture) {
+  const img = texture.image;
+  if (!img || !img.width || !img.height) return;
+  const aspect = img.width / img.height;
+  if (aspect === 1) return;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  if (aspect > 1) {
+    texture.repeat.set(1 / aspect, 1);
+    texture.offset.set((1 - 1 / aspect) / 2, 0);
+  } else {
+    texture.repeat.set(1, aspect);
+    texture.offset.set(0, (1 - aspect) / 2);
+  }
+}
+
 function useStaticTexture(imageUrl) {
   const [texture, setTexture] = useState(() =>
     imageUrl ? (staticTextureCache.get(imageUrl) ?? null) : null,
@@ -145,6 +164,7 @@ function useStaticTexture(imageUrl) {
       imageUrl,
       (loadedTexture) => {
         loadedTexture.colorSpace = THREE.SRGBColorSpace;
+        applyCoverCrop(loadedTexture);
         loadedTexture.needsUpdate = true;
         staticTextureCache.set(imageUrl, loadedTexture);
         setTexture(loadedTexture);

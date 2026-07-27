@@ -71,21 +71,14 @@ export default function VHSExhibition({ recordId, locale }) {
     // 저장된 재생 설정: 사진 표시 시간(초), 영상 재생 방식(0=전체, N=짧게 N초)
     if (data.vhsImageDuration != null) setImageDuration(data.vhsImageDuration);
     if (data.vhsVideoMode != null) setVideoMode(data.vhsVideoMode);
-    // 편집 페이지 저장 시 vhsPhotoFrameIndex가 항상 기록되므로(기본 0) null 체크만으로는
-    // "사용자가 고른 것"을 구분할 수 없다. 0은 기본값으로 보고 뒷면 커버 기본을 적용하고,
-    // 0보다 큰 값만 명시적 선택으로 취급한다.
     if (data.vhsPhotoFrameIndex != null) {
       setPhotoFrameIndex(data.vhsPhotoFrameIndex);
-      setPhotoFrameExplicit(data.vhsPhotoFrameIndex > 0);
     }
   }, [data]);
 
   // Photo frame closeup state
   const [photoFrameOpen, setPhotoFrameOpen] = useState(false);
   const [photoFrameIndex, setPhotoFrameIndex] = useState(0);
-  // Whether the user has explicitly chosen a frame photo. Until then, the frame
-  // defaults to the album's back cover (fallback: front cover).
-  const [photoFrameExplicit, setPhotoFrameExplicit] = useState(false);
 
   // TV closeup state
   const [tvCloseupOpen, setTvCloseupOpen] = useState(false);
@@ -241,10 +234,13 @@ export default function VHSExhibition({ recordId, locale }) {
     startInsert();
   }, [startInsert, startBGM]);
 
-  // Sync BGM with global isPlaying state
+  // Sync BGM with global isPlaying state.
+  // 포토프레임 확대 중에는 동기화를 건너뛴다 — 확대가 슬라이드쇼를 내부적으로
+  // 일시정지(setIsPlaying(false))하는데, 이때 배경음악까지 멈추면 안 된다.
   useEffect(() => {
+    if (photoFrameOpen) return;
     setBgmPlaying(isPlaying);
-  }, [isPlaying, setBgmPlaying]);
+  }, [isPlaying, setBgmPlaying, photoFrameOpen]);
 
   // Duck BGM during insert video scene
   useEffect(() => {
@@ -300,26 +296,19 @@ export default function VHSExhibition({ recordId, locale }) {
 
   const handlePhotoFrameIndexChange = useCallback((i) => {
     setPhotoFrameIndex(i);
-    setPhotoFrameExplicit(true);
   }, []);
 
-  // Resolve the photo-frame image: an explicit user choice wins; otherwise default
-  // to the album back cover, falling back to the front cover, then the first image.
+  // Resolve the photo-frame image. 확대 화면(PhotoFrameCloseup)이 imageList[index]를
+  // 보여주므로 탁자 위 액자도 반드시 같은 목록·인덱스에서 가져온다 — 커버 URL
+  // (backCoverImageUrl/coverImage.url)을 기본값으로 쓰면 두 화면이 서로 다른
+  // 사진을 보여주고, 커버가 동영상(mp4)이면 액자가 깨진다. 선택 전 기본값은
+  // imageList[0] — is_cover가 제외된 목록이라 앨범 커버와 겹치지 않는다.
+  // 저장된 인덱스가 목록 범위를 벗어나면(목록 변경 등) 0으로 되돌린다.
+  const frameIndex = imageList[photoFrameIndex] ? photoFrameIndex : 0;
   const photoFrameSrc = useMemo(() => {
-    if (photoFrameExplicit && imageList[photoFrameIndex]) {
-      return (
-        imageList[photoFrameIndex]?.original_url ||
-        imageList[photoFrameIndex]?.thumbnail_url
-      );
-    }
-    return (
-      data?.backCoverImageUrl ||
-      data?.coverImage?.url ||
-      imageList[0]?.original_url ||
-      imageList[0]?.thumbnail_url ||
-      undefined
-    );
-  }, [photoFrameExplicit, photoFrameIndex, imageList, data]);
+    const item = imageList[frameIndex];
+    return item?.original_url || item?.thumbnail_url || undefined;
+  }, [frameIndex, imageList]);
 
   // TV closeup handlers
   const handleTVClick = useCallback(() => {
@@ -441,7 +430,7 @@ export default function VHSExhibition({ recordId, locale }) {
       {scene === "playback" && (
         <PhotoFrameCloseup
           images={imageList}
-          selectedIndex={photoFrameIndex}
+          selectedIndex={frameIndex}
           onChangeIndex={handlePhotoFrameIndexChange}
           onClose={handlePhotoFrameClose}
           visible={photoFrameOpen}

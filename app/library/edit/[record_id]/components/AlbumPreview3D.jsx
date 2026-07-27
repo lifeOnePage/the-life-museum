@@ -96,6 +96,7 @@ export default function AlbumPreview3D({
   onExpand,
   onFlipChange,
   expanded,
+  locale,
   // 최신 합성 커버(dataURL)를 부모로 전달 — 편집 페이지가 저장 시
   // 라이브러리 캐시에 심어 복귀 즉시 최종 모습이 보이게 하는 용도
   onCoversComposited,
@@ -115,6 +116,7 @@ export default function AlbumPreview3D({
   const [extractedColors, setExtractedColors] = useState(null);
   const [themeBgImg, setThemeBgImg] = useState(null);
   const [themeStickerImg, setThemeStickerImg] = useState(null);
+  const [themeFlowerImg, setThemeFlowerImg] = useState(null);
   const [stickerImages, setStickerImages] = useState({});
 
   // Update zoom config on resize (mobile <-> desktop)
@@ -147,13 +149,17 @@ export default function AlbumPreview3D({
         backCoverImageUrl && backCoverImageUrl !== frontCover
           ? backCoverImageUrl
           : null;
+      const isMemorialTheme = key === "memorial_light" || key === "memorial_dark";
 
-      const [frontImg, backImg, bgImg, stickerImg] = await Promise.all([
+      const [frontImg, backImg, bgImg, stickerImg, flowerImg] = await Promise.all([
         loadImg(frontCover),
         loadImg(backSrc),
         loadImg(bgMap[key] || null, false),
         key === "kitsch"
           ? loadImg("/images/albumtheme/kitsch 2.png", false)
+          : Promise.resolve(null),
+        isMemorialTheme
+          ? loadImg("/stickers/memorial/image 406.svg", false)
           : Promise.resolve(null),
       ]);
 
@@ -186,6 +192,7 @@ export default function AlbumPreview3D({
       setBackCoverImg(backImg);
       setThemeBgImg(bgImg);
       setThemeStickerImg(stickerImg);
+      setThemeFlowerImg(flowerImg);
       setExtractedColors(colors);
     }
 
@@ -419,6 +426,10 @@ export default function AlbumPreview3D({
           color: titleColor || "#000000",
           stroke: titleStroke ?? false,
           strokeOpacity: titleStrokeOpacity ?? 100,
+          themeKey,
+          albumTitle: albumTitle || "",
+          flowerImg: themeFlowerImg,
+          locale,
         }),
       );
     }, 200);
@@ -432,6 +443,9 @@ export default function AlbumPreview3D({
     titleColor,
     titleStroke,
     titleStrokeOpacity,
+    themeKey,
+    themeFlowerImg,
+    locale,
   ]);
 
   // Debounced back cover canvas: coalesces rapid sequential updates (image loads,

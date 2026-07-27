@@ -1584,6 +1584,7 @@ const Index = ({ params }) => {
               titleStrokeOpacity={titleStrokeOpacity}
               flipped={previewFlipped}
               onFlipChange={setPreviewFlipped}
+              locale={locale}
               onCoversComposited={handleCoversComposited}
             />
           )}
@@ -1634,7 +1635,7 @@ const Index = ({ params }) => {
                             setCoverPanel(item.key);
                             setPreviewFlipped(item.side === "back");
                           }}
-                          className={`flex shrink-0 flex-col items-center gap-1 rounded-lg px-3 py-2.5 text-[11px] font-medium transition-colors lg:w-full ${
+                          className={`flex shrink-0 flex-col items-center gap-1 whitespace-nowrap rounded-lg px-3 py-2.5 text-[11px] font-medium transition-colors lg:w-full lg:text-center lg:break-keep lg:whitespace-normal lg:leading-tight ${
                             isActive
                               ? "bg-[#c4b49a]/15 text-[#c4b49a]"
                               : "text-[#9b8b7a] hover:bg-white/5 hover:text-[#e8d5b7]"

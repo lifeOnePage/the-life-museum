@@ -70,15 +70,17 @@ function coverSignature(item) {
   ]);
 }
 
-async function generateAlbumCovers(item) {
+async function generateAlbumCovers(item, locale) {
   const themeKey = item.theme || "minimalist";
+  const isMemorialTheme =
+    themeKey === "memorial_light" || themeKey === "memorial_dark";
   const bio = item.lifestory?.content || "";
   const timeline = (item.timeline?.events || []).map((e) => ({
     year: e.timestamp,
     event: e.title,
   }));
 
-  const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg] =
+  const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg, flowerImg] =
     await Promise.all([
       loadImage(item.coverImage?.url),
       // 뒷면 사진을 아직 저장 안 한 옛 앨범은 편집/공유 페이지와 동일하게
@@ -87,6 +89,9 @@ async function generateAlbumCovers(item) {
       loadImage(THEME_BG_MAP[themeKey] || null),
       themeKey === "kitsch"
         ? loadImage("/images/albumtheme/kitsch 2.png")
+        : Promise.resolve(null),
+      isMemorialTheme
+        ? loadImage("/stickers/memorial/image 406.svg")
         : Promise.resolve(null),
     ]);
 
@@ -122,6 +127,10 @@ async function generateAlbumCovers(item) {
       color: item.coverTitleColor || "#ffffff",
       stroke,
       strokeOpacity,
+      themeKey,
+      albumTitle: item.title || "",
+      flowerImg,
+      locale,
     });
     if (frontDataUrl) frontImage = frontDataUrl;
   }
@@ -247,7 +256,7 @@ export default function MyShelfPage({ params }) {
           const sig = coverSignature(item);
           const cached = coverCache.get(item.id);
           if (cached && cached.sig === sig) return;
-          generateAlbumCovers(item)
+          generateAlbumCovers(item, locale)
             .then(({ frontImage, backImage }) => {
               coverCache.set(item.id, { sig, frontImage, backImage });
               clearOptimisticCover(item.id);
@@ -265,7 +274,7 @@ export default function MyShelfPage({ params }) {
         });
       })
       .catch((err) => console.error("Failed to fetch library:", err));
-  }, [token]);
+  }, [token, locale]);
 
   // 앨범 클릭 핸들러 (3D에서 호출됨)
   const handleAlbumClick = useCallback((albumIndex, albumData) => {
@@ -285,7 +294,7 @@ export default function MyShelfPage({ params }) {
         if (!json.ok || !json.data) return;
         const d = json.data;
 
-        const { frontImage, backImage } = await generateAlbumCovers(d);
+        const { frontImage, backImage } = await generateAlbumCovers(d, locale);
         coverCache.set(albumData.id, {
           sig: coverSignature(d),
           frontImage,
@@ -306,7 +315,7 @@ export default function MyShelfPage({ params }) {
         );
       })
       .catch((err) => console.error("Failed to fetch record detail:", err));
-  }, []);
+  }, [locale]);
 
   // 앨범 플립 핸들러 (선택된 앨범 클릭 시)
   const handleFlipAlbum = useCallback(() => {

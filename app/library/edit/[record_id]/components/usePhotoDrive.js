@@ -7,7 +7,6 @@ const API_URL = "https://the-life-museum-backend-production.up.railway.app";
 
 export function usePhotoDrive(record_id) {
   const [photoMedia, setPhotoMedia] = useState([]);
-  const [photoBlobUrls, setPhotoBlobUrls] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const fetchedRef = useRef(false);
@@ -49,7 +48,6 @@ export function usePhotoDrive(record_id) {
           (m) => m.type === "image",
         );
         setPhotoMedia(images);
-        setPhotoBlobUrls([]);
       }
     } catch (err) {
       console.error("Photo drive refresh failed:", err);
@@ -58,45 +56,14 @@ export function usePhotoDrive(record_id) {
     }
   }, [record_id]);
 
-  const preloadingRef = useRef(false);
-
-  const preloadBlobs = useCallback(async () => {
-    if (photoMedia.length === 0 || preloadingRef.current) return;
-    preloadingRef.current = true;
-
-    const BATCH_SIZE = 5;
-    for (let start = 0; start < photoMedia.length; start += BATCH_SIZE) {
-      const batch = photoMedia.slice(start, start + BATCH_SIZE);
-      await Promise.allSettled(
-        batch.map(async (media, j) => {
-          const i = start + j;
-          try {
-            const rawUrl = media.original_url || media.thumbnail_url;
-            const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
-            const res = await fetch(proxyUrl);
-            const blob = await res.blob();
-            const blobUrl = URL.createObjectURL(blob);
-            setPhotoBlobUrls((curr) => {
-              const updated = [...curr];
-              while (updated.length <= i) updated.push(null);
-              updated[i] = blobUrl;
-              return updated;
-            });
-          } catch (e) {
-            console.error("Blob preload failed:", e);
-          }
-        }),
-      );
-    }
-    preloadingRef.current = false;
-  }, [photoMedia]);
+  // 주의: 과거의 preloadBlobs(앨범 전체 원본을 프록시로 일괄 다운로드해 blob으로
+  // 보관)는 제거됨 — 수천 장 앨범에서 GB 단위 메모리를 점유해 크래시 위험.
+  // 사진은 선택 시 해당 1장만 온디맨드로 blob 변환한다.
 
   return {
     photoMedia,
-    photoBlobUrls,
     isRefreshing,
     isLoading,
     refresh,
-    preloadBlobs,
   };
 }

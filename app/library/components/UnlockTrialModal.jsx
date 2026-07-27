@@ -82,7 +82,7 @@ export default function UnlockTrialModal({
 
   const handleBuy = () => {
     hapticTap();
-    router.push(`/${locale}/account?section=charge`);
+    router.push(`/${locale}/account/purchase`);
   };
 
   return (

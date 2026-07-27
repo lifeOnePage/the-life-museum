@@ -623,7 +623,7 @@ export default function MyShelfPage({ params }) {
       {/* 진열대 크레딧 구매 유도 (체험 앨범 보유 + 미선택 시) */}
       {hasActiveTrial && !selectedAlbum && (
         <button
-          onClick={() => router.push(`/${locale}/account?section=charge`)}
+          onClick={() => router.push(`/${locale}/account/purchase`)}
           className="pointer-events-auto absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#c4b49a] px-6 py-2.5 text-sm font-semibold text-[#1a1510] shadow-lg transition-colors duration-150 hover:bg-[#e8d5b7]"
         >
           <Sparkles size={15} />

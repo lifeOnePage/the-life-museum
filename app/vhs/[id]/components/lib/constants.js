@@ -75,11 +75,15 @@ export const TV_KNOB_LOWER = {
 };
 
 // VHS tape label coordinates (% of tape image)
+// Desktop tape (1920×1081): text-safe zone strictly inside the label paper's
+// blank area — paper spans x≈755–1180, y≈447–695; writable band sits below
+// the top ornament line (~y500) and above the middle ruled line (~y617),
+// which reads as an underline beneath the text.
 export const TAPE_LABEL = {
-  left: 0.33,
-  top: 0.35,
-  width: 0.34,
-  height: 0.35,
+  left: 0.405,
+  top: 0.46,
+  width: 0.2,
+  height: 0.11,
 };
 
 // Mobile portrait tape (941×1672): label text-safe zone (% of image).
@@ -101,7 +105,9 @@ export const TAPE_INTRO_LAYOUT = {
     storyLeft: 0.25,
     storyTop: 0.05,
     storyWidth: 0.5,
-    storyMaxHeight: null,
+    // Tape shell top edge ≈ y0.26 of the image — cap the story block so a
+    // max-length lifestory (250자) can never reach the tape body.
+    storyMaxHeight: 0.195,
     btnTop: 0.88,
   },
   mobile: {
@@ -120,7 +126,7 @@ export const IMAGE_DURATION_OPTIONS = [
   { label: "5초", value: 5 },
   { label: "10초", value: 10 },
 ];
-export const DEFAULT_IMAGE_DURATION = 5;
+export const DEFAULT_IMAGE_DURATION = 3;
 
 // Video playback mode options (0 = full playback)
 export const VIDEO_MODE_OPTIONS = [
@@ -129,7 +135,7 @@ export const VIDEO_MODE_OPTIONS = [
   { label: "짧게 5초", value: 5 },
   { label: "짧게 10초", value: 10 },
 ];
-export const DEFAULT_VIDEO_MODE = 0;
+export const DEFAULT_VIDEO_MODE = 10;
 
 // Color filter options
 export const FILTER_OPTIONS = [
@@ -148,4 +154,4 @@ export const TRANSITION_OPTIONS = [
   { label: "페이드", value: "fade" },
   { label: "켄번", value: "kenburns" },
 ];
-export const DEFAULT_TRANSITION = "fade";
+export const DEFAULT_TRANSITION = "kenburns";

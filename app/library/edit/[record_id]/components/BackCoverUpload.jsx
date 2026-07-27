@@ -4,6 +4,7 @@ import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ImagePlus, RefreshCw, Upload, FolderOpen, X } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
+import { getProxiedUrl } from "@/app/lib/proxy";
 import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
 import ScrollToTopButton from "./ScrollToTopButton";
 
@@ -148,11 +149,7 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
     // 디바이스 업로드와 동일하게 R2에 영구 업로드한다.
     try {
       const blob = await (
-        await fetch(
-          `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(
-            media.original_url || media.thumbnail_url,
-          )}`,
-        )
+        await fetch(getProxiedUrl(media.original_url || media.thumbnail_url))
       ).blob();
       const ext = (blob.type.split("/")[1] || "jpg").replace("jpeg", "jpg");
       const file = new File([blob], `photodrive-${index}.${ext}`, {

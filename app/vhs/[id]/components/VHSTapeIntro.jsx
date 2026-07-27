@@ -1,6 +1,12 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import {
+  useRef,
+  useState,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import { X } from "lucide-react";
 import {
   VHS_TAPE_IMAGE,
@@ -84,7 +90,9 @@ export default function VHSTapeIntro({
       storyTop: img.y + img.height * layout.storyTop,
       storyWidth: img.width * layout.storyWidth,
       storyLeft: img.x + img.width * layout.storyLeft,
-      storyMaxHeight: storyCapFraction ? img.height * storyCapFraction : undefined,
+      storyMaxHeight: storyCapFraction
+        ? img.height * storyCapFraction
+        : undefined,
     });
   }, [imgNatSize, isPortrait]);
 
@@ -107,16 +115,31 @@ export default function VHSTapeIntro({
     setImgNatSize({ w: e.target.naturalWidth, h: e.target.naturalHeight });
   }, []);
 
-  // Lifestory text — no "..." truncation, but must never overlap the tape
-  // body. Instead of clamping lines, shrink the font until it fits the
-  // reserved area (storyMaxHeight); floors out at a still-readable size.
+  // Web fonts swapping in after the first measurement changes text metrics,
+  // so both fit passes below re-run once all fonts are loaded.
+  const [fontsReady, setFontsReady] = useState(false);
+  useEffect(() => {
+    if (typeof document === "undefined" || !document.fonts?.ready) return;
+    let cancelled = false;
+    document.fonts.ready.then(() => {
+      if (!cancelled) setFontsReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Lifestory text (max 250자) — no "..." truncation, but must never overlap
+  // the tape body. Instead of clamping lines, wrap freely and shrink the font
+  // until it fits the reserved area (storyMaxHeight); floors out at an
+  // absolute minimum.
   const storyRef = useRef(null);
   const [storyFontPx, setStoryFontPx] = useState(null);
   const baseStoryFontSize = isPortrait
     ? "clamp(0.65rem, 2.8vw, 0.85rem)"
     : "clamp(0.75rem, 1.5vw, 1.0rem)";
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = storyRef.current;
     if (!el || !lifestory || !labelBounds?.storyMaxHeight) {
       setStoryFontPx(null);
@@ -125,13 +148,67 @@ export default function VHSTapeIntro({
     el.style.fontSize = baseStoryFontSize;
     const basePx = parseFloat(getComputedStyle(el).fontSize);
     let size = basePx;
-    const minSize = Math.max(9, basePx * 0.55);
+    const minSize = 8;
     while (el.scrollHeight > labelBounds.storyMaxHeight && size > minSize) {
       size -= 0.5;
       el.style.fontSize = `${size}px`;
     }
     setStoryFontPx(size);
-  }, [lifestory, labelBounds, baseStoryFontSize]);
+  }, [lifestory, labelBounds, baseStoryFontSize, fontsReady]);
+
+  // Title (max 20자) + subtitle (max 25자) on the tape label — same policy
+  // as lifestory: wrap freely, then shrink both fonts by a shared scale
+  // until the pair fits the label box. Never uses "..." truncation.
+  const labelBoxRef = useRef(null);
+  const titleRef = useRef(null);
+  const subRef = useRef(null);
+  const [labelFontPx, setLabelFontPx] = useState(null);
+  const baseTitleFontSize = isPortrait
+    ? "clamp(0.8rem, 3.6vw, 1.05rem)"
+    : "clamp(0.75rem, 2vw, 1.4rem)";
+  const baseSubFontSize = isPortrait
+    ? "clamp(0.65rem, 2.8vw, 0.85rem)"
+    : "clamp(0.75rem, 1.5vw, 1.0rem)";
+
+  useLayoutEffect(() => {
+    const box = labelBoxRef.current;
+    const titleEl = titleRef.current;
+    if (!box || !titleEl || !title || !labelBounds) {
+      setLabelFontPx(null);
+      return;
+    }
+    const subEl = subRef.current;
+    titleEl.style.fontSize = baseTitleFontSize;
+    if (subEl) subEl.style.fontSize = baseSubFontSize;
+    const titleBase = parseFloat(getComputedStyle(titleEl).fontSize);
+    const subBase = subEl ? parseFloat(getComputedStyle(subEl).fontSize) : 0;
+
+    // offsetHeight (not box.scrollHeight): the box centers its content, so
+    // upward overflow is invisible to scrollHeight.
+    const fits = () => {
+      const h = titleEl.offsetHeight + (subEl ? subEl.offsetHeight : 0);
+      const w = Math.max(titleEl.scrollWidth, subEl ? subEl.scrollWidth : 0);
+      return h <= box.clientHeight + 1 && w <= box.clientWidth + 1;
+    };
+
+    let scale = 1;
+    const minScale = Math.min(1, 8 / titleBase);
+    while (!fits() && scale > minScale) {
+      scale = Math.max(scale - 0.05, minScale);
+      titleEl.style.fontSize = `${titleBase * scale}px`;
+      if (subEl) subEl.style.fontSize = `${subBase * scale}px`;
+    }
+    setLabelFontPx(
+      scale < 1 ? { title: titleBase * scale, sub: subBase * scale } : null,
+    );
+  }, [
+    title,
+    subTitle,
+    labelBounds,
+    baseTitleFontSize,
+    baseSubFontSize,
+    fontsReady,
+  ]);
 
   return (
     <div
@@ -171,13 +248,15 @@ export default function VHSTapeIntro({
           {lifestory && (
             <p
               ref={storyRef}
-              className="absolute text-center leading-relaxed text-white/70"
+              className="absolute text-center leading-relaxed break-words text-white/70"
               style={{
                 fontFamily: "serif",
                 fontSize: storyFontPx ? `${storyFontPx}px` : baseStoryFontSize,
                 left: labelBounds.storyLeft,
                 top: labelBounds.storyTop,
                 width: labelBounds.storyWidth,
+                maxHeight: labelBounds.storyMaxHeight,
+                overflow: "hidden",
               }}
             >
               {lifestory}
@@ -187,6 +266,7 @@ export default function VHSTapeIntro({
           {/* Title on tape label */}
           {title && (
             <div
+              ref={labelBoxRef}
               className="absolute flex flex-col items-center justify-center overflow-hidden"
               style={{
                 left: labelBounds.left,
@@ -196,31 +276,31 @@ export default function VHSTapeIntro({
               }}
             >
               <span
-                className={`${
-                  isPortrait ? "line-clamp-1" : "line-clamp-2"
-                } text-center font-bold text-neutral-800`}
+                ref={titleRef}
+                className="w-full text-center font-bold break-words text-neutral-800"
                 style={{
-                  fontSize: isPortrait
-                    ? "clamp(0.8rem, 3.6vw, 1.05rem)"
-                    : "clamp(0.75rem, 2vw, 1.4rem)",
-                  lineHeight: isPortrait ? 1.35 : 2.0,
+                  fontSize: labelFontPx
+                    ? `${labelFontPx.title}px`
+                    : baseTitleFontSize,
+                  lineHeight: isPortrait ? 1.35 : 1.5,
                 }}
               >
                 {title}
               </span>
-              <span
-                className={`${
-                  isPortrait ? "line-clamp-1" : "line-clamp-2"
-                } text-center text-neutral-800`}
-                style={{
-                  fontSize: isPortrait
-                    ? "clamp(0.65rem, 2.8vw, 0.85rem)"
-                    : "clamp(0.75rem, 1.5vw, 1.0rem)",
-                  lineHeight: 1.3,
-                }}
-              >
-                {subTitle}
-              </span>
+              {subTitle && (
+                <span
+                  ref={subRef}
+                  className="w-full text-center break-words text-neutral-800"
+                  style={{
+                    fontSize: labelFontPx
+                      ? `${labelFontPx.sub}px`
+                      : baseSubFontSize,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {subTitle}
+                </span>
+              )}
             </div>
           )}
 

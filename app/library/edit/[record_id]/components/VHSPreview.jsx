@@ -309,6 +309,24 @@ export default function VHSPreview({
     setTransitioning(false);
   }, [mediaList]);
 
+  // 업커밍 이미지 프리로드 — 크로스페이드 시작 시 다음 이미지가 아직 로드되지
+  // 않으면 next 레이어가 페이드인해도 픽셀이 없어 빈 화면(갈색 필터)만 보이고,
+  // 로드가 끝나는 스왑 시점에 인스턴트로 나타난다. 감상 화면(VHSExhibition)은
+  // useMediaSlideshow.preloadUrls로 프리로드하므로 부드러운데, 자체 슬라이드쇼인
+  // 이 미리보기도 동일하게 프리로드해야 한다.
+  useEffect(() => {
+    if (count <= 1) return;
+    for (let i = 1; i <= Math.min(2, count - 1); i++) {
+      const idx = (currentIndex + i) % count;
+      const m = mediaList[idx];
+      const url = m?.original_url || m?.thumbnail_url;
+      if (url) {
+        const img = new Image();
+        img.src = url;
+      }
+    }
+  }, [currentIndex, count, mediaList]);
+
   const currentItem = count > 0 ? mediaList[currentIndex] : null;
   const nextItem = nextIndex !== null ? mediaList[nextIndex] : null;
 

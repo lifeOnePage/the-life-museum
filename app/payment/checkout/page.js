@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { applyCouponDiscount } from "@/app/utils/payment";
 
 const APP_SCHEME = "thelifemuseum";
 
@@ -59,6 +60,28 @@ function CheckoutContent() {
     }
   }, []);
 
+  // 보관함에서 쿠폰 정보 조회 — 유효하지 않으면 null (정가 결제로 진행)
+  async function resolveCoupon() {
+    if (!couponCode || !token) return null;
+    try {
+      const res = await fetch(`${BASE_URL}/coupon/my`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const c = (data.items || []).find((x) => x.code === couponCode);
+      return c
+        ? {
+            code: c.code,
+            discountPercent: c.discount_percent,
+            maxDiscountKrw: c.max_discount_krw,
+          }
+        : null;
+    } catch {
+      return null;
+    }
+  }
+
   async function startDomesticPayment() {
     const pricing = PACKAGE_PRICES[pkg];
     if (!pricing) {
@@ -67,18 +90,23 @@ function CheckoutContent() {
     }
 
     try {
+      // 쿠폰이 무효하면 couponCode 없이 정가 결제 (서버 금액 검증과 일치시키기 위함)
+      const coupon = await resolveCoupon();
+      const effectiveCouponCode = coupon ? couponCode : "";
+      const finalAmount = applyCouponDiscount(pricing, coupon);
+
       const PortOne = await import("@portone/browser-sdk/v2");
       const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
       // 모바일 결제창은 리다이렉트 → complete 페이지에서 크레딧 충전
-      const redirectUrl = `${window.location.origin}/payment/checkout/complete?package=${pkg}&token=${encodeURIComponent(token)}&locale=${locale}&couponCode=${encodeURIComponent(couponCode)}`;
+      const redirectUrl = `${window.location.origin}/payment/checkout/complete?package=${pkg}&token=${encodeURIComponent(token)}&locale=${locale}&couponCode=${encodeURIComponent(effectiveCouponCode)}`;
 
       const response = await PortOne.requestPayment({
         storeId: PORTONE_V2_STORE_ID,
         channelKey: KG_INICIS_CHANNEL_KEY,
         paymentId,
         orderName: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
-        totalAmount: pricing.krw,
+        totalAmount: finalAmount.krw,
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
         // KG이니시스 V2 일반결제는 fullName + phoneNumber 필수
@@ -103,7 +131,7 @@ function CheckoutContent() {
       }
 
       // 국내 결제 성공 → 크레딧 충전 (PayPal과 동일 경로)
-      await confirmAndAddCredits({ pkg, token, couponCode, paymentId: response.paymentId });
+      await confirmAndAddCredits({ pkg, token, couponCode: effectiveCouponCode, paymentId: response.paymentId });
     } catch (err) {
       setError(err.message);
     }
@@ -117,6 +145,10 @@ function CheckoutContent() {
     }
 
     try {
+      const coupon = await resolveCoupon();
+      const effectiveCouponCode = coupon ? couponCode : "";
+      const finalAmount = applyCouponDiscount(pricing, coupon);
+
       const PortOne = await import("@portone/browser-sdk/v2");
       const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
@@ -125,7 +157,7 @@ function CheckoutContent() {
         channelKey: PAYPAL_CHANNEL_KEY,
         paymentId,
         orderName: `Credit Purchase (${pricing.label})`,
-        totalAmount: pricing.usd,
+        totalAmount: finalAmount.usd,
         currency: "CURRENCY_USD",
         payMethod: "PAYPAL",
         // 결제-유저 바인딩
@@ -145,7 +177,7 @@ function CheckoutContent() {
       await confirmAndAddCredits({
         pkg,
         token,
-        couponCode,
+        couponCode: effectiveCouponCode,
         paymentId: response.paymentId,
       });
     } catch (err) {

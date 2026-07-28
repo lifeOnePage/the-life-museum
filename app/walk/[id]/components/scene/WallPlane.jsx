@@ -8,6 +8,7 @@ import {
   OPACITY_APPEAR_DIST,
   OPACITY_PEAK_DIST,
   OPACITY_HOLD_DIST,
+  FLING_LOAD_PAUSE_SPEED,
 } from "../lib/constants";
 
 // Compute the nearest wrapped Z position for a plane given the current camera Z
@@ -216,20 +217,21 @@ function WallPlane({
         ctx.drawImage(img, paddingPx, paddingPx, drawW, drawH);
 
         // ── 어두운 이미지 필터 ──
+        // 10×10 축소 캔버스에서 평균 밝기 측정. (기존: 전체 해상도 getImageData로
+        // 최대 4MB 픽셀 리드백 후 100픽셀만 샘플링 — 로드마다 메인 스레드 잔렉 유발)
         const DARK_THRESHOLD = 15;
-        const SAMPLE_GRID = 10;
-        const imageData = ctx.getImageData(paddingPx, paddingPx, drawW, drawH);
-        const px = imageData.data;
-        let total = 0, count = 0;
-        const stepX = Math.max(1, Math.floor(drawW / SAMPLE_GRID));
-        const stepY = Math.max(1, Math.floor(drawH / SAMPLE_GRID));
-        for (let y = 0; y < drawH; y += stepY)
-          for (let x = 0; x < drawW; x += stepX) {
-            const i = (y * drawW + x) * 4;
-            total += (px[i] + px[i + 1] + px[i + 2]) / 3;
-            count++;
-          }
-        if (count > 0 && total / count < DARK_THRESHOLD) {
+        const S = 10;
+        const sc = document.createElement("canvas");
+        sc.width = S;
+        sc.height = S;
+        const sctx = sc.getContext("2d", { willReadFrequently: true });
+        sctx.drawImage(img, 0, 0, S, S);
+        const px = sctx.getImageData(0, 0, S, S).data;
+        let total = 0;
+        for (let i = 0; i < px.length; i += 4) {
+          total += (px[i] + px[i + 1] + px[i + 2]) / 3;
+        }
+        if (total / (S * S) < DARK_THRESHOLD) {
           loadStateRef.current = "loaded"; // 재시도 방지
           return; // 텍스처 미생성 → 벽면 어두운 상태 유지
         }
@@ -658,12 +660,17 @@ function WallPlane({
     const distToCamera = Math.abs(cameraZ - wrappedZ);
 
     // ── Lazy loading: 2-tier for video, single-tier for image ──────────────
-    // Tier 1 (2800 units): poster/image load
-    if (loadStateRef.current === "idle" && distToCamera <= FOG_FAR + 800) {
+    // Tier 1 (2800 units): poster/image load.
+    // 강한 휠 플링 중에는 신규 로드 시작을 보류 — 디코드/캔버스/GPU 업로드가
+    // 프레임 예산이 가장 빠듯한 순간에 몰리는 잔렉 방지(플링 감쇠 후 자동 재개).
+    const flinging =
+      (stateRef.current.manualSpeed || 0) > FLING_LOAD_PAUSE_SPEED;
+    if (!flinging && loadStateRef.current === "idle" && distToCamera <= FOG_FAR + 800) {
       if (isVideoType) startPosterLoad(); else startLoad();
     }
-    // Tier 2: 포스터 로드 완료 즉시 비디오 로딩 시작 (동시성 게이트 MAX_CONCURRENT_VIDEO_LOADS로만 제어)
-    if (isVideoType && loadStateRef.current === "poster_loaded") {
+    // Tier 2: 포스터 로드 완료 시 비디오 로딩 시작 (동시성 게이트 MAX_CONCURRENT_VIDEO_LOADS).
+    // 플링 중에는 보류 — 비디오 엘리먼트 생성/디코더 초기화도 메인 스레드 비용.
+    if (!flinging && isVideoType && loadStateRef.current === "poster_loaded") {
       startDeferredVideoLoad();
     }
 

@@ -463,8 +463,8 @@ export default function DisplayScene({ recordId, locale }) {
   const planes = useMemo(() => {
     if (mediaList.length === 0) return [];
     const rng = mulberry32(SEED);
-    return generatePlanes(rng, mediaList);
-  }, [mediaList]);
+    return generatePlanes(rng, mediaList, textureConfig.planePoolSize);
+  }, [mediaList, textureConfig.planePoolSize]);
 
   const handleTogglePlay = useCallback(() => {
     setIsPlaying((prev) => !prev);
@@ -727,6 +727,7 @@ export default function DisplayScene({ recordId, locale }) {
           <Suspense fallback={null}>
             <Scene
               planes={planes}
+              mediaList={mediaList}
               mediaListLength={mediaList.length}
               isPlaying={isPlaying}
               cameraSpeed={cameraSpeed}

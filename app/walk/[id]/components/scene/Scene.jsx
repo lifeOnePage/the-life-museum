@@ -13,6 +13,7 @@ import WallPlane from "./WallPlane";
 import FocusClone from "./FocusClone";
 import MirrorReflection from "./MirrorReflection";
 import GlowBorder from "./GlowBorder";
+import CenterSlideshow from "./CenterSlideshow";
 import {
   CAMERA_START_Z,
   DISPLAY_OFFSET_Z,
@@ -40,6 +41,7 @@ const MAX_CONCURRENT_VIDEO_LOADS = 2;  // 비디오 엘리먼트 생성 (Tier 2)
 
 export default function Scene({
   planes,
+  mediaList,
   mediaListLength,
   isPlaying,
   cameraSpeed,
@@ -118,12 +120,67 @@ export default function Scene({
     cloneReachedView: false,
   });
 
+  // ─── 순환 로딩(corridor cycling) ─────────────────────────────────────────
+  // 슬롯 수는 poolSize로 고정. 각 슬롯(plane.id)이 복도 끝(카메라 뒤 → 안개 저편)
+  // 으로 래핑되는 순간, 아직 안 보여준 다음 사진으로 재할당한다. 그러면 앨범이
+  // 슬롯 수보다 커도 걸어가는 동안 전체 사진이 순서대로 등장하고, 메모리/메시 수는
+  // poolSize로 고정된다(WallPlane이 imageUrl 변경 시 기존 텍스처를 dispose·재로딩).
+  // assignments: { [plane.id]: mediaIndex }
+  const [assignments, setAssignments] = useState(() => {
+    const a = {};
+    planes.forEach((p) => (a[p.id] = p.mediaIndex));
+    return a;
+  });
+  const wrapCountRef = useRef(new Map());        // 슬롯별 누적 래핑 바퀴 수 k(후방 래핑 시 감소)
+  const prevWrappedZRef = useRef(new Map());     // 슬롯별 직전 wrappedZ(래핑 감지용)
+  const pendingAssignRef = useRef({});           // 플러시 대기 중인 재할당(배칭)
+  const assignFlushAccumRef = useRef(0);         // 플러시 주기 타이머(초)
+
+  // 앨범/풀 변경 시 초기화
+  useEffect(() => {
+    const a = {};
+    planes.forEach((p) => (a[p.id] = p.mediaIndex));
+    setAssignments(a);
+    wrapCountRef.current = new Map();
+    prevWrappedZRef.current = new Map();
+    pendingAssignRef.current = {};
+  }, [planes]);
+
+  // 현재 할당된 사진으로 채운 plane 목록(위치는 planes 그대로, 미디어만 순환).
+  const livePlanes = useMemo(() => {
+    if (!mediaList || mediaList.length === 0) return planes;
+    return planes.map((p) => {
+      const mi = assignments[p.id] ?? p.mediaIndex;
+      const m = mediaList[mi];
+      if (!m) return p;
+      return {
+        ...p,
+        mediaIndex: mi,
+        imageUrl: m.original_url || m.thumbnail_url,
+        thumbnailUrl: m.thumbnail_url,
+        mediaType: m.type,
+      };
+    });
+  }, [planes, assignments, mediaList]);
+
   // Fast planeId → mediaType lookup (independent of texture load state)
   const planeMediaTypeMap = useMemo(() => {
     const map = new Map();
-    planes.forEach((p) => map.set(p.id, p.mediaType));
+    livePlanes.forEach((p) => map.set(p.id, p.mediaType));
     return map;
-  }, [planes]);
+  }, [livePlanes]);
+
+  // 최신 livePlanes를 ref로도 노출 — handlePlaneClick이 livePlanes에 직접 의존하면
+  // 순환 재할당(assignments 갱신)마다 onClick 참조가 바뀌어 WallPlane memo가 전부
+  // 깨지고 260개가 통째로 리렌더된다(빠른 이동 시 프레임 드랍의 원인).
+  const livePlanesRef = useRef(livePlanes);
+  livePlanesRef.current = livePlanes;
+
+  // 중앙 독립 슬라이드쇼용 이미지 목록(앨범 순서 유지, 영상 제외 — '사진'만)
+  const centerImages = useMemo(
+    () => (mediaList || []).filter((m) => m.type === "image"),
+    [mediaList],
+  );
 
   // Corridor span for wrapping
   const deepestZ = useMemo(() => {
@@ -170,7 +227,10 @@ export default function Scene({
       });
 
       const loadedCount = textureMap.current.size;
-      const threshold = Math.ceil(planes.length * 0.8);
+      // 순환 로딩에선 로드 윈도우 밖 슬롯이 텍스처를 안 들고 있어(코리도어 span >
+      // dispose 거리) 전체의 80%가 동시에 로드되지 않는다. 실제 도달 가능한 상한을
+      // 둬서 대형 앨범에서도 자동 재생이 확실히 트리거되게 한다.
+      const threshold = Math.min(Math.ceil(planes.length * 0.8), 60);
 
       // Report progress to parent for loading UI
       onLoadProgress?.(loadedCount, threshold);
@@ -359,7 +419,7 @@ export default function Scene({
   const handlePlaneClick = useCallback(
     (planeId) => {
       const s = state.current;
-      const plane = planes.find((p) => p.id === planeId);
+      const plane = livePlanesRef.current.find((p) => p.id === planeId);
       if (!plane) return;
 
       // Already focused on this plane — toggle video or do nothing (never re-focus)
@@ -415,38 +475,37 @@ export default function Scene({
       s.cloneReachedView = false;
       setFocusRender({ mode: "manual", targetId: planeId });
     },
-    [planes, corridorSpan, startVideoPlayback, stopVideoPlayback, pauseVideoPlayback, resumeVideoPlayback],
+    [corridorSpan, startVideoPlayback, stopVideoPlayback, pauseVideoPlayback, resumeVideoPlayback],
   );
 
   // Pick the next plane in album order for auto focus (sequential, wraps around)
   function pickAutoTarget(s) {
-    if (!mediaListLength) return null;
+    if (!livePlanes.length) return null;
 
-    // Try each mediaIndex starting from nextAutoMediaIndex (full cycle)
-    for (let attempt = 0; attempt < mediaListLength; attempt++) {
-      const targetIdx = (s.nextAutoMediaIndex + attempt) % mediaListLength;
-
-      // Find the closest loaded plane ahead of camera with this mediaIndex
-      let best = null;
-      let bestDz = Infinity;
-      for (const p of planes) {
-        if (p.mediaIndex !== targetIdx) continue;
-        if (!textureMap.current.has(p.id)) continue;
-        const wrappedPZ = wrapZ(p.position[2], s.cameraZ);
-        const dz = s.cameraZ - wrappedPZ;
-        if (dz > 0 && dz < bestDz) {
-          best = p;
-          bestDz = dz;
-        }
-      }
-
-      if (best) {
-        s.nextAutoMediaIndex = (targetIdx + 1) % mediaListLength;
-        return best;
+    // 앨범 순서 = 복도 공간 순서(planeGenerator가 mediaIndex 오름차순 배치, 순환
+    // 재할당도 이 순서를 유지)이므로, '카메라 앞쪽에서 가장 가까운 로드된 plane'을
+    // 고르면 매 사이클 바로 다음 사진이 선택돼 건너뛰기 없이 순서대로 포커싱된다.
+    // (기존 mediaIndex 카운터 방식은 순환 로딩에서 복도가 모든 사진을 반복하지
+    //  않아, 포커스 1회당 카메라가 여러 장을 지나가며 건너뛰는 문제가 있었다.)
+    let best = null;
+    let bestDz = Infinity;
+    const minAhead = FOCUS_DISMISS_DISTANCE + 15; // 방금 지나친 plane 재선택 방지
+    for (const p of livePlanes) {
+      if (!textureMap.current.has(p.id)) continue;
+      const wrappedPZ = wrapZ(p.position[2], s.cameraZ);
+      const dz = s.cameraZ - wrappedPZ;
+      if (dz > minAhead && dz < bestDz) {
+        best = p;
+        bestDz = dz;
       }
     }
 
-    return null; // All textures still loading
+    if (best) {
+      s.nextAutoMediaIndex = (best.mediaIndex + 1) % (mediaListLength || 1);
+      return best;
+    }
+
+    return null; // 앞쪽에 로드된 plane이 아직 없음
   }
 
   // Reset when play starts
@@ -464,6 +523,9 @@ export default function Scene({
       smoothSpeed: cameraSpeed,
       videoTriggered: false,
       cloneReachedView: false,
+      // 플링 로드 게이트 상태 보존 — 리셋 프레임에 자식 useFrame이 undefined를
+      // 읽어 게이트가 1프레임 열리는 틈새 방지
+      manualSpeed: state.current.manualSpeed || 0,
     };
     camera.position.set(0, 0, CAMERA_START_Z);
   }
@@ -614,8 +676,59 @@ export default function Scene({
     controlsRef.current.enabled = false;
   }
 
-  useFrame((_, delta) => {
+  useFrame((_, rawDelta) => {
+    // delta 스파이크 클램프 — 탭 백그라운드 복귀 시 delta=숨김 시간 전체가 들어와
+    // 카메라가 (플링 잔여 velocity × 숨김시간 포함) 한 번에 텔레포트하는 것을 방지.
+    // CenterSlideshow의 elapsed 클램프와 동일 정책(0.25s).
+    const delta = Math.min(rawDelta, 0.25);
     const s = state.current;
+
+    // 수동 스크롤 속도 공유 — WallPlane/CenterSlideshow가 강한 플링 중 신규 텍스처
+    // 로드를 보류하는 데 사용(잔렉 방지). 매 프레임 갱신.
+    s.manualSpeed = Math.abs(manualVelocityRef.current);
+
+    // ── 순환 로딩: 슬롯이 복도 끝으로 래핑되면 다음 사진으로 재할당 ──
+    // (재생/일시정지 무관하게 카메라가 움직이면 항상 검사 — 모든 return보다 위)
+    if (mediaList && mediaList.length > 0) {
+      const prevMap = prevWrappedZRef.current;
+      const pending = pendingAssignRef.current;
+      for (const p of planes) {
+        const wz = wrapZ(p.position[2], s.cameraZ);
+        const prev = prevMap.get(p.id);
+        prevMap.set(p.id, wz);
+        // 래핑 감지(방향 대칭): 한 프레임에 wrappedZ가 코리도어 길이의 절반 이상
+        // 급변하면 경계를 넘은 것 — 전방(급감) +1바퀴, 후방(급증) -1바퀴.
+        // 슬롯별 바퀴 수 k에서 (초기 사진 + k×풀 크기)를 유도해 전역 커서 없이
+        // 앨범 순서를 정확히 유지한다. (기존 전역 커서는 경계 부근에서 앞뒤로
+        // 흔들면 전방 래핑만 세어 사진 1장이 영구 스킵되는 비대칭 버그가 있었고,
+        // 뒤로 스크롤 시 이전 사진 복원도 안 됐음. 래핑 시점 슬롯은 dispose 거리
+        // 밖이라 텍스처가 이미 내려가 있어 교체는 자연스럽다.)
+        if (prev !== undefined) {
+          let dk = 0;
+          if (wz < prev - corridorSpan * 0.5) dk = 1;
+          else if (wz > prev + corridorSpan * 0.5) dk = -1;
+          if (dk !== 0) {
+            const k = (wrapCountRef.current.get(p.id) || 0) + dk;
+            wrapCountRef.current.set(p.id, k);
+            const len = mediaList.length;
+            pending[p.id] =
+              (((p.mediaIndex + k * planes.length) % len) + len) % len;
+          }
+        }
+      }
+      // 플러시 스로틀(최대 5회/초): 빠른 스크롤 시 래핑이 프레임마다 발생해
+      // setAssignments가 매 프레임 리렌더(livePlanes 재계산 + 260개 memo 비교)를
+      // 일으키던 잔렉 원인 제거. 래핑 슬롯은 어차피 로드 범위(FOG_FAR+800) 훨씬
+      // 밖의 원거리에 재배치되므로 0.2s 지연은 시각적으로 관측 불가.
+      assignFlushAccumRef.current += delta;
+      if (assignFlushAccumRef.current >= 0.2) {
+        assignFlushAccumRef.current = 0;
+        if (Object.keys(pending).length > 0) {
+          pendingAssignRef.current = {};
+          setAssignments((a) => ({ ...a, ...pending }));
+        }
+      }
+    }
 
     // FOV animation (pinch zoom smooth interpolation)
     if (Math.abs(camera.fov - targetFovRef.current) > 0.1) {
@@ -737,13 +850,26 @@ export default function Scene({
     }
 
     // Manual input while playing (additive to auto-advance)
-    if (keysRef.current.fwd) s.cameraZ -= 150 * delta;
-    if (keysRef.current.back) s.cameraZ += 150 * delta;
+    // manualDz: 이 프레임에 수동 입력으로 실제 전진한 거리(전진 = +). CenterSlideshow가
+    // 진행도에 가산해 소비한다(빠르게 다가가면 중앙 플레인도 같이 가까워지도록).
+    let manualDz = 0;
+    if (keysRef.current.fwd) {
+      s.cameraZ -= 150 * delta;
+      manualDz += 150 * delta;
+    }
+    if (keysRef.current.back) {
+      s.cameraZ += 150 * delta;
+      manualDz -= 150 * delta;
+    }
     if (Math.abs(manualVelocityRef.current) > 0.5) {
       s.cameraZ -= manualVelocityRef.current * delta;
+      manualDz += manualVelocityRef.current * delta;
       manualVelocityRef.current *= Math.pow(0.005, delta);
     } else {
       manualVelocityRef.current = 0;
+    }
+    if (manualDz !== 0) {
+      s.centerManualDz = (s.centerManualDz || 0) + manualDz;
     }
 
     camera.position.z = s.cameraZ;
@@ -768,13 +894,19 @@ export default function Scene({
 
     // 2. Focus state machine
     if (s.focusMode === "idle") {
-      // Pick new auto target
-      const target = pickAutoTarget(s);
+      // 벽면 기반 자동 포커스는 비활성 — 중앙 포커스는 CenterSlideshow(복도와 분리된
+      // 독립 슬라이드쇼)가 담당한다. 수동 클릭 포커스(manual)는 그대로 동작.
+      const target = null;
       if (target) {
         s.focusMode = "auto";
         s.targetPlaneId = target.id;
         s.fadeProgress = 0;
-        s.focusCloneZ = s.cameraZ - DISPLAY_OFFSET_Z;
+        // 클론을 타겟 plane의 실제 위치(가장 가까운 앞쪽)에 생성 → 카메라가 한 칸만
+        // 전진하고 다음 사이클에 바로 다음 사진을 포커싱(건너뛰기 없음).
+        s.focusCloneZ = wrapZ(target.position[2], s.cameraZ);
+        // 진행도 페이드 범위: 생성 시점 → 해제 지점(타겟 - DISMISS)까지 접근하는 동안 0→100→0
+        s.slideStartZ = s.cameraZ;
+        s.slideTargetZ = s.focusCloneZ + FOCUS_DISMISS_DISTANCE;
         s.videoTriggered = false;
         s.cloneReachedView = false;
         setFocusRender({ mode: "auto", targetId: target.id });
@@ -836,7 +968,9 @@ export default function Scene({
                   s.focusMode = "auto";
                   s.targetPlaneId = next.id;
                   s.fadeProgress = 0;
-                  s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
+                  s.focusCloneZ = wrapZ(next.position[2], s.cameraZ);
+          s.slideStartZ = s.cameraZ;
+          s.slideTargetZ = s.focusCloneZ + FOCUS_DISMISS_DISTANCE;
                   s.videoTriggered = false;
                   s.cloneReachedView = false;
                   setFocusRender({ mode: "auto", targetId: next.id });
@@ -888,7 +1022,9 @@ export default function Scene({
             s.focusMode = "auto";
             s.targetPlaneId = next.id;
             s.fadeProgress = 0;
-            s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
+            s.focusCloneZ = wrapZ(next.position[2], s.cameraZ);
+          s.slideStartZ = s.cameraZ;
+          s.slideTargetZ = s.focusCloneZ + FOCUS_DISMISS_DISTANCE;
             s.videoTriggered = false;
             s.cloneReachedView = false;
             setFocusRender({ mode: "auto", targetId: next.id });
@@ -932,7 +1068,9 @@ export default function Scene({
             s.focusMode = "auto";
             s.targetPlaneId = next.id;
             s.fadeProgress = 0;
-            s.focusCloneZ = s.cameraZ - AUTO_RESPAWN_OFFSET;
+            s.focusCloneZ = wrapZ(next.position[2], s.cameraZ);
+          s.slideStartZ = s.cameraZ;
+          s.slideTargetZ = s.focusCloneZ + FOCUS_DISMISS_DISTANCE;
             s.videoTriggered = false;
             s.cloneReachedView = false;
             setFocusRender({ mode: "auto", targetId: next.id });
@@ -941,6 +1079,13 @@ export default function Scene({
           }
         }
       }
+    }
+
+    // 중앙 슬라이드쇼 Z를 이번 프레임 '최종' cameraZ로 재확정 — CenterSlideshow의
+    // useFrame이 이 콜백보다 먼저 실행되면 지난 프레임 cameraZ로 배치돼 1프레임
+    // 지연이 생기고, 빠르게 접근할수록(스크롤/방향키) 뚝뚝 끊겨 보인다.
+    if (s.centerActive && s.centerMesh) {
+      s.centerMesh.position.z = s.cameraZ - s.centerDist;
     }
   });
 
@@ -952,7 +1097,7 @@ export default function Scene({
 
   const focusPlane =
     focusRender.targetId !== null
-      ? planes.find((p) => p.id === focusRender.targetId)
+      ? livePlanes.find((p) => p.id === focusRender.targetId)
       : null;
   const focusTexInfo =
     focusRender.targetId !== null
@@ -971,7 +1116,7 @@ export default function Scene({
   // Previous focus clone data
   const prevFocusPlane =
     prevFocusRender.targetId !== null
-      ? planes.find((p) => p.id === prevFocusRender.targetId)
+      ? livePlanes.find((p) => p.id === prevFocusRender.targetId)
       : null;
   const prevFocusTexInfo =
     prevFocusRender.targetId !== null
@@ -1015,7 +1160,7 @@ export default function Scene({
       </mesh>
 
       {/* Wall Planes - Z-wrapping is handled imperatively inside each WallPlane.useFrame */}
-      {planes.map((p) => {
+      {livePlanes.map((p) => {
         // "auto" → wall stays, FocusClone shows; "manual" → plane flies to camera
         const focusMode =
           focusRender.targetId === p.id
@@ -1052,6 +1197,15 @@ export default function Scene({
         );
       })}
 
+      {/* 중앙 독립 슬라이드쇼(복도와 분리) — 모든 사진을 멀리서·천천히·순서대로 */}
+      <CenterSlideshow
+        imageList={centerImages}
+        isPlaying={isPlaying}
+        active={focusRender.mode !== "manual"}
+        stateRef={state}
+        maxTextureSize={textureConfig.maxTextureSize}
+      />
+
       {/* Auto Focus: Clone + Mirror + GlowBorder */}
       {focusRender.mode === "auto" && focusTexInfo && focusPlane && (
         <>
@@ -1063,6 +1217,8 @@ export default function Scene({
             stateRef={state}
             displayScale={DISPLAY_SCALE}
             cloneZ={focusCloneZ}
+            fadeStartZ={state.current.slideStartZ}
+            fadeEndZ={state.current.slideTargetZ}
             isVideo={focusTexInfo.isVideo}
             videoTexture={focusTexInfo.videoTexture}
             videoPlayStateRef={videoPlayState}

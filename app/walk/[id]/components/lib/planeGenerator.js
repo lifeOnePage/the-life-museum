@@ -32,34 +32,31 @@ function checkOverlap(box1, box2, margin = 5) {
   );
 }
 
-// 총 플레인 수 상한 — 모바일 GPU/CPU 보호
-const MAX_TOTAL_PLANES = 80;
+// 총 플레인(슬롯) 수 기본 상한 — 모바일 GPU/CPU 보호. 실제 값은 디바이스별
+// getTextureConfig().planePoolSize로 전달되며, 이 개수의 슬롯이 복도에 고정 상주한다.
+const MAX_TOTAL_PLANES = 200;
 
-export function generatePlanes(rng, mediaList) {
+/**
+ * 고정된 poolSize개의 슬롯을 복도에 배치한다.
+ *
+ * 앨범 사진 수와 무관하게 슬롯 수는 poolSize로 고정된다(메모리/메시 상한).
+ * 각 슬롯은 초기 mediaIndex = slot % len 을 갖고, 슬롯이 복도 끝으로 래핑되면
+ * Scene이 다음 사진으로 재할당한다(순환 로딩) — 그래서 poolSize보다 큰 앨범도
+ * 걸어가는 동안 전체 사진이 순서대로 등장한다.
+ *
+ * @param {number} poolSize 복도에 상주할 슬롯 수 (device-tiered)
+ */
+export function generatePlanes(rng, mediaList, poolSize = MAX_TOTAL_PLANES) {
   const allPlanes = [];
   if (!mediaList || mediaList.length === 0) return allPlanes;
 
-  // Repeat media so corridor length covers FOG_FAR for seamless infinite loop
-  // (wrapping makes the corridor infinite — corridorSpan ≥ FOG_FAR prevents visible pattern repeats)
-  const MIN_CORRIDOR_LENGTH = FOG_FAR;
-  const avgGapPerItem = 50;
-  const itemsPerSide = Math.ceil(mediaList.length / 2);
-  const corridorPerPass = itemsPerSide * avgGapPerItem;
-  const repeats = Math.max(
-    1,
-    Math.ceil(MIN_CORRIDOR_LENGTH / Math.max(corridorPerPass, 1)),
-  );
-
-  let expandedMedia = [];
-  for (let r = 0; r < repeats; r++) {
-    for (let mi = 0; mi < mediaList.length; mi++) {
-      expandedMedia.push({ media: mediaList[mi], mediaIndex: mi });
-    }
-  }
-
-  // Cap total planes to protect mobile devices
-  if (expandedMedia.length > MAX_TOTAL_PLANES) {
-    expandedMedia = expandedMedia.slice(0, MAX_TOTAL_PLANES);
+  const len = mediaList.length;
+  // 항상 poolSize개의 슬롯을 만들어 복도를 채운다(무한 복도 유지). 앨범이 작으면
+  // 사진이 복도에서 반복되지만, 순환 재할당은 언제나 앞으로 진행한다.
+  const expandedMedia = [];
+  for (let i = 0; i < poolSize; i++) {
+    const mi = i % len;
+    expandedMedia.push({ media: mediaList[mi], mediaIndex: mi });
   }
 
   // Order preservation: place every item along a SINGLE shared Z cursor in source

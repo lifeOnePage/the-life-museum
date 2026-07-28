@@ -1186,8 +1186,8 @@ export default function Scene({
               stateRef={state}
               corridorSpan={corridorSpan}
               activeLoadsRef={activeLoadsRef}
-              maxConcurrentLoads={MAX_CONCURRENT_LOADS}
-              maxTextureSize={textureConfig.maxTextureSize}
+              maxConcurrentLoads={textureConfig.maxConcurrentLoads ?? MAX_CONCURRENT_LOADS}
+              maxTextureSize={textureConfig.wallTextureSize ?? textureConfig.maxTextureSize}
               anisotropy={textureConfig.anisotropy}
               mediaType={p.mediaType}
               videoElementMap={videoElementMap}

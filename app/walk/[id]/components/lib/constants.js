@@ -83,15 +83,38 @@ export const GLOW_POINTS_PER_EDGE = 40;
 // 이 개수로 고정되고, 슬롯이 복도 끝으로 래핑될 때 다음 사진으로 순환 재할당된다
 // (Scene의 순환 로딩). 메모리/메시 수는 이 값으로 고정되므로 저사양 안전의 핵심 상한.
 // 현재(고정 200)와 동일하게 두어 모바일 회귀가 없도록 하고, 데스크톱만 소폭 확대.
+// wallTextureSize: 벽면 plane 전용 텍스처 상한. 벽면은 화면에서 작게 보이므로
+//   모바일 512²로 낮춰 업로드 비용(~2.4배↓)과 GPU 메모리(풀 80 기준 ~250→~106MB)를
+//   줄인다. maxTextureSize는 중앙 슬라이드쇼(화면을 크게 채움) 등 일반 용도.
+// maxConcurrentLoads: 동시 이미지 로드 상한. 모바일은 낮춰 로드 완료(=GPU 업로드)가
+//   한 프레임에 몰리는 히칭을 분산한다.
 export function getTextureConfig() {
   if (typeof window === "undefined") {
-    return { maxTextureSize: 512, anisotropy: 1, planePoolSize: 80 };
+    return {
+      maxTextureSize: 512,
+      wallTextureSize: 512,
+      anisotropy: 1,
+      planePoolSize: 80,
+      maxConcurrentLoads: 8,
+    };
   }
   const isMobile =
     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     ("ontouchstart" in window && window.innerWidth < 1024);
   if (isMobile) {
-    return { maxTextureSize: 768, anisotropy: 2, planePoolSize: 80 };
+    return {
+      maxTextureSize: 768,
+      wallTextureSize: 512,
+      anisotropy: 2,
+      planePoolSize: 80,
+      maxConcurrentLoads: 8,
+    };
   }
-  return { maxTextureSize: 1024, anisotropy: 4, planePoolSize: 160 };
+  return {
+    maxTextureSize: 1024,
+    wallTextureSize: 1024,
+    anisotropy: 4,
+    planePoolSize: 160,
+    maxConcurrentLoads: 30,
+  };
 }

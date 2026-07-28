@@ -329,6 +329,12 @@ export default function DisplayScene({ recordId, locale }) {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [cameraSpeed, setCameraSpeed] = useState(CAMERA_SPEED);
+  // 모바일 기본 카메라 속도 하향(getTextureConfig.defaultCameraSpeed) — SSR 초기값과의
+  // 하이드레이션 불일치를 피하려고 마운트 후 1회 보정(재생 시작 전이라 체감 점프 없음).
+  useEffect(() => {
+    const d = getTextureConfig().defaultCameraSpeed;
+    if (d && d !== CAMERA_SPEED) setCameraSpeed(d);
+  }, []);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [videoPreviewEnabled, setVideoPreviewEnabled] = useState(false);

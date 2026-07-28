@@ -96,6 +96,7 @@ export function getTextureConfig() {
       anisotropy: 1,
       planePoolSize: 80,
       maxConcurrentLoads: 8,
+      defaultCameraSpeed: CAMERA_SPEED,
     };
   }
   const isMobile =
@@ -108,6 +109,10 @@ export function getTextureConfig() {
       anisotropy: 2,
       planePoolSize: 80,
       maxConcurrentLoads: 8,
+      // 모바일 기본 카메라 속도 하향 — 순환 로딩의 텍스처 로드율은
+      // 속도÷사진 간격(110→4.4장/초)이므로, 속도를 낮추는 것이 로드율
+      // 자체를 줄이는 유일한 수단(70→2.8장/초). 슬라이더로 변경 가능.
+      defaultCameraSpeed: 70,
     };
   }
   return {
@@ -116,5 +121,6 @@ export function getTextureConfig() {
     anisotropy: 4,
     planePoolSize: 160,
     maxConcurrentLoads: 30,
+    defaultCameraSpeed: CAMERA_SPEED,
   };
 }

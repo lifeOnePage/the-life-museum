@@ -33,6 +33,7 @@ import {
   BASE_HEIGHT,
   CORRIDOR_HALF,
   OPACITY_APPEAR_DIST,
+  TOUCH_SCROLL_SENSITIVITY,
 } from "../lib/constants";
 
 // ─── 동시 로딩 제한 ─────────────────────────────────────────────────────
@@ -631,7 +632,7 @@ export default function Scene({
         touchRef.current.lastY = currentY; // reset baseline to current position
       }
       const deltaY = touchRef.current.lastY - currentY;
-      manualVelocityRef.current += deltaY * 3;
+      manualVelocityRef.current += deltaY * TOUCH_SCROLL_SENSITIVITY;
       touchRef.current.lastY = currentY;
     };
     const onTouchEnd = (e) => {

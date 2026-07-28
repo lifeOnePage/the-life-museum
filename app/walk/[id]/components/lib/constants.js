@@ -30,18 +30,22 @@ export const OPACITY_HOLD_DIST = 30; // 이 거리에서 hold 종료, fade-out �
 //  · 한 장당 시간(느리게) → SLIDE_DWELL_SEC ↑
 //  · 더 멀리서 등장 → SLIDE_START_DIST ↑ (독립이므로 멀리 둬도 건너뛰지 않음)
 //  · 통과(가까이) 거리 → SLIDE_END_DIST
-export const SLIDE_DWELL_SEC = 3.5;  // 한 사진이 멀리→가까이 지나가는 데 걸리는 시간(초)
+export const SLIDE_DWELL_SEC = 3.5; // 한 사진이 멀리→가까이 지나가는 데 걸리는 시간(초)
 export const SLIDE_START_DIST = 420; // 등장(먼) 거리
-export const SLIDE_END_DIST = -80;   // 통과(끝) 거리 — 음수 = 카메라 뒤까지 실제로 지나침
-export const SLIDE_FADE_IN = 0.3;    // 0~0.5: 앞쪽 이 비율만큼 opacity 0→100 (진행도 기반)
-export const SLIDE_FADE_OUT = 0.07;  // (FocusClone 전용 잔존) 뒤쪽 이 비율만큼 opacity 100→0
+export const SLIDE_END_DIST = -80; // 통과(끝) 거리 — 음수 = 카메라 뒤까지 실제로 지나침
+export const SLIDE_FADE_IN = 0.3; // 0~0.5: 앞쪽 이 비율만큼 opacity 0→100 (진행도 기반)
+export const SLIDE_FADE_OUT = 0.07; // (FocusClone 전용 잔존) 뒤쪽 이 비율만큼 opacity 100→0
 export const SLIDE_APPROACH_EASE = 2.5; // 접근 ease-out 강도(≥1, 1=선형). 클수록 초반 감속이 큼
 export const SLIDE_TERMINAL_SPEED_RATIO = 0.55; // 종단 속도 = 평균 접근 속도 × 이 비율(0이면 끝에서 정지)
 // 중앙 슬라이드쇼 페이드아웃(거리 기반): 카메라를 반투명 상태로 지나치는 느낌.
 // END_DIST는 0 권장 — 음수로 두면 dist<0.1에서 근평면 클리핑으로 통째로 잘려
 // 잔존 opacity(END/(START-END))가 1프레임 하드컷되는 팝이 생긴다.
 export const SLIDE_FADE_OUT_START_DIST = 80; // 이 거리부터 opacity 감소 시작
-export const SLIDE_FADE_OUT_END_DIST = 0;    // 이 거리에서 opacity 0(통과 순간 소멸)
+export const SLIDE_FADE_OUT_END_DIST = 0; // 이 거리에서 opacity 0(통과 순간 소멸)
+
+// 모바일 터치 스크롤 감도 — 손가락 이동 1px당 수동 속도 가산량. 높일수록 같은
+// 스와이프로 더 멀리 이동(데스크톱 휠은 deltaY×0.8 별도).
+export const TOUCH_SCROLL_SENSITIVITY = 7;
 
 // 강한 휠 플링(수동 스크롤 속도가 이 값 초과, 유닛/초) 동안 신규 텍스처 로드 시작을
 // 보류 — 이미지 디코드/다운스케일/GPU 업로드가 프레임 예산이 가장 빠듯한 타이밍에
@@ -81,13 +85,13 @@ export const GLOW_POINTS_PER_EDGE = 40;
 // 현재(고정 200)와 동일하게 두어 모바일 회귀가 없도록 하고, 데스크톱만 소폭 확대.
 export function getTextureConfig() {
   if (typeof window === "undefined") {
-    return { maxTextureSize: 512, anisotropy: 1, planePoolSize: 200 };
+    return { maxTextureSize: 512, anisotropy: 1, planePoolSize: 80 };
   }
   const isMobile =
     /Android|iPhone|iPad|iPod/i.test(navigator.userAgent) ||
     ("ontouchstart" in window && window.innerWidth < 1024);
   if (isMobile) {
-    return { maxTextureSize: 768, anisotropy: 2, planePoolSize: 200 };
+    return { maxTextureSize: 768, anisotropy: 2, planePoolSize: 80 };
   }
-  return { maxTextureSize: 1024, anisotropy: 4, planePoolSize: 260 };
+  return { maxTextureSize: 1024, anisotropy: 4, planePoolSize: 160 };
 }

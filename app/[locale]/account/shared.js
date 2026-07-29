@@ -170,42 +170,6 @@ export function setLocaleCookie(locale) {
   localStorage.setItem("NEXT_LOCALE", locale);
 }
 
-export const COUPON_GROUP_STYLE = {
-  "와디즈 쿠폰": {
-    border: "border-l-[#c4b49a]",
-    badge: "bg-[#c4b49a]/15 text-[#c4b49a]",
-    text: "text-[#c4b49a]/70",
-  },
-  카톡이벤트: {
-    border: "border-l-[#fee500]",
-    badge: "bg-[#fee500]/15 text-[#fee500]",
-    text: "text-[#fee500]/70",
-  },
-};
-export const DEFAULT_COUPON_STYLE = {
-  border: "border-l-white/20",
-  badge: "bg-white/10 text-white/50",
-  text: "text-white/50",
-};
-
-// 임시 하드코딩 쿠폰 맵 — handleCouponApply/handleSaveCoupon이 공유.
-export const COUPON_MAP = {
-  manwon: {
-    value: 10000,
-    groupName: "와디즈 쿠폰",
-    couponName: "10,000원 할인권",
-  },
-  "2manwon": {
-    value: 20000,
-    groupName: "카톡이벤트",
-    couponName: "팔로워 20,000원 할인권",
-  },
-  "3manwon": {
-    value: 30000,
-    groupName: "와디즈 쿠폰",
-    couponName: "오픈 이벤트 30,000원 할인권",
-  },
-};
 
 export function formatPrice(price, locale) {
   if (price === 0) return locale === "ko" ? "₩0" : "$0";

@@ -3,20 +3,11 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
-import { requestCreditPurchase } from "@/app/utils/payment";
+import { requestCreditPurchase, applyCouponDiscount } from "@/app/utils/payment";
 import LegalModal from "@/app/components/LegalModal";
 import { getPlatform } from "@/app/utils/platform";
 import { useCouponWallet } from "../CouponContext";
-import {
-  T,
-  BASE_URL,
-  CREDIT_PACKAGES,
-  COUPON_GROUP_STYLE,
-  DEFAULT_COUPON_STYLE,
-  COUPON_MAP,
-  getStoredLocale,
-  formatPrice,
-} from "../shared";
+import { T, BASE_URL, CREDIT_PACKAGES, getStoredLocale, formatPrice } from "../shared";
 
 export default function AccountPurchasePage() {
   const { user, setUser } = useAuth();
@@ -42,10 +33,6 @@ export default function AccountPurchasePage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [showAgreeModal, setShowAgreeModal] = useState(false);
 
-  const [couponCode, setCouponCode] = useState("");
-  const [couponValidating, setCouponValidating] = useState(false);
-  const [couponError, setCouponError] = useState("");
-
   const handlePurchase = async () => {
     if (!agreedToTerms) return;
     setPurchasing(true);
@@ -59,6 +46,7 @@ export default function AccountPurchasePage() {
         userPhone: user?.phone || "",
         locale: currentLocale,
         method: "domestic",
+        coupon: couponDiscount,
       });
       if (rsp?.paymentId) {
         const res = await authedFetch(`${BASE_URL}/credit/purchase`, {
@@ -95,48 +83,16 @@ export default function AccountPurchasePage() {
     }
   };
 
-  const handleCouponApply = async () => {
-    if (!couponCode.trim()) return;
-    setCouponValidating(true);
-    setCouponError("");
-    setCouponDiscount(null);
-
-    // TODO: 임시 — 쿠폰 코드별 할인
-    await new Promise((r) => setTimeout(r, 500));
-    const code = couponCode.trim().toLowerCase();
-    const match = COUPON_MAP[code];
-    if (!match) {
-      setCouponError(t.couponInvalid);
-      setCouponValidating(false);
-      return;
-    }
-    setCouponDiscount({
-      type: "amount",
-      value: match.value,
-      code: couponCode.trim(),
-      groupName: match.groupName,
-      couponName: match.couponName,
-    });
-    setCouponValidating(false);
-  };
-
   const handleCouponRemove = () => {
-    setCouponCode("");
     setCouponDiscount(null);
-    setCouponError("");
   };
 
   const handleApplySavedCoupon = (coupon) => {
     setCouponDiscount(coupon);
-    setCouponCode(coupon.code);
   };
 
-  const calcDiscountedPrice = (price) => {
-    if (!couponDiscount) return price;
-    if (couponDiscount.type === "percent")
-      return Math.round(price * (1 - couponDiscount.value / 100));
-    return Math.max(0, price - couponDiscount.value);
-  };
+  const calcDiscountedPrice = (priceKRW) =>
+    applyCouponDiscount({ krw: priceKRW, usd: 0 }, couponDiscount).krw;
 
   const selectedPkg = CREDIT_PACKAGES.find((p) => p.key === selectedPackage);
 
@@ -243,9 +199,7 @@ export default function AccountPurchasePage() {
                       />
                     </svg>
                     <span className="text-sm font-medium text-green-400">
-                      {couponDiscount.type === "percent"
-                        ? `${couponDiscount.value}% ${t.discountLabel}`
-                        : `${formatPrice(couponDiscount.value, "ko")} ${t.discountLabel}`}
+                      {couponDiscount.discountPercent}% {t.discountLabel}
                     </span>
                   </div>
                   <button
@@ -255,90 +209,27 @@ export default function AccountPurchasePage() {
                     {t.couponRemove}
                   </button>
                 </div>
-                {(couponDiscount.groupName || couponDiscount.couponName) &&
-                  (() => {
-                    const gs =
-                      COUPON_GROUP_STYLE[couponDiscount.groupName] ||
-                      DEFAULT_COUPON_STYLE;
-                    return (
-                      <div className="mt-2 flex flex-col gap-0.5 pl-6 text-xs">
-                        {couponDiscount.groupName && (
-                          <span className={gs.text}>
-                            {couponDiscount.groupName}
-                          </span>
-                        )}
-                        {couponDiscount.couponName && (
-                          <span className="text-green-400/70">
-                            {couponDiscount.couponName}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })()}
+                <div className="mt-2 pl-6 text-xs text-green-400/70">
+                  {couponDiscount.code}
+                </div>
+              </div>
+            ) : savedCoupons.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {savedCoupons.map((coupon) => (
+                  <button
+                    key={coupon.code}
+                    onClick={() => handleApplySavedCoupon(coupon)}
+                    className="flex items-center justify-between rounded-lg border border-l-[3px] border-white/10 border-l-[#c4b49a] px-4 py-3 text-left transition hover:bg-white/5"
+                  >
+                    <span className="text-sm text-[#e8d5b7]">{coupon.code}</span>
+                    <span className="text-xs text-[#c4b49a]">
+                      {coupon.discountPercent}%
+                    </span>
+                  </button>
+                ))}
               </div>
             ) : (
-              <div className="flex flex-col gap-3">
-                {/* 보관함 쿠폰 선택 */}
-                {savedCoupons.length > 0 && (
-                  <div className="flex flex-col gap-2">
-                    {savedCoupons.map((coupon) => {
-                      const gs =
-                        COUPON_GROUP_STYLE[coupon.groupName] ||
-                        DEFAULT_COUPON_STYLE;
-                      return (
-                        <button
-                          key={coupon.code}
-                          onClick={() => handleApplySavedCoupon(coupon)}
-                          className={`flex items-center justify-between rounded-lg border border-l-[3px] border-white/10 ${gs.border} px-4 py-3 text-left transition hover:bg-white/5`}
-                        >
-                          <div className="flex flex-col gap-0.5">
-                            {coupon.groupName && (
-                              <span
-                                className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}
-                              >
-                                {coupon.groupName}
-                              </span>
-                            )}
-                            <span className="text-sm text-[#e8d5b7]">
-                              {coupon.couponName || coupon.code}
-                            </span>
-                          </div>
-                          <span className="text-xs text-[#c4b49a]">
-                            {coupon.type === "percent"
-                              ? `${coupon.value}%`
-                              : formatPrice(coupon.value, "ko")}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-                {/* 직접 입력 */}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={couponCode}
-                    onChange={(e) => {
-                      setCouponCode(e.target.value);
-                      setCouponError("");
-                    }}
-                    placeholder={t.couponPlaceholder}
-                    className="flex-1 rounded-lg border border-white/10 bg-white/3 px-4 py-2.5 text-sm text-[#e8d5b7] placeholder-white/20 transition outline-none focus:border-[#c4b49a]"
-                  />
-                  <button
-                    onClick={handleCouponApply}
-                    disabled={couponValidating || !couponCode.trim()}
-                    className="rounded-lg bg-[#c4b49a] px-4 py-2.5 text-sm font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
-                  >
-                    {couponValidating ? t.couponApplying : t.couponApply}
-                  </button>
-                </div>
-                {couponError && (
-                  <p className="mt-2 text-xs text-red-400/80">
-                    {couponError}
-                  </p>
-                )}
-              </div>
+              <p className="text-xs text-[#9b8b7a]">{t.noCoupons}</p>
             )}
           </div>
         )}

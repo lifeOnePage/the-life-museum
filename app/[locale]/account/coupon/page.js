@@ -6,32 +6,17 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { getPlatform } from "@/app/utils/platform";
 import { useCouponWallet } from "../CouponContext";
-import {
-  T,
-  BASE_URL,
-  COUPON_GROUP_STYLE,
-  DEFAULT_COUPON_STYLE,
-  COUPON_MAP,
-  getStoredLocale,
-  formatPrice,
-} from "../shared";
+import { T, BASE_URL, getStoredLocale, formatPrice } from "../shared";
 
 export default function AccountCouponPage() {
   const router = useRouter();
   const { user, setUser } = useAuth();
-  const {
-    savedCoupons,
-    setSavedCoupons,
-    couponDiscount,
-    setCouponDiscount,
-  } = useCouponWallet();
+  const { savedCoupons, couponDiscount, setCouponDiscount, refreshSavedCoupons } =
+    useCouponWallet();
 
   const [currentLocale, setCurrentLocale] = useState("ko");
-  const [currency, setCurrency] = useState("KRW");
   useEffect(() => {
-    const locale = getStoredLocale();
-    setCurrentLocale(locale);
-    setCurrency(locale === "en" ? "USD" : "KRW");
+    setCurrentLocale(getStoredLocale());
   }, []);
   const t = T[currentLocale] || T.ko;
 
@@ -46,7 +31,8 @@ export default function AccountCouponPage() {
   const [saveCouponError, setSaveCouponError] = useState("");
   const [saveCouponSuccess, setSaveCouponSuccess] = useState("");
 
-  // 쿠폰 등록: 할인 쿠폰(하드코딩)은 보관함에 저장, 그 외에는 서버 등록(앨범 생성권 즉시 지급)
+  // 쿠폰 등록 — 서버가 타입(즉시지급/할인)을 판별해준다.
+  // discount 타입은 보관함에 등록되고, credit 타입은 앨범 생성권이 즉시 지급된다.
   const handleSaveCoupon = async () => {
     if (!saveCouponCode.trim()) return;
     setSaveCouponValidating(true);
@@ -54,35 +40,7 @@ export default function AccountCouponPage() {
     setSaveCouponSuccess("");
 
     const rawCode = saveCouponCode.trim();
-    const code = rawCode.toLowerCase();
-    const match = COUPON_MAP[code];
-    if (match) {
-      const newCoupon = {
-        type: "amount",
-        value: match.value,
-        code: rawCode,
-        groupName: match.groupName,
-        couponName: match.couponName,
-      };
 
-      // 중복 체크
-      if (savedCoupons.some((c) => c.code === newCoupon.code)) {
-        setSaveCouponError(
-          currentLocale === "ko"
-            ? "이미 등록된 쿠폰입니다."
-            : "Coupon already registered.",
-        );
-        setSaveCouponValidating(false);
-        return;
-      }
-
-      setSavedCoupons((prev) => [...prev, newCoupon]);
-      setSaveCouponCode("");
-      setSaveCouponValidating(false);
-      return;
-    }
-
-    // 즉시지급 쿠폰 — 서버에서 검증 후 앨범 생성권 즉시 지급
     try {
       const res = await authedFetch(`${BASE_URL}/coupon/redeem`, {
         method: "POST",
@@ -100,14 +58,24 @@ export default function AccountCouponPage() {
         setSaveCouponError(msg);
         return;
       }
-      const merged = { ...user, credits: data.credits };
-      setUser(merged);
-      localStorage.setItem("app_user", JSON.stringify(merged));
-      setSaveCouponSuccess(
-        currentLocale === "ko"
-          ? `앨범 생성권 ${data.added.toLocaleString()}개가 지급되었습니다.`
-          : `${data.added.toLocaleString()} album credit(s) added.`,
-      );
+
+      if (data.type === "discount") {
+        await refreshSavedCoupons();
+        setSaveCouponSuccess(
+          currentLocale === "ko"
+            ? "쿠폰이 보관함에 등록됐어요."
+            : "Coupon added to your wallet.",
+        );
+      } else {
+        const merged = { ...user, credits: data.credits };
+        setUser(merged);
+        localStorage.setItem("app_user", JSON.stringify(merged));
+        setSaveCouponSuccess(
+          currentLocale === "ko"
+            ? `앨범 생성권 ${data.added.toLocaleString()}개가 지급되었습니다.`
+            : `${data.added.toLocaleString()} album credit(s) added.`,
+        );
+      }
       setSaveCouponCode("");
     } catch {
       setSaveCouponError(
@@ -117,17 +85,6 @@ export default function AccountCouponPage() {
       );
     } finally {
       setSaveCouponValidating(false);
-    }
-  };
-
-  const handleCouponRemove = () => {
-    setCouponDiscount(null);
-  };
-
-  const handleRemoveSavedCoupon = (code) => {
-    setSavedCoupons((prev) => prev.filter((c) => c.code !== code));
-    if (couponDiscount?.code === code) {
-      handleCouponRemove();
     }
   };
 
@@ -184,57 +141,40 @@ export default function AccountCouponPage() {
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-white/10">
-          {savedCoupons.map((coupon, idx) => {
-            const gs =
-              COUPON_GROUP_STYLE[coupon.groupName] || DEFAULT_COUPON_STYLE;
-            return (
-              <div
-                key={coupon.code}
-                className={`flex items-center justify-between border-l-[3px] bg-[#1e1a14] px-5 py-4 ${gs.border} ${idx > 0 ? "border-t border-white/8" : ""}`}
-              >
-                <div className="flex flex-col gap-0.5">
-                  {coupon.groupName && (
-                    <span
-                      className={`inline-block w-fit rounded-full px-1.5 py-0.5 text-[10px] font-medium ${gs.badge}`}
-                    >
-                      {coupon.groupName}
-                    </span>
-                  )}
-                  <span className="text-sm font-medium text-[#e8d5b7]">
-                    {coupon.couponName || coupon.code}
-                  </span>
-                  <span className="text-xs text-[#c4b49a]">
-                    {coupon.type === "percent"
-                      ? `${coupon.value}% ${t.discountLabel}`
-                      : `${formatPrice(coupon.value, currency === "KRW" ? "ko" : "en")} ${t.discountLabel}`}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  {couponDiscount?.code === coupon.code ? (
-                    <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-400">
-                      {t.couponApplied}
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => {
-                        handleApplySavedCoupon(coupon);
-                        router.push(`/${currentLocale}/account/purchase`);
-                      }}
-                      className="rounded-lg border border-[#c4b49a]/30 px-3 py-1 text-xs text-[#c4b49a] transition hover:bg-[#c4b49a]/10"
-                    >
-                      {t.couponUse}
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleRemoveSavedCoupon(coupon.code)}
-                    className="text-xs text-white/30 transition hover:text-white/50"
-                  >
-                    ✕
-                  </button>
-                </div>
+          {savedCoupons.map((coupon, idx) => (
+            <div
+              key={coupon.code}
+              className={`flex items-center justify-between border-l-[3px] border-l-[#c4b49a] bg-[#1e1a14] px-5 py-4 ${idx > 0 ? "border-t border-white/8" : ""}`}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span className="text-sm font-medium text-[#e8d5b7]">
+                  {coupon.code}
+                </span>
+                <span className="text-xs text-[#c4b49a]">
+                  {coupon.discountPercent}% {t.discountLabel} (
+                  {currentLocale === "ko" ? "최대" : "up to"}{" "}
+                  {formatPrice(coupon.maxDiscountKrw, "ko")})
+                </span>
               </div>
-            );
-          })}
+              <div className="flex items-center gap-2">
+                {couponDiscount?.code === coupon.code ? (
+                  <span className="rounded-full bg-green-500/15 px-3 py-1 text-xs font-medium text-green-400">
+                    {t.couponApplied}
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => {
+                      handleApplySavedCoupon(coupon);
+                      router.push(`/${currentLocale}/account/purchase`);
+                    }}
+                    className="rounded-lg border border-[#c4b49a]/30 px-3 py-1 text-xs text-[#c4b49a] transition hover:bg-[#c4b49a]/10"
+                  >
+                    {t.couponUse}
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>

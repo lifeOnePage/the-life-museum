@@ -15,13 +15,15 @@ const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
 //   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107) ← 현재
 //   테스트:  channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f  (INIpayTest)
 const KG_INICIS_CHANNEL_KEY = "channel-key-8365f96d-7754-4b0e-8364-72b98565054a";
-// PayPal 실결제(라이브) 채널 (테스트: channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044)
-const PAYPAL_CHANNEL_KEY = "channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054";
+// PayPal(해외/USD)은 현재 비활성화 — KRW 결제만 지원. 재도입 시 주석 해제.
+// 라이브: channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054 (테스트: channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044)
+// const PAYPAL_CHANNEL_KEY = "channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054";
 
 const PACKAGE_PRICES = {
-  credit_1000: { krw: 10000, usd: 999, label: "1,000 Credits" },
-  credit_3000: { krw: 24000, usd: 2099, label: "3,000 Credits" },
-  credit_6000: { krw: 39000, usd: 3399, label: "6,000 Credits" },
+  album_1: { krw: 9000, usd: 699, label: "1 Album" },
+  album_3: { krw: 24000, usd: 1899, label: "3 Albums" },
+  album_6: { krw: 39000, usd: 2999, label: "6 Albums" },
+  album_test_1000: { krw: 1000, usd: 100, label: "Test 1 Album" },
 };
 
 const T = {
@@ -40,8 +42,7 @@ const T = {
 function CheckoutContent() {
   const searchParams = useSearchParams();
   const locale = searchParams.get("locale") || "ko";
-  const pkg = searchParams.get("package") || "credit_1000";
-  const method = searchParams.get("method") || "domestic";
+  const pkg = searchParams.get("package") || "album_1";
   const token = searchParams.get("token") || "";
   const couponCode = searchParams.get("couponCode") || "";
   const userId = searchParams.get("id") || "";
@@ -53,11 +54,8 @@ function CheckoutContent() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (method === "domestic") {
-      startDomesticPayment();
-    } else {
-      startPayPalPayment();
-    }
+    // PayPal(international)은 현재 비활성화 — 국내 결제만 지원
+    startDomesticPayment();
   }, []);
 
   // 보관함에서 쿠폰 정보 조회 — 유효하지 않으면 null (정가 결제로 진행)
@@ -98,14 +96,14 @@ function CheckoutContent() {
       const PortOne = await import("@portone/browser-sdk/v2");
       const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
-      // 모바일 결제창은 리다이렉트 → complete 페이지에서 크레딧 충전
+      // 모바일 결제창은 리다이렉트 → complete 페이지에서 결제 검증 후 앨범 생성권 지급
       const redirectUrl = `${window.location.origin}/payment/checkout/complete?package=${pkg}&token=${encodeURIComponent(token)}&locale=${locale}&couponCode=${encodeURIComponent(effectiveCouponCode)}`;
 
       const response = await PortOne.requestPayment({
         storeId: PORTONE_V2_STORE_ID,
         channelKey: KG_INICIS_CHANNEL_KEY,
         paymentId,
-        orderName: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
+        orderName: locale === "ko" ? `앨범 구매 (${pricing.label})` : `Album Purchase (${pricing.label})`,
         totalAmount: finalAmount.krw,
         currency: "CURRENCY_KRW",
         payMethod: "CARD",
@@ -130,60 +128,62 @@ function CheckoutContent() {
         return;
       }
 
-      // 국내 결제 성공 → 크레딧 충전 (PayPal과 동일 경로)
+      // 국내 결제 성공 → 앨범 생성권 지급
       await confirmAndAddCredits({ pkg, token, couponCode: effectiveCouponCode, paymentId: response.paymentId });
     } catch (err) {
       setError(err.message);
     }
   }
 
-  async function startPayPalPayment() {
-    const pricing = PACKAGE_PRICES[pkg];
-    if (!pricing) {
-      setError("Invalid package");
-      return;
-    }
-
-    try {
-      const coupon = await resolveCoupon();
-      const effectiveCouponCode = coupon ? couponCode : "";
-      const finalAmount = applyCouponDiscount(pricing, coupon);
-
-      const PortOne = await import("@portone/browser-sdk/v2");
-      const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
-
-      const response = await PortOne.requestPayment({
-        storeId: PORTONE_V2_STORE_ID,
-        channelKey: PAYPAL_CHANNEL_KEY,
-        paymentId,
-        orderName: `Credit Purchase (${pricing.label})`,
-        totalAmount: finalAmount.usd,
-        currency: "CURRENCY_USD",
-        payMethod: "PAYPAL",
-        // 결제-유저 바인딩
-        customData: JSON.stringify({ userId }),
-      });
-
-      if (response.code) {
-        if (response.code === "PAY_PROCESS_CANCELED") {
-          returnToApp("fail", "결제를 취소하였습니다.");
-          return;
-        }
-        returnToApp("fail", response.message || "Payment failed.");
-        return;
-      }
-
-      // PayPal 결제 성공 → 크레딧 충전 처리
-      await confirmAndAddCredits({
-        pkg,
-        token,
-        couponCode: effectiveCouponCode,
-        paymentId: response.paymentId,
-      });
-    } catch (err) {
-      setError(err.message);
-    }
-  }
+  // PayPal(해외 결제)은 현재 비활성화 — KRW 결제만 지원. 재도입 시 주석 해제하고
+  // useEffect의 분기도 함께 복구할 것.
+  // async function startPayPalPayment() {
+  //   const pricing = PACKAGE_PRICES[pkg];
+  //   if (!pricing) {
+  //     setError("Invalid package");
+  //     return;
+  //   }
+  //
+  //   try {
+  //     const coupon = await resolveCoupon();
+  //     const effectiveCouponCode = coupon ? couponCode : "";
+  //     const finalAmount = applyCouponDiscount(pricing, coupon);
+  //
+  //     const PortOne = await import("@portone/browser-sdk/v2");
+  //     const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+  //
+  //     const response = await PortOne.requestPayment({
+  //       storeId: PORTONE_V2_STORE_ID,
+  //       channelKey: PAYPAL_CHANNEL_KEY,
+  //       paymentId,
+  //       orderName: `Album Purchase (${pricing.label})`,
+  //       totalAmount: finalAmount.usd,
+  //       currency: "CURRENCY_USD",
+  //       payMethod: "PAYPAL",
+  //       // 결제-유저 바인딩
+  //       customData: JSON.stringify({ userId }),
+  //     });
+  //
+  //     if (response.code) {
+  //       if (response.code === "PAY_PROCESS_CANCELED") {
+  //         returnToApp("fail", "결제를 취소하였습니다.");
+  //         return;
+  //       }
+  //       returnToApp("fail", response.message || "Payment failed.");
+  //       return;
+  //     }
+  //
+  //     // PayPal 결제 성공 → 앨범 생성권 지급 처리
+  //     await confirmAndAddCredits({
+  //       pkg,
+  //       token,
+  //       couponCode: effectiveCouponCode,
+  //       paymentId: response.paymentId,
+  //     });
+  //   } catch (err) {
+  //     setError(err.message);
+  //   }
+  // }
 
   function returnToApp(status, message = "") {
     const deepLink = `${APP_SCHEME}://payment/${status}?message=${encodeURIComponent(message)}`;
@@ -221,7 +221,7 @@ function CheckoutContent() {
 }
 
 /**
- * 결제 검증 + 크레딧 충전 (PayPal 전용 — 국내는 complete 페이지에서 처리)
+ * 결제 검증 + 앨범 생성권 지급 (PC 국내결제 non-redirect 케이스에서 호출)
  */
 async function confirmAndAddCredits({ pkg, token, couponCode, paymentId }) {
   const headers = {
@@ -245,7 +245,7 @@ async function confirmAndAddCredits({ pkg, token, couponCode, paymentId }) {
     window.location.href = deepLink;
   } else {
     const data = await creditRes.json().catch(() => ({}));
-    const msg = data.message || data.detail || "Credit purchase failed";
+    const msg = data.message || data.detail || "Album purchase failed";
     window.location.href = `${APP_SCHEME}://payment/fail?message=${encodeURIComponent(msg)}`;
   }
 }

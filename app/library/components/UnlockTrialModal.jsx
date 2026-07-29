@@ -10,31 +10,24 @@ import { hapticTap } from "@/app/utils/haptics";
 const BASE_URL =
   "https://the-life-museum-backend-production.up.railway.app/api/v1";
 
-// 잠금 해제(영구 활성화) 비용 — 백엔드 COSTS["album_create"]와 동일
-const UNLOCK_COST = 900;
-
 const T = {
   ko: {
     title: "체험 기간이 만료되었어요",
     titleActive: "앨범 잠금 해제",
-    desc: "무료 체험 앨범이에요. 크레딧으로 잠금을 해제하면 계속 보고 공유할 수 있어요.",
-    balance: "보유 크레딧",
-    cost: "필요 크레딧",
+    desc: "무료 체험 앨범이에요. 결제하면 계속 보고 공유할 수 있어요.",
     unlock: "잠금 해제",
-    insufficient: "크레딧이 부족해요. 충전 후 다시 시도해 주세요.",
-    buy: "크레딧 구매하기",
+    insufficient: "앨범을 계속 보려면 결제가 필요해요.",
+    buy: "결제하러 가기",
     close: "닫기",
     error: "잠금 해제에 실패했어요. 다시 시도해 주세요.",
   },
   en: {
     title: "Your free trial has ended",
     titleActive: "Unlock album",
-    desc: "This is a free trial album. Unlock it with credits to keep viewing and sharing it.",
-    balance: "Your credits",
-    cost: "Required",
+    desc: "This is a free trial album. Pay to keep viewing and sharing it.",
     unlock: "Unlock",
-    insufficient: "Not enough credits. Please top up and try again.",
-    buy: "Buy credits",
+    insufficient: "Payment is required to keep this album.",
+    buy: "Proceed to payment",
     close: "Close",
     error: "Failed to unlock. Please try again.",
   },
@@ -54,8 +47,7 @@ export default function UnlockTrialModal({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const balance = user?.credits ?? 0;
-  const canAfford = balance >= UNLOCK_COST;
+  const canAfford = (user?.credits ?? 0) >= 1;
 
   const handleUnlock = async () => {
     hapticTap();
@@ -82,7 +74,7 @@ export default function UnlockTrialModal({
 
   const handleBuy = () => {
     hapticTap();
-    router.push(`/${locale}/account?section=charge`);
+    router.push(`/${locale}/account/purchase`);
   };
 
   return (
@@ -103,20 +95,6 @@ export default function UnlockTrialModal({
         <p className="mb-1 text-sm text-[#9b8b7a]">{albumTitle}</p>
         <p className="mb-5 text-sm text-[#9b8b7a]">{t.desc}</p>
 
-        {/* 크레딧 현황 */}
-        <div className="mb-5 space-y-1.5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm">
-          <div className="flex justify-between text-[#9b8b7a]">
-            <span>{t.cost}</span>
-            <span className="text-[#e8d5b7]">{UNLOCK_COST.toLocaleString()} C</span>
-          </div>
-          <div className="flex justify-between text-[#9b8b7a]">
-            <span>{t.balance}</span>
-            <span className={canAfford ? "text-[#e8d5b7]" : "text-red-400"}>
-              {balance.toLocaleString()} C
-            </span>
-          </div>
-        </div>
-
         {!canAfford && (
           <p className="mb-3 text-center text-xs text-red-400">{t.insufficient}</p>
         )}
@@ -130,7 +108,7 @@ export default function UnlockTrialModal({
             disabled={submitting}
             className="w-full rounded-lg bg-[#c4b49a] py-2.5 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-60"
           >
-            {t.unlock} ({UNLOCK_COST.toLocaleString()} C)
+            {t.unlock}
           </button>
         ) : (
           <button

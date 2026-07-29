@@ -10,15 +10,15 @@ const BASE_URL =
 const T = {
   ko: {
     verifying: "결제 확인 중...",
-    success: "충전 완료!",
-    successDesc: (c) => `${c.toLocaleString()} 크레딧이 충전되었습니다.`,
+    success: "구매 완료!",
+    successDesc: (c) => `앨범 생성권 ${c.toLocaleString()}개가 지급되었습니다.`,
     goLibrary: "라이브러리로 이동",
     error: "결제 확인 실패",
   },
   en: {
     verifying: "Verifying payment...",
-    success: "Credits Added!",
-    successDesc: (c) => `${c.toLocaleString()} credits have been added.`,
+    success: "Purchase Complete!",
+    successDesc: (c) => `${c.toLocaleString()} album credit(s) have been added.`,
     goLibrary: "Go to Library",
     error: "Payment verification failed",
   },
@@ -35,7 +35,7 @@ function PaymentSuccessContent() {
   const [addedCredits, setAddedCredits] = useState(0);
 
   useEffect(() => {
-    const pkg = searchParams.get("package") || "credit_1000";
+    const pkg = searchParams.get("package") || "album_1";
     // PortOne V2 모바일 리다이렉트 결과
     const paymentId = searchParams.get("paymentId");
     const v2Code = searchParams.get("code"); // 결제 실패 시에만 존재
@@ -54,7 +54,7 @@ function PaymentSuccessContent() {
           return;
         }
 
-        // 백엔드가 paymentId 로 PortOne V2 결제를 검증한 뒤 크레딧 충전
+        // 백엔드가 paymentId 로 PortOne V2 결제를 검증한 뒤 앨범 생성권 지급
         const creditRes = await authedFetch(`${BASE_URL}/credit/purchase`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },

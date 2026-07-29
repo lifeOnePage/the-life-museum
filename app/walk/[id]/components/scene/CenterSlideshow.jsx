@@ -62,6 +62,9 @@ export default function CenterSlideshow({
   // imageList 세대 — 리스트 교체 후 도착하는 in-flight 로드(낡은 텍스처)를 폐기해
   // 새 리스트의 인덱스에 엉뚱한 사진이 캐시되거나 누수되는 레이스를 막는다.
   const genRef = useRef(0);
+  // 로드 실패 지수 백오프(mi → { fails, nextAt }) — 실패 시 loadTex가 매 프레임
+  // 재요청(최대 3건/프레임)하는 폭주를 차단. 2s→4s→…→최대 16s 후 재시도.
+  const retryRef = useRef(new Map());
 
   const len = imageList?.length || 0;
 
@@ -79,6 +82,8 @@ export default function CenterSlideshow({
       const m = imageList[mi];
       if (!m) return;
       if (cacheRef.current.has(mi) || loadingRef.current.has(mi)) return;
+      const rt = retryRef.current.get(mi);
+      if (rt && performance.now() < rt.nextAt) return; // 실패 백오프 대기 중
       const url = m.original_url || m.thumbnail_url;
       if (!url) return;
 
@@ -112,6 +117,7 @@ export default function CenterSlideshow({
           const prev = cacheRef.current.get(mi);
           if (prev) prev.texture.dispose(); // 덮어쓰기 시 기존 텍스처 누수 방지
           cacheRef.current.set(mi, { texture: tex, aspect: img.width / img.height });
+          retryRef.current.delete(mi); // 성공 — 백오프 초기화
         } catch {
           /* ignore */
         }
@@ -123,7 +129,12 @@ export default function CenterSlideshow({
         else onLoaded();
       };
       img.onerror = () => {
-        if (gen === genRef.current) loadingRef.current.delete(mi);
+        if (gen !== genRef.current) return;
+        loadingRef.current.delete(mi);
+        const cur = retryRef.current.get(mi) || { fails: 0, nextAt: 0 };
+        cur.fails += 1;
+        cur.nextAt = performance.now() + Math.min(16000, 1000 * 2 ** cur.fails);
+        retryRef.current.set(mi, cur);
       };
       img.src = getProxiedUrl(url);
     },
@@ -133,6 +144,7 @@ export default function CenterSlideshow({
   // imageList 변경 시 초기화 + 텍스처 전부 해제
   useEffect(() => {
     genRef.current += 1; // in-flight 로드 무효화
+    retryRef.current = new Map();
     idxRef.current = 0;
     elapsedRef.current = 0;
     for (const e of cacheRef.current.values()) e.texture.dispose();

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Canvas } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import {
   Suspense,
   useMemo,
@@ -308,6 +308,44 @@ function PlaybackControls({
   );
 }
 
+// ── 성능 계측 프로브 (URL에 ?debug 추가 시 활성) ──────────────────────────────
+// Canvas 내부에서 프레임 시간·드로우콜·GPU 리소스 수를 0.5s 창으로 집계해
+// 오버레이로 전달한다. 실기기(모바일)에서 병목을 실측하기 위한 도구.
+function PerfProbe({ enabled, onSample }) {
+  const accRef = useRef({ frames: 0, time: 0, maxDt: 0 });
+  useFrame(({ gl }, delta) => {
+    if (!enabled) return;
+    const a = accRef.current;
+    a.frames += 1;
+    a.time += delta;
+    if (delta > a.maxDt) a.maxDt = delta;
+    if (a.time >= 0.5) {
+      onSample({
+        fps: Math.round(a.frames / a.time),
+        avgMs: ((a.time / a.frames) * 1000).toFixed(1),
+        maxMs: (a.maxDt * 1000).toFixed(0),
+        calls: gl.info.render.calls,
+        tris: gl.info.render.triangles,
+        textures: gl.info.memory.textures,
+        geometries: gl.info.memory.geometries,
+      });
+      accRef.current = { frames: 0, time: 0, maxDt: 0 };
+    }
+  });
+  return null;
+}
+
+function PerfOverlay({ data }) {
+  if (!data) return null;
+  return (
+    <div className="pointer-events-none absolute left-2 top-2 z-50 rounded bg-black/70 p-2 font-mono text-[10px] leading-tight text-green-400">
+      <div>FPS {data.fps} | frame {data.avgMs}ms (max {data.maxMs}ms)</div>
+      <div>calls {data.calls} | tris {(data.tris / 1000).toFixed(0)}k</div>
+      <div>tex {data.textures} | geom {data.geometries} | dpr {typeof window !== "undefined" ? Math.min(window.devicePixelRatio, 1.5) : "?"}</div>
+    </div>
+  );
+}
+
 export default function DisplayScene({ recordId, locale }) {
   const t = T[locale] || T.ko;
   const router = useRouter();
@@ -334,6 +372,15 @@ export default function DisplayScene({ recordId, locale }) {
   useEffect(() => {
     const d = getTextureConfig().defaultCameraSpeed;
     if (d && d !== CAMERA_SPEED) setCameraSpeed(d);
+  }, []);
+
+  // 성능 오버레이 — URL에 ?debug가 있으면 활성(실기기 병목 실측용)
+  const [perfEnabled, setPerfEnabled] = useState(false);
+  const [perfData, setPerfData] = useState(null);
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("debug")) {
+      setPerfEnabled(true);
+    }
   }, []);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -687,6 +734,8 @@ export default function DisplayScene({ recordId, locale }) {
         />
       )}
 
+      {perfEnabled && <PerfOverlay data={perfData} />}
+
       <div
         className={`transition-opacity duration-500 ${!(isApp || isFullscreen) || showControls ? "opacity-100" : "pointer-events-none opacity-0"}`}
       >
@@ -746,6 +795,7 @@ export default function DisplayScene({ recordId, locale }) {
               videoPreviewEnabled={videoPreviewEnabled}
               videoMaxDuration={videoMaxDuration}
             />
+            <PerfProbe enabled={perfEnabled} onSample={setPerfData} />
           </Suspense>
         </Canvas>
       )}

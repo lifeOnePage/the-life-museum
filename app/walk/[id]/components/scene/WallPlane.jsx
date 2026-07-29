@@ -176,8 +176,7 @@ function WallPlane({
     const img = new Image();
     img.crossOrigin = "anonymous";
 
-    img.onload = () => {
-      if (activeLoadsRef) activeLoadsRef.current--;
+    const onLoaded = () => {
       if (disposedRef.current) return;
       try {
         const mediaAspect = img.width / img.height;
@@ -259,6 +258,14 @@ function WallPlane({
       }
     };
 
+    img.onload = () => {
+      if (activeLoadsRef) activeLoadsRef.current--;
+      // 디코드를 비동기로 강제(img.decode) — drawImage의 메인 스레드 동기
+      // 디코드(프레임 블로킹) 방지. 미지원/실패 시 동기 경로 폴백.
+      if (img.decode) img.decode().then(onLoaded).catch(onLoaded);
+      else onLoaded();
+    };
+
     img.onerror = (err) => {
       if (activeLoadsRef) activeLoadsRef.current--;
       console.error("Image load failed:", url.substring(0, 80), err);
@@ -291,8 +298,7 @@ function WallPlane({
     const img = new Image();
     img.crossOrigin = "anonymous";
 
-    img.onload = () => {
-      if (activeLoadsRef) activeLoadsRef.current--;
+    const onPosterLoaded = () => {
       if (disposedRef.current || loadStateRef.current === "idle") return;
 
       try {
@@ -357,6 +363,13 @@ function WallPlane({
       }
     };
 
+    img.onload = () => {
+      if (activeLoadsRef) activeLoadsRef.current--;
+      // 디코드 비동기화 — startLoad와 동일한 이유
+      if (img.decode) img.decode().then(onPosterLoaded).catch(onPosterLoaded);
+      else onPosterLoaded();
+    };
+
     img.onerror = () => {
       if (activeLoadsRef) activeLoadsRef.current--;
       console.error("[WallPlane] Poster load failed:", thumbUrl?.substring(0, 80));
@@ -393,6 +406,9 @@ function WallPlane({
         if (activeVideoLoadsRef) activeVideoLoadsRef.current--;
       }
     };
+    // iOS 등에서 preload="none" 비디오가 loadeddata/error를 영영 안 쏘면 동시성
+    // 게이트(2)가 영구 점유될 수 있어 타임아웃으로 강제 해제(성공 시 무해 — 중복 해제 가드됨)
+    setTimeout(releaseVideoConcurrency, 10000);
 
     const video = document.createElement("video");
     video.crossOrigin = "anonymous";
@@ -668,10 +684,44 @@ function WallPlane({
     if (!flinging && loadStateRef.current === "idle" && distToCamera <= FOG_FAR + 800) {
       if (isVideoType) startPosterLoad(); else startLoad();
     }
-    // Tier 2: 포스터 로드 완료 시 비디오 로딩 시작 (동시성 게이트 MAX_CONCURRENT_VIDEO_LOADS).
-    // 플링 중에는 보류 — 비디오 엘리먼트 생성/디코더 초기화도 메인 스레드 비용.
-    if (!flinging && isVideoType && loadStateRef.current === "poster_loaded") {
+    // Tier 2: 포스터 로드 완료 + '근접 시'에만 비디오 엘리먼트 생성.
+    // 거리 무관 생성 시 풀 내 모든 비디오 슬롯이 라이브 <video>+디코더를 보유해
+    // 모바일 디코더 한계(~16개)/메모리를 압박한다(시스템성 잔렉의 원인).
+    // 플링 중에도 보류 — 엘리먼트 생성/디코더 초기화도 메인 스레드 비용.
+    if (
+      !flinging &&
+      isVideoType &&
+      loadStateRef.current === "poster_loaded" &&
+      distToCamera <= 400
+    ) {
       startDeferredVideoLoad();
+    }
+
+    // 멀어진 비디오의 엘리먼트/디코더만 조기 회수(포스터 텍스처는 유지).
+    // 기존 far-dispose(FOG_FAR+200=2200)는 풀 축소 후 corridorSpan(~2000)보다 커서
+    // 도달 불가(데드 코드) — span 기준 임계로 실제 회수되게 한다. 재진입 시
+    // 400 이내에서 재생성(임계 간 히스테리시스로 스래싱 없음).
+    if (
+      isVideoType &&
+      loadStateRef.current === "loaded" &&
+      videoRef.current &&
+      distToCamera > Math.min(FOG_FAR + 200, corridorSpan * 0.4)
+    ) {
+      videoRef.current.pause();
+      videoRef.current.src = "";
+      videoRef.current = null;
+      if (videoTextureRef.current) {
+        videoTextureRef.current.dispose();
+        videoTextureRef.current = null;
+      }
+      if (videoElementMap) {
+        videoElementMap.current.delete(id);
+      }
+      if (mat && posterTextureRef.current && mat.map !== posterTextureRef.current) {
+        mat.map = posterTextureRef.current;
+        mat.needsUpdate = true;
+      }
+      loadStateRef.current = "poster_loaded";
     }
 
     // ── Far-distance dispose ────────────────────────────────────────────────

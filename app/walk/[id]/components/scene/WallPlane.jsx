@@ -141,6 +141,10 @@ function WallPlane({
   // Video: 'idle' → 'loading' → 'poster_loaded' → 'video_loading' → 'loaded'
   const loadStateRef = useRef("idle");
   const disposedRef = useRef(false);
+  // 로드 실패 지수 백오프 — 실패 즉시 idle로 돌아가면 다음 프레임에 바로
+  // 재요청되어, 프록시 장애/CORS 차단이 프레임레이트 요청 폭주(self-DDoS)로
+  // 증폭된다(공유 링크 1분 로딩 + 무한 CORS 에러의 원인). 2s→4s→…→최대 16s.
+  const retryStateRef = useRef({ fails: 0, nextAt: 0 });
 
   // Video refs
   const videoRef = useRef(null);
@@ -250,6 +254,7 @@ function WallPlane({
 
         flickerState.current = { active: false, elapsed: 0, done: true };
         loadStateRef.current = "loaded";
+        retryStateRef.current = { fails: 0, nextAt: 0 };
 
         onTextureLoaded?.(id, tex, boxAspect);
       } catch (err) {
@@ -269,6 +274,9 @@ function WallPlane({
     img.onerror = (err) => {
       if (activeLoadsRef) activeLoadsRef.current--;
       console.error("Image load failed:", url.substring(0, 80), err);
+      const rs = retryStateRef.current;
+      rs.fails += 1;
+      rs.nextAt = performance.now() + Math.min(16000, 1000 * 2 ** rs.fails);
       loadStateRef.current = "idle";
     };
 
@@ -354,6 +362,7 @@ function WallPlane({
 
         flickerState.current = { active: false, elapsed: 0, done: true };
         loadStateRef.current = "poster_loaded";
+        retryStateRef.current = { fails: 0, nextAt: 0 };
 
         // Register with Scene — poster ready, video not yet available
         onTextureLoaded?.(id, tex, boxAspect, { isVideo: true });
@@ -373,6 +382,9 @@ function WallPlane({
     img.onerror = () => {
       if (activeLoadsRef) activeLoadsRef.current--;
       console.error("[WallPlane] Poster load failed:", thumbUrl?.substring(0, 80));
+      const rs = retryStateRef.current;
+      rs.fails += 1;
+      rs.nextAt = performance.now() + Math.min(16000, 1000 * 2 ** rs.fails);
       loadStateRef.current = "idle";
     };
 
@@ -482,6 +494,7 @@ function WallPlane({
   useEffect(() => {
     disposedRef.current = false;
     loadStateRef.current = "idle";
+    retryStateRef.current = { fails: 0, nextAt: 0 }; // 새 사진은 백오프 초기화
     return () => {
       disposedRef.current = true;
       const mat = frontMatRef.current;
@@ -681,7 +694,12 @@ function WallPlane({
     // 프레임 예산이 가장 빠듯한 순간에 몰리는 잔렉 방지(플링 감쇠 후 자동 재개).
     const flinging =
       (stateRef.current.manualSpeed || 0) > FLING_LOAD_PAUSE_SPEED;
-    if (!flinging && loadStateRef.current === "idle" && distToCamera <= FOG_FAR + 800) {
+    if (
+      !flinging &&
+      loadStateRef.current === "idle" &&
+      distToCamera <= FOG_FAR + 800 &&
+      performance.now() >= retryStateRef.current.nextAt // 실패 백오프 대기 중이면 보류
+    ) {
       if (isVideoType) startPosterLoad(); else startLoad();
     }
     // Tier 2: 포스터 로드 완료 + '근접 시'에만 비디오 엘리먼트 생성.

@@ -46,7 +46,7 @@ export default function AccountCouponPage() {
   const [saveCouponError, setSaveCouponError] = useState("");
   const [saveCouponSuccess, setSaveCouponSuccess] = useState("");
 
-  // 쿠폰 등록: 할인 쿠폰(하드코딩)은 보관함에 저장, 그 외에는 크레딧 쿠폰으로 서버 등록(즉시 지급)
+  // 쿠폰 등록: 할인 쿠폰(하드코딩)은 보관함에 저장, 그 외에는 서버 등록(앨범 생성권 즉시 지급)
   const handleSaveCoupon = async () => {
     if (!saveCouponCode.trim()) return;
     setSaveCouponValidating(true);
@@ -82,7 +82,7 @@ export default function AccountCouponPage() {
       return;
     }
 
-    // 크레딧 쿠폰 — 서버에서 검증 후 크레딧 즉시 지급
+    // 즉시지급 쿠폰 — 서버에서 검증 후 앨범 생성권 즉시 지급
     try {
       const res = await authedFetch(`${BASE_URL}/coupon/redeem`, {
         method: "POST",
@@ -105,8 +105,8 @@ export default function AccountCouponPage() {
       localStorage.setItem("app_user", JSON.stringify(merged));
       setSaveCouponSuccess(
         currentLocale === "ko"
-          ? `${data.added.toLocaleString()} 크레딧이 지급되었습니다. (보유 ${data.credits.toLocaleString()} 크레딧)`
-          : `${data.added.toLocaleString()} credits added. (Balance: ${data.credits.toLocaleString()})`,
+          ? `앨범 생성권 ${data.added.toLocaleString()}개가 지급되었습니다.`
+          : `${data.added.toLocaleString()} album credit(s) added.`,
       );
       setSaveCouponCode("");
     } catch {

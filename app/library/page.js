@@ -144,14 +144,14 @@ const T = {
     view: "보러가기",
     share: "공유하기",
     unlock: "잠금 해제",
-    buyCredits: "크레딧 구매",
+    buyCredits: "앨범 구매하기",
   },
   en: {
     edit: "Edit",
     view: "View",
     share: "Share",
     unlock: "Unlock",
-    buyCredits: "Buy Credits",
+    buyCredits: "Buy Albums",
   },
 };
 
@@ -595,7 +595,7 @@ export default function MyShelfPage({ params }) {
                   </button>
                 )}
                 {selActiveTrial && (
-                  // 체험 기간(30일 이내) → 진열대에서 크레딧 구매 유도
+                  // 체험 기간(30일 이내) → 진열대에서 결제 유도
                   <button
                     onClick={() => setShowUnlockModal(true)}
                     className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#c4b49a] px-5 py-2 text-sm font-semibold text-[#1a1510] transition-colors duration-150 hover:bg-[#e8d5b7]"
@@ -620,7 +620,7 @@ export default function MyShelfPage({ params }) {
         />
       )}
 
-      {/* 진열대 크레딧 구매 유도 (체험 앨범 보유 + 미선택 시) */}
+      {/* 진열대 결제 유도 (체험 앨범 보유 + 미선택 시) */}
       {hasActiveTrial && !selectedAlbum && (
         <button
           onClick={() => router.push(`/${locale}/account/purchase`)}

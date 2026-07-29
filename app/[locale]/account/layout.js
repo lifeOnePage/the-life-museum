@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuth } from "@/app/contexts/AuthContext";
 import AppName from "@/app/components/AppName";
 import Footer from "@/app/components/Footer";
 import { getPlatform } from "@/app/utils/platform";
@@ -26,7 +25,6 @@ function sectionFromPathname(pathname) {
 export default function AccountLayout({ children }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuth();
 
   const [currentLocale, setCurrentLocale] = useState("ko");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -103,16 +101,9 @@ export default function AccountLayout({ children }) {
             <IconBack />
             {t.back}
           </button>
-          <h1 className="mb-4 text-lg text-[#e8d5b7]">
+          <h1 className="mb-6 text-lg text-[#e8d5b7]">
             <AppName />
           </h1>
-
-          <div className="mb-6 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-2.5">
-            <p className="text-xs text-white/30">{t.myCredits}</p>
-            <p className="text-lg font-bold text-[#e8d5b7]">
-              {(user?.credits ?? 0).toLocaleString()} {t.creditUnit}
-            </p>
-          </div>
 
           <nav className="">
             {MENU.map((item) =>
@@ -164,9 +155,6 @@ export default function AccountLayout({ children }) {
           <h1 className="text-sm font-semibold text-[#e8d5b7]">
             {mobileTitle}
           </h1>
-          <p className="text-[11px] font-bold text-white/30">
-            {(user?.credits ?? 0).toLocaleString()} {t.creditUnit}
-          </p>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}

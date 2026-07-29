@@ -17,7 +17,7 @@ const T = {
     share: "공유",
     kakao: "카카오톡 공유",
     close: "닫기",
-    trialLocked: "무료 체험 기간이 만료됐어요. 크레딧으로 잠금을 해제하면 공유링크가 다시 활성화돼요.",
+    trialLocked: "무료 체험 기간이 만료됐어요. 결제해서 잠금을 해제하면 공유링크가 다시 활성화돼요.",
   },
   en: {
     title: "Visibility Settings",
@@ -26,7 +26,7 @@ const T = {
     share: "Share",
     kakao: "Share on KakaoTalk",
     close: "Close",
-    trialLocked: "Your free trial has expired. Unlock with credits to re-enable the share link.",
+    trialLocked: "Your free trial has expired. Pay to unlock and re-enable the share link.",
   },
 };
 

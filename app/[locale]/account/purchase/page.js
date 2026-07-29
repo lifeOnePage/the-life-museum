@@ -23,11 +23,8 @@ export default function AccountPurchasePage() {
   const { savedCoupons, couponDiscount, setCouponDiscount } = useCouponWallet();
 
   const [currentLocale, setCurrentLocale] = useState("ko");
-  const [currency, setCurrency] = useState("KRW");
   useEffect(() => {
-    const locale = getStoredLocale();
-    setCurrentLocale(locale);
-    setCurrency(locale === "en" ? "USD" : "KRW");
+    setCurrentLocale(getStoredLocale());
   }, []);
   const t = T[currentLocale] || T.ko;
 
@@ -38,7 +35,7 @@ export default function AccountPurchasePage() {
   }, []);
 
   const [chargeCouponOpen, setChargeCouponOpen] = useState(false);
-  const [selectedPackage, setSelectedPackage] = useState("credit_1000");
+  const [selectedPackage, setSelectedPackage] = useState(CREDIT_PACKAGES[1]?.key);
   const [purchasing, setPurchasing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -49,8 +46,8 @@ export default function AccountPurchasePage() {
   const [couponValidating, setCouponValidating] = useState(false);
   const [couponError, setCouponError] = useState("");
 
-  const handlePurchase = async (method) => {
-    if (selectedPackage === "free" || !agreedToTerms) return;
+  const handlePurchase = async () => {
+    if (!agreedToTerms) return;
     setPurchasing(true);
     setPaymentError("");
     try {
@@ -61,7 +58,7 @@ export default function AccountPurchasePage() {
         userEmail: user?.email || "",
         userPhone: user?.phone || "",
         locale: currentLocale,
-        method,
+        method: "domestic",
       });
       if (rsp?.paymentId) {
         const res = await authedFetch(`${BASE_URL}/credit/purchase`, {
@@ -81,10 +78,17 @@ export default function AccountPurchasePage() {
           setPaymentSuccess(true);
         } else {
           const data = await res.json().catch(() => ({}));
+          console.error(
+            "[credit/purchase] rejected — status:",
+            res.status,
+            "body:",
+            data,
+          );
           setPaymentError(data.message || data.detail || t.paymentError);
         }
       }
     } catch (err) {
+      console.error("[requestCreditPurchase] failed:", err);
       setPaymentError(err.message || t.paymentError);
     } finally {
       setPurchasing(false);
@@ -142,29 +146,10 @@ export default function AccountPurchasePage() {
     <div>
       <h2 className="mb-6 text-xl font-semibold text-[#e8d5b7]">{t.charge}</h2>
 
-      {/* 통화 토글 */}
-      <div className="mb-6 flex items-center justify-center">
-        <div className="flex items-center rounded-full border border-white/10 text-sm">
-          <button
-            onClick={() => setCurrency("KRW")}
-            className={`rounded-l-full px-4 py-1.5 transition ${currency === "KRW" ? "bg-[#c4b49a]/20 text-[#e8d5b7]" : "text-white/30 hover:text-white/50"}`}
-          >
-            {t.domestic}
-          </button>
-          <button
-            onClick={() => setCurrency("USD")}
-            className={`rounded-r-full px-4 py-1.5 transition ${currency === "USD" ? "bg-[#c4b49a]/20 text-[#e8d5b7]" : "text-white/30 hover:text-white/50"}`}
-          >
-            {t.international}
-          </button>
-        </div>
-      </div>
-
-      {/* 패키지 리스트 */}
+      {/* 앨범 상품 리스트 */}
       <div className="mb-6 overflow-hidden rounded-xl border border-white/10">
         {CREDIT_PACKAGES.map((pkg, idx) => {
           const isSelected = selectedPackage === pkg.key;
-          const price = currency === "KRW" ? pkg.priceKRW : pkg.priceUSD;
           return (
             <button
               key={pkg.key}
@@ -183,7 +168,7 @@ export default function AccountPurchasePage() {
                   <div className="h-2.5 w-2.5 rounded-full bg-[#c4b49a]" />
                 )}
               </div>
-              {/* 크레딧 */}
+              {/* 앨범 상품명 */}
               <span className="text-base font-semibold text-[#e8d5b7]">
                 {currentLocale === "ko" ? pkg.labelKo : pkg.labelEn}
               </span>
@@ -195,18 +180,11 @@ export default function AccountPurchasePage() {
                   </span>
                 )}
                 <span className="text-[#e8d5b7]">
-                  {formatPrice(price, currency === "KRW" ? "ko" : "en")}
+                  {formatPrice(pkg.priceKRW, "ko")}
                 </span>
-                {(currency === "KRW"
-                  ? pkg.originalPriceKRW
-                  : pkg.originalPriceUSD) && (
+                {pkg.originalPriceKRW && (
                   <span className="text-[#9b8b7a]/50 line-through">
-                    {formatPrice(
-                      currency === "KRW"
-                        ? pkg.originalPriceKRW
-                        : pkg.originalPriceUSD,
-                      currency === "KRW" ? "ko" : "en",
-                    )}
+                    {formatPrice(pkg.originalPriceKRW, "ko")}
                   </span>
                 )}
               </span>
@@ -267,7 +245,7 @@ export default function AccountPurchasePage() {
                     <span className="text-sm font-medium text-green-400">
                       {couponDiscount.type === "percent"
                         ? `${couponDiscount.value}% ${t.discountLabel}`
-                        : `${formatPrice(couponDiscount.value, currency === "KRW" ? "ko" : "en")} ${t.discountLabel}`}
+                        : `${formatPrice(couponDiscount.value, "ko")} ${t.discountLabel}`}
                     </span>
                   </div>
                   <button
@@ -328,10 +306,7 @@ export default function AccountPurchasePage() {
                           <span className="text-xs text-[#c4b49a]">
                             {coupon.type === "percent"
                               ? `${coupon.value}%`
-                              : formatPrice(
-                                  coupon.value,
-                                  currency === "KRW" ? "ko" : "en",
-                                )}
+                              : formatPrice(coupon.value, "ko")}
                           </span>
                         </button>
                       );
@@ -369,45 +344,24 @@ export default function AccountPurchasePage() {
         )}
       </div>
 
-      {/* 요약 */}
+      {/* 결제 요약 — 앨범명 / 결제 금액만 표시 */}
       {selectedPkg && (
-        <div className="mb-6 rounded-xl border border-white/10 bg-[#1e1a14] px-5 py-4 text-sm">
-          <div className="flex justify-between py-1">
-            <span className="text-[#9b8b7a]">{t.expectedCredits}</span>
-            <span className="font-semibold text-[#e8d5b7]">
-              {((user?.credits ?? 0) + selectedPkg.credits).toLocaleString()}{" "}
-              {t.creditUnit}
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-white/10 bg-[#1e1a14] px-5 py-4 text-sm">
+          <span className="font-medium text-[#e8d5b7]">
+            {currentLocale === "ko" ? selectedPkg.labelKo : selectedPkg.labelEn}
+          </span>
+          <span className="flex items-center gap-2">
+            <span className="text-base font-bold text-[#e8d5b7]">
+              {formatPrice(calcDiscountedPrice(selectedPkg.priceKRW), "ko")}
             </span>
-          </div>
-          <div className="mt-2 flex items-center justify-between border-t border-white/10 pt-2">
-            <span className="text-[#9b8b7a]">{t.totalPayment}</span>
-            <span className="flex items-center gap-2">
-              <span className="font-bold text-[#e8d5b7]">
-                {formatPrice(
-                  calcDiscountedPrice(
-                    currency === "KRW" ? selectedPkg.priceKRW : selectedPkg.priceUSD,
-                  ),
-                  currency === "KRW" ? "ko" : "en",
-                )}
-              </span>
-              {couponDiscount &&
-                calcDiscountedPrice(
-                  currency === "KRW" ? selectedPkg.priceKRW : selectedPkg.priceUSD,
-                ) !==
-                  (currency === "KRW"
-                    ? selectedPkg.priceKRW
-                    : selectedPkg.priceUSD) && (
-                  <span className="text-[#9b8b7a]/50 line-through">
-                    {formatPrice(
-                      currency === "KRW"
-                        ? selectedPkg.priceKRW
-                        : selectedPkg.priceUSD,
-                      currency === "KRW" ? "ko" : "en",
-                    )}
-                  </span>
-                )}
-            </span>
-          </div>
+            {couponDiscount &&
+              calcDiscountedPrice(selectedPkg.priceKRW) !==
+                selectedPkg.priceKRW && (
+                <span className="text-[#9b8b7a]/50 line-through">
+                  {formatPrice(selectedPkg.priceKRW, "ko")}
+                </span>
+              )}
+          </span>
         </div>
       )}
 
@@ -439,7 +393,7 @@ export default function AccountPurchasePage() {
         </label>
       )}
 
-      {/* 구매 버튼 */}
+      {/* 결제 버튼 */}
       {paymentSuccess ? (
         <div className="flex flex-col items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/5 py-6">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20">
@@ -464,10 +418,8 @@ export default function AccountPurchasePage() {
       ) : (
         <>
           <button
-            onClick={() =>
-              handlePurchase(currency === "KRW" ? "domestic" : "international")
-            }
-            disabled={purchasing || selectedPackage === "free" || !agreedToTerms}
+            onClick={handlePurchase}
+            disabled={purchasing || !agreedToTerms}
             className="flex w-full flex-col items-center gap-2 rounded-xl bg-[#c4b49a] py-4 transition hover:bg-[#e8d5b7] disabled:opacity-40"
           >
             <div className="flex items-center gap-2">
@@ -475,44 +427,30 @@ export default function AccountPurchasePage() {
                 {purchasing ? t.purchasing : t.purchase}
               </span>
               <span className="text-sm text-[#1a1510]/40">
-                {currency === "KRW"
-                  ? currentLocale === "ko"
-                    ? "간편결제 / 카드"
-                    : "Easy Pay / Card"
-                  : "PayPal"}
+                {currentLocale === "ko" ? "간편결제 / 카드" : "Easy Pay / Card"}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              {currency === "KRW" ? (
-                <>
-                  <img
-                    src="/logo/Toss_App_Icon.png"
-                    alt="Toss Pay"
-                    className="h-5 rounded-sm object-contain"
-                  />
-                  <img
-                    src="/logo/bade_kakaopay.png"
-                    alt="Kakao Pay"
-                    className="h-5 rounded-sm object-contain"
-                  />
-                  <img
-                    src="/logo/badge_npay.svg"
-                    alt="Naver Pay"
-                    className="h-5 rounded-sm object-contain"
-                  />
-                </>
-              ) : (
-                <img
-                  src="/logo/PayPal-Monogram-FullColor-RGB.png"
-                  alt="PayPal"
-                  className="h-5 rounded-sm object-contain"
-                />
-              )}
+              <img
+                src="/logo/Toss_App_Icon.png"
+                alt="Toss Pay"
+                className="h-5 rounded-sm object-contain"
+              />
+              <img
+                src="/logo/bade_kakaopay.png"
+                alt="Kakao Pay"
+                className="h-5 rounded-sm object-contain"
+              />
+              <img
+                src="/logo/badge_npay.svg"
+                alt="Naver Pay"
+                className="h-5 rounded-sm object-contain"
+              />
             </div>
           </button>
           {paymentError && (
             <p className="mt-3 text-center text-sm text-red-400/80">
-              {t.paymentErrorMsg}
+              {paymentError}
             </p>
           )}
         </>

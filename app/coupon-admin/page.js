@@ -144,7 +144,10 @@ function PasswordGate({ onAuthed }) {
 
 // ── 발행 패널 ───────────────────────────────────────────────
 function AdminPanel({ token, onExpired }) {
+  const [couponType, setCouponType] = useState("credit"); // "credit" | "discount"
   const [creditAmount, setCreditAmount] = useState(1000);
+  const [discountPercent, setDiscountPercent] = useState(10);
+  const [maxDiscount, setMaxDiscount] = useState(5000);
   const [count, setCount] = useState(1);
   const [prefix, setPrefix] = useState("TLM");
   const [busy, setBusy] = useState(false);
@@ -196,7 +199,13 @@ function AdminPanel({ token, onExpired }) {
       const json = await authedRequest("/coupon/admin/generate", {
         method: "POST",
         body: JSON.stringify({
-          credit_amount: Number(creditAmount),
+          coupon_type: couponType,
+          ...(couponType === "credit"
+            ? { credit_amount: Number(creditAmount) }
+            : {
+                discount_percent: Number(discountPercent),
+                max_discount_krw: Number(maxDiscount),
+              }),
           count: Number(count),
           prefix,
         }),
@@ -225,23 +234,71 @@ function AdminPanel({ token, onExpired }) {
       {/* 발행 폼 */}
       <div style={{ ...cardStyle, display: "grid", gap: 12 }}>
         <strong>새 쿠폰 발행</strong>
+        {/* 타입 선택 */}
+        <div style={{ display: "flex", gap: 8 }}>
+          {[
+            { key: "credit", label: "크레딧 쿠폰 (즉시 지급)" },
+            { key: "discount", label: "할인 쿠폰 (결제 시 % 차감)" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setCouponType(tab.key)}
+              style={{
+                ...btnStyle,
+                padding: "8px 14px",
+                fontSize: 13,
+                borderColor: couponType === tab.key ? "#7dff9b" : "#545454",
+                color: couponType === tab.key ? "#7dff9b" : "#fff",
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
+            gridTemplateColumns:
+              couponType === "credit" ? "1fr 1fr 1fr" : "1fr 1fr 1fr 1fr",
             gap: 8,
           }}
         >
-          <label style={{ display: "grid", gap: 4, fontSize: 13, color: "#bbb" }}>
-            크레딧 수량
-            <input
-              type="number"
-              min={1}
-              style={inputStyle}
-              value={creditAmount}
-              onChange={(e) => setCreditAmount(e.target.value)}
-            />
-          </label>
+          {couponType === "credit" ? (
+            <label style={{ display: "grid", gap: 4, fontSize: 13, color: "#bbb" }}>
+              크레딧 수량
+              <input
+                type="number"
+                min={1}
+                style={inputStyle}
+                value={creditAmount}
+                onChange={(e) => setCreditAmount(e.target.value)}
+              />
+            </label>
+          ) : (
+            <>
+              <label style={{ display: "grid", gap: 4, fontSize: 13, color: "#bbb" }}>
+                할인율 (%)
+                <input
+                  type="number"
+                  min={1}
+                  max={100}
+                  style={inputStyle}
+                  value={discountPercent}
+                  onChange={(e) => setDiscountPercent(e.target.value)}
+                />
+              </label>
+              <label style={{ display: "grid", gap: 4, fontSize: 13, color: "#bbb" }}>
+                최대 할인 (원)
+                <input
+                  type="number"
+                  min={1}
+                  style={inputStyle}
+                  value={maxDiscount}
+                  onChange={(e) => setMaxDiscount(e.target.value)}
+                />
+              </label>
+            </>
+          )}
           <label style={{ display: "grid", gap: 4, fontSize: 13, color: "#bbb" }}>
             발행 개수 (최대 100)
             <input
@@ -311,7 +368,9 @@ function AdminPanel({ token, onExpired }) {
               >
                 <span>{c.code}</span>
                 <span style={{ color: "#7dff9b" }}>
-                  {c.credit_amount.toLocaleString()} 크레딧
+                  {c.coupon_type === "discount"
+                    ? `${c.discount_percent}% 할인 (최대 ₩${(c.max_discount_krw || 0).toLocaleString()})`
+                    : `${(c.credit_amount || 0).toLocaleString()} 크레딧`}
                 </span>
               </div>
             ))}
@@ -345,7 +404,7 @@ function AdminPanel({ token, onExpired }) {
             <thead>
               <tr style={{ color: "#888", textAlign: "left" }}>
                 <th style={{ padding: "6px 8px" }}>코드</th>
-                <th style={{ padding: "6px 8px" }}>크레딧</th>
+                <th style={{ padding: "6px 8px" }}>혜택</th>
                 <th style={{ padding: "6px 8px" }}>상태</th>
                 <th style={{ padding: "6px 8px" }}>사용자</th>
                 <th style={{ padding: "6px 8px" }}>발행일</th>
@@ -364,18 +423,28 @@ function AdminPanel({ token, onExpired }) {
                     {c.code}
                   </td>
                   <td style={{ padding: "6px 8px" }}>
-                    {c.credit_amount.toLocaleString()}
+                    {c.coupon_type === "discount"
+                      ? `${c.discount_percent}% (최대 ₩${(c.max_discount_krw || 0).toLocaleString()})`
+                      : `${(c.credit_amount || 0).toLocaleString()} 크레딧`}
                   </td>
                   <td
                     style={{
                       padding: "6px 8px",
-                      color: c.is_used ? "#ff7d7d" : "#7dff9b",
+                      color: c.is_used
+                        ? "#ff7d7d"
+                        : c.claimed_by_email
+                          ? "#ffd97d"
+                          : "#7dff9b",
                     }}
                   >
-                    {c.is_used ? "사용됨" : "미사용"}
+                    {c.is_used
+                      ? "사용됨"
+                      : c.claimed_by_email
+                        ? "등록됨"
+                        : "미사용"}
                   </td>
                   <td style={{ padding: "6px 8px", color: "#bbb" }}>
-                    {c.used_by_email || "-"}
+                    {c.used_by_email || c.claimed_by_email || "-"}
                   </td>
                   <td style={{ padding: "6px 8px", color: "#bbb" }}>
                     {new Date(c.created_at).toLocaleDateString("ko-KR")}

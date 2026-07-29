@@ -3,6 +3,8 @@
 // R2는 CORS 미설정이라 직접 로드 실패 후 프록시 재시도(왕복 2회)가 발생한다.
 // 같은 URL을 화면/컴포넌트마다 재다운로드하지 않도록 모듈 레벨에서 캐시한다.
 // (편집 프리뷰 AlbumPreview3D와 편집 페이지 저장 시 낙관적 합성에서 공유)
+import { getProxiedUrl } from "@/app/lib/proxy";
+
 const imgPromiseCache = new Map();
 
 export function loadCachedImage(src, crossOrigin = true) {
@@ -31,7 +33,8 @@ export function loadCachedImage(src, crossOrigin = true) {
       proxy.crossOrigin = "anonymous";
       proxy.onload = () => resolve(proxy);
       proxy.onerror = () => resolve(null);
-      proxy.src = `https://the-life-museum-backend-production.up.railway.app/api/v1/scraper/proxy/image?url=${encodeURIComponent(src)}`;
+      // 직접 로드가 이미 실패한 상황이므로 R2 URL이라도 프록시로 강제 재시도
+      proxy.src = getProxiedUrl(src, { force: true });
     };
 
     if (knownNoCors) {

@@ -11,6 +11,34 @@ const PACKAGE_PRICES = {
   album_test_1000: { krw: 1000, usd: 100, label: "Test 1 Album" },
 };
 
+// ── 할인 쿠폰 금액 계산 ──────────────────────────────
+// 주의: 백엔드(app/services/coupon.py)와 정확히 같은 정수 연산이어야 한다.
+// 서버가 결제 금액을 할인가와 대조 검증하므로 반올림이 다르면 결제가 거부된다.
+export const KRW_PER_USD = 1400; // 할인 상한(KRW) → USD 환산 고정 환율
+
+/**
+ * @param {{krw:number, usd:number}} pricing usd는 센트 단위
+ * @param {{discountPercent:number, maxDiscountKrw:number}|null|undefined} coupon
+ * @returns {{krw:number, usd:number}} 할인 적용 후 결제 금액
+ */
+export function applyCouponDiscount(pricing, coupon) {
+  if (!coupon?.discountPercent) return { krw: pricing.krw, usd: pricing.usd };
+  const cap = coupon.maxDiscountKrw || 0;
+  const dKrw = Math.min(
+    Math.floor((pricing.krw * coupon.discountPercent) / 100),
+    cap,
+  );
+  const capUsdCents = Math.floor((cap * 100) / KRW_PER_USD);
+  const dUsd = Math.min(
+    Math.floor((pricing.usd * coupon.discountPercent) / 100),
+    capUsdCents,
+  );
+  return {
+    krw: Math.max(0, pricing.krw - dKrw),
+    usd: Math.max(0, pricing.usd - dUsd),
+  };
+}
+
 // ── 앱 딥링크 & 웹 URL ──────────────────────────────
 const APP_SCHEME = "thelifemuseum";
 const WEB_ORIGIN = "https://the-life-museum.vercel.app";
@@ -56,9 +84,10 @@ async function requestCreditPurchaseNative({ package: pkg, userId, userName, use
 /**
  * 앨범 결제 (PortOne V2 → KG이니시스 카드, KRW)
  */
-async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko" }) {
+async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko", coupon }) {
   const pricing = PACKAGE_PRICES[pkg];
   if (!pricing) throw new Error(`Invalid package: ${pkg}`);
+  const finalAmount = applyCouponDiscount(pricing, coupon);
 
   const PortOne = await import("@portone/browser-sdk/v2");
   const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
@@ -68,7 +97,7 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
     channelKey: KG_INICIS_CHANNEL_KEY,
     paymentId,
     orderName: locale === "ko" ? `앨범 구매 (${pricing.label})` : `Album Purchase (${pricing.label})`,
-    totalAmount: pricing.krw,
+    totalAmount: finalAmount.krw,
     currency: "CURRENCY_KRW",
     payMethod: "CARD",
     // KG이니시스 V2 일반결제는 fullName + phoneNumber 필수
@@ -98,9 +127,10 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
 // /**
 //  * 해외 앨범 결제 (PortOne V2 → PayPal)
 //  */
-// async function requestCreditPurchasePayPal({ package: pkg, userId, userName, userEmail, locale = "en" }) {
+// async function requestCreditPurchasePayPal({ package: pkg, userId, userName, userEmail, locale = "en", coupon }) {
 //   const pricing = PACKAGE_PRICES[pkg];
 //   if (!pricing) throw new Error(`Invalid package: ${pkg}`);
+//   const finalAmount = applyCouponDiscount(pricing, coupon);
 //
 //   const PortOne = await import("@portone/browser-sdk/v2");
 //
@@ -111,7 +141,7 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
 //     channelKey: PAYPAL_CHANNEL_KEY,
 //     paymentId,
 //     orderName: `Album Purchase (${pricing.label})`,
-//     totalAmount: pricing.usd,
+//     totalAmount: finalAmount.usd,
 //     currency: "CURRENCY_USD",
 //     payMethod: "PAYPAL",
 //     // 결제-유저 바인딩
@@ -133,11 +163,11 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
 /**
  * 앨범 결제 요청 (KRW만 지원). 네이티브 앱이면 외부 브라우저로 결제 페이지 오픈.
  */
-export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko", method = "domestic", couponCode }) {
+export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko", method = "domestic", couponCode, coupon }) {
   if (isNativeApp()) {
     return requestCreditPurchaseNative({ package: pkg, userId, userName, userEmail, userPhone, locale, method, couponCode });
   }
-  return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale });
+  return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale, coupon });
 }
 
 // ── 하위호환: 기존 requestAlbumPayment도 export ──

@@ -8,6 +8,8 @@ import dynamic from "next/dynamic";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader";
 import { Text } from "@react-three/drei";
 
+import CtaButton from "./landing/CtaButton";
+
 const LandingTypography = dynamic(() => import("./LandingTypography"), {
   ssr: false,
 });
@@ -411,13 +413,30 @@ function SceneContent() {
 }
 
 export default function Landing() {
+  const rootRef = useRef(null);
+  // 인트로가 화면에 보일 때만 3D 렌더 루프를 돌린다.
+  // 화면 밖으로 벗어나면 frameloop="never"로 GPU/메인스레드 부하를 없애 스크롤 렉을 방지.
+  const [inView, setInView] = useState(true);
+
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const io = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
+
   return (
     <div
+      ref={rootRef}
       style={{
         position: "relative",
         width: "100vw",
         height: "100vh",
-        overflow: "hidden",
+        overflow: "clip",
         background: COLORS.background,
       }}
     >
@@ -426,11 +445,14 @@ export default function Landing() {
           position: "absolute",
           inset: 0,
           zIndex: 1,
+          pointerEvents: "none",
+          touchAction: "pan-y",
         }}
       >
         <Canvas
           dpr={[1, 2]}
-          style={{ width: "100%", height: "100%" }}
+          frameloop={inView ? "always" : "never"}
+          style={{ width: "100%", height: "100%", touchAction: "pan-y", pointerEvents: "none" }}
           camera={{
             position: [-300, -180, 400],
             rotation: [0.5, -0.79, 0.37],
@@ -451,6 +473,45 @@ export default function Landing() {
         }}
       >
         <LandingTypography />
+
+        {/* 좌측 하단: 서브 카피 + CTA 버튼 */}
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 1.4, ease: [0.22, 1, 0.36, 1] }}
+          className="group"
+          style={{
+            position: "absolute",
+            right: "clamp(20px, 3vw, 40px)",
+            bottom: "clamp(28px, 6vh, 64px)",
+            pointerEvents: "auto",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            textAlign: "right",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "Pretendard, 'Pretendard Variable', sans-serif",
+              color: "rgba(242,242,242,0.85)",
+              fontSize: "clamp(13px, 1.05vw, 16px)",
+              lineHeight: 1.55,
+              margin: "0 0 20px",
+              letterSpacing: "-0.01em",
+              maxWidth: "30ch",
+              textAlign: "right",
+              textShadow: "0 2px 20px rgba(0,0,0,0.6)",
+            }}
+          >
+            당신의 수많은 사진, 아름다운 앨범으로 정리해
+            <br />
+            소중한 사람과 함께 할 수 있게 해드립니다.
+          </p>
+          <CtaButton variant="ghost" arrow>
+            지금 앨범 만들기
+          </CtaButton>
+        </motion.div>
       </div>
     </div>
   );

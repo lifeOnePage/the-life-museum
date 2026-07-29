@@ -4,12 +4,13 @@ import { CROSSFADE_DURATION_MS } from "./constants";
 /**
  * Slideshow state & timer hook for VHS playback.
  *
- * @param {{ mediaList, isPlaying, imageDuration, videoMode, active }} opts
+ * @param {{ mediaList, isPlaying, imageDuration, videoMode, active, loop }} opts
  *   - mediaList: array of { type, src, ... }
  *   - isPlaying: boolean
  *   - imageDuration: seconds per image
  *   - videoMode: 0 = full playback, N = clip to N seconds
  *   - active: only run when scene === "playback"
+ *   - loop: true = 무한 반복, false = 모든 컨텐츠 1회 재생 후 종료(ended)
  */
 export function useMediaSlideshow({
   mediaList,
@@ -17,10 +18,13 @@ export function useMediaSlideshow({
   imageDuration,
   videoMode,
   active,
+  loop = true,
 }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [nextIndex, setNextIndex] = useState(null);
   const [transitioning, setTransitioning] = useState(false);
+  // 루프 off에서 마지막 컨텐츠까지 모두 재생 완료된 상태(리플레이 버튼 대기).
+  const [ended, setEnded] = useState(false);
   const timerRef = useRef(null);
   const transitionTimerRef = useRef(null);
 
@@ -43,10 +47,23 @@ export function useMediaSlideshow({
   const rafRef = useRef(null);
 
   const advance = useCallback(() => {
-    if (count <= 1) return;
+    if (count === 0) return;
     if (transitioning || nextIndex !== null) return;
 
-    const next = (currentIndex + 1) % count;
+    const isLast = currentIndex >= count - 1;
+
+    // 마지막 컨텐츠 재생 후 처리
+    if (isLast) {
+      if (!loop) {
+        // 루프 off: 모든 컨텐츠를 한 번씩 재생 완료 → 종료(리플레이 대기)
+        setEnded(true);
+        return;
+      }
+      if (count <= 1) return; // 단일 컨텐츠 무한 루프: 자기 자신으로 전환 불필요
+    }
+
+    const next = isLast ? 0 : currentIndex + 1;
+
     // Phase 1: mount the next layer at opacity 0
     setNextIndex(next);
 
@@ -63,7 +80,7 @@ export function useMediaSlideshow({
         }, CROSSFADE_DURATION_MS);
       });
     });
-  }, [count, currentIndex, transitioning, nextIndex, clearTransitionTimer]);
+  }, [count, currentIndex, transitioning, nextIndex, loop, clearTransitionTimer]);
 
   const retreat = useCallback(() => {
     if (count <= 1) return;
@@ -86,9 +103,33 @@ export function useMediaSlideshow({
     });
   }, [count, currentIndex, transitioning, nextIndex, clearTransitionTimer]);
 
+  // 처음부터 다시 재생(리플레이 버튼)
+  const restart = useCallback(() => {
+    clearTimer();
+    clearTransitionTimer();
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    setEnded(false);
+    setNextIndex(null);
+    setTransitioning(false);
+    setCurrentIndex(0);
+  }, [clearTimer, clearTransitionTimer]);
+
+  // 루프를 다시 켜면 종료 상태를 해제하고 이어서 재생
+  useEffect(() => {
+    if (loop && ended) setEnded(false);
+  }, [loop, ended]);
+
   // Auto-advance timer for images and short video mode
   useEffect(() => {
-    if (!active || !isPlaying || count === 0 || transitioning || nextIndex !== null) return;
+    if (
+      !active ||
+      !isPlaying ||
+      ended ||
+      count === 0 ||
+      transitioning ||
+      nextIndex !== null
+    )
+      return;
 
     const item = mediaList[currentIndex];
     if (!item) return;
@@ -111,6 +152,7 @@ export function useMediaSlideshow({
   }, [
     active,
     isPlaying,
+    ended,
     currentIndex,
     nextIndex,
     transitioning,
@@ -136,6 +178,7 @@ export function useMediaSlideshow({
     setCurrentIndex(0);
     setNextIndex(null);
     setTransitioning(false);
+    setEnded(false);
   }, [mediaList]);
 
   const currentItem = count > 0 ? mediaList[currentIndex] : null;
@@ -157,8 +200,10 @@ export function useMediaSlideshow({
     transitioning,
     currentItem,
     nextItem,
+    ended,
     advance,
     retreat,
+    restart,
     preloadUrls,
   };
 }

@@ -1,15 +1,7 @@
 import * as THREE from "three";
 
-// API
-export const API_BASE =
-  "https://the-life-museum-backend-production.up.railway.app/api/v1";
-export const PROXY_URL = `${API_BASE}/scraper/proxy/image`;
-export const USE_PROXY = true;
-
-export function getProxiedUrl(originalUrl) {
-  if (!USE_PROXY) return originalUrl;
-  return `${PROXY_URL}?url=${encodeURIComponent(originalUrl)}`;
-}
+// API — 프록시 URL 생성은 공용 유틸로 위임 (R2 URL은 프록시 우회)
+export { API_BASE, getProxiedUrl } from "@/app/lib/proxy";
 
 // Layout
 export const SEED = 1337;

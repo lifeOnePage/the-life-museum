@@ -13,6 +13,7 @@ import {
   Film,
   Image as ImageIcon,
 } from "lucide-react";
+import { getProxiedUrl } from "@/app/lib/proxy";
 import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
 import { authedFetch } from "@/app/utils/authedFetch";
 import ScrollToTopButton from "./ScrollToTopButton";
@@ -182,7 +183,7 @@ export default function CoverImageGenerator({
         initialFrontCover.startsWith("data:");
       const fetchUrl = isLocal
         ? initialFrontCover
-        : `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(initialFrontCover)}`;
+        : getProxiedUrl(initialFrontCover);
       const blob = await fetch(fetchUrl).then((r) => r.blob());
       const ext = blob.type === "image/png" ? "png" : "jpg";
       const file = new File([blob], `current-cover.${ext}`, {
@@ -290,7 +291,7 @@ export default function CoverImageGenerator({
     }
 
     const rawUrl = media.original_url || media.thumbnail_url;
-    const proxyUrl = `${API_URL}/api/v1/scraper/proxy/image?url=${encodeURIComponent(rawUrl)}`;
+    const proxyUrl = getProxiedUrl(rawUrl);
     try {
       const blob = await fetch(proxyUrl).then((r) => r.blob());
       const ext = blob.type === "image/png" ? "png" : "jpg";

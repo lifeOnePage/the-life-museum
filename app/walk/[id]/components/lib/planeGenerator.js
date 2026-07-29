@@ -124,7 +124,12 @@ export function generatePlanes(rng, mediaList, poolSize = MAX_TOTAL_PLANES) {
       mediaIndex,
       position: [x, y, z],
       rotation: [rotX, rotY],
-      imageUrl: media.original_url || media.thumbnail_url,
+      // 이미지 벽면은 썸네일 우선(원본은 메인 스레드 동기 디코드 비용 — Scene.livePlanes
+      // 주석 참고). 비디오는 imageUrl이 video.src로도 쓰이므로 원본(스트림 URL) 유지.
+      imageUrl:
+        media.type === "video"
+          ? media.original_url || media.thumbnail_url
+          : media.thumbnail_url || media.original_url,
       thumbnailUrl: media.thumbnail_url,
       mediaType: media.type,
       baseHeight: estimatedHeight,

@@ -86,7 +86,7 @@ export default function CenterSlideshow({
       const gen = genRef.current;
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = () => {
+      const onLoaded = () => {
         if (gen !== genRef.current) return; // 리스트 교체 이후 도착한 낡은 로드 — 폐기
         loadingRef.current.delete(mi);
         try {
@@ -105,6 +105,9 @@ export default function CenterSlideshow({
           canvas.getContext("2d").drawImage(img, 0, 0, dw, dh);
           const tex = new THREE.CanvasTexture(canvas);
           tex.colorSpace = THREE.SRGBColorSpace;
+          // 이미 목표 크기로 프리스케일됨 — NPOT 밉맵 체인 생성(업로드 +33%) 생략
+          tex.generateMipmaps = false;
+          tex.minFilter = THREE.LinearFilter;
           tex.needsUpdate = true;
           const prev = cacheRef.current.get(mi);
           if (prev) prev.texture.dispose(); // 덮어쓰기 시 기존 텍스처 누수 방지
@@ -112,6 +115,12 @@ export default function CenterSlideshow({
         } catch {
           /* ignore */
         }
+      };
+      img.onload = () => {
+        // 디코드 비동기화 — 원본(=w2000급) drawImage의 메인 스레드 동기 디코드
+        // (3.5초 주기 히칭) 방지. 미지원/실패 시 동기 경로 폴백.
+        if (img.decode) img.decode().then(onLoaded).catch(onLoaded);
+        else onLoaded();
       };
       img.onerror = () => {
         if (gen === genRef.current) loadingRef.current.delete(mi);
@@ -269,7 +278,11 @@ export default function CenterSlideshow({
           (SLIDE_FADE_OUT_START_DIST - SLIDE_FADE_OUT_END_DIST),
       ),
     );
-    mat.opacity = Math.min(fadeIn, fadeOut);
+    const opacity = Math.min(fadeIn, fadeOut);
+    mat.opacity = opacity;
+    // 사실상 투명한 구간(등장 직전·통과 직후)은 드로우 자체를 생략 —
+    // 통과 직전 전화면 크기의 DoubleSide 알파 쿼드 오버드로(타일 GPU 부담) 제거
+    if (opacity <= 0.01) mesh.visible = false;
   });
 
   return (

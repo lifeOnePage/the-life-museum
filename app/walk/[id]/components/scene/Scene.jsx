@@ -157,7 +157,15 @@ export default function Scene({
       return {
         ...p,
         mediaIndex: mi,
-        imageUrl: m.original_url || m.thumbnail_url,
+        // 이미지 벽면은 최종 512² 이하로 그려지므로 썸네일(=w400급)로 로드한다.
+        // 원본(=w2000급, ~3MP)은 drawImage 시 메인 스레드 동기 디코드가 장당
+        // 30~120ms 걸리고, 순환 재할당(~2.8장/초)마다 반복되어 모바일 상시
+        // 잔렉의 지배 원인이었다. 원본 화질은 중앙 슬라이드쇼/포커스 전용.
+        // 비디오는 imageUrl이 Tier-2의 video.src로도 쓰이므로 원본(스트림 URL) 유지.
+        imageUrl:
+          m.type === "video"
+            ? m.original_url || m.thumbnail_url
+            : m.thumbnail_url || m.original_url,
         thumbnailUrl: m.thumbnail_url,
         mediaType: m.type,
       };
@@ -233,8 +241,10 @@ export default function Scene({
       // 둬서 대형 앨범에서도 자동 재생이 확실히 트리거되게 한다.
       const threshold = Math.min(Math.ceil(planes.length * 0.8), 60);
 
-      // Report progress to parent for loading UI
-      onLoadProgress?.(loadedCount, threshold);
+      // Report progress to parent for loading UI — 자동재생 이후에는 생략
+      // (순환 로딩에서 로드가 상시 발생하므로, 로드마다 부모 setState로
+      //  DisplayScene 전체가 리렌더되던 상시 처닝 제거)
+      if (!autoPlayFiredRef.current) onLoadProgress?.(loadedCount, threshold);
 
       // 전체 plane의 80% 이상 로딩 완료 시 자동 재생
       if (!autoPlayFiredRef.current && planes.length > 0) {

@@ -102,11 +102,15 @@ export const T = {
       "계정을 삭제하면 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다.",
     deleteConfirm: "삭제",
     deleting: "삭제 중...",
+    servicePeriodNotice: "서비스 제공기간 : 생성일로부터 1년",
+    refundNoticePrefix: "환불 및 취소 규정은 ",
+    refundNoticeLink: "이용약관",
+    refundNoticeSuffix: "을 참고해주세요.",
     purchaseAgreeLabel: "[필수] 구매 조건 및 결제 진행 동의",
     purchaseAgreeViewDetail: "약관 보기",
     purchaseAgreeModalTitle: "구매 조건 및 환불 규정",
     purchaseAgreeModalBody:
-      "결제 후 사용하지 않은 앨범 생성권은 결제일로부터 7일 이내 환불 가능하며, 일부 사용 시 잔여분의 10%가 수수료로 공제됩니다. 결제로 구매한 디지털 앨범 생성 서비스 및 꾸미기 아이템(디지털 콘텐츠)은 구매 즉시 또는 사용 개시 이후 환불이 제한됩니다.",
+      "서비스 제공기간: 생성된 AI 앨범은 생성일로부터 1년 동안 서비스 내에서 열람할 수 있습니다.\n\nAI 앨범 생성이 시작되기 전까지는 결제 취소 및 전액 환불이 가능합니다. AI 앨범 생성이 완료된 이후에는 디지털 콘텐츠의 특성상 환불이 불가능합니다. 단, 서비스 장애 또는 회사의 귀책사유로 정상적인 서비스 이용이 불가능한 경우에는 환불이 가능합니다.\n\n자세한 내용은 [환불 및 취소정책] 페이지를 참고해주세요.",
   },
   en: {
     profile: "Profile",
@@ -151,12 +155,16 @@ export const T = {
       "Deleting your account will permanently remove all your data and cannot be undone.",
     deleteConfirm: "Delete",
     deleting: "Deleting...",
+    servicePeriodNotice: "Service period: 1 year from creation date",
+    refundNoticePrefix: "See our ",
+    refundNoticeLink: "Terms of Service",
+    refundNoticeSuffix: " for refund and cancellation details.",
     purchaseAgreeLabel:
       "[Required] I agree to the purchase terms and refund policy",
     purchaseAgreeViewDetail: "View details",
     purchaseAgreeModalTitle: "Purchase Terms & Refund Policy",
     purchaseAgreeModalBody:
-      "Unused album credits may be refunded within 7 days of payment. If a portion has been used, a 10% fee will be deducted from the remaining balance upon refund. Digital albums and decoration items purchased cannot be refunded once purchased or used.",
+      "Service period: Generated AI albums can be viewed within the service for 1 year from their creation date.\n\nYou may cancel and receive a full refund before AI album generation begins. Once generation is complete, refunds are not available due to the nature of digital content — except when normal use of the service is impossible due to a service outage or fault attributable to the company.\n\nSee the [Refund & Cancellation Policy] page for details.",
   },
 };
 

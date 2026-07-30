@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { requestCreditPurchase, applyCouponDiscount } from "@/app/utils/payment";
@@ -255,6 +256,20 @@ export default function AccountPurchasePage() {
           </span>
         </div>
       )}
+
+      {/* 서비스 제공기간 / 환불·취소 규정 안내 (결제 직전 고지) */}
+      <p className="mb-6 text-xs leading-relaxed text-[#9b8b7a]">
+        {t.servicePeriodNotice}
+        <br />
+        {t.refundNoticePrefix}
+        <Link
+          href={`/${currentLocale}/legal/terms`}
+          className="text-[#c4b49a] underline underline-offset-2 transition hover:text-[#e8d5b7]"
+        >
+          {t.refundNoticeLink}
+        </Link>
+        {t.refundNoticeSuffix}
+      </p>
 
       {/* 구매 조건 동의 (결제 직전 필수 체크) */}
       {!paymentSuccess && (

@@ -1,8 +1,4 @@
-"use client";
-
-import { useState } from "react";
-import LegalModal from "./LegalModal";
-import { TERMS_KO, PRIVACY_KO } from "./legalContent";
+import Link from "next/link";
 
 const T = {
   ko: {
@@ -14,6 +10,7 @@ const T = {
     mailOrderNo: "통신판매신고번호",
     terms: "이용약관",
     privacy: "개인정보처리방침",
+    refund: "환불 및 취소정책",
   },
   en: {
     company: "Company",
@@ -24,6 +21,7 @@ const T = {
     mailOrderNo: "Mail-order Business No.",
     terms: "Terms of Service",
     privacy: "Privacy Policy",
+    refund: "Refund & Cancellation Policy",
   },
 };
 
@@ -38,23 +36,28 @@ const INFO = {
 
 export default function Footer({ locale = "ko" }) {
   const t = T[locale] || T.ko;
-  const [openModal, setOpenModal] = useState(null); // null | "terms" | "privacy"
 
   return (
     <footer className="border-t border-white/10 bg-[#121212] px-4 py-6 text-xs text-[#9b8b7a]">
-      <div className="mx-auto mb-2 flex max-w-4xl items-center justify-center gap-3 text-center">
-        <button
-          onClick={() => setOpenModal("terms")}
+      <div className="mx-auto mb-2 flex max-w-4xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-center">
+        <Link
+          href={`/${locale}/legal/terms`}
           className="underline underline-offset-2 transition hover:text-[#c4b49a]"
         >
           {t.terms}
-        </button>
-        <button
-          onClick={() => setOpenModal("privacy")}
+        </Link>
+        <Link
+          href={`/${locale}/legal/privacy`}
           className="underline underline-offset-2 transition hover:text-[#c4b49a]"
         >
           {t.privacy}
-        </button>
+        </Link>
+        <Link
+          href={`/${locale}/legal/refund`}
+          className="underline underline-offset-2 transition hover:text-[#c4b49a]"
+        >
+          {t.refund}
+        </Link>
       </div>
       <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center">
         <span>
@@ -82,17 +85,6 @@ export default function Footer({ locale = "ko" }) {
           {t.address} {INFO.address}
         </span>
       </div>
-
-      {openModal === "terms" && (
-        <LegalModal title={t.terms} onClose={() => setOpenModal(null)}>
-          {TERMS_KO}
-        </LegalModal>
-      )}
-      {openModal === "privacy" && (
-        <LegalModal title={t.privacy} onClose={() => setOpenModal(null)}>
-          {PRIVACY_KO}
-        </LegalModal>
-      )}
     </footer>
   );
 }

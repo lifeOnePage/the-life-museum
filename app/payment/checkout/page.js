@@ -23,7 +23,8 @@ const PACKAGE_PRICES = {
   album_1: { krw: 9000, usd: 699, label: "1 Album" },
   album_3: { krw: 24000, usd: 1899, label: "3 Albums" },
   album_6: { krw: 39000, usd: 2999, label: "6 Albums" },
-  album_test_1000: { krw: 1000, usd: 100, label: "Test 1 Album" },
+  // 임시 결제 테스트용 — 잠시 주석 처리 (PG 최소 결제금액 1,000원 제약)
+  // album_test_1000: { krw: 1000, usd: 100, label: "Test 1 Album" },
 };
 
 const T = {

@@ -7,21 +7,21 @@ export const BASE_URL =
 // ── 앨범 결제 상품 ──────────────────────────────
 // "포인트/크레딧 충전"이 아니라 "앨범 생성권 N개"를 직접 구매하는 구조.
 // KRW 결제만 지원 (PayPal/USD는 잠시 비활성화 — app/utils/payment.js 참고).
-// 임시 결제 테스트용 패키지 — 실 서비스 오픈 전 제거할 것
-const TEST_PACKAGE = {
-  key: "album_test_1000",
-  albums: 1,
-  priceKRW: 1000,
-  originalPriceKRW: null,
-  labelKo: "[테스트] 앨범 1개",
-  labelEn: "[Test] 1 Album",
-  descKo: "결제 테스트",
-  descEn: "Payment test",
-  badge: "TEST",
-};
+// 임시 결제 테스트용 패키지 — 잠시 주석 처리 (실 서비스 오픈 전까지 노출 안 함)
+// const TEST_PACKAGE = {
+//   key: "album_test_1000",
+//   albums: 1,
+//   priceKRW: 1000,
+//   originalPriceKRW: null,
+//   labelKo: "[테스트] 앨범 1개",
+//   labelEn: "[Test] 1 Album",
+//   descKo: "결제 테스트",
+//   descEn: "Payment test",
+//   badge: "TEST",
+// };
 
 export const CREDIT_PACKAGES = [
-  TEST_PACKAGE,
+  // TEST_PACKAGE,
   {
     key: "album_1",
     albums: 1,

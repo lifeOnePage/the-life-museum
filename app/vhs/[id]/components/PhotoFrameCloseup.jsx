@@ -244,18 +244,22 @@ export default function PhotoFrameCloseup({
                   <button
                     key={img.id ?? idx}
                     onClick={() => handlePickPhoto(idx)}
-                    className={`group relative aspect-square overflow-hidden rounded-lg transition-all ${
+                    // 정사각 셀을 aspect-ratio 대신 padding-top 100%(너비 기준)로 확보 —
+                    // 일부 앱 WebView(iOS 15.x 등)에서 aspect-ratio+grid+%높이 조합이
+                    // 무시되어 셀이 붕괴하고 썸네일이 겹쳐 보이던 문제의 폴백.
+                    className={`group relative w-full overflow-hidden rounded-lg transition-all ${
                       isSelected
                         ? "ring-2 ring-[#c9a84c] ring-offset-2 ring-offset-neutral-900"
                         : "hover:ring-1 hover:ring-white/40"
                     }`}
+                    style={{ paddingTop: "100%" }}
                   >
                     <img
                       src={thumb}
                       alt=""
                       loading="lazy"
                       decoding="async"
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
                       draggable={false}
                     />
                     {isSelected && (

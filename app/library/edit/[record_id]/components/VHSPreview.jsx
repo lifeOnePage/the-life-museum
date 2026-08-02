@@ -566,18 +566,21 @@ export default function VHSPreview({
                   <button
                     key={img.id ?? idx}
                     onClick={() => handlePickPhoto(idx)}
-                    className={`group relative aspect-square overflow-hidden rounded-lg transition-all ${
+                    // padding-top 정사각 폴백 — 앱 WebView의 aspect-ratio 붕괴 대응
+                    // (PhotoFrameCloseup과 동일 패턴)
+                    className={`group relative w-full overflow-hidden rounded-lg transition-all ${
                       isSelected
                         ? "ring-2 ring-[#c9a84c] ring-offset-1 ring-offset-neutral-900"
                         : "hover:ring-1 hover:ring-white/40"
                     }`}
+                    style={{ paddingTop: "100%" }}
                   >
                     <img
                       src={thumb}
                       alt=""
                       loading="lazy"
                       decoding="async"
-                      className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                      className="absolute inset-0 h-full w-full object-cover transition-transform group-hover:scale-105"
                       draggable={false}
                     />
                     {isSelected && (

@@ -44,7 +44,7 @@ export default function VHSControls({
 }) {
   return (
     <div
-      className="absolute top-[max(env(safe-area-inset-top),1.5rem)] left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm transition-opacity duration-300 max-w-[calc(100vw-2rem)]"
+      className="absolute top-[max(env(safe-area-inset-top),1.5rem)] left-1/2 z-50 flex max-w-[calc(100vw-1rem)] -translate-x-1/2 flex-wrap items-center justify-center gap-x-3 gap-y-2 rounded-lg bg-black/60 px-4 py-2 backdrop-blur-sm transition-opacity duration-300"
       style={{
         opacity: visible ? 1 : 0,
         pointerEvents: visible ? "auto" : "none",
@@ -60,7 +60,7 @@ export default function VHSControls({
         </button>
       </Tooltip>
 
-      <div className="h-6 w-px bg-white/20" />
+      <div className="hidden h-6 w-px bg-white/20 sm:block" />
 
       {/* Play / Pause */}
       <Tooltip label={isPlaying ? "일시정지" : "재생"}>
@@ -122,11 +122,11 @@ export default function VHSControls({
         </button>
       </Tooltip>
 
-      <div className="h-6 w-px bg-white/20" />
+      <div className="hidden h-6 w-px bg-white/20 sm:block" />
 
       {/* Image duration select */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-white/60">사진</span>
+        <span className="hidden text-xs text-white/60 sm:inline">사진</span>
         <select
           value={imageDuration}
           onChange={(e) => onImageDurationChange(Number(e.target.value))}
@@ -142,7 +142,7 @@ export default function VHSControls({
 
       {/* Video mode select */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-white/60">영상</span>
+        <span className="hidden text-xs text-white/60 sm:inline">영상</span>
         <select
           value={videoMode}
           onChange={(e) => onVideoModeChange(Number(e.target.value))}
@@ -158,7 +158,7 @@ export default function VHSControls({
 
       {/* Transition style select */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-white/60">전환</span>
+        <span className="hidden text-xs text-white/60 sm:inline">전환</span>
         <select
           value={transitionType}
           onChange={(e) => onTransitionTypeChange(e.target.value)}
@@ -174,7 +174,7 @@ export default function VHSControls({
 
       {/* Color filter select */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-white/60">필터</span>
+        <span className="hidden text-xs text-white/60 sm:inline">필터</span>
         <select
           value={colorFilter}
           onChange={(e) => onColorFilterChange(e.target.value)}
@@ -188,7 +188,7 @@ export default function VHSControls({
         </select>
       </div>
 
-      <div className="h-6 w-px bg-white/20" />
+      <div className="hidden h-6 w-px bg-white/20 sm:block" />
 
       {/* Fullscreen */}
       <Tooltip label={isFullscreen ? "전체화면 해제" : "전체화면"}>

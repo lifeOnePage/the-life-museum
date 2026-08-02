@@ -1215,6 +1215,7 @@ export default function Scene({
         active={focusRender.mode !== "manual"}
         stateRef={state}
         maxTextureSize={textureConfig.maxTextureSize}
+        cameraSpeed={cameraSpeed}
       />
 
       {/* Auto Focus: Clone + Mirror + GlowBorder */}

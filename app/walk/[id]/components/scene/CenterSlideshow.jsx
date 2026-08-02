@@ -5,6 +5,7 @@ import {
   getProxiedUrl,
   BASE_HEIGHT,
   DISPLAY_SCALE,
+  CAMERA_SPEED,
   SLIDE_DWELL_SEC,
   SLIDE_START_DIST,
   SLIDE_END_DIST,
@@ -49,6 +50,9 @@ export default function CenterSlideshow({
   active,
   stateRef,
   maxTextureSize = 1024,
+  // 속도 슬라이더 값 — 기본 속도(CAMERA_SPEED) 대비 비율로 중앙 페이스에 반영.
+  // (중앙은 복도와 분리된 자체 타이머지만, 슬라이더 조절은 체감상 함께 빨라져야 함)
+  cameraSpeed = CAMERA_SPEED,
 }) {
   const { camera } = useThree();
   const meshRef = useRef();
@@ -214,7 +218,10 @@ export default function CenterSlideshow({
     }
     // delta 스파이크 클램프(탭 백그라운드 복귀 시 delta=숨김 시간 전체) — 없으면
     // 복귀 프레임에 elapsed가 폭증해 사진이 무표시로 연쇄 스킵된다.
-    elapsedRef.current += Math.min(delta, 0.25);
+    // 속도 슬라이더 반영: 기본 속도 대비 비율(pace)로 자체 타이머를 가감속 —
+    // 슬라이더를 올리면 중앙 사진도 비례해서 빨리 다가온다(QA#5).
+    const pace = Math.max(0.05, (cameraSpeed || CAMERA_SPEED) / CAMERA_SPEED);
+    elapsedRef.current += Math.min(delta, 0.25) * pace;
     // 전진 판정: 시간 만료 '또는' 페이드아웃 완료 지점 통과. 후자가 먼저 오면
     // (현재 상수 기준 p≈0.74) opacity 0인 꼬리 구간을 스킵해 다음 사진이 바로
     // 등장한다(전환 공백 ~0.5초 제거).

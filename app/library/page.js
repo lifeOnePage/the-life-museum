@@ -69,6 +69,8 @@ function coverSignature(item) {
     item.coverTitleFont ?? null,
     item.coverTitleColor ?? null,
     item.coverTitleBgColor ?? null,
+    // 사용자 배치 스티커 — 변경 시 뒷면 재합성
+    item.stickers ?? null,
   ]);
 }
 
@@ -82,7 +84,22 @@ async function generateAlbumCovers(item, locale) {
     event: e.title,
   }));
 
-  const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg, flowerImg] =
+  // 사용자 배치 스티커 — 고유 src만 로드해 {src: img} 맵 구성 (실패한 이미지는 제외)
+  const stickers = Array.isArray(item.stickers) ? item.stickers : [];
+  const uniqueStickerSrcs = [
+    ...new Set(stickers.map((s) => s?.src).filter(Boolean)),
+  ];
+
+  // flowerImg(main: memorial 앞면 장식)와 stickerImages(feat-scene: 사용자 뒷면
+  // 스티커)는 용도가 달라 둘 다 유지 — Promise.all 순서와 구조분해 순서 일치 필수
+  const [
+    frontCoverImg,
+    backCoverImg,
+    themeBgImg,
+    themeStickerImg,
+    flowerImg,
+    stickerImages,
+  ] =
     await Promise.all([
       loadImage(item.coverImage?.url),
       // 뒷면 사진을 아직 저장 안 한 옛 앨범은 편집/공유 페이지와 동일하게
@@ -95,6 +112,11 @@ async function generateAlbumCovers(item, locale) {
       isMemorialTheme
         ? loadImage("/stickers/memorial/image 406.svg")
         : Promise.resolve(null),
+      Promise.all(
+        uniqueStickerSrcs.map(async (src) => [src, await loadImage(src)]),
+      ).then((pairs) =>
+        Object.fromEntries(pairs.filter(([, img]) => img)),
+      ),
     ]);
 
   const backImage = generateBackCoverDataUrl(
@@ -107,6 +129,8 @@ async function generateAlbumCovers(item, locale) {
     null,
     themeBgImg,
     themeStickerImg,
+    stickers,
+    stickerImages,
   );
 
   // Front cover composite — 오버레이 OFF여도 합성본(정사각 크롭)을 사용한다.

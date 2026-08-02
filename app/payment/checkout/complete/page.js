@@ -11,16 +11,16 @@ const BASE_URL =
 const T = {
   ko: {
     verifying: "결제 확인 중...",
-    success: "충전 완료!",
-    successDesc: (c) => `${c.toLocaleString()} 크레딧이 충전되었습니다.`,
+    success: "구매 완료!",
+    successDesc: (c) => `앨범 생성권 ${c.toLocaleString()}개가 지급되었습니다.`,
     error: "결제 확인 실패",
     returnToApp: "앱으로 돌아가기",
     autoReturn: "잠시 후 앱으로 돌아갑니다...",
   },
   en: {
     verifying: "Verifying payment...",
-    success: "Credits Added!",
-    successDesc: (c) => `${c.toLocaleString()} credits have been added.`,
+    success: "Purchase Complete!",
+    successDesc: (c) => `${c.toLocaleString()} album credit(s) have been added.`,
     error: "Payment verification failed",
     returnToApp: "Return to App",
     autoReturn: "Returning to app shortly...",
@@ -42,7 +42,7 @@ function CompleteContent() {
   }, []);
 
   async function confirmPayment() {
-    const pkg = searchParams.get("package") || "credit_1000";
+    const pkg = searchParams.get("package") || "album_1";
     const token = searchParams.get("token") || "";
     const couponCode = searchParams.get("couponCode") || "";
     const paymentId = searchParams.get("paymentId"); // PortOne V2 결제 ID
@@ -69,7 +69,7 @@ function CompleteContent() {
         return;
       }
 
-      // 백엔드가 paymentId 로 PortOne V2 결제를 검증한 뒤 크레딧 충전
+      // 백엔드가 paymentId 로 PortOne V2 결제를 검증한 뒤 앨범 생성권 지급
       const creditRes = await fetch(`${BASE_URL}/credit/purchase`, {
         method: "POST",
         headers,
@@ -88,7 +88,7 @@ function CompleteContent() {
         autoReturnToApp("success", "", data.credits, data.added);
       } else {
         const data = await creditRes.json().catch(() => ({}));
-        const msg = data.message || data.detail || "Credit purchase failed";
+        const msg = data.message || data.detail || "Album purchase failed";
         setStatus("error");
         setErrorMsg(msg);
         autoReturnToApp("fail", msg);

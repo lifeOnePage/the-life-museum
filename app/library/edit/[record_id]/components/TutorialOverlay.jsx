@@ -5,21 +5,21 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const TUTORIAL_STEPS_KO = [
-  { targetSelector: '[data-tutorial="preview"]', title: "3D 프리뷰", description: "앨범을 드래그하여 앞/뒷면을 확인할 수 있어요", position: "right", tab: null },
-  { targetSelector: '[data-tutorial="cover-editor"]', title: "표지 디자인", description: "AI로 표지를 생성하거나 직접 업로드할 수 있어요", position: "left", tab: "front" },
-  { targetSelector: '[data-tutorial="story"]', title: "스토리", description: "키워드를 선택하고 AI로 글을 생성해보세요", position: "left", tab: "back" },
-  { targetSelector: '[data-tutorial="timeline"]', title: "타임라인", description: "인생의 주요 순간들을 기록하세요. 드래그로 순서 변경 가능해요", position: "left", tab: "back" },
-  { targetSelector: '[data-tutorial="theme"]', title: "테마", description: "뒷면 디자인 테마를 선택하세요", position: "left", tab: "back" },
-  { targetSelector: '[data-tutorial="exit"]', title: "저장하고 나가기", description: "편집이 끝나면 이 버튼을 눌러 저장하고 나가세요", position: "right", tab: null },
+  { targetSelector: '[data-tutorial="preview"]', title: "미리보기", description: "버튼을 눌러 앞/뒷면을 확인할 수 있어요", position: "right", tab: null, panel: null },
+  { targetSelector: '[data-tutorial="cover-editor"]', title: "표지 디자인", description: "AI로 표지를 생성하거나 직접 업로드할 수 있어요", position: "left", tab: "cover", panel: "cover" },
+  { targetSelector: '[data-tutorial="story"]', title: "스토리", description: "키워드를 선택하고 AI로 글을 생성해보세요", position: "left", tab: "cover", panel: "story" },
+  { targetSelector: '[data-tutorial="timeline"]', title: "타임라인", description: "인생의 주요 순간들을 기록하세요. 드래그로 순서 변경 가능해요", position: "left", tab: "cover", panel: "timeline" },
+  { targetSelector: '[data-tutorial="theme"]', title: "테마", description: "뒷면 디자인 테마를 선택하세요", position: "left", tab: "cover", panel: "theme" },
+  { targetSelector: '[data-tutorial="exit"]', title: "저장하고 나가기", description: "편집이 끝나면 이 버튼을 눌러 저장하고 나가세요", position: "right", tab: null, panel: null },
 ];
 
 const TUTORIAL_STEPS_EN = [
-  { targetSelector: '[data-tutorial="preview"]', title: "3D Preview", description: "Drag the album to see the front and back", position: "right", tab: null },
-  { targetSelector: '[data-tutorial="cover-editor"]', title: "Cover Design", description: "Generate a cover with AI or upload your own", position: "left", tab: "front" },
-  { targetSelector: '[data-tutorial="story"]', title: "Story", description: "Select keywords and let AI generate your story", position: "left", tab: "back" },
-  { targetSelector: '[data-tutorial="timeline"]', title: "Timeline", description: "Record key moments in your life. Drag to reorder", position: "left", tab: "back" },
-  { targetSelector: '[data-tutorial="theme"]', title: "Theme", description: "Choose a back cover design theme", position: "left", tab: "back" },
-  { targetSelector: '[data-tutorial="exit"]', title: "Save & Exit", description: "When done, press this button to save and exit", position: "right", tab: null },
+  { targetSelector: '[data-tutorial="preview"]', title: "Preview", description: "Tap the button to see the front and back", position: "right", tab: null, panel: null },
+  { targetSelector: '[data-tutorial="cover-editor"]', title: "Cover Design", description: "Generate a cover with AI or upload your own", position: "left", tab: "cover", panel: "cover" },
+  { targetSelector: '[data-tutorial="story"]', title: "Story", description: "Select keywords and let AI generate your story", position: "left", tab: "cover", panel: "story" },
+  { targetSelector: '[data-tutorial="timeline"]', title: "Timeline", description: "Record key moments in your life. Drag to reorder", position: "left", tab: "cover", panel: "timeline" },
+  { targetSelector: '[data-tutorial="theme"]', title: "Theme", description: "Choose a back cover design theme", position: "left", tab: "cover", panel: "theme" },
+  { targetSelector: '[data-tutorial="exit"]', title: "Save & Exit", description: "When done, press this button to save and exit", position: "right", tab: null, panel: null },
 ];
 
 export default function TutorialOverlay({
@@ -27,6 +27,8 @@ export default function TutorialOverlay({
   onClose,
   activeTab,
   setActiveTab,
+  coverPanel,
+  setCoverPanel,
   locale,
 }) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -49,21 +51,24 @@ export default function TutorialOverlay({
     }
   }, [isActive, step]);
 
-  // Switch tab when step changes
+  // Switch tab + rail panel when step changes
   useEffect(() => {
     if (!isActive || !step) return;
     if (step.tab && step.tab !== activeTab) {
       setActiveTab(step.tab);
     }
-  }, [currentStep, isActive, step, activeTab, setActiveTab]);
+    if (step.panel && step.panel !== coverPanel) {
+      setCoverPanel(step.panel);
+    }
+  }, [currentStep, isActive, step, activeTab, setActiveTab, coverPanel, setCoverPanel]);
 
-  // Measure target after tab switch settles
+  // Measure target after tab/panel switch settles
   useEffect(() => {
     if (!isActive) return;
     // Small delay to let tab content render
     const timer = setTimeout(measureTarget, 150);
     return () => clearTimeout(timer);
-  }, [currentStep, isActive, activeTab, measureTarget]);
+  }, [currentStep, isActive, activeTab, coverPanel, measureTarget]);
 
   // Reset step on open
   useEffect(() => {

@@ -1,8 +1,14 @@
 "use client";
 
-import { UNIFIED_THEMES } from "../themeConfig";
+import { useState } from "react";
+import { UNIFIED_THEMES, THEME_CATEGORIES } from "../themeConfig";
 
 const THEME_LIST = Object.values(UNIFIED_THEMES);
+
+const T = {
+  ko: { comingSoon: "준비중이에요" },
+  en: { comingSoon: "Coming soon" },
+};
 
 // Mini SVG previews for each theme layout
 function KitschPreview({ theme }) {
@@ -407,53 +413,155 @@ function FullImagePreview() {
   );
 }
 
+function MemorialLightPreview() {
+  return (
+    <svg viewBox="0 0 44 56" className="h-full w-full">
+      <rect width="44" height="56" rx="2" fill="#ece7df" />
+      {/* Title */}
+      <rect x="11" y="10" width="22" height="2" rx="1" fill="#3a352e" opacity="0.8" />
+      {/* Subtitle */}
+      <rect x="16" y="14" width="12" height="1.2" rx="0.6" fill="#8a8478" />
+      {/* Short divider */}
+      <line x1="19" y1="18" x2="25" y2="18" stroke="#8a8478" strokeWidth="0.5" />
+      {/* Two-column timeline dashes */}
+      {[23, 26.5, 30].map((y) => (
+        <g key={y}>
+          <rect x="7" y={y} width="10" height="1" rx="0.5" fill="#8a8478" opacity="0.7" />
+          <rect x="24" y={y} width="10" height="1" rx="0.5" fill="#8a8478" opacity="0.7" />
+        </g>
+      ))}
+      <line x1="21.5" y1="22" x2="21.5" y2="31" stroke="#8a8478" strokeWidth="0.4" opacity="0.4" />
+      {/* Divider */}
+      <line x1="6" y1="35" x2="38" y2="35" stroke="#8a8478" strokeWidth="0.4" opacity="0.4" />
+      {/* Quote */}
+      <rect x="12" y="39" width="20" height="1" rx="0.5" fill="#3a352e" opacity="0.5" />
+      <rect x="15" y="42" width="14" height="1" rx="0.5" fill="#3a352e" opacity="0.5" />
+      {/* Bottom dot */}
+      <circle cx="22" cy="47" r="0.7" fill="#8a8478" />
+    </svg>
+  );
+}
+
+function MemorialDarkPreview() {
+  return (
+    <svg viewBox="0 0 44 56" className="h-full w-full">
+      <rect width="44" height="56" rx="2" fill="#141414" />
+      {/* Title */}
+      <rect x="11" y="10" width="22" height="2" rx="1" fill="#e8d5b7" opacity="0.9" />
+      {/* Subtitle */}
+      <rect x="16" y="14" width="12" height="1.2" rx="0.6" fill="#a89d89" />
+      {/* Short divider */}
+      <line x1="19" y1="18" x2="25" y2="18" stroke="#a89d89" strokeWidth="0.5" />
+      {/* Full divider */}
+      <line x1="6" y1="21" x2="38" y2="21" stroke="#a89d89" strokeWidth="0.4" opacity="0.4" />
+      {/* Two-column timeline dashes */}
+      {[25, 28.5, 32].map((y) => (
+        <g key={y}>
+          <rect x="7" y={y} width="10" height="1" rx="0.5" fill="#a89d89" opacity="0.7" />
+          <rect x="24" y={y} width="10" height="1" rx="0.5" fill="#a89d89" opacity="0.7" />
+        </g>
+      ))}
+      <line x1="21.5" y1="24" x2="21.5" y2="33" stroke="#a89d89" strokeWidth="0.4" opacity="0.4" />
+      {/* Quote */}
+      <rect x="12" y="40" width="20" height="1" rx="0.5" fill="#e8d5b7" opacity="0.6" />
+      <rect x="15" y="43" width="14" height="1" rx="0.5" fill="#e8d5b7" opacity="0.6" />
+      {/* Bottom label with flanking lines */}
+      <line x1="6" y1="52" x2="15" y2="52" stroke="#a89d89" strokeWidth="0.4" opacity="0.5" />
+      <rect x="17" y="51.3" width="10" height="1.2" rx="0.4" fill="#a89d89" opacity="0.6" />
+      <line x1="29" y1="52" x2="38" y2="52" stroke="#a89d89" strokeWidth="0.4" opacity="0.5" />
+    </svg>
+  );
+}
+
 const PREVIEW_MAP = {
   fullimage: FullImagePreview,
   kitsch: KitschPreview,
   illustration: IllustrationPreview,
   minimalist: MinimalistPreview,
+  memorial_light: MemorialLightPreview,
+  memorial_dark: MemorialDarkPreview,
 };
 
-const ThemeSelector = ({ selectedTheme, onThemeChange }) => {
+const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
+  const t = T[locale] || T.ko;
+  const selectedCategory = THEME_LIST.find(
+    (o) => o.key === selectedTheme,
+  )?.category;
+  const [activeCategory, setActiveCategory] = useState(
+    selectedCategory || "basic",
+  );
+
+  const themesInCategory = THEME_LIST.filter(
+    (o) => o.category === activeCategory,
+  );
+
   return (
     <div className="space-y-3">
-      {THEME_LIST.map((option) => {
-        const isSelected = selectedTheme === option.key;
-        const PreviewComponent = PREVIEW_MAP[option.key];
-        return (
-          <button
-            key={option.key}
-            onClick={() => onThemeChange(option.key)}
-            className={`flex w-full items-center gap-3 rounded-lg border px-3 py-3 text-left transition-all ${
-              isSelected
-                ? "border-[#c4b49a] bg-[#c4b49a]/5"
-                : "border-white/10 bg-white/5 hover:border-white/20"
-            }`}
-          >
-            {/* Mini preview card */}
-            <div className="flex h-14 w-11 shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/10 shadow-sm">
-              {PreviewComponent && <PreviewComponent theme={option} />}
-            </div>
-
-            {/* Text */}
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-[#e8d5b7]">
-                {option.name}
-              </p>
-              <p className="text-xs text-[#9b8b7a]">{option.description}</p>
-            </div>
-
-            {/* Radio indicator */}
-            <div
-              className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors ${
-                isSelected ? "border-[#c4b49a] bg-[#c4b49a]" : "border-white/25"
+      {/* Category tabs */}
+      <div
+        className="scrollbar-hide -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
+        onWheel={(e) => {
+          // 데스크탑 마우스 휠은 기본적으로 세로 스크롤만 발생시키므로,
+          // 세로 휠 입력을 가로 스크롤로 변환해준다(트랙패드 좌우 스와이프는 그대로 동작).
+          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+            e.currentTarget.scrollLeft += e.deltaY;
+          }
+        }}
+      >
+        {THEME_CATEGORIES.map((cat) => {
+          const isActive = activeCategory === cat.key;
+          return (
+            <button
+              key={cat.key}
+              onClick={() => setActiveCategory(cat.key)}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
+                isActive
+                  ? "border-[#c4b49a] bg-[#c4b49a]/15 text-[#e8d5b7]"
+                  : "border-white/10 text-[#9b8b7a] hover:border-white/25"
               }`}
             >
-              {isSelected && <div className="h-2 w-2 rounded-full bg-white" />}
-            </div>
-          </button>
-        );
-      })}
+              {locale === "en" ? cat.nameEn : cat.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Theme grid */}
+      {themesInCategory.length === 0 ? (
+        <div className="flex flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-white/10 py-10 text-center">
+          <p className="text-sm text-[#9b8b7a]">{t.comingSoon}</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-2.5">
+          {themesInCategory.map((option) => {
+            const isSelected = selectedTheme === option.key;
+            const PreviewComponent = PREVIEW_MAP[option.key];
+            return (
+              <button
+                key={option.key}
+                onClick={() => onThemeChange(option.key)}
+                className={`flex flex-col gap-1.5 rounded-lg border p-2 text-left transition-all ${
+                  isSelected
+                    ? "border-[#c4b49a] bg-[#c4b49a]/5"
+                    : "border-white/10 bg-white/5 hover:border-white/20"
+                }`}
+              >
+                <div className="relative flex aspect-44/56 w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/10 shadow-sm">
+                  {PreviewComponent && <PreviewComponent theme={option} />}
+                  {isSelected && (
+                    <div className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#c4b49a]">
+                      <div className="h-1.5 w-1.5 rounded-full bg-white" />
+                    </div>
+                  )}
+                </div>
+                <p className="truncate text-xs font-medium text-[#e8d5b7]">
+                  {option.name}
+                </p>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };

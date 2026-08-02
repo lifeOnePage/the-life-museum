@@ -5,9 +5,6 @@ import { useRouter } from "next/navigation";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { useAuth } from "@/app/contexts/AuthContext";
 
-// 앨범 생성 비용 — 백엔드 COSTS["album_create"]와 동일. 첫 앨범(체험)은 무료.
-const ALBUM_COST = 900;
-
 const T = {
   ko: {
     tabNew: "새 앨범 만들기",
@@ -27,11 +24,9 @@ const T = {
     adding: "추가 중...",
     add: "추가하기",
     errorAdd: "공유 앨범 추가에 실패했습니다.",
-    creditCost: "필요 크레딧",
-    creditBalance: "보유 크레딧",
-    firstFree: "첫 앨범은 무료로 만들 수 있어요",
-    insufficient: "크레딧이 부족해요. 충전 후 다시 시도해 주세요.",
-    buyCredits: "크레딧 구매하기",
+    firstFree: "첫 앨범은 30일간 무료로 체험할 수 있어요",
+    insufficient: "앨범을 만들려면 결제가 필요해요.",
+    buyCredits: "결제하러 가기",
   },
   en: {
     tabNew: "New Album",
@@ -51,11 +46,9 @@ const T = {
     adding: "Adding...",
     add: "Add",
     errorAdd: "Failed to add shared album.",
-    creditCost: "Required",
-    creditBalance: "Your credits",
-    firstFree: "Your first album is free 🎉",
-    insufficient: "Not enough credits. Please top up and try again.",
-    buyCredits: "Buy credits",
+    firstFree: "Your first album gets a free 30-day trial",
+    insufficient: "Payment is required to create an album.",
+    buyCredits: "Proceed to payment",
   },
 };
 
@@ -84,10 +77,11 @@ export default function CreateAlbumModal({
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("new"); // 'new' | 'share'
 
-  // 크레딧: 첫 앨범(체험 미사용)은 무료, 이후는 900C 차감
-  const balance = user?.credits ?? 0;
+  // 첫 앨범(체험 미사용)은 무료, 이후는 결제된 생성권 1개 소모.
+  // (잔액 자체는 화면에 노출하지 않고, 생성 가능 여부만 판단해 결제 유도로 분기)
+  const remainingSlots = user?.credits ?? 0;
   const isFirstFree = !(user?.free_trial_used ?? false);
-  const canAfford = isFirstFree || balance >= ALBUM_COST;
+  const canAfford = isFirstFree || remainingSlots >= 1;
 
   // 새 앨범 만들기 상태
   const [title, setTitle] = useState("");
@@ -104,9 +98,9 @@ export default function CreateAlbumModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // 크레딧 부족(무료 대상 아님) 시 생성 대신 충전 페이지로
+    // 생성권 부족(무료 대상 아님) 시 생성 대신 결제 페이지로
     if (!canAfford) {
-      router.push(`/${locale}/account`);
+      router.push(`/${locale}/account/purchase`);
       onClose();
       return;
     }
@@ -276,27 +270,9 @@ export default function CreateAlbumModal({
               />
             </div>
 
-            {/* 크레딧 안내 */}
-            {isFirstFree ? (
+            {isFirstFree && (
               <div className="rounded-xl border border-[#c4b49a]/30 bg-[#c4b49a]/10 p-3 text-center text-sm text-[#c4b49a]">
                 {t.firstFree}
-              </div>
-            ) : (
-              <div className="space-y-1.5 rounded-xl border border-white/10 bg-white/5 p-4 text-sm">
-                <div className="flex justify-between text-[#9b8b7a]">
-                  <span>{t.creditCost}</span>
-                  <span className="text-[#e8d5b7]">
-                    {ALBUM_COST.toLocaleString()} C
-                  </span>
-                </div>
-                <div className="flex justify-between text-[#9b8b7a]">
-                  <span>{t.creditBalance}</span>
-                  <span
-                    className={canAfford ? "text-[#e8d5b7]" : "text-red-400"}
-                  >
-                    {balance.toLocaleString()} C
-                  </span>
-                </div>
               </div>
             )}
             {!canAfford && (
@@ -323,9 +299,7 @@ export default function CreateAlbumModal({
                   ? t.creating
                   : !canAfford
                     ? t.buyCredits
-                    : isFirstFree
-                      ? t.create
-                      : `${t.create} (${ALBUM_COST.toLocaleString()} C)`}
+                    : t.create}
               </button>
             </div>
           </form>

@@ -74,8 +74,10 @@ function coverSignature(item) {
   ]);
 }
 
-async function generateAlbumCovers(item) {
+async function generateAlbumCovers(item, locale) {
   const themeKey = item.theme || "minimalist";
+  const isMemorialTheme =
+    themeKey === "memorial_light" || themeKey === "memorial_dark";
   const bio = item.lifestory?.content || "";
   const timeline = (item.timeline?.events || []).map((e) => ({
     year: e.timestamp,
@@ -88,7 +90,16 @@ async function generateAlbumCovers(item) {
     ...new Set(stickers.map((s) => s?.src).filter(Boolean)),
   ];
 
-  const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg, stickerImages] =
+  // flowerImg(main: memorial 앞면 장식)와 stickerImages(feat-scene: 사용자 뒷면
+  // 스티커)는 용도가 달라 둘 다 유지 — Promise.all 순서와 구조분해 순서 일치 필수
+  const [
+    frontCoverImg,
+    backCoverImg,
+    themeBgImg,
+    themeStickerImg,
+    flowerImg,
+    stickerImages,
+  ] =
     await Promise.all([
       loadImage(item.coverImage?.url),
       // 뒷면 사진을 아직 저장 안 한 옛 앨범은 편집/공유 페이지와 동일하게
@@ -97,6 +108,9 @@ async function generateAlbumCovers(item) {
       loadImage(THEME_BG_MAP[themeKey] || null),
       themeKey === "kitsch"
         ? loadImage("/images/albumtheme/kitsch 2.png")
+        : Promise.resolve(null),
+      isMemorialTheme
+        ? loadImage("/stickers/memorial/image 406.svg")
         : Promise.resolve(null),
       Promise.all(
         uniqueStickerSrcs.map(async (src) => [src, await loadImage(src)]),
@@ -139,6 +153,10 @@ async function generateAlbumCovers(item) {
       color: item.coverTitleColor || "#ffffff",
       stroke,
       strokeOpacity,
+      themeKey,
+      albumTitle: item.title || "",
+      flowerImg,
+      locale,
     });
     if (frontDataUrl) frontImage = frontDataUrl;
   }
@@ -152,14 +170,14 @@ const T = {
     view: "보러가기",
     share: "공유하기",
     unlock: "잠금 해제",
-    buyCredits: "크레딧 구매",
+    buyCredits: "앨범 구매하기",
   },
   en: {
     edit: "Edit",
     view: "View",
     share: "Share",
     unlock: "Unlock",
-    buyCredits: "Buy Credits",
+    buyCredits: "Buy Albums",
   },
 };
 
@@ -264,7 +282,7 @@ export default function MyShelfPage({ params }) {
           const sig = coverSignature(item);
           const cached = coverCache.get(item.id);
           if (cached && cached.sig === sig) return;
-          generateAlbumCovers(item)
+          generateAlbumCovers(item, locale)
             .then(({ frontImage, backImage }) => {
               coverCache.set(item.id, { sig, frontImage, backImage });
               clearOptimisticCover(item.id);
@@ -282,7 +300,7 @@ export default function MyShelfPage({ params }) {
         });
       })
       .catch((err) => console.error("Failed to fetch library:", err));
-  }, [token]);
+  }, [token, locale]);
 
   // 앨범 클릭 핸들러 (3D에서 호출됨)
   const handleAlbumClick = useCallback((albumIndex, albumData) => {
@@ -302,7 +320,7 @@ export default function MyShelfPage({ params }) {
         if (!json.ok || !json.data) return;
         const d = json.data;
 
-        const { frontImage, backImage } = await generateAlbumCovers(d);
+        const { frontImage, backImage } = await generateAlbumCovers(d, locale);
         coverCache.set(albumData.id, {
           sig: coverSignature(d),
           frontImage,
@@ -323,7 +341,7 @@ export default function MyShelfPage({ params }) {
         );
       })
       .catch((err) => console.error("Failed to fetch record detail:", err));
-  }, []);
+  }, [locale]);
 
   // 앨범 플립 핸들러 (선택된 앨범 클릭 시)
   const handleFlipAlbum = useCallback(() => {
@@ -603,7 +621,7 @@ export default function MyShelfPage({ params }) {
                   </button>
                 )}
                 {selActiveTrial && (
-                  // 체험 기간(30일 이내) → 진열대에서 크레딧 구매 유도
+                  // 체험 기간(30일 이내) → 진열대에서 결제 유도
                   <button
                     onClick={() => setShowUnlockModal(true)}
                     className="flex shrink-0 items-center gap-1.5 rounded-full bg-[#c4b49a] px-5 py-2 text-sm font-semibold text-[#1a1510] transition-colors duration-150 hover:bg-[#e8d5b7]"
@@ -628,10 +646,10 @@ export default function MyShelfPage({ params }) {
         />
       )}
 
-      {/* 진열대 크레딧 구매 유도 (체험 앨범 보유 + 미선택 시) */}
+      {/* 진열대 결제 유도 (체험 앨범 보유 + 미선택 시) */}
       {hasActiveTrial && !selectedAlbum && (
         <button
-          onClick={() => router.push(`/${locale}/account`)}
+          onClick={() => router.push(`/${locale}/account/purchase`)}
           className="pointer-events-auto absolute bottom-6 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[#c4b49a] px-6 py-2.5 text-sm font-semibold text-[#1a1510] shadow-lg transition-colors duration-150 hover:bg-[#e8d5b7]"
         >
           <Sparkles size={15} />

@@ -2,11 +2,13 @@
 
 import { isNativeApp } from "./platform";
 
-// ── 크레딧 패키지 가격표 ──────────────────────────────
+// ── 앨범 결제 상품 가격표 (KRW만 사용 — usd는 PayPal 재도입 대비 보존) ──────
 const PACKAGE_PRICES = {
-  credit_1000: { krw: 10000, usd: 999, label: "1,000 Credits" },
-  credit_3000: { krw: 24000, usd: 2099, label: "3,000 Credits" },
-  credit_6000: { krw: 39000, usd: 3399, label: "6,000 Credits" },
+  album_1: { krw: 9000, usd: 699, label: "1 Album" },
+  album_3: { krw: 24000, usd: 1899, label: "3 Albums" },
+  album_6: { krw: 39000, usd: 2999, label: "6 Albums" },
+  // 임시 결제 테스트용 — 잠시 주석 처리 (PG 최소 결제금액 1,000원 제약)
+  // album_test_1000: { krw: 1000, usd: 100, label: "Test 1 Album" },
 };
 
 // ── 할인 쿠폰 금액 계산 ──────────────────────────────
@@ -47,10 +49,10 @@ const PORTONE_V2_STORE_ID = "store-80711687-4087-4840-90f6-a41f229d5d00";
 //   실결제:  channel-key-8365f96d-7754-4b0e-8364-72b98565054a  (MID MOI6967107) ← 현재
 //   테스트:  channel-key-17cb310e-e15c-4ac2-8911-d426ab37193f  (INIpayTest)
 const KG_INICIS_CHANNEL_KEY = "channel-key-8365f96d-7754-4b0e-8364-72b98565054a";
-// PayPal (해외) — 실결제(라이브) 채널
-//   라이브:  channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054 ← 현재
+// PayPal(해외/USD)은 현재 비활성화 — KRW 결제만 지원. 재도입 시 주석 해제.
+//   라이브:  channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054
 //   테스트:  channel-key-d4b3c48a-8f06-4fab-8b06-c6a1ef309044
-const PAYPAL_CHANNEL_KEY = "channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054";
+// const PAYPAL_CHANNEL_KEY = "channel-key-04062b22-b3ed-4ca5-9be9-b0facc13c054";
 
 /**
  * 네이티브 앱 → 외부 브라우저에서 결제 페이지 열기
@@ -80,7 +82,7 @@ async function requestCreditPurchaseNative({ package: pkg, userId, userName, use
 }
 
 /**
- * 국내 크레딧 결제 (PortOne V2 → KG이니시스 카드)
+ * 앨범 결제 (PortOne V2 → KG이니시스 카드, KRW)
  */
 async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko", coupon }) {
   const pricing = PACKAGE_PRICES[pkg];
@@ -94,7 +96,7 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
     storeId: PORTONE_V2_STORE_ID,
     channelKey: KG_INICIS_CHANNEL_KEY,
     paymentId,
-    orderName: locale === "ko" ? `크레딧 충전 (${pricing.label})` : `Credit Purchase (${pricing.label})`,
+    orderName: locale === "ko" ? `앨범 구매 (${pricing.label})` : `Album Purchase (${pricing.label})`,
     totalAmount: finalAmount.krw,
     currency: "CURRENCY_KRW",
     payMethod: "CARD",
@@ -120,60 +122,57 @@ async function requestCreditPurchaseKR({ package: pkg, userId, userName, userEma
   return { paymentId: response.paymentId, imp_uid: null };
 }
 
+// PayPal(해외 결제)은 현재 비활성화 — KRW 결제만 지원. 재도입 시 주석 해제하고
+// requestCreditPurchase의 method 분기도 함께 복구할 것.
+// /**
+//  * 해외 앨범 결제 (PortOne V2 → PayPal)
+//  */
+// async function requestCreditPurchasePayPal({ package: pkg, userId, userName, userEmail, locale = "en", coupon }) {
+//   const pricing = PACKAGE_PRICES[pkg];
+//   if (!pricing) throw new Error(`Invalid package: ${pkg}`);
+//   const finalAmount = applyCouponDiscount(pricing, coupon);
+//
+//   const PortOne = await import("@portone/browser-sdk/v2");
+//
+//   const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+//
+//   const response = await PortOne.requestPayment({
+//     storeId: PORTONE_V2_STORE_ID,
+//     channelKey: PAYPAL_CHANNEL_KEY,
+//     paymentId,
+//     orderName: `Album Purchase (${pricing.label})`,
+//     totalAmount: finalAmount.usd,
+//     currency: "CURRENCY_USD",
+//     payMethod: "PAYPAL",
+//     // 결제-유저 바인딩
+//     customData: JSON.stringify({ userId: userId || "" }),
+//   });
+//
+//   if (response.code) {
+//     if (response.code === "PAY_PROCESS_CANCELED") {
+//       throw new Error("결제를 취소하였습니다.");
+//     }
+//     throw new Error(response.message || "Payment cancelled.");
+//   }
+//
+//   return { paymentId: response.paymentId, imp_uid: null };
+// }
+
+// ── 통합 함수 ──────────────────
+
 /**
- * 해외 크레딧 결제 (PortOne V2 → PayPal)
- */
-async function requestCreditPurchasePayPal({ package: pkg, userId, userName, userEmail, locale = "en", coupon }) {
-  const pricing = PACKAGE_PRICES[pkg];
-  if (!pricing) throw new Error(`Invalid package: ${pkg}`);
-  const finalAmount = applyCouponDiscount(pricing, coupon);
-
-  const PortOne = await import("@portone/browser-sdk/v2");
-
-  const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
-
-  const response = await PortOne.requestPayment({
-    storeId: PORTONE_V2_STORE_ID,
-    channelKey: PAYPAL_CHANNEL_KEY,
-    paymentId,
-    orderName: `Credit Purchase (${pricing.label})`,
-    totalAmount: finalAmount.usd,
-    currency: "CURRENCY_USD",
-    payMethod: "PAYPAL",
-    // 결제-유저 바인딩
-    customData: JSON.stringify({ userId: userId || "" }),
-  });
-
-  if (response.code) {
-    if (response.code === "PAY_PROCESS_CANCELED") {
-      throw new Error("결제를 취소하였습니다.");
-    }
-    throw new Error(response.message || "Payment cancelled.");
-  }
-
-  return { paymentId: response.paymentId, imp_uid: null };
-}
-
-// ── 통합 함수 (method 기반 분기) ──────────────────
-
-/**
- * method ("domestic" | "international") 에 따라 결제 분기
- * 네이티브 앱이면 외부 브라우저로 결제 페이지 오픈
+ * 앨범 결제 요청 (KRW만 지원). 네이티브 앱이면 외부 브라우저로 결제 페이지 오픈.
  */
 export async function requestCreditPurchase({ package: pkg, userId, userName, userEmail, userPhone, locale = "ko", method = "domestic", couponCode, coupon }) {
   if (isNativeApp()) {
     return requestCreditPurchaseNative({ package: pkg, userId, userName, userEmail, userPhone, locale, method, couponCode });
   }
-  if (method === "domestic") {
-    return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale, coupon });
-  } else {
-    return requestCreditPurchasePayPal({ package: pkg, userId, userName, userEmail, locale, coupon });
-  }
+  return requestCreditPurchaseKR({ package: pkg, userId, userName, userEmail, userPhone, locale, coupon });
 }
 
 // ── 하위호환: 기존 requestAlbumPayment도 export ──
 export async function requestAlbumPayment({ userId, userName, userEmail, locale = "ko" }) {
-  return requestCreditPurchase({ package: "credit_1000", userId, userName, userEmail, locale });
+  return requestCreditPurchase({ package: "album_1", userId, userName, userEmail, locale });
 }
 
 export { APP_SCHEME, WEB_ORIGIN };

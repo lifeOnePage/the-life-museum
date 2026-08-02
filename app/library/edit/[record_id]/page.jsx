@@ -503,6 +503,7 @@ const Index = ({ params }) => {
       { year: "2001", event: "초등학교 입학 - 첫 번째 친구를 만남" },
     ],
     selectedTheme: DEFAULT_THEME,
+    stickers: [],
     titleOverlayEnabled: false,
     titlePosition: "bottom-center",
     titleFont: "Pretendard Variable",
@@ -551,6 +552,9 @@ const Index = ({ params }) => {
           const savedTheme = UNIFIED_THEMES[data.theme]
             ? data.theme
             : DEFAULT_THEME;
+          const savedStickers = Array.isArray(data.stickers)
+            ? data.stickers
+            : [];
           const savedTitleOverlayEnabled = data.coverTitleVisible ?? false;
           const savedTitlePosition = data.coverTitlePosition || "bottom-center";
           const savedTitleFont = data.coverTitleFont || "Pretendard Variable";
@@ -572,6 +576,7 @@ const Index = ({ params }) => {
           );
           setTimeline(timelineData);
           setSelectedTheme(savedTheme);
+          setStickers(savedStickers);
           setTitleOverlayEnabled(savedTitleOverlayEnabled);
           setTitlePosition(savedTitlePosition);
           setTitleFont(savedTitleFont);
@@ -614,6 +619,7 @@ const Index = ({ params }) => {
             bio: bioContent,
             timeline: timelineData,
             selectedTheme: savedTheme,
+            stickers: savedStickers,
             titleOverlayEnabled: savedTitleOverlayEnabled,
             titlePosition: savedTitlePosition,
             titleFont: savedTitleFont,
@@ -662,6 +668,7 @@ const Index = ({ params }) => {
           bgColor: toApiColor(theme.bg),
           keyColor: toApiColor(theme.accent),
           theme: selectedTheme,
+          stickers,
           title: albumTitle,
           subTitle: albumSubtitle,
           coverTitleVisible: titleOverlayEnabled,
@@ -777,6 +784,8 @@ const Index = ({ params }) => {
       JSON.stringify(initialState.current.timeline);
     const isThemeDirty =
       selectedTheme !== initialState.current.selectedTheme ||
+      JSON.stringify(stickers) !==
+        JSON.stringify(initialState.current.stickers || []) ||
       albumTitle !== initialState.current.albumTitle ||
       albumSubtitle !== initialState.current.albumSubtitle ||
       titleOverlayEnabled !== initialState.current.titleOverlayEnabled ||
@@ -896,6 +905,7 @@ const Index = ({ params }) => {
           initialState.current.timeline = [...timeline];
         } else if (r.value.editor === "theme") {
           initialState.current.selectedTheme = selectedTheme;
+          initialState.current.stickers = [...stickers];
           initialState.current.albumTitle = albumTitle;
           initialState.current.albumSubtitle = albumSubtitle;
           initialState.current.titleOverlayEnabled = titleOverlayEnabled;
@@ -996,6 +1006,8 @@ const Index = ({ params }) => {
     JSON.stringify(timeline) !==
       JSON.stringify(initialState.current.timeline) ||
     selectedTheme !== initialState.current.selectedTheme ||
+    JSON.stringify(stickers) !==
+      JSON.stringify(initialState.current.stickers || []) ||
     titleOverlayEnabled !== initialState.current.titleOverlayEnabled ||
     titlePosition !== initialState.current.titlePosition ||
     titleFont !== initialState.current.titleFont ||

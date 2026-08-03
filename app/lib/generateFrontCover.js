@@ -1,3 +1,5 @@
+import { drawUserStickers } from "./generateBackCover";
+
 // Load fonts for canvas rendering via FontFace API
 let fontsReady = false;
 const fontMap = {};
@@ -292,12 +294,15 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
     albumTitle,
     flowerImg,
     locale,
+    stickers,
+    stickerImages,
   } = config;
 
   // 추모 테마는 뒷면과 짝을 이루는 고정 레이아웃(오벌 프레임 + 이름)을 쓴다 —
   // 수동 타이틀 오버레이(title/position/stroke 등)는 이 레이아웃에서는 무시된다.
   if (themeKey === "memorial_light" || themeKey === "memorial_dark") {
-    if (!frontCoverImg && !albumTitle) return null;
+    if (!frontCoverImg && !albumTitle && !(stickers && stickers.length))
+      return null;
     const size = 1024;
     const resolution = 2048;
     const canvas = document.createElement("canvas");
@@ -316,11 +321,12 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
       flowerImg,
       locale,
     );
+    drawUserStickers(ctx, size, stickers, stickerImages);
     return canvas.toDataURL("image/jpeg", 0.95);
   }
 
-  // Need either an image or a title to render anything
-  if (!frontCoverImg && !title) return null;
+  // Need either an image, a title, or a sticker to render anything
+  if (!frontCoverImg && !title && !(stickers && stickers.length)) return null;
 
   // Text metrics/layout below are authored against this base design size.
   const BASE_SIZE = 1024;
@@ -415,6 +421,8 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
   }
 
   ctx.restore();
+
+  drawUserStickers(ctx, size, stickers, stickerImages);
 
   return canvas.toDataURL("image/jpeg", 0.95);
 }

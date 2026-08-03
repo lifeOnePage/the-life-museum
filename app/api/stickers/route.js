@@ -12,6 +12,10 @@ const PACK_LABELS = {
   kitsch: { name: "기본", nameEn: "Basic" },
   retro: { name: "레트로", nameEn: "Retro" },
   memorial: { name: "추모", nameEn: "Memorial" },
+  children: { name: "육아", nameEn: "Children" },
+  deco: { name: "꾸미기", nameEn: "Deco" },
+  travel: { name: "여행", nameEn: "Travel" },
+  wedding: { name: "웨딩", nameEn: "Wedding" },
 };
 
 function toTitleCase(id) {

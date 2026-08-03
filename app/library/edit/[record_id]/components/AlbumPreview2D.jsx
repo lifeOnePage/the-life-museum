@@ -171,12 +171,20 @@ export default function AlbumPreview2D({
 
   const themeKey = selectedTheme || "minimalist";
 
+  // 앞/뒷면에 붙은 스티커를 각각 분리 — side 없는 기존 데이터는 뒷면으로 취급(하위 호환)
+  const frontStickers = (stickers || []).filter((s) => s.side === "front");
+  const backStickers = (stickers || []).filter((s) => s.side !== "front");
+
   // Debounced front cover canvas: run async after render, 200ms debounce
   // prevents blocking the main thread on every prop change
   const [frontCoverDataUrl, setFrontCoverDataUrl] = useState(null);
   useEffect(() => {
     if (typeof document === "undefined") return;
-    if (!frontCoverImg && !(titleOverlayEnabled && albumTitle)) {
+    if (
+      !frontCoverImg &&
+      !(titleOverlayEnabled && albumTitle) &&
+      frontStickers.length === 0
+    ) {
       setFrontCoverDataUrl(null);
       return;
     }
@@ -194,6 +202,10 @@ export default function AlbumPreview2D({
           albumTitle: albumTitle || "",
           flowerImg: themeFlowerImg,
           locale,
+          // 편집 중(스티커 오버레이가 직접 뜬 상태)에는 캔버스에 굽지 않고
+          // DOM 오버레이로만 보여준다 — 그렇지 않으면 두 번 겹쳐 보인다.
+          stickers: stickersEditable === "front" ? [] : frontStickers,
+          stickerImages,
         }),
       );
     }, 200);
@@ -210,6 +222,9 @@ export default function AlbumPreview2D({
     themeKey,
     themeFlowerImg,
     locale,
+    frontStickers,
+    stickerImages,
+    stickersEditable,
   ]);
 
   // Debounced back cover canvas: coalesces rapid sequential updates (image loads,
@@ -231,7 +246,7 @@ export default function AlbumPreview2D({
         themeStickerImg,
         // 편집 중(스티커 오버레이가 직접 뜬 상태)에는 캔버스에 굽지 않고
         // DOM 오버레이로만 보여준다 — 그렇지 않으면 두 번 겹쳐 보인다.
-        stickersEditable ? [] : stickers || [],
+        stickersEditable === "back" ? [] : backStickers,
         stickerImages,
       );
       setBackCoverDataUrl(dataUrl);
@@ -249,7 +264,7 @@ export default function AlbumPreview2D({
     extractedColors,
     themeBgImg,
     themeStickerImg,
-    stickers,
+    backStickers,
     stickersEditable,
     stickerImages,
     onBackCoverDataUrlChange,
@@ -266,9 +281,12 @@ export default function AlbumPreview2D({
   const frontSrc = frontCoverDataUrl || frontCover;
   const backSrc = backCoverDataUrl;
 
-  // ─── 스티커 드래그 배치 (테마 패널 활성 시 뒷면 실제 미리보기 위에서 직접 조작) ───
+  // ─── 스티커 드래그 배치 (스티커 패널 활성 시 앞/뒷면 실제 미리보기 위에서 직접 조작) ───
   const [selectedStickerId, setSelectedStickerId] = useState(null);
+  const frontStageRef = useRef(null);
   const backStageRef = useRef(null);
+  const activeStageRef =
+    stickersEditable === "front" ? frontStageRef : backStageRef;
   const dragRef = useRef(null);
 
   useEffect(() => {
@@ -290,13 +308,13 @@ export default function AlbumPreview2D({
   const handleStickerPointerDown = (e, sticker) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!backStageRef.current) return;
+    if (!activeStageRef.current) return;
     e.target.setPointerCapture(e.pointerId);
     setSelectedStickerId(sticker.id);
     dragRef.current = {
       mode: "move",
       id: sticker.id,
-      rect: backStageRef.current.getBoundingClientRect(),
+      rect: activeStageRef.current.getBoundingClientRect(),
       startX: sticker.x,
       startY: sticker.y,
       pointerX: e.clientX,
@@ -308,10 +326,10 @@ export default function AlbumPreview2D({
   const handleRotateDown = (e, sticker) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!backStageRef.current) return;
+    if (!activeStageRef.current) return;
     e.target.setPointerCapture(e.pointerId);
     setSelectedStickerId(sticker.id);
-    const rect = backStageRef.current.getBoundingClientRect();
+    const rect = activeStageRef.current.getBoundingClientRect();
     dragRef.current = {
       mode: "rotate",
       id: sticker.id,
@@ -324,10 +342,10 @@ export default function AlbumPreview2D({
   const handleResizeDown = (e, sticker) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!backStageRef.current) return;
+    if (!activeStageRef.current) return;
     e.target.setPointerCapture(e.pointerId);
     setSelectedStickerId(sticker.id);
-    const rect = backStageRef.current.getBoundingClientRect();
+    const rect = activeStageRef.current.getBoundingClientRect();
     dragRef.current = {
       mode: "resize",
       id: sticker.id,
@@ -438,6 +456,71 @@ export default function AlbumPreview2D({
     };
   }, []);
 
+  // 앞/뒷면 공통 스티커 오버레이 렌더러 — 드래그 이동/회전/크기조절/삭제 핸들 포함
+  const renderStickerOverlay = (items) =>
+    items.map((s) => {
+      const isSelected = selectedStickerId === s.id;
+      const dispSize = STICKER_BASE_SIZE * s.scale;
+      return (
+        <div
+          key={s.id}
+          className="absolute touch-none select-none"
+          style={{
+            left: `${s.x * 100}%`,
+            top: `${s.y * 100}%`,
+            width: dispSize,
+            height: dispSize,
+            transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`,
+          }}
+        >
+          <img
+            src={s.src}
+            alt=""
+            draggable={false}
+            onPointerDown={(e) => handleStickerPointerDown(e, s)}
+            className={`h-full w-full cursor-grab touch-none object-contain active:cursor-grabbing ${
+              isSelected
+                ? "outline outline-2 outline-offset-2 outline-[#c4b49a]"
+                : ""
+            }`}
+          />
+
+          {isSelected && (
+            <>
+              {/* 회전 손잡이 — 위쪽, 연결선 포함 */}
+              <div className="pointer-events-none absolute bottom-full left-1/2 h-5 w-px -translate-x-1/2 bg-[#c4b49a]" />
+              <button
+                onPointerDown={(e) => handleRotateDown(e, s)}
+                className="absolute bottom-full left-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-5 cursor-grab touch-none items-center justify-center rounded-full border-2 border-[#c4b49a] bg-[#2a2318] text-[#c4b49a] active:cursor-grabbing"
+                title="회전"
+              >
+                <RotateCw className="h-3 w-3" />
+              </button>
+
+              {/* 크기 조절 손잡이 — 우하단 모서리 */}
+              <button
+                onPointerDown={(e) => handleResizeDown(e, s)}
+                className="absolute right-0 bottom-0 h-4 w-4 translate-x-1/2 translate-y-1/2 cursor-nwse-resize touch-none rounded-full border-2 border-[#c4b49a] bg-[#2a2318]"
+                title="크기 조절"
+              />
+
+              {/* 삭제 버튼 — 좌상단 모서리 */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeSticker(s.id);
+                }}
+                className="absolute top-0 left-0 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-white hover:bg-red-500/80"
+                title="삭제"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+            </>
+          )}
+        </div>
+      );
+    });
+
   return (
     <div className="relative h-full w-full">
       <div className="absolute top-2 left-1/2 z-10 flex -translate-x-1/2 items-center gap-2 rounded-lg bg-black/40 px-3 py-1.5 backdrop-blur-sm">
@@ -469,7 +552,22 @@ export default function AlbumPreview2D({
           >
           {/* Front face */}
           <div
-            className="absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl"
+            ref={frontStageRef}
+            onPointerMove={
+              stickersEditable === "front" ? handleStickerPointerMove : undefined
+            }
+            onPointerUp={
+              stickersEditable === "front" ? handleStickerPointerUp : undefined
+            }
+            onPointerCancel={
+              stickersEditable === "front" ? handleStickerPointerUp : undefined
+            }
+            onClickCapture={(e) => {
+              if (stickersEditable === "front" && e.target === e.currentTarget) {
+                setSelectedStickerId(null);
+              }
+            }}
+            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${stickersEditable === "front" ? "touch-none select-none" : ""}`}
             style={{ backfaceVisibility: "hidden" }}
           >
             {frontSrc && (
@@ -477,23 +575,31 @@ export default function AlbumPreview2D({
                 src={frontSrc}
                 alt=""
                 draggable={false}
-                className="h-full w-full object-cover"
+                className={`h-full w-full object-cover ${stickersEditable === "front" ? "pointer-events-none" : ""}`}
               />
             )}
+
+            {stickersEditable === "front" && renderStickerOverlay(frontStickers)}
           </div>
 
           {/* Back face */}
           <div
             ref={backStageRef}
-            onPointerMove={stickersEditable ? handleStickerPointerMove : undefined}
-            onPointerUp={stickersEditable ? handleStickerPointerUp : undefined}
-            onPointerCancel={stickersEditable ? handleStickerPointerUp : undefined}
+            onPointerMove={
+              stickersEditable === "back" ? handleStickerPointerMove : undefined
+            }
+            onPointerUp={
+              stickersEditable === "back" ? handleStickerPointerUp : undefined
+            }
+            onPointerCancel={
+              stickersEditable === "back" ? handleStickerPointerUp : undefined
+            }
             onClickCapture={(e) => {
-              if (stickersEditable && e.target === e.currentTarget) {
+              if (stickersEditable === "back" && e.target === e.currentTarget) {
                 setSelectedStickerId(null);
               }
             }}
-            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${stickersEditable ? "touch-none select-none" : ""}`}
+            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${stickersEditable === "back" ? "touch-none select-none" : ""}`}
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
@@ -504,74 +610,12 @@ export default function AlbumPreview2D({
                 src={backSrc}
                 alt=""
                 draggable={false}
-                className={`h-full w-full object-cover ${stickersEditable ? "pointer-events-none" : ""}`}
+                className={`h-full w-full object-cover ${stickersEditable === "back" ? "pointer-events-none" : ""}`}
               />
             )}
 
-            {stickersEditable &&
-              (stickers || []).map((s) => {
-                const isSelected = selectedStickerId === s.id;
-                const dispSize = STICKER_BASE_SIZE * s.scale;
-                return (
-                  <div
-                    key={s.id}
-                    className="absolute touch-none select-none"
-                    style={{
-                      left: `${s.x * 100}%`,
-                      top: `${s.y * 100}%`,
-                      width: dispSize,
-                      height: dispSize,
-                      transform: `translate(-50%, -50%) rotate(${s.rotation}deg)`,
-                    }}
-                  >
-                    <img
-                      src={s.src}
-                      alt=""
-                      draggable={false}
-                      onPointerDown={(e) => handleStickerPointerDown(e, s)}
-                      className={`h-full w-full cursor-grab touch-none object-contain active:cursor-grabbing ${
-                        isSelected
-                          ? "outline outline-2 outline-offset-2 outline-[#c4b49a]"
-                          : ""
-                      }`}
-                    />
-
-                    {isSelected && (
-                      <>
-                        {/* 회전 손잡이 — 위쪽, 연결선 포함 */}
-                        <div className="pointer-events-none absolute bottom-full left-1/2 h-5 w-px -translate-x-1/2 bg-[#c4b49a]" />
-                        <button
-                          onPointerDown={(e) => handleRotateDown(e, s)}
-                          className="absolute bottom-full left-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-5 cursor-grab touch-none items-center justify-center rounded-full border-2 border-[#c4b49a] bg-[#2a2318] text-[#c4b49a] active:cursor-grabbing"
-                          title="회전"
-                        >
-                          <RotateCw className="h-3 w-3" />
-                        </button>
-
-                        {/* 크기 조절 손잡이 — 우하단 모서리 */}
-                        <button
-                          onPointerDown={(e) => handleResizeDown(e, s)}
-                          className="absolute right-0 bottom-0 h-4 w-4 translate-x-1/2 translate-y-1/2 cursor-nwse-resize touch-none rounded-full border-2 border-[#c4b49a] bg-[#2a2318]"
-                          title="크기 조절"
-                        />
-
-                        {/* 삭제 버튼 — 좌상단 모서리 */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeSticker(s.id);
-                          }}
-                          className="absolute top-0 left-0 flex h-5 w-5 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-black/70 text-white hover:bg-red-500/80"
-                          title="삭제"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+            {stickersEditable === "back" && renderStickerOverlay(backStickers)}
+          </div>
           </div>
         </div>
       </div>

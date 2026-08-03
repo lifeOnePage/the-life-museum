@@ -1091,7 +1091,7 @@ function drawMemorialDarkLayout(
 // ─── User-placed stickers (from the back theme editor) ───
 // stickers: [{ src, x, y, rotation, scale }] with x/y normalized to 0..1
 // stickerImages: { [src]: HTMLImageElement }
-function drawUserStickers(ctx, size, stickers, stickerImages) {
+export function drawUserStickers(ctx, size, stickers, stickerImages) {
   if (!stickers || stickers.length === 0) return;
   for (const sticker of stickers) {
     const img = stickerImages?.[sticker.src];

@@ -8,7 +8,6 @@ import {
   RefreshCw,
   ChevronLeft,
   Upload,
-  FolderOpen,
 } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { getProxiedUrl } from "@/app/lib/proxy";
@@ -41,12 +40,10 @@ function LazyImage({ src, alt, className }) {
 
 const T = {
   ko: {
-    generate: "이미지 생성하기",
-    generateDesc: "AI로 표지 만들기",
-    deviceUpload: "디바이스 업로드",
-    photodrive: "포토드라이브",
-    photodriveDesc: "레코드 사진에서 선택",
-    photodriveHeader: "포토드라이브",
+    deviceUpload: "직접 업로드",
+    photodrive: "드라이브 업로드",
+    photodriveDesc: "레코드 드라이브에서 선택",
+    photodriveHeader: "드라이브 업로드",
     photodriveSelectDesc: "레코드의 사진 중 표지로 사용할 이미지를 선택하세요.",
     noPhotos: "사용 가능한 사진이 없습니다.",
     saving: "저장 중...",
@@ -54,8 +51,6 @@ const T = {
     scrollTop: "맨 위로",
   },
   en: {
-    generate: "Generate Image",
-    generateDesc: "Create cover with AI",
     deviceUpload: "Device Upload",
     photodrive: "Photo Drive",
     photodriveDesc: "Choose from record photos",
@@ -88,6 +83,7 @@ const CoverImageEditor = forwardRef(
   ) => {
     const t = T[locale] || T.ko;
     const [view, setView] = useState("menu");
+    const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState("");
     const [selectedFile, setSelectedFile] = useState(null);
@@ -217,57 +213,88 @@ const CoverImageEditor = forwardRef(
               exit={{ opacity: 0, x: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {/* 주요 옵션: 이미지 생성하기 / 포토드라이브 선택 (나란히) */}
-              <div className="flex gap-4">
-                {/* AI Generate card */}
-                <button
-                  onClick={() => setView("generate")}
-                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
-                >
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                    <Sparkles className="h-4 w-4 text-[#9b8b7a]" />
-                  </div>
-                  <span className="text-sm font-medium text-[#e8d5b7]">
-                    {t.generate}
-                  </span>
-                  <p className="mt-1 text-xs text-[#9b8b7a]">{t.generateDesc}</p>
-                </button>
-
-                {/* Photo drive card */}
-                <button
-                  onClick={() => {
-                    // 사진은 선택 시 해당 1장만 온디맨드로 가져온다 (전량 프리로드 금지)
-                    setView("photodrive");
-                    setSelectedPhotoIndex(-1);
-                  }}
-                  className="flex flex-1 flex-col items-center justify-center rounded-xl border border-white/15 px-4 py-8 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm"
-                >
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                    <FolderOpen className="h-[18px] w-[18px] text-[#9b8b7a]" />
-                  </div>
-                  <span className="text-sm font-medium text-[#e8d5b7]">
-                    {t.photodrive}
-                  </span>
-                  <p className="mt-1 text-xs text-[#9b8b7a]">
-                    {t.photodriveDesc}
-                  </p>
-                </button>
+              {/* Preview + 항상 떠 있는 업로드/AI 아이콘 */}
+              <div className="relative mb-3 h-36 w-full overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                {frontCover && (
+                  <img
+                    src={frontCover}
+                    alt="앞면 커버"
+                    className="h-full w-full object-cover"
+                  />
+                )}
+                <div className="absolute right-2 bottom-2 flex gap-2">
+                  <button
+                    onClick={() => setUploadMenuOpen((o) => !o)}
+                    className={`flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-sm transition ${
+                      uploadMenuOpen
+                        ? "bg-[#c4b49a] text-[#1a1510]"
+                        : "bg-black/60 text-white hover:bg-black/80"
+                    }`}
+                  >
+                    <Upload className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setView("generate")}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
-              {/* 대체 옵션: 디바이스 업로드 (하단, 보조 스타일) */}
-              <label className="mt-4 flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-white/10 bg-transparent px-4 py-3 transition-all hover:border-[#c4b49a] hover:bg-[rgba(103,173,209,0.1)] hover:shadow-sm">
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
-                <Upload className="h-4 w-4 text-[#9b8b7a]" />
-                <span className="text-sm font-medium text-[#9b8b7a]">
-                  {t.deviceUpload}
-                </span>
-                <span className="text-xs text-[#9b8b7a]/70">{t.imageLimit}</span>
-              </label>
+              {/* 업로드 아이콘을 누르면 나타나는 직접 업로드 / 드라이브 업로드 선택 */}
+              <AnimatePresence initial={false}>
+                {uploadMenuOpen && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="flex gap-4 pt-1">
+                      {/* Device upload card */}
+                      <label className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-white/15 py-5 transition-all hover:border-[#c4b49a] hover:bg-white/5">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleFileUpload}
+                        />
+                        <Upload className="h-4 w-4 text-[#9b8b7a]" />
+                        <span className="text-xs font-medium text-[#e8d5b7]">
+                          {t.deviceUpload}
+                        </span>
+                        <p className="text-[10px] text-[#9b8b7a]">
+                          {t.imageLimit}
+                        </p>
+                      </label>
+
+                      {/* Photo drive card */}
+                      <button
+                        onClick={() => {
+                          // 사진은 선택 시 해당 1장만 온디맨드로 가져온다 (전량 프리로드 금지)
+                          setView("photodrive");
+                          setSelectedPhotoIndex(-1);
+                        }}
+                        className="flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-white/15 py-5 transition-all hover:border-[#c4b49a] hover:bg-white/5"
+                      >
+                        <img
+                          src="/cloud_download.svg"
+                          alt=""
+                          className="h-4 w-4"
+                        />
+                        <span className="text-xs font-medium text-[#e8d5b7]">
+                          {t.photodrive}
+                        </span>
+                        <p className="text-[10px] text-[#9b8b7a]">
+                          {t.photodriveDesc}
+                        </p>
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {error && <p className="mt-3 text-xs text-red-500">{error}</p>}
             </motion.div>

@@ -5,6 +5,7 @@ const T = {
     company: "상호명",
     bizNo: "사업자등록번호",
     contact: "연락처",
+    email: "문의 이메일",
     address: "사업장주소",
     ceo: "대표자명",
     mailOrderNo: "통신판매신고번호",
@@ -16,6 +17,7 @@ const T = {
     company: "Company",
     bizNo: "Business Registration No.",
     contact: "Contact",
+    email: "Contact Email",
     address: "Address",
     ceo: "CEO",
     mailOrderNo: "Mail-order Business No.",
@@ -29,6 +31,7 @@ const INFO = {
   company: "(주) 메타메모리즈",
   bizNo: "396-88-03037",
   contact: "070-5236-4839",
+  email: "nextfuturerec@gmail.com",
   address: "서울시 마포구 월드컵로 196, 비105-디195",
   ceo: "김주섭",
   mailOrderNo: "2024-서울마포-2029",
@@ -70,6 +73,16 @@ export default function Footer({ locale = "ko" }) {
         <span className="opacity-40">|</span>
         <span>
           {t.contact} {INFO.contact}
+        </span>
+        <span className="opacity-40">|</span>
+        <span>
+          {t.email}{" "}
+          <a
+            href={`mailto:${INFO.email}`}
+            className="underline underline-offset-2 transition hover:text-[#c4b49a]"
+          >
+            {INFO.email}
+          </a>
         </span>
         <span className="opacity-40">|</span>
         <span>

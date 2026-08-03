@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { UNIFIED_THEMES, THEME_CATEGORIES } from "../themeConfig";
+import ScrollableChipRow from "./ScrollableChipRow";
 
 const THEME_LIST = Object.values(UNIFIED_THEMES);
 
@@ -498,16 +499,7 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
   return (
     <div className="space-y-3">
       {/* Category tabs */}
-      <div
-        className="scrollbar-hide -mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
-        onWheel={(e) => {
-          // 데스크탑 마우스 휠은 기본적으로 세로 스크롤만 발생시키므로,
-          // 세로 휠 입력을 가로 스크롤로 변환해준다(트랙패드 좌우 스와이프는 그대로 동작).
-          if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-            e.currentTarget.scrollLeft += e.deltaY;
-          }
-        }}
-      >
+      <ScrollableChipRow>
         {THEME_CATEGORIES.map((cat) => {
           const isActive = activeCategory === cat.key;
           return (
@@ -524,7 +516,7 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
             </button>
           );
         })}
-      </div>
+      </ScrollableChipRow>
 
       {/* Theme grid */}
       {themesInCategory.length === 0 ? (

@@ -26,6 +26,7 @@ import {
   ImagePlus,
   Palette,
   History,
+  Sticker,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/ui/tabs";
 import { Button } from "./components/ui/button";
@@ -59,7 +60,8 @@ const WalkPreview = dynamic(() => import("./components/WalkPreview"), {
   ssr: false,
 });
 import TutorialOverlay from "./components/TutorialOverlay";
-import ThemeStickerPanel from "./components/ThemeStickerPanel";
+import ThemeSelector from "./components/ThemeSelector";
+import StickerPanel from "./components/StickerPanel";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
 import BackCoverUpload from "./components/BackCoverUpload";
 import { usePhotoDrive } from "./components/usePhotoDrive";
@@ -98,10 +100,11 @@ const T = {
     lastSaved: "마지막 저장",
     tabCover: "앨범 커버",
     tabMemory: "앨범 메모리",
-    railText: "텍스트",
-    railCover: "표지",
-    railBackPhoto: "뒷면 사진",
+    railText: "타이틀",
+    railCover: "앞면",
+    railBackPhoto: "뒷면",
     railTheme: "테마",
+    railSticker: "스티커",
     railStory: "스토리",
     railTimeline: "타임라인",
     titleLabel: "제목",
@@ -109,8 +112,8 @@ const T = {
     titlePlaceholder: "앨범 제목을 입력하세요",
     subtitlePlaceholder: "부제목을 입력하세요",
     showTitle: "표지에 제목 표시하기",
-    coverDesign: "표지 디자인",
-    coverDesignSub: "AI 생성 또는 직접 업로드",
+    coverDesign: "앞면 이미지 설정하기",
+    coverDesignSub: "직접 업로드하거나 AI로 새 이미지를 생성하세요.",
     bgm: "배경음악",
     bgmSelected: "선택됨",
     recordType: "메모리 타입",
@@ -171,10 +174,11 @@ const T = {
     lastSaved: "Last saved",
     tabCover: "Album Cover",
     tabMemory: "Album Memory",
-    railText: "Text",
-    railCover: "Cover",
-    railBackPhoto: "Back Photo",
+    railText: "Title",
+    railCover: "Front",
+    railBackPhoto: "Back",
     railTheme: "Theme",
+    railSticker: "Stickers",
     railStory: "Story",
     railTimeline: "Timeline",
     titleLabel: "Title",
@@ -182,7 +186,7 @@ const T = {
     titlePlaceholder: "Enter album title",
     subtitlePlaceholder: "Enter subtitle",
     showTitle: "Show title on cover",
-    coverDesign: "Cover Design",
+    coverDesign: "Set Front Cover Image",
     coverDesignSub: "AI generate or upload",
     bgm: "Background Music",
     bgmSelected: "Selected",
@@ -395,6 +399,8 @@ const Index = ({ params }) => {
   const [previewFlipped, setPreviewFlipped] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
   const [stickers, setStickers] = useState([]);
+  // 스티커 패널에서 지금 편집 중인 면 — 미리보기 자동 플립에도 사용
+  const [stickerSide, setStickerSide] = useState("back");
 
   // Title overlay state
   const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
@@ -693,8 +699,7 @@ const Index = ({ params }) => {
             recordType === "retro_tape" ? vhsPhotoFrameIndex : undefined,
           vhsImageDuration:
             recordType === "retro_tape" ? vhsImageDuration : undefined,
-          vhsVideoMode:
-            recordType === "retro_tape" ? vhsVideoMode : undefined,
+          vhsVideoMode: recordType === "retro_tape" ? vhsVideoMode : undefined,
           walkCameraSpeed:
             recordType === "exhibit" ? walkCameraSpeed : undefined,
           walkVideoPreview:
@@ -858,7 +863,8 @@ const Index = ({ params }) => {
               },
             );
             const data = await response.json();
-            if (!response.ok) throw new Error(data.error || t.errorSaveBackCover);
+            if (!response.ok)
+              throw new Error(data.error || t.errorSaveBackCover);
           }
         }
         return { editor: "backCover", success: true, url: finalUrl };
@@ -1337,6 +1343,7 @@ const Index = ({ params }) => {
     { key: "cover", label: t.railCover, icon: ImageIcon, side: "front" },
     { key: "backPhoto", label: t.railBackPhoto, icon: ImagePlus, side: "back" },
     { key: "theme", label: t.railTheme, icon: Palette, side: "back" },
+    { key: "sticker", label: t.railSticker, icon: Sticker, side: "back" },
     { key: "story", label: t.railStory, icon: BookOpen, side: "back" },
     { key: "timeline", label: t.railTimeline, icon: History, side: "back" },
   ];
@@ -1585,7 +1592,7 @@ const Index = ({ params }) => {
               selectedTheme={selectedTheme}
               stickers={stickers}
               onStickersChange={setStickers}
-              stickersEditable={coverPanel === "theme"}
+              stickersEditable={coverPanel === "sticker" ? stickerSide : false}
               albumTitle={albumTitle}
               albumSubTitle={albumSubtitle}
               titleOverlayEnabled={titleOverlayEnabled}
@@ -1645,9 +1652,13 @@ const Index = ({ params }) => {
                           key={item.key}
                           onClick={() => {
                             setCoverPanel(item.key);
-                            setPreviewFlipped(item.side === "back");
+                            setPreviewFlipped(
+                              item.key === "sticker"
+                                ? stickerSide === "back"
+                                : item.side === "back",
+                            );
                           }}
-                          className={`flex shrink-0 flex-col items-center gap-1 whitespace-nowrap rounded-lg px-3 py-2.5 text-[11px] font-medium transition-colors lg:w-full lg:text-center lg:break-keep lg:whitespace-normal lg:leading-tight ${
+                          className={`flex shrink-0 flex-col items-center gap-1 rounded-lg px-3 py-2.5 text-[11px] font-medium whitespace-nowrap transition-colors lg:w-full lg:text-center lg:leading-tight lg:break-keep lg:whitespace-normal ${
                             isActive
                               ? "bg-[#c4b49a]/15 text-[#c4b49a]"
                               : "text-[#9b8b7a] hover:bg-white/5 hover:text-[#e8d5b7]"
@@ -1662,145 +1673,150 @@ const Index = ({ params }) => {
 
                   {/* Detail panel */}
                   <div className="scrollbar-accent min-h-0 flex-1 overflow-y-auto px-4 pt-5 pb-10 sm:px-5">
-                    <div className={coverPanel === "text" ? "space-y-5" : "hidden"}>
-                    {/* Title / Subtitle inputs (always visible) */}
-                    <div className="space-y-3">
-                      <div>
-                        <div className="mb-1.5 flex items-center justify-between">
-                          <label className="block text-xs font-medium text-[#9b8b7a]">
-                            {t.titleLabel}
-                          </label>
-                          <span className="text-[10px] text-[#9b8b7a]">
-                            {albumTitle.length}/20
-                          </span>
+                    <div
+                      className={coverPanel === "text" ? "space-y-5" : "hidden"}
+                    >
+                      {/* Title / Subtitle inputs (always visible) */}
+                      <div className="space-y-3">
+                        <div>
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <label className="block text-xs font-medium text-[#9b8b7a]">
+                              {t.titleLabel}
+                            </label>
+                            <span className="text-[10px] text-[#9b8b7a]">
+                              {albumTitle.length}/20
+                            </span>
+                          </div>
+                          <input
+                            type="text"
+                            value={albumTitle}
+                            onChange={(e) =>
+                              setAlbumTitle(e.target.value.slice(0, 20))
+                            }
+                            maxLength={20}
+                            placeholder={t.titlePlaceholder}
+                            className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
+                          />
                         </div>
-                        <input
-                          type="text"
-                          value={albumTitle}
-                          onChange={(e) =>
-                            setAlbumTitle(e.target.value.slice(0, 20))
-                          }
-                          maxLength={20}
-                          placeholder={t.titlePlaceholder}
-                          className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
-                        />
-                      </div>
-                      <div>
-                        <div className="mb-1.5 flex items-center justify-between">
-                          <label className="block text-xs font-medium text-[#9b8b7a]">
-                            {t.subtitleLabel}
-                          </label>
-                          <span className="text-[10px] text-[#9b8b7a]">
-                            {albumSubtitle.length}/25
-                          </span>
+                        <div>
+                          <div className="mb-1.5 flex items-center justify-between">
+                            <label className="block text-xs font-medium text-[#9b8b7a]">
+                              {t.subtitleLabel}
+                            </label>
+                            <span className="text-[10px] text-[#9b8b7a]">
+                              {albumSubtitle.length}/25
+                            </span>
+                          </div>
+                          <input
+                            type="text"
+                            value={albumSubtitle}
+                            onChange={(e) =>
+                              setAlbumSubtitle(e.target.value.slice(0, 25))
+                            }
+                            maxLength={25}
+                            placeholder={t.subtitlePlaceholder}
+                            className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
+                          />
                         </div>
-                        <input
-                          type="text"
-                          value={albumSubtitle}
-                          onChange={(e) =>
-                            setAlbumSubtitle(e.target.value.slice(0, 25))
-                          }
-                          maxLength={25}
-                          placeholder={t.subtitlePlaceholder}
-                          className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
-                        />
                       </div>
-                    </div>
 
-                    {/* Title Overlay Section - on/off switch, no separate collapse */}
-                    <div className="rounded-lg border border-white/10">
-                      <div className="flex items-center justify-between px-4 py-3">
-                        <span className="text-sm font-semibold text-[#e8d5b7]">
-                          {t.showTitle}
-                        </span>
-                        <button
-                          type="button"
-                          role="switch"
-                          aria-checked={titleOverlayEnabled}
-                          onClick={() => {
-                            const next = !titleOverlayEnabled;
-                            setTitleOverlayEnabled(next);
-                            if (next) setPreviewFlipped(false);
-                          }}
-                          className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
-                            titleOverlayEnabled
-                              ? "bg-[#c4b49a]"
-                              : "bg-[#9b8b7a]/40"
-                          }`}
-                        >
-                          <span
-                            className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                      {/* Title Overlay Section - on/off switch, no separate collapse */}
+                      <div className="rounded-lg border border-white/10">
+                        <div className="flex items-center justify-between px-4 py-3">
+                          <span className="text-sm font-semibold text-[#e8d5b7]">
+                            {t.showTitle}
+                          </span>
+                          <button
+                            type="button"
+                            role="switch"
+                            aria-checked={titleOverlayEnabled}
+                            onClick={() => {
+                              const next = !titleOverlayEnabled;
+                              setTitleOverlayEnabled(next);
+                              if (next) setPreviewFlipped(false);
+                            }}
+                            className={`relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors ${
                               titleOverlayEnabled
-                                ? "translate-x-[18px]"
-                                : "translate-x-[3px]"
+                                ? "bg-[#c4b49a]"
+                                : "bg-[#9b8b7a]/40"
                             }`}
-                          />
-                        </button>
-                      </div>
-
-                      {titleOverlayEnabled && (
-                        <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                          <TitleOverlayEditor
-                            position={titlePosition}
-                            font={titleFont}
-                            color={titleColor}
-                            stroke={titleStroke}
-                            strokeOpacity={titleStrokeOpacity}
-                            onPositionChange={setTitlePosition}
-                            onFontChange={setTitleFont}
-                            onColorChange={setTitleColor}
-                            onStrokeChange={setTitleStroke}
-                            onStrokeOpacityChange={setTitleStrokeOpacity}
-                            locale={locale}
-                          />
+                          >
+                            <span
+                              className={`inline-block h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+                                titleOverlayEnabled
+                                  ? "translate-x-[18px]"
+                                  : "translate-x-[3px]"
+                              }`}
+                            />
+                          </button>
                         </div>
-                      )}
-                    </div>
+
+                        {titleOverlayEnabled && (
+                          <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                            <TitleOverlayEditor
+                              position={titlePosition}
+                              font={titleFont}
+                              color={titleColor}
+                              stroke={titleStroke}
+                              strokeOpacity={titleStrokeOpacity}
+                              onPositionChange={setTitlePosition}
+                              onFontChange={setTitleFont}
+                              onColorChange={setTitleColor}
+                              onStrokeChange={setTitleStroke}
+                              onStrokeOpacityChange={setTitleStrokeOpacity}
+                              locale={locale}
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* Cover Design panel */}
                     <div
                       data-tutorial="cover-editor"
-                      className={coverPanel === "cover" ? "space-y-3" : "hidden"}
+                      className={
+                        coverPanel === "cover" ? "space-y-3" : "hidden"
+                      }
                     >
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-[#e8d5b7]">
+                      <div>
+                        <span className="block text-sm font-semibold text-[#e8d5b7]">
                           {t.coverDesign}
                         </span>
-                        <span className="text-[11px] text-[#9b8b7a]">
+                        <span className="mt-1 block text-[11px] text-[#9b8b7a]">
                           {t.coverDesignSub}
                         </span>
                       </div>
                       <CoverImageEditor
-                                ref={coverRef}
-                                record_id={record_id}
-                                onImageGenerated={setFrontCover}
-                                frontCover={frontCover}
-                                initialFrontCover={
-                                  initialState.current.frontCover
-                                }
-                                photoMedia={photoDrive.photoMedia}
-                                photoBlobUrls={photoDrive.photoBlobUrls}
-                                onRefreshPhotos={photoDrive.refresh}
-                                isRefreshing={photoDrive.isRefreshing}
-                                isLoading={photoDrive.isLoading}
-                                preloadBlobs={photoDrive.preloadBlobs}
-                                locale={locale}
-                                isAdmin={isAdmin}
-                                onRequestAIConsent={(type) => {
-                                  if (hasAIConsent())
-                                    return Promise.resolve(true);
-                                  return new Promise((resolve) => {
-                                    consentResolveRef.current = resolve;
-                                    setShowAIConsent(type);
-                                  });
-                                }}
-                              />
+                        ref={coverRef}
+                        record_id={record_id}
+                        onImageGenerated={setFrontCover}
+                        frontCover={frontCover}
+                        initialFrontCover={initialState.current.frontCover}
+                        photoMedia={photoDrive.photoMedia}
+                        photoBlobUrls={photoDrive.photoBlobUrls}
+                        onRefreshPhotos={photoDrive.refresh}
+                        isRefreshing={photoDrive.isRefreshing}
+                        isLoading={photoDrive.isLoading}
+                        preloadBlobs={photoDrive.preloadBlobs}
+                        locale={locale}
+                        isAdmin={isAdmin}
+                        onRequestAIConsent={(type) => {
+                          if (hasAIConsent()) return Promise.resolve(true);
+                          return new Promise((resolve) => {
+                            consentResolveRef.current = resolve;
+                            setShowAIConsent(type);
+                          });
+                        }}
+                      />
                     </div>
 
                     {/* Back Cover Image panel */}
-                    <div className={coverPanel === "backPhoto" ? "space-y-3" : "hidden"}>
-                      <span className="text-sm font-semibold text-[#e8d5b7]">
+                    <div
+                      className={
+                        coverPanel === "backPhoto" ? "space-y-3" : "hidden"
+                      }
+                    >
+                      <span className="block text-sm font-semibold text-[#e8d5b7]">
                         {t.backCoverImage}
                       </span>
                       <BackCoverUpload
@@ -1808,6 +1824,7 @@ const Index = ({ params }) => {
                         record_id={record_id}
                         backCoverImageUrl={backCoverImageUrl}
                         onUrlChange={setBackCoverImageUrl}
+                        frontCover={frontCover}
                         photoMedia={photoDrive.photoMedia}
                         photoBlobUrls={photoDrive.photoBlobUrls}
                         onRefreshPhotos={photoDrive.refresh}
@@ -1821,7 +1838,9 @@ const Index = ({ params }) => {
                     {/* Theme panel */}
                     <div
                       data-tutorial="theme"
-                      className={coverPanel === "theme" ? "space-y-5" : "hidden"}
+                      className={
+                        coverPanel === "theme" ? "space-y-5" : "hidden"
+                      }
                     >
                       <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#2a2318] px-4 py-3.5">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c4b49a]/10">
@@ -1833,12 +1852,31 @@ const Index = ({ params }) => {
                       </div>
 
                       {coverPanel === "theme" && (
-                        <ThemeStickerPanel
-                          locale={locale}
-                          theme={selectedTheme}
+                        <ThemeSelector
+                          selectedTheme={selectedTheme}
                           onThemeChange={setSelectedTheme}
+                          locale={locale}
+                        />
+                      )}
+                    </div>
+
+                    {/* Sticker panel */}
+                    <div
+                      data-tutorial="sticker"
+                      className={
+                        coverPanel === "sticker" ? "space-y-5" : "hidden"
+                      }
+                    >
+                      {coverPanel === "sticker" && (
+                        <StickerPanel
+                          locale={locale}
                           stickers={stickers}
                           onStickersChange={setStickers}
+                          activeSide={stickerSide}
+                          onActiveSideChange={(side) => {
+                            setStickerSide(side);
+                            setPreviewFlipped(side === "back");
+                          }}
                         />
                       )}
                     </div>
@@ -1846,190 +1884,186 @@ const Index = ({ params }) => {
                     {/* Story panel */}
                     <div
                       data-tutorial="story"
-                      className={coverPanel === "story" ? "space-y-3" : "hidden"}
+                      className={
+                        coverPanel === "story" ? "space-y-3" : "hidden"
+                      }
                     >
                       <span className="text-sm font-semibold text-[#e8d5b7]">
                         {t.story}
                       </span>
                       {/* Keyword chips section */}
-                              <div>
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-xs font-medium text-[#9b8b7a]">
-                                    {t.keywordSelect}
-                                  </span>
-                                  <span
-                                    onClick={() =>
-                                      setKeywordHelpOpen(!keywordHelpOpen)
-                                    }
-                                    className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-colors hover:text-[#c4a882] ${keywordHelpOpen ? "text-[#c4b49a]" : "text-[#9b8b7a]"}`}
-                                  >
-                                    <HelpCircle className="h-3.5 w-3.5" />
-                                  </span>
-                                  {usedChips.size > 0 && (
-                                    <span className="text-[11px] text-[#9b8b7a]">
-                                      {t.keywordSelected(usedChips.size)}
-                                    </span>
-                                  )}
-                                </div>
-                                <AnimatePresence>
-                                  {keywordHelpOpen && (
-                                    <motion.div
-                                      initial={{ opacity: 0, height: 0 }}
-                                      animate={{ opacity: 1, height: "auto" }}
-                                      exit={{ opacity: 0, height: 0 }}
-                                      transition={{ duration: 0.15 }}
-                                      className="overflow-hidden"
-                                    >
-                                      <div className="mt-1.5 rounded-lg border border-white/10 bg-[#2a2318] px-3 py-2.5 shadow-sm">
-                                        <p className="text-[11px] leading-relaxed text-[#9b8b7a]">
-                                          {t.keywordHelp}
-                                        </p>
-                                      </div>
-                                    </motion.div>
-                                  )}
-                                </AnimatePresence>
-
-                                <div className="mt-2 flex flex-wrap gap-1.5">
-                                  {(keywordsExpanded
-                                    ? KEYWORD_CHIPS
-                                    : KEYWORD_CHIPS.slice(0, 3)
-                                  ).map((chip) => {
-                                    const isUsed = usedChips.has(chip);
-                                    return (
-                                      <button
-                                        key={chip}
-                                        type="button"
-                                        onClick={() =>
-                                          isUsed
-                                            ? handleChipRemove(chip)
-                                            : handleChipClick(chip)
-                                        }
-                                        className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
-                                          isUsed
-                                            ? "border border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
-                                            : "border border-white/15 bg-white/5 text-[#9b8b7a] hover:border-[#c4b49a] hover:text-[#c4b49a]"
-                                        }`}
-                                      >
-                                        {isUsed ? `${chip} ✕` : `+ ${chip}`}
-                                      </button>
-                                    );
-                                  })}
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      setKeywordsExpanded(!keywordsExpanded)
-                                    }
-                                    className="rounded-full border border-dashed border-white/15 px-3 py-1 text-[11px] font-medium text-[#9b8b7a] transition-colors hover:border-[#c4b49a] hover:text-[#c4b49a]"
-                                  >
-                                    {keywordsExpanded
-                                      ? t.keywordsLess
-                                      : t.keywordsMore(
-                                          KEYWORD_CHIPS.length - 3,
-                                        )}
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Text input area with selected chips */}
-                              <div className="min-h-50 w-full rounded-lg bg-[#2e2720] px-4 pt-3 pb-3">
-                                {usedChips.size > 0 && (
-                                  <div className="mb-2 flex flex-wrap gap-1.5">
-                                    {[...usedChips].map((chip) => (
-                                      <span
-                                        key={chip}
-                                        className="inline-flex items-center gap-1 rounded-full border border-[#c4b49a] bg-[#c4b49a]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#c4b49a]"
-                                      >
-                                        {chip}
-                                        <button
-                                          type="button"
-                                          onClick={() => handleChipRemove(chip)}
-                                          className="ml-0.5 text-[#c4b49a]/60 transition-colors hover:text-[#c4b49a]"
-                                        >
-                                          <X className="h-3 w-3" />
-                                        </button>
-                                      </span>
-                                    ))}
-                                  </div>
-                                )}
-                                <Textarea
-                                  value={bio}
-                                  onChange={(e) =>
-                                    setBio(e.target.value.slice(0, 250))
-                                  }
-                                  placeholder={
-                                    usedChips.size > 0
-                                      ? t.placeholderWithChips
-                                      : t.placeholderNoChips
-                                  }
-                                  className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:ring-0 focus:outline-none"
-                                />
-                              </div>
-
-                              {/* Character count */}
-                              <div className="flex items-center justify-between">
-                                <p
-                                  className={`text-[11px] ${getFullBioText().length >= 250 ? "text-red-400" : "text-[#9b8b7a]/60"}`}
-                                >
-                                  {t.charCount(getFullBioText().length)}
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-medium text-[#9b8b7a]">
+                            {t.keywordSelect}
+                          </span>
+                          <span
+                            onClick={() => setKeywordHelpOpen(!keywordHelpOpen)}
+                            className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded-full transition-colors hover:text-[#c4a882] ${keywordHelpOpen ? "text-[#c4b49a]" : "text-[#9b8b7a]"}`}
+                          >
+                            <HelpCircle className="h-3.5 w-3.5" />
+                          </span>
+                          {usedChips.size > 0 && (
+                            <span className="text-[11px] text-[#9b8b7a]">
+                              {t.keywordSelected(usedChips.size)}
+                            </span>
+                          )}
+                        </div>
+                        <AnimatePresence>
+                          {keywordHelpOpen && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.15 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="mt-1.5 rounded-lg border border-white/10 bg-[#2a2318] px-3 py-2.5 shadow-sm">
+                                <p className="text-[11px] leading-relaxed text-[#9b8b7a]">
+                                  {t.keywordHelp}
                                 </p>
-                                {bioError && (
-                                  <p className="text-xs text-red-500">
-                                    {bioError}
-                                  </p>
-                                )}
                               </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
 
-                              {/* Generation count */}
-                              {!isAdmin && (
-                                <div className="flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
-                                  <span className="text-xs text-[#c4b49a]">
-                                    {t.genCount}
-                                  </span>
-                                  <span
-                                    className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
-                                  >
-                                    {storyGenCount}/3
-                                  </span>
-                                </div>
-                              )}
-
-                              {!isAdmin && storyRemainingGens <= 0 && (
-                                <div className="rounded-lg bg-red-500/10 px-3 py-2">
-                                  <p className="text-xs text-red-500">
-                                    {t.genExhausted}
-                                  </p>
-                                </div>
-                              )}
-
-                              {/* Generate button */}
-                              <Button
-                                onClick={handleGenerate}
-                                disabled={
-                                  isGenerating ||
-                                  !getFullBioText() ||
-                                  storyRemainingGens <= 0
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {(keywordsExpanded
+                            ? KEYWORD_CHIPS
+                            : KEYWORD_CHIPS.slice(0, 3)
+                          ).map((chip) => {
+                            const isUsed = usedChips.has(chip);
+                            return (
+                              <button
+                                key={chip}
+                                type="button"
+                                onClick={() =>
+                                  isUsed
+                                    ? handleChipRemove(chip)
+                                    : handleChipClick(chip)
                                 }
-                                size="sm"
-                                className="h-8 w-full bg-[#c4b49a] text-xs text-[#1a1510] hover:bg-[#e8d5b7]"
+                                className={`rounded-full px-3 py-1 text-[11px] font-medium transition-all ${
+                                  isUsed
+                                    ? "border border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
+                                    : "border border-white/15 bg-white/5 text-[#9b8b7a] hover:border-[#c4b49a] hover:text-[#c4b49a]"
+                                }`}
                               >
-                                {isGenerating ? (
-                                  <>
-                                    <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
-                                    {t.generating}
-                                  </>
-                                ) : (
-                                  <>
-                                    <Sparkles className="mr-1.5 h-3 w-3" />
-                                    {t.generateStory}
-                                  </>
-                                )}
-                              </Button>
+                                {isUsed ? `${chip} ✕` : `+ ${chip}`}
+                              </button>
+                            );
+                          })}
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setKeywordsExpanded(!keywordsExpanded)
+                            }
+                            className="rounded-full border border-dashed border-white/15 px-3 py-1 text-[11px] font-medium text-[#9b8b7a] transition-colors hover:border-[#c4b49a] hover:text-[#c4b49a]"
+                          >
+                            {keywordsExpanded
+                              ? t.keywordsLess
+                              : t.keywordsMore(KEYWORD_CHIPS.length - 3)}
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Text input area with selected chips */}
+                      <div className="min-h-50 w-full rounded-lg bg-[#2e2720] px-4 pt-3 pb-3">
+                        {usedChips.size > 0 && (
+                          <div className="mb-2 flex flex-wrap gap-1.5">
+                            {[...usedChips].map((chip) => (
+                              <span
+                                key={chip}
+                                className="inline-flex items-center gap-1 rounded-full border border-[#c4b49a] bg-[#c4b49a]/10 px-2.5 py-0.5 text-[11px] font-medium text-[#c4b49a]"
+                              >
+                                {chip}
+                                <button
+                                  type="button"
+                                  onClick={() => handleChipRemove(chip)}
+                                  className="ml-0.5 text-[#c4b49a]/60 transition-colors hover:text-[#c4b49a]"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <Textarea
+                          value={bio}
+                          onChange={(e) => setBio(e.target.value.slice(0, 250))}
+                          placeholder={
+                            usedChips.size > 0
+                              ? t.placeholderWithChips
+                              : t.placeholderNoChips
+                          }
+                          className="min-h-36 w-full resize-none border-none bg-transparent p-0 text-sm tracking-[0.7px] text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:ring-0 focus:outline-none"
+                        />
+                      </div>
+
+                      {/* Character count */}
+                      <div className="flex items-center justify-between">
+                        <p
+                          className={`text-[11px] ${getFullBioText().length >= 250 ? "text-red-400" : "text-[#9b8b7a]/60"}`}
+                        >
+                          {t.charCount(getFullBioText().length)}
+                        </p>
+                        {bioError && (
+                          <p className="text-xs text-red-500">{bioError}</p>
+                        )}
+                      </div>
+
+                      {/* Generation count */}
+                      {!isAdmin && (
+                        <div className="flex items-center justify-between rounded-lg border-[1.5px] border-[#c4b49a] px-3 py-2">
+                          <span className="text-xs text-[#c4b49a]">
+                            {t.genCount}
+                          </span>
+                          <span
+                            className={`text-xs font-medium ${storyRemainingGens <= 0 ? "text-red-500" : "text-[#c4b49a]"}`}
+                          >
+                            {storyGenCount}/3
+                          </span>
+                        </div>
+                      )}
+
+                      {!isAdmin && storyRemainingGens <= 0 && (
+                        <div className="rounded-lg bg-red-500/10 px-3 py-2">
+                          <p className="text-xs text-red-500">
+                            {t.genExhausted}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Generate button */}
+                      <Button
+                        onClick={handleGenerate}
+                        disabled={
+                          isGenerating ||
+                          !getFullBioText() ||
+                          storyRemainingGens <= 0
+                        }
+                        size="sm"
+                        className="h-8 w-full bg-[#c4b49a] text-xs text-[#1a1510] hover:bg-[#e8d5b7]"
+                      >
+                        {isGenerating ? (
+                          <>
+                            <RefreshCw className="mr-1.5 h-3 w-3 animate-spin" />
+                            {t.generating}
+                          </>
+                        ) : (
+                          <>
+                            <Sparkles className="mr-1.5 h-3 w-3" />
+                            {t.generateStory}
+                          </>
+                        )}
+                      </Button>
                     </div>
 
                     {/* Timeline panel */}
                     <div
                       data-tutorial="timeline"
-                      className={coverPanel === "timeline" ? "space-y-2" : "hidden"}
+                      className={
+                        coverPanel === "timeline" ? "space-y-2" : "hidden"
+                      }
                     >
                       <span className="text-sm font-semibold text-[#e8d5b7]">
                         {t.timeline}
@@ -2075,9 +2109,7 @@ const Index = ({ params }) => {
                       )}
 
                       {timelineError && (
-                        <p className="text-xs text-red-500">
-                          {timelineError}
-                        </p>
+                        <p className="text-xs text-red-500">{timelineError}</p>
                       )}
                     </div>
                   </div>
@@ -2087,285 +2119,283 @@ const Index = ({ params }) => {
               {/* Memory tab */}
               <TabsContent
                 value="memory"
-                className="scrollbar-accent min-h-0 flex-1 overflow-y-auto px-4 pt-5 sm:px-5 data-[state=inactive]:hidden"
+                className="scrollbar-accent min-h-0 flex-1 overflow-y-auto px-4 pt-5 data-[state=inactive]:hidden sm:px-5"
               >
                 <div className="space-y-5 pb-10">
-                    {/* Record Type Section */}
-                    <div className="rounded-lg border border-white/10">
-                      <button
-                        onClick={() => setRecordTypeOpen(!recordTypeOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#e8d5b7]">
-                            {t.recordType}
-                          </span>
-                          <span className="text-[11px] text-[#9b8b7a]">
-                            {recordType === "exhibit"
-                              ? t.recordTypeExhibit
-                              : t.recordTypeRetroTape}
-                          </span>
-                        </div>
-                        {recordTypeOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {recordTypeOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <div className="flex flex-col gap-2">
-                                {[
-                                  {
-                                    value: "exhibit",
-                                    label: t.recordTypeExhibit,
-                                  },
-                                  {
-                                    value: "retro_tape",
-                                    label: t.recordTypeRetroTape,
-                                  },
-                                ].map((option) => (
-                                  <label
-                                    key={option.value}
-                                    onClick={() => setRecordType(option.value)}
-                                    className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                  {/* Record Type Section */}
+                  <div className="rounded-lg border border-white/10">
+                    <button
+                      onClick={() => setRecordTypeOpen(!recordTypeOpen)}
+                      className="flex w-full items-center justify-between px-4 py-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[#e8d5b7]">
+                          {t.recordType}
+                        </span>
+                        <span className="text-[11px] text-[#9b8b7a]">
+                          {recordType === "exhibit"
+                            ? t.recordTypeExhibit
+                            : t.recordTypeRetroTape}
+                        </span>
+                      </div>
+                      {recordTypeOpen ? (
+                        <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                      )}
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {recordTypeOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                            <div className="flex flex-col gap-2">
+                              {[
+                                {
+                                  value: "exhibit",
+                                  label: t.recordTypeExhibit,
+                                },
+                                {
+                                  value: "retro_tape",
+                                  label: t.recordTypeRetroTape,
+                                },
+                              ].map((option) => (
+                                <label
+                                  key={option.value}
+                                  onClick={() => setRecordType(option.value)}
+                                  className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                                    recordType === option.value
+                                      ? "border-[#c4a882] bg-[#c4a882]/10"
+                                      : "border-white/10 hover:border-white/20"
+                                  }`}
+                                >
+                                  <div
+                                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
                                       recordType === option.value
-                                        ? "border-[#c4a882] bg-[#c4a882]/10"
-                                        : "border-white/10 hover:border-white/20"
+                                        ? "border-[#c4a882]"
+                                        : "border-white/30"
                                     }`}
                                   >
-                                    <div
-                                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                                        recordType === option.value
-                                          ? "border-[#c4a882]"
-                                          : "border-white/30"
-                                      }`}
-                                    >
-                                      {recordType === option.value && (
-                                        <div className="h-2 w-2 rounded-full bg-[#c4a882]" />
-                                      )}
-                                    </div>
-                                    <span className="text-sm text-[#e8d5b7]">
-                                      {option.label}
-                                    </span>
-                                  </label>
-                                ))}
-                              </div>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* BGM Section */}
-                    <div className="rounded-lg border border-white/10">
-                      <button
-                        onClick={() => setBgmOpen(!bgmOpen)}
-                        className="flex w-full items-center justify-between px-4 py-3"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold text-[#e8d5b7]">
-                            {t.bgm}
-                          </span>
-                          {bgmUrl && (
-                            <span className="text-[11px] text-[#c4b49a]">
-                              {t.bgmSelected}
-                            </span>
-                          )}
-                        </div>
-                        {bgmOpen ? (
-                          <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                        )}
-                      </button>
-                      <AnimatePresence initial={false}>
-                        {bgmOpen && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                              <BgmEditor
-                                selectedBgmUrl={bgmUrl}
-                                onBgmChange={handleBgmChange}
-                                locale={locale}
-                              />
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    {/* VHS Settings — only shown for retro_tape */}
-                    {recordType === "retro_tape" && (
-                      <>
-                        {/* Filter Section */}
-                        <div className="rounded-lg border border-white/10">
-                          <button
-                            onClick={() => setVhsFilterOpen(!vhsFilterOpen)}
-                            className="flex w-full items-center justify-between px-4 py-3"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-[#e8d5b7]">
-                                필터
-                              </span>
-                              <span className="text-[11px] text-[#9b8b7a]">
-                                {vhsFilter === "none" ? "없음" : "세피아"}
-                              </span>
-                            </div>
-                            {vhsFilterOpen ? (
-                              <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                            )}
-                          </button>
-                          <AnimatePresence initial={false}>
-                            {vhsFilterOpen && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                                  <div className="flex flex-col gap-2">
-                                    {[
-                                      { value: "none", label: "없음" },
-                                      { value: "sepia", label: "세피아" },
-                                    ].map((option) => (
-                                      <label
-                                        key={option.value}
-                                        onClick={() =>
-                                          setVhsFilter(option.value)
-                                        }
-                                        className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
-                                          vhsFilter === option.value
-                                            ? "border-[#c4a882] bg-[#c4a882]/10"
-                                            : "border-white/10 hover:border-white/20"
-                                        }`}
-                                      >
-                                        <div
-                                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                                            vhsFilter === option.value
-                                              ? "border-[#c4a882]"
-                                              : "border-white/30"
-                                          }`}
-                                        >
-                                          {vhsFilter === option.value && (
-                                            <div className="h-2 w-2 rounded-full bg-[#c4a882]" />
-                                          )}
-                                        </div>
-                                        <span className="text-sm text-[#e8d5b7]">
-                                          {option.label}
-                                        </span>
-                                      </label>
-                                    ))}
+                                    {recordType === option.value && (
+                                      <div className="h-2 w-2 rounded-full bg-[#c4a882]" />
+                                    )}
                                   </div>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        {/* Transition Section */}
-                        <div className="rounded-lg border border-white/10">
-                          <button
-                            onClick={() =>
-                              setVhsTransitionOpen(!vhsTransitionOpen)
-                            }
-                            className="flex w-full items-center justify-between px-4 py-3"
-                          >
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-[#e8d5b7]">
-                                전환 효과
-                              </span>
-                              <span className="text-[11px] text-[#9b8b7a]">
-                                {vhsTransition === "fade" ? "페이드" : "켄번"}
-                              </span>
-                            </div>
-                            {vhsTransitionOpen ? (
-                              <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
-                            ) : (
-                              <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
-                            )}
-                          </button>
-                          <AnimatePresence initial={false}>
-                            {vhsTransitionOpen && (
-                              <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="overflow-hidden"
-                              >
-                                <div className="border-t border-white/8 px-4 pt-3 pb-4">
-                                  <div className="flex flex-col gap-2">
-                                    {[
-                                      { value: "fade", label: "페이드" },
-                                      { value: "kenburns", label: "켄번" },
-                                    ].map((option) => (
-                                      <label
-                                        key={option.value}
-                                        onClick={() =>
-                                          setVhsTransition(option.value)
-                                        }
-                                        className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
-                                          vhsTransition === option.value
-                                            ? "border-[#c4a882] bg-[#c4a882]/10"
-                                            : "border-white/10 hover:border-white/20"
-                                        }`}
-                                      >
-                                        <div
-                                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
-                                            vhsTransition === option.value
-                                              ? "border-[#c4a882]"
-                                              : "border-white/30"
-                                          }`}
-                                        >
-                                          {vhsTransition === option.value && (
-                                            <div className="h-2 w-2 rounded-full bg-[#c4a882]" />
-                                          )}
-                                        </div>
-                                        <span className="text-sm text-[#e8d5b7]">
-                                          {option.label}
-                                        </span>
-                                      </label>
-                                    ))}
-                                  </div>
-                                </div>
-                              </motion.div>
-                            )}
-                          </AnimatePresence>
-                        </div>
-
-                        {/* Photo Frame Section */}
-                        <div className="rounded-lg border border-white/10">
-                          <div className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-semibold text-[#e8d5b7]">
-                                액자 사진
-                              </span>
-                              <span className="text-[11px] text-[#9b8b7a]">
-                                프리뷰에서 액자를 클릭하여 변경
-                              </span>
+                                  <span className="text-sm text-[#e8d5b7]">
+                                    {option.label}
+                                  </span>
+                                </label>
+                              ))}
                             </div>
                           </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* BGM Section */}
+                  <div className="rounded-lg border border-white/10">
+                    <button
+                      onClick={() => setBgmOpen(!bgmOpen)}
+                      className="flex w-full items-center justify-between px-4 py-3"
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-semibold text-[#e8d5b7]">
+                          {t.bgm}
+                        </span>
+                        {bgmUrl && (
+                          <span className="text-[11px] text-[#c4b49a]">
+                            {t.bgmSelected}
+                          </span>
+                        )}
+                      </div>
+                      {bgmOpen ? (
+                        <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                      )}
+                    </button>
+                    <AnimatePresence initial={false}>
+                      {bgmOpen && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                            <BgmEditor
+                              selectedBgmUrl={bgmUrl}
+                              onBgmChange={handleBgmChange}
+                              locale={locale}
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* VHS Settings — only shown for retro_tape */}
+                  {recordType === "retro_tape" && (
+                    <>
+                      {/* Filter Section */}
+                      <div className="rounded-lg border border-white/10">
+                        <button
+                          onClick={() => setVhsFilterOpen(!vhsFilterOpen)}
+                          className="flex w-full items-center justify-between px-4 py-3"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#e8d5b7]">
+                              필터
+                            </span>
+                            <span className="text-[11px] text-[#9b8b7a]">
+                              {vhsFilter === "none" ? "없음" : "세피아"}
+                            </span>
+                          </div>
+                          {vhsFilterOpen ? (
+                            <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                          )}
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {vhsFilterOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                                <div className="flex flex-col gap-2">
+                                  {[
+                                    { value: "none", label: "없음" },
+                                    { value: "sepia", label: "세피아" },
+                                  ].map((option) => (
+                                    <label
+                                      key={option.value}
+                                      onClick={() => setVhsFilter(option.value)}
+                                      className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                                        vhsFilter === option.value
+                                          ? "border-[#c4a882] bg-[#c4a882]/10"
+                                          : "border-white/10 hover:border-white/20"
+                                      }`}
+                                    >
+                                      <div
+                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                                          vhsFilter === option.value
+                                            ? "border-[#c4a882]"
+                                            : "border-white/30"
+                                        }`}
+                                      >
+                                        {vhsFilter === option.value && (
+                                          <div className="h-2 w-2 rounded-full bg-[#c4a882]" />
+                                        )}
+                                      </div>
+                                      <span className="text-sm text-[#e8d5b7]">
+                                        {option.label}
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Transition Section */}
+                      <div className="rounded-lg border border-white/10">
+                        <button
+                          onClick={() =>
+                            setVhsTransitionOpen(!vhsTransitionOpen)
+                          }
+                          className="flex w-full items-center justify-between px-4 py-3"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#e8d5b7]">
+                              전환 효과
+                            </span>
+                            <span className="text-[11px] text-[#9b8b7a]">
+                              {vhsTransition === "fade" ? "페이드" : "켄번"}
+                            </span>
+                          </div>
+                          {vhsTransitionOpen ? (
+                            <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                          )}
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {vhsTransitionOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="border-t border-white/8 px-4 pt-3 pb-4">
+                                <div className="flex flex-col gap-2">
+                                  {[
+                                    { value: "fade", label: "페이드" },
+                                    { value: "kenburns", label: "켄번" },
+                                  ].map((option) => (
+                                    <label
+                                      key={option.value}
+                                      onClick={() =>
+                                        setVhsTransition(option.value)
+                                      }
+                                      className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                                        vhsTransition === option.value
+                                          ? "border-[#c4a882] bg-[#c4a882]/10"
+                                          : "border-white/10 hover:border-white/20"
+                                      }`}
+                                    >
+                                      <div
+                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                                          vhsTransition === option.value
+                                            ? "border-[#c4a882]"
+                                            : "border-white/30"
+                                        }`}
+                                      >
+                                        {vhsTransition === option.value && (
+                                          <div className="h-2 w-2 rounded-full bg-[#c4a882]" />
+                                        )}
+                                      </div>
+                                      <span className="text-sm text-[#e8d5b7]">
+                                        {option.label}
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+
+                      {/* Photo Frame Section */}
+                      <div className="rounded-lg border border-white/10">
+                        <div className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#e8d5b7]">
+                              액자 사진
+                            </span>
+                            <span className="text-[11px] text-[#9b8b7a]">
+                              프리뷰에서 액자를 클릭하여 변경
+                            </span>
+                          </div>
                         </div>
-                      </>
-                    )}
+                      </div>
+                    </>
+                  )}
                 </div>
               </TabsContent>
             </Tabs>
@@ -2478,7 +2508,7 @@ const Index = ({ params }) => {
                       placeholder={t.externalLinkPlaceholder}
                       className="w-full rounded-md border border-white/15 bg-[#2e2720] px-3 py-2 pr-12 text-sm text-[#e8d5b7] outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30"
                     />
-                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-[#9b8b7a]/60">
+                    <span className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-[11px] text-[#9b8b7a]/60">
                       {editExternalLinkTitle.length}/10
                     </span>
                   </div>

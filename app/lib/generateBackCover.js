@@ -1088,10 +1088,224 @@ function drawMemorialDarkLayout(
   ctx.textAlign = "left";
 }
 
+// ─── Travel Diary layout ───
+// 크래프트지 배경 프레임(travel1_back.svg) 위에 트랙리스트 스타일 타임라인을 얹는다.
+// 프레임 원본 에셋이 1080×1080 기준으로 제작되어 있어, size(보통 1024)에
+// 맞춰 전부 scale = size / 1080 배율로 좌표를 환산한다.
+function drawTravelLayout(ctx, size, theme, timeline, frameImg) {
+  const scale = size / 1080;
+  const s = (v) => v * scale;
+
+  // Fallback 배경(프레임 로딩 전에도 자연스럽게) + 프레임 전체
+  ctx.fillStyle = theme.bg;
+  ctx.fillRect(0, 0, size, size);
+  if (frameImg) {
+    ctx.drawImage(frameImg, 0, 0, size, size);
+  }
+
+  const monoFont = monoplexFontLoaded ? '"MonoplexKR"' : "monospace";
+  const titleFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
+  const margin = s(60);
+
+  // "TRACKLIST" 헤더 + 밑줄
+  const headerY = s(96);
+  ctx.font = `700 ${s(30)}px ${titleFont}`;
+  ctx.fillStyle = theme.text;
+  ctx.letterSpacing = `${s(1)}px`;
+  ctx.textAlign = "left";
+  const headerText = "TRACKLIST";
+  ctx.fillText(headerText, margin, headerY);
+  ctx.letterSpacing = "0px";
+  const headerWidth = ctx.measureText(headerText).width;
+  ctx.strokeStyle = theme.text;
+  ctx.globalAlpha = 0.55;
+  ctx.lineWidth = s(1.5);
+  ctx.beginPath();
+  ctx.moveTo(margin, headerY + s(10));
+  ctx.lineTo(margin + headerWidth, headerY + s(10));
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // 타임라인 → 트랙 넘버 리스트
+  const items = (timeline || []).slice(0, 10);
+  let cursorY = headerY + s(56);
+  const rowGap = s(40);
+  const maxTextWidth = size - margin - s(80);
+  ctx.textAlign = "left";
+  items.forEach((item, i) => {
+    const num = String(i + 1).padStart(2, "0");
+    ctx.font = `600 ${s(19)}px ${monoFont}`;
+    ctx.fillStyle = theme.text;
+    ctx.globalAlpha = 0.7;
+    ctx.fillText(num, margin, cursorY);
+    ctx.globalAlpha = 1;
+
+    ctx.font = `400 ${s(19)}px ${monoFont}`;
+    ctx.fillStyle = theme.text;
+    const lines = wrapText(ctx, item.event || "", maxTextWidth - s(40)).slice(
+      0,
+      1,
+    );
+    ctx.fillText(lines[0] || "", margin + s(40), cursorY);
+    cursorY += rowGap;
+  });
+
+  // 좌측 하단 — 지구본 아이콘 + 발행 정보
+  const footerY = size - s(70);
+  const globeCx = margin + s(9);
+  const globeCy = footerY - s(6);
+  const globeR = s(9);
+  ctx.strokeStyle = theme.text;
+  ctx.globalAlpha = 0.6;
+  ctx.lineWidth = s(1.3);
+  ctx.beginPath();
+  ctx.ellipse(globeCx, globeCy, globeR, globeR, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.ellipse(globeCx, globeCy, globeR * 0.42, globeR, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(globeCx - globeR, globeCy);
+  ctx.lineTo(globeCx + globeR, globeCy);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  const year = new Date().getFullYear();
+  const footerLine1 = `RECORDED IN ${year}`;
+  const footerLine2 = "ALL RIGHTS RESERVED.";
+  ctx.font = `600 ${s(13)}px ${monoFont}`;
+  ctx.fillStyle = theme.text;
+  ctx.globalAlpha = 0.75;
+  ctx.letterSpacing = `${s(0.5)}px`;
+  ctx.fillText(footerLine1, margin + globeR * 2 + s(10), footerY - s(11));
+  ctx.fillText(footerLine2, margin + globeR * 2 + s(10), footerY + s(9));
+  ctx.letterSpacing = "0px";
+  ctx.globalAlpha = 1;
+}
+
+function drawHeartIcon(ctx, cx, cy, r, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r * 0.9);
+  ctx.bezierCurveTo(cx - r * 1.6, cy - r * 0.6, cx - r * 0.5, cy - r * 1.6, cx, cy - r * 0.5);
+  ctx.bezierCurveTo(cx + r * 0.5, cy - r * 1.6, cx + r * 1.6, cy - r * 0.6, cx, cy + r * 0.9);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// ─── Couple layout (뒷면) — 크림 배경 + "OUR STORY" + 짧은 글 + 액자 사진 +
+// 2단 넘버링 타임라인. couple_1/couple_2 공용.
+function drawCoupleLayout(ctx, size, bio, timeline, photoImg) {
+  const bg = "#f2ece3";
+  const textMain = "#3a2a22";
+  const textMuted = "#8a7566";
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  const titleFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
+  const monoFont = monoplexFontLoaded ? '"MonoplexKR"' : "monospace";
+
+  // 하트 + "OUR STORY"
+  drawHeartIcon(ctx, size / 2, size * 0.06, size * 0.014, textMain);
+  ctx.textAlign = "center";
+  ctx.font = `700 ${size * 0.032}px ${titleFont}`;
+  ctx.fillStyle = textMain;
+  ctx.letterSpacing = "2px";
+  ctx.fillText("OUR STORY", size / 2, size * 0.1);
+  ctx.letterSpacing = "0px";
+
+  // 짧은 글 (bio)
+  let cursorY = size * 0.145;
+  if (bio) {
+    ctx.font = `400 ${size * 0.0165}px ${titleFont}`;
+    ctx.fillStyle = textMuted;
+    const lines = wrapText(ctx, bio, size * 0.5).slice(0, 4);
+    for (const line of lines) {
+      ctx.fillText(line, size / 2, cursorY);
+      cursorY += size * 0.028;
+    }
+  } else {
+    cursorY += size * 0.02;
+  }
+
+  // 액자 사진
+  const photoW = size * 0.22;
+  const photoH = photoW * 1.05;
+  const photoX = size / 2 - photoW / 2;
+  const photoY = cursorY + size * 0.02;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(photoX - 4, photoY - 4, photoW + 8, photoH + 8);
+  if (photoImg) {
+    const imgRatio = photoImg.width / photoImg.height;
+    const boxRatio = photoW / photoH;
+    let sx, sy, sw, sh;
+    if (imgRatio > boxRatio) {
+      sh = photoImg.height;
+      sw = sh * boxRatio;
+      sx = (photoImg.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = photoImg.width;
+      sh = sw / boxRatio;
+      sx = 0;
+      sy = (photoImg.height - sh) / 2;
+    }
+    ctx.drawImage(photoImg, sx, sy, sw, sh, photoX, photoY, photoW, photoH);
+  } else {
+    ctx.fillStyle = "#d8cfc2";
+    ctx.fillRect(photoX, photoY, photoW, photoH);
+  }
+  ctx.strokeStyle = textMuted;
+  ctx.globalAlpha = 0.4;
+  ctx.lineWidth = 1;
+  ctx.strokeRect(photoX - 4, photoY - 4, photoW + 8, photoH + 8);
+  ctx.globalAlpha = 1;
+
+  // 2단 넘버링 타임라인
+  const items = (timeline || []).slice(0, 10);
+  const left = size * 0.14;
+  const right = size * 0.86;
+  const colGap = size * 0.06;
+  const colWidth = (right - left - colGap) / 2;
+  const rowHeight = size * 0.034;
+  let listY = photoY + photoH + size * 0.09;
+  const maxRows = 5;
+  const leftItems = items.slice(0, maxRows);
+  const rightItems = items.slice(maxRows, maxRows * 2);
+
+  const renderRow = (item, i, colX) => {
+    const y = listY + i * rowHeight;
+    const num = String(i + 1 + (colX > left ? maxRows : 0)).padStart(2, "0");
+    ctx.textAlign = "left";
+    ctx.font = `600 ${size * 0.014}px ${monoFont}`;
+    ctx.fillStyle = textMuted;
+    ctx.fillText(num, colX, y);
+    ctx.font = `400 ${size * 0.0145}px ${titleFont}`;
+    ctx.fillStyle = textMain;
+    ctx.fillText(item.event || "", colX + size * 0.032, y);
+  };
+  leftItems.forEach((item, i) => renderRow(item, i, left));
+  rightItems.forEach((item, i) => renderRow(item, i, left + colWidth + colGap));
+
+  // 하단 카피
+  const rowCount = Math.max(leftItems.length, rightItems.length, 1);
+  const footerY = listY + (rowCount - 1) * rowHeight + size * 0.055;
+  ctx.textAlign = "center";
+  ctx.font = `500 ${size * 0.014}px ${titleFont}`;
+  ctx.fillStyle = textMuted;
+  ctx.letterSpacing = "2px";
+  ctx.fillText("TEN YEARS, OUR STORY", size / 2, Math.min(footerY, size - size * 0.04));
+  ctx.letterSpacing = "0px";
+
+  ctx.textAlign = "left";
+}
+
 // ─── User-placed stickers (from the back theme editor) ───
 // stickers: [{ src, x, y, rotation, scale }] with x/y normalized to 0..1
 // stickerImages: { [src]: HTMLImageElement }
-function drawUserStickers(ctx, size, stickers, stickerImages) {
+export function drawUserStickers(ctx, size, stickers, stickerImages) {
   if (!stickers || stickers.length === 0) return;
   for (const sticker of stickers) {
     const img = stickerImages?.[sticker.src];
@@ -1167,6 +1381,14 @@ export function generateBackCoverDataUrl(
         albumSubTitle,
         themeBgImg,
       );
+      break;
+    case "travel":
+      // themeBgImg = travel1_back.svg 프레임
+      drawTravelLayout(ctx, size, theme, timeline, themeBgImg);
+      break;
+    case "couple_1":
+    case "couple_2":
+      drawCoupleLayout(ctx, size, bio, timeline, backCoverImg);
       break;
     case "memorial_light":
       drawMemorialLightLayout(ctx, size, bio, timeline, albumTitle, albumSubTitle);

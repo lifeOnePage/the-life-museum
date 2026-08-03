@@ -2,11 +2,11 @@
 // 카테고리별 팩 단위로 순차 추가될 예정(각 팩마다 완전히 새로운 레이아웃).
 export const THEME_CATEGORIES = [
   { key: "basic", name: "기본", nameEn: "Basic" },
-  { key: "lifefourcut", name: "인생네컷", nameEn: "Photo Booth" },
+  // { key: "lifefourcut", name: "인생네컷", nameEn: "Photo Booth" },
   { key: "travel", name: "여행", nameEn: "Travel" },
   { key: "couple", name: "연인", nameEn: "Couple" },
-  { key: "parenting", name: "육아", nameEn: "Parenting" },
-  { key: "retro", name: "레트로", nameEn: "Retro" },
+  // { key: "parenting", name: "육아", nameEn: "Parenting" },
+  // { key: "retro", name: "레트로", nameEn: "Retro" },
   { key: "memorial", name: "추모", nameEn: "Memorial" },
 ];
 
@@ -50,6 +50,36 @@ export const UNIFIED_THEMES = {
     bg: "#000000",
     accent: "#ffffff",
     text: "#ffffff",
+  },
+  travel: {
+    key: "travel",
+    category: "travel",
+    name: "Travel Diary",
+    description: "크래프트지 여행 다이어리, 탑승권 스티커",
+    descriptionEn: "Kraft-paper travel diary with a boarding pass sticker",
+    bg: "#c2ab8c",
+    accent: "#a13d2e",
+    text: "#3a3226",
+  },
+  couple_1: {
+    key: "couple_1",
+    category: "couple",
+    name: "Arch Frame",
+    description: "아치형 프레임의 버건디 커플 테마",
+    descriptionEn: "Burgundy couple theme with an arch photo frame",
+    bg: "#6f1f1d",
+    accent: "#f4ece2",
+    text: "#f4ece2",
+  },
+  couple_2: {
+    key: "couple_2",
+    category: "couple",
+    name: "Classic Frame",
+    description: "클래식 사각 프레임의 버건디 커플 테마",
+    descriptionEn: "Burgundy couple theme with a classic rectangular frame",
+    bg: "#6f1f1d",
+    accent: "#f4ece2",
+    text: "#f4ece2",
   },
   memorial_light: {
     key: "memorial_light",

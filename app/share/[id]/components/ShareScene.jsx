@@ -200,6 +200,7 @@ export default function ShareScene({
     const bgMap = {
       kitsch: "/images/albumtheme/kitsch.png",
       illustration: "/images/albumtheme/illustration.png",
+      travel: "/images/albumtheme/travel/travel1_back.svg",
     };
     const bgSrc = bgMap[key];
     if (!bgSrc) {

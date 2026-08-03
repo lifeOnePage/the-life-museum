@@ -29,6 +29,7 @@ const BASE_URL =
 const THEME_BG_MAP = {
   kitsch: "/images/albumtheme/kitsch.png",
   illustration: "/images/albumtheme/illustration.png",
+  travel: "/images/albumtheme/travel/travel1_back.svg",
 };
 
 function loadImage(src) {
@@ -76,13 +77,18 @@ function coverSignature(item) {
 
 async function generateAlbumCovers(item, locale) {
   const themeKey = item.theme || "minimalist";
-  const isMemorialTheme =
-    themeKey === "memorial_light" || themeKey === "memorial_dark";
   const bio = item.lifestory?.content || "";
   const timeline = (item.timeline?.events || []).map((e) => ({
     year: e.timestamp,
     event: e.title,
   }));
+  const frontFrameMap = {
+    memorial_light: "/stickers/memorial/image 406.svg",
+    memorial_dark: "/stickers/memorial/image 406.svg",
+    travel: "/images/albumtheme/travel/travel1_front.svg",
+    couple_1: "/images/albumtheme/couple/couple-1.svg",
+    couple_2: "/images/albumtheme/couple/couple-2.svg",
+  };
 
   // 사용자 배치 스티커 — 고유 src만 로드해 {src: img} 맵 구성 (실패한 이미지는 제외)
   const stickers = Array.isArray(item.stickers) ? item.stickers : [];

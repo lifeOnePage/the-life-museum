@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   X,
   Upload,
-  FolderOpen,
   Film,
   Image as ImageIcon,
 } from "lucide-react";
@@ -56,7 +55,7 @@ const T = {
     currentCover: "현재 표지",
     changeRefLabel: "다른 참고 이미지",
     device: "디바이스",
-    photodrive: "포토드라이브",
+    photodrive: "드라이브 업로드",
     style: "스타일",
     generating: "생성 중...",
     generateMore: "추가 생성하기",
@@ -512,7 +511,7 @@ export default function CoverImageGenerator({
               }}
               className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors"
             >
-              <FolderOpen className="mb-1 h-4 w-4 text-[#9b8b7a]" />
+              <img src="/cloud_download.svg" alt="" className="mb-1 h-4 w-4" />
               <span className="text-[11px] text-[#9b8b7a]">{t.photodrive}</span>
             </button>
           </div>

@@ -6,7 +6,17 @@ import {
   OPACITY_APPEAR_DIST,
   OPACITY_PEAK_DIST,
   OPACITY_HOLD_DIST,
+  SLIDE_FADE_IN,
+  SLIDE_FADE_OUT,
 } from "../lib/constants";
+
+// 진행도(0~1) → opacity 벨 커브: 앞 inFrac fade-in, 중간 hold, 뒤 outFrac fade-out
+function bellOpacity(p, inFrac, outFrac) {
+  if (p <= 0 || p >= 1) return 0;
+  if (inFrac > 0 && p < inFrac) return p / inFrac;
+  if (outFrac > 0 && p > 1 - outFrac) return (1 - p) / outFrac;
+  return 1;
+}
 
 export default function FocusClone({
   texture,
@@ -21,6 +31,10 @@ export default function FocusClone({
   videoPlayStateRef,
   planeId,
   onClick,
+  // 순차 슬라이드쇼용 진행도 기반 페이드 범위(카메라 Z 기준). 지정 시 거리 기반
+  // 대신 사용해, 클론이 가까이 생성돼도 접근하는 동안 0→100→0으로 부드럽게 페이드.
+  fadeStartZ,
+  fadeEndZ,
 }) {
   const meshRef = useRef();
 
@@ -30,32 +44,36 @@ export default function FocusClone({
   useFrame(() => {
     if (!meshRef.current) return;
     const s = stateRef.current;
-    // Use the prop-captured spawn position so this instance never reads a
-    // stateRef value that was mutated for the NEXT clone cycle.
-    meshRef.current.position.set(0, cameraY, cloneZ);
 
-    // Distance-based opacity (4-zone bell curve):
-    // dist ≥ 200              → 0        (보이지 않음)
-    // 200 > dist ≥ 130        → 0 → 1    fade-in  (70단위)
-    // 130 > dist ≥ 80         → 1.0      hold     (50단위)
-    // 80  > dist > 56         → 1 → 0    fade-out (24단위)
-    // dist ≤ 56               → 0        (dismiss)
-    const dist = Math.abs(s.cameraZ - cloneZ);
-    let opacity = 0;
-    if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
-      if (dist >= OPACITY_PEAK_DIST) {
-        // fade-in 구간
-        opacity =
-          (OPACITY_APPEAR_DIST - dist) /
-          (OPACITY_APPEAR_DIST - OPACITY_PEAK_DIST);
-      } else if (dist >= OPACITY_HOLD_DIST) {
-        // hold 구간
-        opacity = 1.0;
-      } else {
-        // fade-out 구간
-        opacity =
-          (dist - FOCUS_DISMISS_DISTANCE) /
-          (OPACITY_HOLD_DIST - FOCUS_DISMISS_DISTANCE);
+    let opacity;
+    if (typeof fadeStartZ === "number" && typeof fadeEndZ === "number") {
+      // 순차 슬라이드쇼: 진행도 p(카메라가 spawn→해제 지점 접근 정도)에 따라
+      // 클론이 멀리(SLIDE_START_DIST)에서 가까이(SLIDE_END_DIST)로 다가오며 페이드.
+      const span = fadeStartZ - fadeEndZ;
+      let p = span > 0 ? (fadeStartZ - s.cameraZ) / span : 1;
+      p = Math.max(0, Math.min(1, p));
+      // 클론을 타겟 plane의 실제 위치(cloneZ)에 고정 → 카메라가 양옆 복도 plane과
+      // 동일한 속도로 접근(중앙 속도 = 복도 속도, 별도 fly-in 가속 없음).
+      // opacity만 진행도 기반으로 0→100→0 부드럽게 페이드.
+      meshRef.current.position.set(0, cameraY, cloneZ);
+      opacity = bellOpacity(p, SLIDE_FADE_IN, SLIDE_FADE_OUT);
+    } else {
+      // Distance-based (prev 클론 / manual): 고정 위치 + 거리 기반 opacity
+      meshRef.current.position.set(0, cameraY, cloneZ);
+      const dist = Math.abs(s.cameraZ - cloneZ);
+      opacity = 0;
+      if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
+        if (dist >= OPACITY_PEAK_DIST) {
+          opacity =
+            (OPACITY_APPEAR_DIST - dist) /
+            (OPACITY_APPEAR_DIST - OPACITY_PEAK_DIST);
+        } else if (dist >= OPACITY_HOLD_DIST) {
+          opacity = 1.0;
+        } else {
+          opacity =
+            (dist - FOCUS_DISMISS_DISTANCE) /
+            (OPACITY_HOLD_DIST - FOCUS_DISMISS_DISTANCE);
+        }
       }
     }
     meshRef.current.material.opacity = opacity;

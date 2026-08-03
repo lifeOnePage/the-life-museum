@@ -383,6 +383,13 @@ export default function SharePage({ params }) {
     }));
   }, [recordData]);
 
+  // 사용자 배치 스티커 — AlbumPreview3D의 로딩 effect 의존성이므로
+  // 렌더마다 새 배열이 만들어지지 않게 useMemo로 참조를 고정한다.
+  const stickers = useMemo(
+    () => (Array.isArray(recordData?.stickers) ? recordData.stickers : []),
+    [recordData],
+  );
+
   const images = useMemo(
     () => (recordData?.mediaList ?? []).filter((m) => m.type === "image"),
     [recordData],
@@ -558,6 +565,7 @@ export default function SharePage({ params }) {
           bio={bio}
           timeline={timeline}
           selectedTheme={selectedTheme}
+          stickers={stickers}
           albumTitle={albumTitle}
           albumSubTitle={subtitle}
           titleOverlayEnabled={titleOverlayEnabled}

@@ -32,5 +32,10 @@ export function getProxiedUrl(url, { force = false } = {}) {
       return url;
     }
   }
-  return `${API_BASE}/scraper/proxy/image?url=${encodeURIComponent(url)}`;
+  // cv(cache version): CORS 캐시 오염 복구용 캐시 키 버전.
+  // 과거 프록시 응답이 ACAO/Vary 없이 24h 캐시되어(crossOrigin 없는 <img>가 저장),
+  // 이후 crossOrigin 로드가 오염된 엔트리에 걸려 CORS 실패를 무한 반복했다.
+  // 백엔드가 항상 ACAO를 부착하도록 수정됐지만, 이미 오염된 클라이언트 캐시를
+  // 즉시 우회하기 위해 키를 1회 갈아준다. (백엔드 수정 배포 후에 올릴 것)
+  return `${API_BASE}/scraper/proxy/image?url=${encodeURIComponent(url)}&cv=2`;
 }

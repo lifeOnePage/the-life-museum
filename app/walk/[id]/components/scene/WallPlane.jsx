@@ -8,6 +8,7 @@ import {
   OPACITY_APPEAR_DIST,
   OPACITY_PEAK_DIST,
   OPACITY_HOLD_DIST,
+  FLING_LOAD_PAUSE_SPEED,
 } from "../lib/constants";
 
 // Compute the nearest wrapped Z position for a plane given the current camera Z
@@ -140,6 +141,10 @@ function WallPlane({
   // Video: 'idle' → 'loading' → 'poster_loaded' → 'video_loading' → 'loaded'
   const loadStateRef = useRef("idle");
   const disposedRef = useRef(false);
+  // 로드 실패 지수 백오프 — 실패 즉시 idle로 돌아가면 다음 프레임에 바로
+  // 재요청되어, 프록시 장애/CORS 차단이 프레임레이트 요청 폭주(self-DDoS)로
+  // 증폭된다(공유 링크 1분 로딩 + 무한 CORS 에러의 원인). 2s→4s→…→최대 16s.
+  const retryStateRef = useRef({ fails: 0, nextAt: 0 });
 
   // Video refs
   const videoRef = useRef(null);
@@ -175,8 +180,7 @@ function WallPlane({
     const img = new Image();
     img.crossOrigin = "anonymous";
 
-    img.onload = () => {
-      if (activeLoadsRef) activeLoadsRef.current--;
+    const onLoaded = () => {
       if (disposedRef.current) return;
       try {
         const mediaAspect = img.width / img.height;
@@ -216,20 +220,21 @@ function WallPlane({
         ctx.drawImage(img, paddingPx, paddingPx, drawW, drawH);
 
         // ── 어두운 이미지 필터 ──
+        // 10×10 축소 캔버스에서 평균 밝기 측정. (기존: 전체 해상도 getImageData로
+        // 최대 4MB 픽셀 리드백 후 100픽셀만 샘플링 — 로드마다 메인 스레드 잔렉 유발)
         const DARK_THRESHOLD = 15;
-        const SAMPLE_GRID = 10;
-        const imageData = ctx.getImageData(paddingPx, paddingPx, drawW, drawH);
-        const px = imageData.data;
-        let total = 0, count = 0;
-        const stepX = Math.max(1, Math.floor(drawW / SAMPLE_GRID));
-        const stepY = Math.max(1, Math.floor(drawH / SAMPLE_GRID));
-        for (let y = 0; y < drawH; y += stepY)
-          for (let x = 0; x < drawW; x += stepX) {
-            const i = (y * drawW + x) * 4;
-            total += (px[i] + px[i + 1] + px[i + 2]) / 3;
-            count++;
-          }
-        if (count > 0 && total / count < DARK_THRESHOLD) {
+        const S = 10;
+        const sc = document.createElement("canvas");
+        sc.width = S;
+        sc.height = S;
+        const sctx = sc.getContext("2d", { willReadFrequently: true });
+        sctx.drawImage(img, 0, 0, S, S);
+        const px = sctx.getImageData(0, 0, S, S).data;
+        let total = 0;
+        for (let i = 0; i < px.length; i += 4) {
+          total += (px[i] + px[i + 1] + px[i + 2]) / 3;
+        }
+        if (total / (S * S) < DARK_THRESHOLD) {
           loadStateRef.current = "loaded"; // 재시도 방지
           return; // 텍스처 미생성 → 벽면 어두운 상태 유지
         }
@@ -249,6 +254,7 @@ function WallPlane({
 
         flickerState.current = { active: false, elapsed: 0, done: true };
         loadStateRef.current = "loaded";
+        retryStateRef.current = { fails: 0, nextAt: 0 };
 
         onTextureLoaded?.(id, tex, boxAspect);
       } catch (err) {
@@ -257,9 +263,20 @@ function WallPlane({
       }
     };
 
+    img.onload = () => {
+      if (activeLoadsRef) activeLoadsRef.current--;
+      // 디코드를 비동기로 강제(img.decode) — drawImage의 메인 스레드 동기
+      // 디코드(프레임 블로킹) 방지. 미지원/실패 시 동기 경로 폴백.
+      if (img.decode) img.decode().then(onLoaded).catch(onLoaded);
+      else onLoaded();
+    };
+
     img.onerror = (err) => {
       if (activeLoadsRef) activeLoadsRef.current--;
       console.error("Image load failed:", url.substring(0, 80), err);
+      const rs = retryStateRef.current;
+      rs.fails += 1;
+      rs.nextAt = performance.now() + Math.min(16000, 1000 * 2 ** rs.fails);
       loadStateRef.current = "idle";
     };
 
@@ -289,8 +306,7 @@ function WallPlane({
     const img = new Image();
     img.crossOrigin = "anonymous";
 
-    img.onload = () => {
-      if (activeLoadsRef) activeLoadsRef.current--;
+    const onPosterLoaded = () => {
       if (disposedRef.current || loadStateRef.current === "idle") return;
 
       try {
@@ -346,6 +362,7 @@ function WallPlane({
 
         flickerState.current = { active: false, elapsed: 0, done: true };
         loadStateRef.current = "poster_loaded";
+        retryStateRef.current = { fails: 0, nextAt: 0 };
 
         // Register with Scene — poster ready, video not yet available
         onTextureLoaded?.(id, tex, boxAspect, { isVideo: true });
@@ -355,9 +372,19 @@ function WallPlane({
       }
     };
 
+    img.onload = () => {
+      if (activeLoadsRef) activeLoadsRef.current--;
+      // 디코드 비동기화 — startLoad와 동일한 이유
+      if (img.decode) img.decode().then(onPosterLoaded).catch(onPosterLoaded);
+      else onPosterLoaded();
+    };
+
     img.onerror = () => {
       if (activeLoadsRef) activeLoadsRef.current--;
       console.error("[WallPlane] Poster load failed:", thumbUrl?.substring(0, 80));
+      const rs = retryStateRef.current;
+      rs.fails += 1;
+      rs.nextAt = performance.now() + Math.min(16000, 1000 * 2 ** rs.fails);
       loadStateRef.current = "idle";
     };
 
@@ -391,6 +418,9 @@ function WallPlane({
         if (activeVideoLoadsRef) activeVideoLoadsRef.current--;
       }
     };
+    // iOS 등에서 preload="none" 비디오가 loadeddata/error를 영영 안 쏘면 동시성
+    // 게이트(2)가 영구 점유될 수 있어 타임아웃으로 강제 해제(성공 시 무해 — 중복 해제 가드됨)
+    setTimeout(releaseVideoConcurrency, 10000);
 
     const video = document.createElement("video");
     video.crossOrigin = "anonymous";
@@ -464,6 +494,7 @@ function WallPlane({
   useEffect(() => {
     disposedRef.current = false;
     loadStateRef.current = "idle";
+    retryStateRef.current = { fails: 0, nextAt: 0 }; // 새 사진은 백오프 초기화
     return () => {
       disposedRef.current = true;
       const mat = frontMatRef.current;
@@ -658,13 +689,57 @@ function WallPlane({
     const distToCamera = Math.abs(cameraZ - wrappedZ);
 
     // ── Lazy loading: 2-tier for video, single-tier for image ──────────────
-    // Tier 1 (2800 units): poster/image load
-    if (loadStateRef.current === "idle" && distToCamera <= FOG_FAR + 800) {
+    // Tier 1 (2800 units): poster/image load.
+    // 강한 휠 플링 중에는 신규 로드 시작을 보류 — 디코드/캔버스/GPU 업로드가
+    // 프레임 예산이 가장 빠듯한 순간에 몰리는 잔렉 방지(플링 감쇠 후 자동 재개).
+    const flinging =
+      (stateRef.current.manualSpeed || 0) > FLING_LOAD_PAUSE_SPEED;
+    if (
+      !flinging &&
+      loadStateRef.current === "idle" &&
+      distToCamera <= FOG_FAR + 800 &&
+      performance.now() >= retryStateRef.current.nextAt // 실패 백오프 대기 중이면 보류
+    ) {
       if (isVideoType) startPosterLoad(); else startLoad();
     }
-    // Tier 2: 포스터 로드 완료 즉시 비디오 로딩 시작 (동시성 게이트 MAX_CONCURRENT_VIDEO_LOADS로만 제어)
-    if (isVideoType && loadStateRef.current === "poster_loaded") {
+    // Tier 2: 포스터 로드 완료 + '근접 시'에만 비디오 엘리먼트 생성.
+    // 거리 무관 생성 시 풀 내 모든 비디오 슬롯이 라이브 <video>+디코더를 보유해
+    // 모바일 디코더 한계(~16개)/메모리를 압박한다(시스템성 잔렉의 원인).
+    // 플링 중에도 보류 — 엘리먼트 생성/디코더 초기화도 메인 스레드 비용.
+    if (
+      !flinging &&
+      isVideoType &&
+      loadStateRef.current === "poster_loaded" &&
+      distToCamera <= 400
+    ) {
       startDeferredVideoLoad();
+    }
+
+    // 멀어진 비디오의 엘리먼트/디코더만 조기 회수(포스터 텍스처는 유지).
+    // 기존 far-dispose(FOG_FAR+200=2200)는 풀 축소 후 corridorSpan(~2000)보다 커서
+    // 도달 불가(데드 코드) — span 기준 임계로 실제 회수되게 한다. 재진입 시
+    // 400 이내에서 재생성(임계 간 히스테리시스로 스래싱 없음).
+    if (
+      isVideoType &&
+      loadStateRef.current === "loaded" &&
+      videoRef.current &&
+      distToCamera > Math.min(FOG_FAR + 200, corridorSpan * 0.4)
+    ) {
+      videoRef.current.pause();
+      videoRef.current.src = "";
+      videoRef.current = null;
+      if (videoTextureRef.current) {
+        videoTextureRef.current.dispose();
+        videoTextureRef.current = null;
+      }
+      if (videoElementMap) {
+        videoElementMap.current.delete(id);
+      }
+      if (mat && posterTextureRef.current && mat.map !== posterTextureRef.current) {
+        mat.map = posterTextureRef.current;
+        mat.needsUpdate = true;
+      }
+      loadStateRef.current = "poster_loaded";
     }
 
     // ── Far-distance dispose ────────────────────────────────────────────────

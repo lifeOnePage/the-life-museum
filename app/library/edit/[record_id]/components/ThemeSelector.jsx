@@ -474,13 +474,51 @@ function MemorialDarkPreview() {
   );
 }
 
+function TravelPreview() {
+  return (
+    <svg viewBox="0 0 44 56" className="h-full w-full">
+      <rect width="44" height="56" rx="2" fill="#c2ab8c" />
+      {/* Title */}
+      <rect x="4" y="6" width="16" height="2" rx="1" fill="#3a3226" opacity="0.85" />
+      <rect x="4" y="9.5" width="12" height="1" rx="0.5" fill="#8a7a63" opacity="0.8" />
+      {/* Stamp */}
+      <circle cx="36" cy="8" r="4.5" fill="none" stroke="#a13d2e" strokeWidth="0.6" opacity="0.8" />
+      {/* Photo window */}
+      <rect x="4" y="13" width="36" height="24" rx="0.5" fill="#4a4a4a" stroke="#fff" strokeWidth="0.6" />
+      {/* Boarding pass sticker overlapping bottom-right of photo */}
+      <g transform="rotate(-4 33 34)">
+        <rect x="24" y="29" width="18" height="10" rx="1" fill="#e8ddc9" />
+        <rect x="24" y="29" width="18" height="3.5" rx="1" fill="#a13d2e" />
+      </g>
+      {/* Bottom caption lines */}
+      <rect x="4" y="42" width="8" height="1.4" rx="0.5" fill="#3a3226" opacity="0.7" />
+      <rect x="4" y="46" width="24" height="1" rx="0.5" fill="#8a7a63" opacity="0.6" />
+      <rect x="4" y="48.5" width="20" height="1" rx="0.5" fill="#8a7a63" opacity="0.6" />
+    </svg>
+  );
+}
+
 const PREVIEW_MAP = {
   fullimage: FullImagePreview,
   kitsch: KitschPreview,
   illustration: IllustrationPreview,
   minimalist: MinimalistPreview,
+  travel: TravelPreview,
   memorial_light: MemorialLightPreview,
   memorial_dark: MemorialDarkPreview,
+};
+
+// 사진 미리보기가 준비된 테마는 손그림 SVG 대신 실제 이미지를 보여준다.
+const PHOTO_PREVIEW_MAP = {
+  minimalist: "/images/themepreview/minimalist.png",
+  kitsch: "/images/themepreview/kitsch.png",
+  illustration: "/images/themepreview/illustration.png",
+  fullimage: "/images/themepreview/full-image.svg",
+  travel: "/images/themepreview/travel-diary.svg",
+  memorial_light: "/images/themepreview/memorial-light.svg",
+  memorial_dark: "/images/themepreview/memorial-dark.svg",
+  couple_1: "/images/themepreview/couple-1.svg",
+  couple_2: "/images/themepreview/couple-2.svg",
 };
 
 const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
@@ -528,6 +566,7 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
           {themesInCategory.map((option) => {
             const isSelected = selectedTheme === option.key;
             const PreviewComponent = PREVIEW_MAP[option.key];
+            const photoPreview = PHOTO_PREVIEW_MAP[option.key];
             return (
               <button
                 key={option.key}
@@ -538,8 +577,16 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
                     : "border-white/10 bg-white/5 hover:border-white/20"
                 }`}
               >
-                <div className="relative flex aspect-44/56 w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/10 shadow-sm">
-                  {PreviewComponent && <PreviewComponent theme={option} />}
+                <div className="relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/10 shadow-sm">
+                  {photoPreview ? (
+                    <img
+                      src={photoPreview}
+                      alt={option.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    PreviewComponent && <PreviewComponent theme={option} />
+                  )}
                   {isSelected && (
                     <div className="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#c4b49a]">
                       <div className="h-1.5 w-1.5 rounded-full bg-white" />

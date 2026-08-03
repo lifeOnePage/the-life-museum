@@ -29,6 +29,7 @@ const BASE_URL =
 const THEME_BG_MAP = {
   kitsch: "/images/albumtheme/kitsch.png",
   illustration: "/images/albumtheme/illustration.png",
+  travel: "/images/albumtheme/travel/travel1_back.svg",
 };
 
 function loadImage(src) {
@@ -74,13 +75,18 @@ function coverSignature(item) {
 
 async function generateAlbumCovers(item, locale) {
   const themeKey = item.theme || "minimalist";
-  const isMemorialTheme =
-    themeKey === "memorial_light" || themeKey === "memorial_dark";
   const bio = item.lifestory?.content || "";
   const timeline = (item.timeline?.events || []).map((e) => ({
     year: e.timestamp,
     event: e.title,
   }));
+  const frontFrameMap = {
+    memorial_light: "/stickers/memorial/image 406.svg",
+    memorial_dark: "/stickers/memorial/image 406.svg",
+    travel: "/images/albumtheme/travel/travel1_front.svg",
+    couple_1: "/images/albumtheme/couple/couple-1.svg",
+    couple_2: "/images/albumtheme/couple/couple-2.svg",
+  };
 
   const [frontCoverImg, backCoverImg, themeBgImg, themeStickerImg, flowerImg] =
     await Promise.all([
@@ -92,9 +98,7 @@ async function generateAlbumCovers(item, locale) {
       themeKey === "kitsch"
         ? loadImage("/images/albumtheme/kitsch 2.png")
         : Promise.resolve(null),
-      isMemorialTheme
-        ? loadImage("/stickers/memorial/image 406.svg")
-        : Promise.resolve(null),
+      loadImage(frontFrameMap[themeKey] || null),
     ]);
 
   const backImage = generateBackCoverDataUrl(

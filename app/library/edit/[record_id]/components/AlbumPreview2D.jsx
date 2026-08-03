@@ -80,12 +80,19 @@ export default function AlbumPreview2D({
       const bgMap = {
         kitsch: "/images/albumtheme/kitsch.png",
         illustration: "/images/albumtheme/illustration.png",
+        travel: "/images/albumtheme/travel/travel1_back.svg",
       };
       const backSrc =
         backCoverImageUrl && backCoverImageUrl !== frontCover
           ? backCoverImageUrl
           : null;
-      const isMemorialTheme = key === "memorial_light" || key === "memorial_dark";
+      const frontFrameMap = {
+        memorial_light: "/stickers/memorial/image 406.svg",
+        memorial_dark: "/stickers/memorial/image 406.svg",
+        travel: "/images/albumtheme/travel/travel1_front.svg",
+        couple_1: "/images/albumtheme/couple/couple-1.svg",
+        couple_2: "/images/albumtheme/couple/couple-2.svg",
+      };
 
       const [frontImg, backImg, bgImg, stickerImg, flowerImg] = await Promise.all([
         loadImg(frontCover),
@@ -94,9 +101,7 @@ export default function AlbumPreview2D({
         key === "kitsch"
           ? loadImg("/images/albumtheme/kitsch 2.png", false)
           : Promise.resolve(null),
-        isMemorialTheme
-          ? loadImg("/stickers/memorial/image 406.svg", false)
-          : Promise.resolve(null),
+        loadImg(frontFrameMap[key] || null, false),
       ]);
 
       if (cancelled) return;

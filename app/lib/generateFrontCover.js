@@ -96,6 +96,192 @@ const MEMORIAL_TEXT = {
   en: { headline: "In loving memory and respect.", label: "MEMORY ALBUM" },
 };
 
+// ─── Travel Diary front cover: kraft-paper frame + photo window ───
+// 프레임 원본 에셋(travel1_front.svg)이 1080×1080 기준으로 제작되어 있어,
+// size(보통 1024)에 맞춰 scale = size / 1080 배율로 좌표를 환산한다.
+// 프레임 안의 "사진 창"은 투명 처리되어 있어 사진을 먼저 그린 뒤 프레임을
+// 그 위에 겹쳐 그리면 창 안으로 사진이 비쳐 보인다.
+function drawTravelFrontLayout(ctx, size, sourceImg, albumTitle, frameImg) {
+  const scale = size / 1080;
+  const s = (v) => v * scale;
+  const bg = "#c2ab8c";
+  const textMain = "#3a3226";
+  const textMuted = "#8a7a63";
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  // 사진 창(투명 컷아웃) 좌표 — travel1_front.svg 실측값
+  const hole = { x: s(62), y: s(226), w: s(944), h: s(625) };
+  if (sourceImg) {
+    const imgRatio = sourceImg.width / sourceImg.height;
+    const boxRatio = hole.w / hole.h;
+    let sx, sy, sw, sh;
+    if (imgRatio > boxRatio) {
+      sh = sourceImg.height;
+      sw = sh * boxRatio;
+      sx = (sourceImg.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = sourceImg.width;
+      sh = sw / boxRatio;
+      sx = 0;
+      sy = (sourceImg.height - sh) / 2;
+    }
+    ctx.drawImage(sourceImg, sx, sy, sw, sh, hole.x, hole.y, hole.w, hole.h);
+  }
+
+  // 프레임(크래프트지 + 탑승권 스티커 + 스탬프) — 사진 창은 투명이라 위에서
+  // 그린 사진이 그대로 비쳐 보인다.
+  if (frameImg) {
+    ctx.drawImage(frameImg, 0, 0, size, size);
+  }
+
+  const titleFont = fontMap["Pretendard Variable"]
+    ? '"Pretendard Variable"'
+    : "sans-serif";
+
+  // 타이틀 — 사진 창 위쪽 여백
+  ctx.textAlign = "left";
+  ctx.fillStyle = textMain;
+  ctx.font = `800 ${s(46)}px ${titleFont}`;
+  ctx.fillText(albumTitle || "A new adventure", s(58), s(88));
+
+  // 서브 캡션
+  ctx.font = `600 ${s(16)}px ${titleFont}`;
+  ctx.fillStyle = textMuted;
+  ctx.letterSpacing = `${s(2.5)}px`;
+  ctx.fillText("TRAVEL · RECORD · REMEMBER", s(58), s(124));
+  ctx.letterSpacing = "0px";
+
+  // 하단 — VOL.1 + 캡션 문구
+  ctx.font = `700 ${s(17)}px ${titleFont}`;
+  ctx.fillStyle = textMain;
+  ctx.fillText("VOL. 1", s(58), s(905));
+
+  ctx.font = `italic 400 ${s(15)}px ${titleFont}`;
+  ctx.fillStyle = textMuted;
+  ctx.fillText("Every journey leaves a mark.", s(58), s(940));
+  ctx.fillText("Let's collect the moments that matter.", s(58), s(963));
+
+  ctx.textAlign = "left";
+}
+
+// 작은 하트 아이콘 — 커플 테마 공용
+function drawHeart(ctx, cx, cy, r, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + r * 0.9);
+  ctx.bezierCurveTo(
+    cx - r * 1.6,
+    cy - r * 0.6,
+    cx - r * 0.5,
+    cy - r * 1.6,
+    cx,
+    cy - r * 0.5,
+  );
+  ctx.bezierCurveTo(
+    cx + r * 0.5,
+    cy - r * 1.6,
+    cx + r * 1.6,
+    cy - r * 0.6,
+    cx,
+    cy + r * 0.9,
+  );
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// ─── Couple front cover: 버건디 배경 + 사진 창(아치/사각) + 커플 이름 ───
+// 프레임 원본 에셋(couple-1.svg / couple-2.svg)은 마스크 역할만 하는 단색
+// 도형이라, 사진을 캔버스 전체에 먼저 채우고 그 위에 프레임을 덮어 씌우면
+// 뚫린 창(아치 또는 사각형) 모양대로만 사진이 드러난다.
+function drawCoupleFrontLayout(
+  ctx,
+  size,
+  sourceImg,
+  albumTitle,
+  frameImg,
+  variant,
+) {
+  const scale = size / 1024;
+  const s = (v) => v * scale;
+  const bg = "#6f1f1d";
+  const textColor = "#f4ece2";
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  if (sourceImg) {
+    const imgRatio = sourceImg.width / sourceImg.height;
+    let sx, sy, sw, sh;
+    if (imgRatio > 1) {
+      sh = sourceImg.height;
+      sw = sh;
+      sx = (sourceImg.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = sourceImg.width;
+      sh = sw;
+      sx = 0;
+      sy = (sourceImg.height - sh) / 2;
+    }
+    ctx.drawImage(sourceImg, sx, sy, sw, sh, 0, 0, size, size);
+  }
+
+  if (frameImg) {
+    ctx.drawImage(frameImg, 0, 0, size, size);
+  }
+
+  const titleFont = fontMap["Pretendard Variable"]
+    ? '"Pretendard Variable"'
+    : "sans-serif";
+  const name = albumTitle || "Our Story";
+
+  if (variant === 1) {
+    // 좌상단 작은 서브 카피 2줄
+    ctx.textAlign = "left";
+    ctx.font = `600 ${s(20)}px ${titleFont}`;
+    ctx.fillStyle = textColor;
+    ctx.letterSpacing = `${s(1)}px`;
+    ctx.fillText("LAST YEARS,", s(50), s(90));
+    ctx.fillText("OUR STORY", s(50), s(130));
+    ctx.letterSpacing = "0px";
+
+    // 우상단 커플 이름
+    ctx.textAlign = "right";
+    ctx.font = `700 ${s(60)}px ${titleFont}`;
+    ctx.fillText(name, size - s(50), s(120));
+
+    // 하단 중앙 캡션
+    ctx.textAlign = "center";
+    ctx.font = `400 ${s(15)}px ${titleFont}`;
+    ctx.letterSpacing = `${s(2)}px`;
+    ctx.fillText("사진으로 기록한 10년", size / 2, size - s(60));
+    ctx.letterSpacing = "0px";
+  } else {
+    // 사진 위 중앙 타이틀 + 서브 카피
+    ctx.textAlign = "center";
+    ctx.font = `700 ${s(34)}px ${titleFont}`;
+    ctx.fillStyle = textColor;
+    ctx.fillText(name, size / 2, s(90));
+
+    ctx.font = `600 ${s(13)}px ${titleFont}`;
+    ctx.letterSpacing = `${s(2)}px`;
+    ctx.fillText("LAST YEARS, OUR STORY", size / 2, s(122));
+    ctx.letterSpacing = "0px";
+
+    // 하단 하트 + 캡션
+    drawHeart(ctx, size / 2, size - s(92), s(8), textColor);
+    ctx.font = `400 ${s(15)}px ${titleFont}`;
+    ctx.fillText("사진으로 기록한 10년", size / 2, size - s(55));
+  }
+
+  ctx.textAlign = "left";
+}
+
 // ─── Memorial front cover: oval-framed photo + flower + name ───
 // (뒷면 memorial_light/memorial_dark와 동일한 팔레트를 사용)
 function drawMemorialFrontLayout(
@@ -104,7 +290,6 @@ function drawMemorialFrontLayout(
   isDark,
   sourceImg,
   albumTitle,
-  flowerImg,
   locale,
 ) {
   const bg = isDark ? "#141414" : "#ece7df";
@@ -172,16 +357,7 @@ function drawMemorialFrontLayout(
   ctx.ellipse(ovalCx, ovalCy, ovalRx, ovalRy, 0, 0, Math.PI * 2);
   ctx.stroke();
 
-  // Flower — centered just below the oval
-  let cursorY = ovalCy + ovalRy + 20;
-  if (flowerImg) {
-    const flowerW = size * 0.09;
-    const flowerH = flowerW * (flowerImg.height / flowerImg.width);
-    ctx.drawImage(flowerImg, ovalCx - flowerW / 2, cursorY, flowerW, flowerH);
-    cursorY += flowerH + 25;
-  } else {
-    cursorY += 35;
-  }
+  let cursorY = ovalCy + ovalRy + 20 + 35;
 
   // Divider lines flanking the "MEMORY ALBUM" label
   const lineY = cursorY;
@@ -269,6 +445,7 @@ function getTextLayout(position, size) {
 }
 
 /**
+ *
  * Generate a composited front cover data URL with title/subtitle overlay.
  * @param {HTMLImageElement|null} frontCoverImg - loaded image element
  * @param {Object} config
@@ -318,8 +495,52 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
       themeKey === "memorial_dark",
       frontCoverImg,
       albumTitle,
-      flowerImg,
       locale,
+    );
+    drawUserStickers(ctx, size, stickers, stickerImages);
+    return canvas.toDataURL("image/jpeg", 0.95);
+  }
+
+  // Travel Diary 테마도 뒷면과 짝을 이루는 고정 레이아웃(크래프트지 프레임 +
+  // 탑승권 스티커)을 쓴다 — flowerImg 슬롯을 프레임 이미지로 재사용한다.
+  if (themeKey === "travel") {
+    if (!frontCoverImg && !albumTitle && !(stickers && stickers.length))
+      return null;
+    const size = 1024;
+    const resolution = 2048;
+    const canvas = document.createElement("canvas");
+    canvas.width = resolution;
+    canvas.height = resolution;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(resolution / size, resolution / size);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    drawTravelFrontLayout(ctx, size, frontCoverImg, albumTitle, flowerImg);
+    drawUserStickers(ctx, size, stickers, stickerImages);
+    return canvas.toDataURL("image/jpeg", 0.95);
+  }
+
+  // Couple 테마도 뒷면과 짝을 이루는 고정 레이아웃(버건디 + 아치/사각 프레임)을
+  // 쓴다 — flowerImg 슬롯을 프레임 이미지로 재사용한다.
+  if (themeKey === "couple_1" || themeKey === "couple_2") {
+    if (!frontCoverImg && !albumTitle && !(stickers && stickers.length))
+      return null;
+    const size = 1024;
+    const resolution = 2048;
+    const canvas = document.createElement("canvas");
+    canvas.width = resolution;
+    canvas.height = resolution;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(resolution / size, resolution / size);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    drawCoupleFrontLayout(
+      ctx,
+      size,
+      frontCoverImg,
+      albumTitle,
+      flowerImg,
+      themeKey === "couple_1" ? 1 : 2,
     );
     drawUserStickers(ctx, size, stickers, stickerImages);
     return canvas.toDataURL("image/jpeg", 0.95);

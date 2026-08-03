@@ -115,9 +115,10 @@ async function generateAlbumCovers(item, locale) {
       themeKey === "kitsch"
         ? loadImage("/images/albumtheme/kitsch 2.png")
         : Promise.resolve(null),
-      isMemorialTheme
-        ? loadImage("/stickers/memorial/image 406.svg")
-        : Promise.resolve(null),
+      // 앞면 프레임/장식(테마별) — AlbumPreview2D/3D와 동일하게 frontFrameMap 사용.
+      // (병합 과정에서 사라진 isMemorialTheme 변수를 참조해 ReferenceError로
+      //  갤러리 커버 합성이 전부 실패하던 것을 수정)
+      loadImage(frontFrameMap[themeKey] || null),
       Promise.all(
         uniqueStickerSrcs.map(async (src) => [src, await loadImage(src)]),
       ).then((pairs) =>

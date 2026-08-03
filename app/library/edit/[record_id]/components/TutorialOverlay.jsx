@@ -6,7 +6,7 @@ import { X, ChevronLeft, ChevronRight } from "lucide-react";
 
 const TUTORIAL_STEPS_KO = [
   { targetSelector: '[data-tutorial="preview"]', title: "미리보기", description: "버튼을 눌러 앞/뒷면을 확인할 수 있어요", position: "right", tab: null, panel: null },
-  { targetSelector: '[data-tutorial="cover-editor"]', title: "표지 디자인", description: "AI로 표지를 생성하거나 직접 업로드할 수 있어요", position: "left", tab: "cover", panel: "cover" },
+  { targetSelector: '[data-tutorial="cover-editor"]', title: "표지 디자인", description: "AI로 표지를 생성하거나 직접 업로드할 수 있어요", position: "left", tab: "cover", panel: "coverImage" },
   { targetSelector: '[data-tutorial="story"]', title: "스토리", description: "키워드를 선택하고 AI로 글을 생성해보세요", position: "left", tab: "cover", panel: "story" },
   { targetSelector: '[data-tutorial="timeline"]', title: "타임라인", description: "인생의 주요 순간들을 기록하세요. 드래그로 순서 변경 가능해요", position: "left", tab: "cover", panel: "timeline" },
   { targetSelector: '[data-tutorial="theme"]', title: "테마", description: "뒷면 디자인 테마를 선택하세요", position: "left", tab: "cover", panel: "theme" },
@@ -15,7 +15,7 @@ const TUTORIAL_STEPS_KO = [
 
 const TUTORIAL_STEPS_EN = [
   { targetSelector: '[data-tutorial="preview"]', title: "Preview", description: "Tap the button to see the front and back", position: "right", tab: null, panel: null },
-  { targetSelector: '[data-tutorial="cover-editor"]', title: "Cover Design", description: "Generate a cover with AI or upload your own", position: "left", tab: "cover", panel: "cover" },
+  { targetSelector: '[data-tutorial="cover-editor"]', title: "Cover Design", description: "Generate a cover with AI or upload your own", position: "left", tab: "cover", panel: "coverImage" },
   { targetSelector: '[data-tutorial="story"]', title: "Story", description: "Select keywords and let AI generate your story", position: "left", tab: "cover", panel: "story" },
   { targetSelector: '[data-tutorial="timeline"]', title: "Timeline", description: "Record key moments in your life. Drag to reorder", position: "left", tab: "cover", panel: "timeline" },
   { targetSelector: '[data-tutorial="theme"]', title: "Theme", description: "Choose a back cover design theme", position: "left", tab: "cover", panel: "theme" },

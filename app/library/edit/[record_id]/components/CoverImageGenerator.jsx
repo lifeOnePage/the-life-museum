@@ -7,10 +7,11 @@ import {
   ImagePlus,
   RefreshCw,
   ChevronLeft,
-  X,
   Upload,
   Film,
   Image as ImageIcon,
+  Pencil,
+  RotateCcw,
 } from "lucide-react";
 import { getProxiedUrl } from "@/app/lib/proxy";
 import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
@@ -51,10 +52,8 @@ const T = {
     genCount: "사용한 생성 횟수",
     genExhausted: "생성 횟수를 모두 사용했습니다.",
     refImage: "참고 이미지",
-    refDefaultHint: "현재 표지를 참고 이미지로 사용합니다. 바로 생성하거나 다른 이미지를 선택하세요.",
     currentCover: "현재 표지",
-    changeRefLabel: "다른 참고 이미지",
-    device: "디바이스",
+    device: "디바이스 업로드",
     photodrive: "드라이브 업로드",
     style: "스타일",
     generating: "생성 중...",
@@ -77,10 +76,8 @@ const T = {
     genCount: "Generations used",
     genExhausted: "You've used all your generations.",
     refImage: "Reference Image",
-    refDefaultHint: "Using the current cover as reference. Generate now, or pick another image.",
     currentCover: "Current Cover",
-    changeRefLabel: "Other reference image",
-    device: "Device",
+    device: "Device Upload",
     photodrive: "Photo Drive",
     style: "Style",
     generating: "Generating...",
@@ -111,6 +108,7 @@ export default function CoverImageGenerator({
   record_id,
   onApply,
   onBack,
+  frontCover,
   initialFrontCover,
   photoMedia,
   onRefreshPhotos,
@@ -123,6 +121,7 @@ export default function CoverImageGenerator({
   const t = T[locale] || T.ko;
   const STYLES = locale === "en" ? STYLES_EN : STYLES_KO;
   const [view, setView] = useState("generate"); // "generate" | "ref-photodrive"
+  const [uploadMenuOpen, setUploadMenuOpen] = useState(false);
   // 포토드라이브 그리드 청크 마운트 — 수천 장 앨범에서 DOM 전량 마운트 방지
   const {
     visibleCount: gridCount,
@@ -165,25 +164,40 @@ export default function CoverImageGenerator({
     fetchGenCount();
   }, [record_id]);
 
+  // 지금 실제로 적용되어 있는 표지 — AI로 새로 생성해 적용한 직후에도
+  // (initialFrontCover는 세션 시작 시점 값이라 갱신되지 않음) 항상 최신 상태를 가리킨다
+  const liveFrontCover = frontCover || initialFrontCover;
+
   // 현재 표지가 이미지인지(영상/움짤이면 참고 이미지로 부적합) 판별
   const coverIsImage = (() => {
-    if (!initialFrontCover) return false;
-    const clean = initialFrontCover.split("?")[0].toLowerCase();
+    if (!liveFrontCover) return false;
+    const clean = liveFrontCover.split("?")[0].toLowerCase();
     return !/\.(mp4|webm|mov|gif)$/.test(clean);
   })();
 
   // 현재 앨범 표지를 참고 이미지(File)로 로드
   const loadCoverAsRef = async () => {
-    if (!initialFrontCover || !coverIsImage) return;
+    if (!liveFrontCover || !coverIsImage) return;
     setIsLoadingCoverRef(true);
     try {
       const isLocal =
-        initialFrontCover.startsWith("blob:") ||
-        initialFrontCover.startsWith("data:");
-      const fetchUrl = isLocal
-        ? initialFrontCover
-        : getProxiedUrl(initialFrontCover);
-      const blob = await fetch(fetchUrl).then((r) => r.blob());
+        liveFrontCover.startsWith("blob:") ||
+        liveFrontCover.startsWith("data:");
+      let blob;
+      if (isLocal) {
+        blob = await fetch(liveFrontCover).then((r) => r.blob());
+      } else {
+        try {
+          const res = await fetch(getProxiedUrl(liveFrontCover));
+          if (!res.ok) throw new Error(`fetch failed: ${res.status}`);
+          blob = await res.blob();
+        } catch {
+          // 직접 로드 실패(CORS 등) — 프록시 강제 경유로 재시도
+          blob = await fetch(
+            getProxiedUrl(liveFrontCover, { force: true }),
+          ).then((r) => r.blob());
+        }
+      }
       const ext = blob.type === "image/png" ? "png" : "jpg";
       const file = new File([blob], `current-cover.${ext}`, {
         type: blob.type,
@@ -205,13 +219,20 @@ export default function CoverImageGenerator({
       loadCoverAsRef();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialFrontCover]);
+  }, [liveFrontCover]);
 
   const handleSelectImage = (index) => {
     setSelectedImageIndex(index);
     const imageUrl = generatedImages[index];
     if (imageUrl) onApply(imageUrl);
   };
+
+  // 참고 이미지 박스에 지금 실제로 적용된 표지를 보여준다 —
+  // 생성 결과를 선택했다면 그 결과, 아니면 로드해둔 참고 이미지.
+  const displayedRefImage =
+    selectedImageIndex >= 0
+      ? generatedImages[selectedImageIndex]
+      : imageRefPreviews[0];
 
   const handleRevertCover = () => {
     if (initialFrontCover) onApply(initialFrontCover);
@@ -270,13 +291,6 @@ export default function CoverImageGenerator({
     setImageRefPreviews([URL.createObjectURL(file)]);
     setRefIsCurrentCover(false);
     e.target.value = "";
-  };
-
-  const removeImageRef = () => {
-    imageRefPreviews.forEach((url) => URL.revokeObjectURL(url));
-    setImageRefFiles([]);
-    setImageRefPreviews([]);
-    setRefIsCurrentCover(false);
   };
 
   const handleRefPhotoSelect = async (index) => {
@@ -444,77 +458,98 @@ export default function CoverImageGenerator({
             {t.refImage}
           </label>
 
-          {/* 현재 선택된 참고 이미지 미리보기 (기본값: 현재 앨범 표지) */}
-          {isLoadingCoverRef && imageRefPreviews.length === 0 ? (
-            <div className="mb-3 h-20 w-20 animate-pulse rounded-lg bg-[#3a3028]" />
-          ) : imageRefPreviews.length > 0 ? (
-            <div className="mb-3 flex items-center gap-3">
-              <div className="relative inline-block">
+          {/* 현재 선택된 참고 이미지 미리보기 (기본값: 현재 앨범 표지) — 앞면 선택 UI와 동일한 패턴 */}
+          <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg border border-white/10 bg-white/5">
+            {isLoadingCoverRef && !displayedRefImage ? (
+              <div className="absolute inset-0 animate-pulse bg-[#3a3028]" />
+            ) : (
+              displayedRefImage && (
                 <img
-                  src={imageRefPreviews[0]}
+                  src={displayedRefImage}
                   alt="참고 이미지"
-                  className="h-20 w-20 rounded-lg object-cover"
+                  className="h-full w-full object-cover"
                 />
-                <button
-                  onClick={removeImageRef}
-                  className="absolute -top-1.5 -right-1.5 flex h-5 w-5 items-center justify-center rounded-full border border-white/15 bg-[#2e2720] text-[#e8d5b7] transition-colors hover:bg-[#3a3025]"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-              {refIsCurrentCover && (
-                <span className="inline-flex items-center gap-1 rounded-full border border-[#c4b49a]/40 bg-[#c4b49a]/10 px-2 py-1 text-[11px] font-medium text-[#c4b49a]">
-                  <ImageIcon className="h-3 w-3" />
-                  {t.currentCover}
-                </span>
-              )}
-            </div>
-          ) : null}
-
-          {/* 참고 이미지 소스 (항상 노출 — 현재 표지 / 디바이스 / 포토드라이브) */}
-          {(refIsCurrentCover || imageRefPreviews.length > 0) && (
-            <p className="mb-1.5 text-[11px] text-[#9b8b7a]">
-              {refIsCurrentCover ? t.refDefaultHint : t.changeRefLabel}
-            </p>
-          )}
-          <div className="mb-4 flex gap-3">
-            {coverIsImage && (
+              )
+            )}
+            {refIsCurrentCover && selectedImageIndex < 0 && (
+              <span className="absolute top-2 left-2 inline-flex items-center gap-1 rounded-full border border-[#c4b49a]/40 bg-[#1a1510]/70 px-2 py-1 text-[11px] font-medium text-[#c4b49a] backdrop-blur-sm">
+                <ImageIcon className="h-3 w-3" />
+                {t.currentCover}
+              </span>
+            )}
+            <div className="absolute right-2 bottom-2 flex gap-2">
               <button
-                onClick={loadCoverAsRef}
-                disabled={isLoadingCoverRef}
-                className={`flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed py-4 transition-colors disabled:opacity-50 ${
-                  refIsCurrentCover
-                    ? "border-[#c4b49a] bg-[#c4b49a]/10"
-                    : "hover:border-[#c4b49a] border-white/15 bg-white/5"
+                onClick={() => setUploadMenuOpen((o) => !o)}
+                className={`flex h-9 w-9 items-center justify-center rounded-full backdrop-blur-sm transition ${
+                  uploadMenuOpen
+                    ? "bg-[#c4b49a] text-[#1a1510]"
+                    : "bg-black/60 text-white hover:bg-black/80"
                 }`}
               >
-                <ImageIcon className="mb-1 h-4 w-4 text-[#9b8b7a]" />
-                <span className="text-[11px] text-[#9b8b7a]">
-                  {t.currentCover}
-                </span>
+                <Pencil className="h-4 w-4" />
               </button>
-            )}
-            <label className="hover:border-[#c4b49a] flex flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors">
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleImageRef}
-              />
-              <Upload className="mb-1 h-4 w-4 text-[#9b8b7a]" />
-              <span className="text-[11px] text-[#9b8b7a]">{t.device}</span>
-            </label>
-            <button
-              onClick={() => {
-                // 사진은 선택 시 해당 1장만 온디맨드로 가져온다 (전량 프리로드 금지)
-                setView("ref-photodrive");
-              }}
-              className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors"
-            >
-              <img src="/cloud_download.svg" alt="" className="mb-1 h-4 w-4" />
-              <span className="text-[11px] text-[#9b8b7a]">{t.photodrive}</span>
-            </button>
+              {coverIsImage && (
+                <button
+                  onClick={() => {
+                    setSelectedImageIndex(-1);
+                    loadCoverAsRef();
+                  }}
+                  disabled={isLoadingCoverRef}
+                  className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80 disabled:opacity-50"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </button>
+              )}
+            </div>
           </div>
+
+          {/* 연필 아이콘을 누르면 나타나는 직접 업로드 / 드라이브 업로드 선택 */}
+          <AnimatePresence initial={false}>
+            {uploadMenuOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="mb-4 flex gap-3 pt-1">
+                  <label className="hover:border-[#c4b49a] flex flex-1 cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        handleImageRef(e);
+                        setUploadMenuOpen(false);
+                      }}
+                    />
+                    <Upload className="mb-1 h-4 w-4 text-[#9b8b7a]" />
+                    <span className="text-[11px] text-[#9b8b7a]">
+                      {t.device}
+                    </span>
+                  </label>
+                  <button
+                    onClick={() => {
+                      // 사진은 선택 시 해당 1장만 온디맨드로 가져온다 (전량 프리로드 금지)
+                      setView("ref-photodrive");
+                      setUploadMenuOpen(false);
+                    }}
+                    className="hover:border-[#c4b49a] flex flex-1 flex-col items-center justify-center rounded-lg border border-dashed border-white/15 bg-white/5 py-4 transition-colors"
+                  >
+                    <img
+                      src="/cloud_download.svg"
+                      alt=""
+                      className="mb-1 h-4 w-4"
+                    />
+                    <span className="text-[11px] text-[#9b8b7a]">
+                      {t.photodrive}
+                    </span>
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* 2. Style selector */}
           <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">

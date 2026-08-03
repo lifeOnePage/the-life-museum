@@ -23,7 +23,6 @@ import {
   Loader2,
   Type,
   Image as ImageIcon,
-  ImagePlus,
   Palette,
   History,
   Sticker,
@@ -101,12 +100,13 @@ const T = {
     tabCover: "앨범 커버",
     tabMemory: "앨범 메모리",
     railText: "타이틀",
-    railCover: "앞면",
-    railBackPhoto: "뒷면",
+    railCoverImage: "커버 이미지",
     railTheme: "테마",
     railSticker: "스티커",
     railStory: "스토리",
     railTimeline: "타임라인",
+    coverSideFront: "앞면",
+    coverSideBack: "뒷면",
     titleLabel: "제목",
     subtitleLabel: "부제목",
     titlePlaceholder: "앨범 제목을 입력하세요",
@@ -175,12 +175,13 @@ const T = {
     tabCover: "Album Cover",
     tabMemory: "Album Memory",
     railText: "Title",
-    railCover: "Front",
-    railBackPhoto: "Back",
+    railCoverImage: "Cover Image",
     railTheme: "Theme",
     railSticker: "Stickers",
     railStory: "Story",
     railTimeline: "Timeline",
+    coverSideFront: "Front",
+    coverSideBack: "Back",
     titleLabel: "Title",
     subtitleLabel: "Subtitle",
     titlePlaceholder: "Enter album title",
@@ -401,6 +402,8 @@ const Index = ({ params }) => {
   const [stickers, setStickers] = useState([]);
   // 스티커 패널에서 지금 편집 중인 면 — 미리보기 자동 플립에도 사용
   const [stickerSide, setStickerSide] = useState("back");
+  // 커버 이미지 패널(앞면/뒷면 통합)에서 지금 편집 중인 면
+  const [coverImageSide, setCoverImageSide] = useState("front");
 
   // Title overlay state
   const [titleOverlayEnabled, setTitleOverlayEnabled] = useState(false);
@@ -414,7 +417,7 @@ const Index = ({ params }) => {
   const [backCoverImageUrl, setBackCoverImageUrl] = useState(null);
 
   // "앨범 커버" 탭 좌측 레일에서 선택된 패널
-  // "text" | "cover" | "backPhoto" | "theme" | "story" | "timeline"
+  // "theme" | "text" | "coverImage" | "sticker" | "story" | "timeline"
   const [coverPanel, setCoverPanel] = useState("text");
 
   // Collapsible sections (앨범 메모리 탭)
@@ -1339,10 +1342,9 @@ const Index = ({ params }) => {
 
   // "앨범 커버" 탭 좌측 레일 항목 — side: 미리보기가 자동으로 전환될 면
   const RAIL_ITEMS = [
-    { key: "text", label: t.railText, icon: Type, side: "front" },
-    { key: "cover", label: t.railCover, icon: ImageIcon, side: "front" },
-    { key: "backPhoto", label: t.railBackPhoto, icon: ImagePlus, side: "back" },
     { key: "theme", label: t.railTheme, icon: Palette, side: "back" },
+    { key: "text", label: t.railText, icon: Type, side: "front" },
+    { key: "coverImage", label: t.railCoverImage, icon: ImageIcon, side: "front" },
     { key: "sticker", label: t.railSticker, icon: Sticker, side: "back" },
     { key: "story", label: t.railStory, icon: BookOpen, side: "back" },
     { key: "timeline", label: t.railTimeline, icon: History, side: "back" },
@@ -1655,7 +1657,9 @@ const Index = ({ params }) => {
                             setPreviewFlipped(
                               item.key === "sticker"
                                 ? stickerSide === "back"
-                                : item.side === "back",
+                                : item.key === "coverImage"
+                                  ? coverImageSide === "back"
+                                  : item.side === "back",
                             );
                           }}
                           className={`flex shrink-0 flex-col items-center gap-1 rounded-lg px-3 py-2.5 text-[11px] font-medium whitespace-nowrap transition-colors lg:w-full lg:text-center lg:leading-tight lg:break-keep lg:whitespace-normal ${
@@ -1771,68 +1775,95 @@ const Index = ({ params }) => {
                       </div>
                     </div>
 
-                    {/* Cover Design panel */}
+                    {/* Cover Image panel (front/back 통합) */}
                     <div
                       data-tutorial="cover-editor"
                       className={
-                        coverPanel === "cover" ? "space-y-3" : "hidden"
+                        coverPanel === "coverImage" ? "space-y-3" : "hidden"
                       }
                     >
-                      <div>
-                        <span className="block text-sm font-semibold text-[#e8d5b7]">
-                          {t.coverDesign}
-                        </span>
-                        <span className="mt-1 block text-[11px] text-[#9b8b7a]">
-                          {t.coverDesignSub}
-                        </span>
+                      {/* 앞면/뒷면 전환 */}
+                      <div className="flex gap-1.5 rounded-full border border-white/10 bg-white/5 p-1">
+                        {["front", "back"].map((side) => (
+                          <button
+                            key={side}
+                            onClick={() => {
+                              setCoverImageSide(side);
+                              setPreviewFlipped(side === "back");
+                            }}
+                            className={`flex-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${
+                              coverImageSide === side
+                                ? "bg-[#c4b49a]/15 text-[#e8d5b7]"
+                                : "text-[#9b8b7a] hover:text-[#e8d5b7]"
+                            }`}
+                          >
+                            {side === "front"
+                              ? t.coverSideFront
+                              : t.coverSideBack}
+                          </button>
+                        ))}
                       </div>
-                      <CoverImageEditor
-                        ref={coverRef}
-                        record_id={record_id}
-                        onImageGenerated={setFrontCover}
-                        frontCover={frontCover}
-                        initialFrontCover={initialState.current.frontCover}
-                        photoMedia={photoDrive.photoMedia}
-                        photoBlobUrls={photoDrive.photoBlobUrls}
-                        onRefreshPhotos={photoDrive.refresh}
-                        isRefreshing={photoDrive.isRefreshing}
-                        isLoading={photoDrive.isLoading}
-                        preloadBlobs={photoDrive.preloadBlobs}
-                        locale={locale}
-                        isAdmin={isAdmin}
-                        onRequestAIConsent={(type) => {
-                          if (hasAIConsent()) return Promise.resolve(true);
-                          return new Promise((resolve) => {
-                            consentResolveRef.current = resolve;
-                            setShowAIConsent(type);
-                          });
-                        }}
-                      />
-                    </div>
 
-                    {/* Back Cover Image panel */}
-                    <div
-                      className={
-                        coverPanel === "backPhoto" ? "space-y-3" : "hidden"
-                      }
-                    >
-                      <span className="block text-sm font-semibold text-[#e8d5b7]">
-                        {t.backCoverImage}
-                      </span>
-                      <BackCoverUpload
-                        ref={backCoverRef}
-                        record_id={record_id}
-                        backCoverImageUrl={backCoverImageUrl}
-                        onUrlChange={setBackCoverImageUrl}
-                        frontCover={frontCover}
-                        photoMedia={photoDrive.photoMedia}
-                        photoBlobUrls={photoDrive.photoBlobUrls}
-                        onRefreshPhotos={photoDrive.refresh}
-                        isRefreshing={photoDrive.isRefreshing}
-                        isLoading={photoDrive.isLoading}
-                        preloadBlobs={photoDrive.preloadBlobs}
-                        locale={locale}
-                      />
+                      <div
+                        className={
+                          coverImageSide === "front" ? "space-y-3" : "hidden"
+                        }
+                      >
+                        <div>
+                          <span className="block text-sm font-semibold text-[#e8d5b7]">
+                            {t.coverDesign}
+                          </span>
+                          <span className="mt-1 block text-[11px] text-[#9b8b7a]">
+                            {t.coverDesignSub}
+                          </span>
+                        </div>
+                        <CoverImageEditor
+                          ref={coverRef}
+                          record_id={record_id}
+                          onImageGenerated={setFrontCover}
+                          frontCover={frontCover}
+                          initialFrontCover={initialState.current.frontCover}
+                          photoMedia={photoDrive.photoMedia}
+                          photoBlobUrls={photoDrive.photoBlobUrls}
+                          onRefreshPhotos={photoDrive.refresh}
+                          isRefreshing={photoDrive.isRefreshing}
+                          isLoading={photoDrive.isLoading}
+                          preloadBlobs={photoDrive.preloadBlobs}
+                          locale={locale}
+                          isAdmin={isAdmin}
+                          onRequestAIConsent={(type) => {
+                            if (hasAIConsent()) return Promise.resolve(true);
+                            return new Promise((resolve) => {
+                              consentResolveRef.current = resolve;
+                              setShowAIConsent(type);
+                            });
+                          }}
+                        />
+                      </div>
+
+                      <div
+                        className={
+                          coverImageSide === "back" ? "space-y-3" : "hidden"
+                        }
+                      >
+                        <span className="block text-sm font-semibold text-[#e8d5b7]">
+                          {t.backCoverImage}
+                        </span>
+                        <BackCoverUpload
+                          ref={backCoverRef}
+                          record_id={record_id}
+                          backCoverImageUrl={backCoverImageUrl}
+                          onUrlChange={setBackCoverImageUrl}
+                          frontCover={frontCover}
+                          photoMedia={photoDrive.photoMedia}
+                          photoBlobUrls={photoDrive.photoBlobUrls}
+                          onRefreshPhotos={photoDrive.refresh}
+                          isRefreshing={photoDrive.isRefreshing}
+                          isLoading={photoDrive.isLoading}
+                          preloadBlobs={photoDrive.preloadBlobs}
+                          locale={locale}
+                        />
+                      </div>
                     </div>
 
                     {/* Theme panel */}

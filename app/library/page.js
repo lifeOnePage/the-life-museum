@@ -91,7 +91,10 @@ async function generateAlbumCovers(item, locale) {
   };
 
   // 사용자 배치 스티커 — 고유 src만 로드해 {src: img} 맵 구성 (실패한 이미지는 제외)
+  // side 없는 기존 데이터는 뒷면으로 취급(하위 호환, AlbumPreview2D.jsx와 동일 규칙)
   const stickers = Array.isArray(item.stickers) ? item.stickers : [];
+  const frontStickers = stickers.filter((s) => s.side === "front");
+  const backStickers = stickers.filter((s) => s.side !== "front");
   const uniqueStickerSrcs = [
     ...new Set(stickers.map((s) => s?.src).filter(Boolean)),
   ];
@@ -115,9 +118,7 @@ async function generateAlbumCovers(item, locale) {
       themeKey === "kitsch"
         ? loadImage("/images/albumtheme/kitsch 2.png")
         : Promise.resolve(null),
-      isMemorialTheme
-        ? loadImage("/stickers/memorial/image 406.svg")
-        : Promise.resolve(null),
+      loadImage(frontFrameMap[themeKey] || null),
       Promise.all(
         uniqueStickerSrcs.map(async (src) => [src, await loadImage(src)]),
       ).then((pairs) =>
@@ -135,7 +136,7 @@ async function generateAlbumCovers(item, locale) {
     null,
     themeBgImg,
     themeStickerImg,
-    stickers,
+    backStickers,
     stickerImages,
   );
 
@@ -163,6 +164,8 @@ async function generateAlbumCovers(item, locale) {
       albumTitle: item.title || "",
       flowerImg,
       locale,
+      stickers: frontStickers,
+      stickerImages,
     });
     if (frontDataUrl) frontImage = frontDataUrl;
   }

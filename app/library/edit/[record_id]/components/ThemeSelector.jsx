@@ -419,24 +419,87 @@ function MemorialLightPreview() {
     <svg viewBox="0 0 44 56" className="h-full w-full">
       <rect width="44" height="56" rx="2" fill="#ece7df" />
       {/* Title */}
-      <rect x="11" y="10" width="22" height="2" rx="1" fill="#3a352e" opacity="0.8" />
+      <rect
+        x="11"
+        y="10"
+        width="22"
+        height="2"
+        rx="1"
+        fill="#3a352e"
+        opacity="0.8"
+      />
       {/* Subtitle */}
       <rect x="16" y="14" width="12" height="1.2" rx="0.6" fill="#8a8478" />
       {/* Short divider */}
-      <line x1="19" y1="18" x2="25" y2="18" stroke="#8a8478" strokeWidth="0.5" />
+      <line
+        x1="19"
+        y1="18"
+        x2="25"
+        y2="18"
+        stroke="#8a8478"
+        strokeWidth="0.5"
+      />
       {/* Two-column timeline dashes */}
       {[23, 26.5, 30].map((y) => (
         <g key={y}>
-          <rect x="7" y={y} width="10" height="1" rx="0.5" fill="#8a8478" opacity="0.7" />
-          <rect x="24" y={y} width="10" height="1" rx="0.5" fill="#8a8478" opacity="0.7" />
+          <rect
+            x="7"
+            y={y}
+            width="10"
+            height="1"
+            rx="0.5"
+            fill="#8a8478"
+            opacity="0.7"
+          />
+          <rect
+            x="24"
+            y={y}
+            width="10"
+            height="1"
+            rx="0.5"
+            fill="#8a8478"
+            opacity="0.7"
+          />
         </g>
       ))}
-      <line x1="21.5" y1="22" x2="21.5" y2="31" stroke="#8a8478" strokeWidth="0.4" opacity="0.4" />
+      <line
+        x1="21.5"
+        y1="22"
+        x2="21.5"
+        y2="31"
+        stroke="#8a8478"
+        strokeWidth="0.4"
+        opacity="0.4"
+      />
       {/* Divider */}
-      <line x1="6" y1="35" x2="38" y2="35" stroke="#8a8478" strokeWidth="0.4" opacity="0.4" />
+      <line
+        x1="6"
+        y1="35"
+        x2="38"
+        y2="35"
+        stroke="#8a8478"
+        strokeWidth="0.4"
+        opacity="0.4"
+      />
       {/* Quote */}
-      <rect x="12" y="39" width="20" height="1" rx="0.5" fill="#3a352e" opacity="0.5" />
-      <rect x="15" y="42" width="14" height="1" rx="0.5" fill="#3a352e" opacity="0.5" />
+      <rect
+        x="12"
+        y="39"
+        width="20"
+        height="1"
+        rx="0.5"
+        fill="#3a352e"
+        opacity="0.5"
+      />
+      <rect
+        x="15"
+        y="42"
+        width="14"
+        height="1"
+        rx="0.5"
+        fill="#3a352e"
+        opacity="0.5"
+      />
       {/* Bottom dot */}
       <circle cx="22" cy="47" r="0.7" fill="#8a8478" />
     </svg>
@@ -448,28 +511,115 @@ function MemorialDarkPreview() {
     <svg viewBox="0 0 44 56" className="h-full w-full">
       <rect width="44" height="56" rx="2" fill="#141414" />
       {/* Title */}
-      <rect x="11" y="10" width="22" height="2" rx="1" fill="#e8d5b7" opacity="0.9" />
+      <rect
+        x="11"
+        y="10"
+        width="22"
+        height="2"
+        rx="1"
+        fill="#e8d5b7"
+        opacity="0.9"
+      />
       {/* Subtitle */}
       <rect x="16" y="14" width="12" height="1.2" rx="0.6" fill="#a89d89" />
       {/* Short divider */}
-      <line x1="19" y1="18" x2="25" y2="18" stroke="#a89d89" strokeWidth="0.5" />
+      <line
+        x1="19"
+        y1="18"
+        x2="25"
+        y2="18"
+        stroke="#a89d89"
+        strokeWidth="0.5"
+      />
       {/* Full divider */}
-      <line x1="6" y1="21" x2="38" y2="21" stroke="#a89d89" strokeWidth="0.4" opacity="0.4" />
+      <line
+        x1="6"
+        y1="21"
+        x2="38"
+        y2="21"
+        stroke="#a89d89"
+        strokeWidth="0.4"
+        opacity="0.4"
+      />
       {/* Two-column timeline dashes */}
       {[25, 28.5, 32].map((y) => (
         <g key={y}>
-          <rect x="7" y={y} width="10" height="1" rx="0.5" fill="#a89d89" opacity="0.7" />
-          <rect x="24" y={y} width="10" height="1" rx="0.5" fill="#a89d89" opacity="0.7" />
+          <rect
+            x="7"
+            y={y}
+            width="10"
+            height="1"
+            rx="0.5"
+            fill="#a89d89"
+            opacity="0.7"
+          />
+          <rect
+            x="24"
+            y={y}
+            width="10"
+            height="1"
+            rx="0.5"
+            fill="#a89d89"
+            opacity="0.7"
+          />
         </g>
       ))}
-      <line x1="21.5" y1="24" x2="21.5" y2="33" stroke="#a89d89" strokeWidth="0.4" opacity="0.4" />
+      <line
+        x1="21.5"
+        y1="24"
+        x2="21.5"
+        y2="33"
+        stroke="#a89d89"
+        strokeWidth="0.4"
+        opacity="0.4"
+      />
       {/* Quote */}
-      <rect x="12" y="40" width="20" height="1" rx="0.5" fill="#e8d5b7" opacity="0.6" />
-      <rect x="15" y="43" width="14" height="1" rx="0.5" fill="#e8d5b7" opacity="0.6" />
+      <rect
+        x="12"
+        y="40"
+        width="20"
+        height="1"
+        rx="0.5"
+        fill="#e8d5b7"
+        opacity="0.6"
+      />
+      <rect
+        x="15"
+        y="43"
+        width="14"
+        height="1"
+        rx="0.5"
+        fill="#e8d5b7"
+        opacity="0.6"
+      />
       {/* Bottom label with flanking lines */}
-      <line x1="6" y1="52" x2="15" y2="52" stroke="#a89d89" strokeWidth="0.4" opacity="0.5" />
-      <rect x="17" y="51.3" width="10" height="1.2" rx="0.4" fill="#a89d89" opacity="0.6" />
-      <line x1="29" y1="52" x2="38" y2="52" stroke="#a89d89" strokeWidth="0.4" opacity="0.5" />
+      <line
+        x1="6"
+        y1="52"
+        x2="15"
+        y2="52"
+        stroke="#a89d89"
+        strokeWidth="0.4"
+        opacity="0.5"
+      />
+      <rect
+        x="17"
+        y="51.3"
+        width="10"
+        height="1.2"
+        rx="0.4"
+        fill="#a89d89"
+        opacity="0.6"
+      />
+      <line
+        x1="29"
+        y1="52"
+        x2="38"
+        y2="52"
+        stroke="#a89d89"
+        strokeWidth="0.4"
+        opacity="0.5"
+      />
     </svg>
   );
 }
@@ -479,21 +629,78 @@ function TravelPreview() {
     <svg viewBox="0 0 44 56" className="h-full w-full">
       <rect width="44" height="56" rx="2" fill="#c2ab8c" />
       {/* Title */}
-      <rect x="4" y="6" width="16" height="2" rx="1" fill="#3a3226" opacity="0.85" />
-      <rect x="4" y="9.5" width="12" height="1" rx="0.5" fill="#8a7a63" opacity="0.8" />
+      <rect
+        x="4"
+        y="6"
+        width="16"
+        height="2"
+        rx="1"
+        fill="#3a3226"
+        opacity="0.85"
+      />
+      <rect
+        x="4"
+        y="9.5"
+        width="12"
+        height="1"
+        rx="0.5"
+        fill="#8a7a63"
+        opacity="0.8"
+      />
       {/* Stamp */}
-      <circle cx="36" cy="8" r="4.5" fill="none" stroke="#a13d2e" strokeWidth="0.6" opacity="0.8" />
+      <circle
+        cx="36"
+        cy="8"
+        r="4.5"
+        fill="none"
+        stroke="#a13d2e"
+        strokeWidth="0.6"
+        opacity="0.8"
+      />
       {/* Photo window */}
-      <rect x="4" y="13" width="36" height="24" rx="0.5" fill="#4a4a4a" stroke="#fff" strokeWidth="0.6" />
+      <rect
+        x="4"
+        y="13"
+        width="36"
+        height="24"
+        rx="0.5"
+        fill="#4a4a4a"
+        stroke="#fff"
+        strokeWidth="0.6"
+      />
       {/* Boarding pass sticker overlapping bottom-right of photo */}
       <g transform="rotate(-4 33 34)">
         <rect x="24" y="29" width="18" height="10" rx="1" fill="#e8ddc9" />
         <rect x="24" y="29" width="18" height="3.5" rx="1" fill="#a13d2e" />
       </g>
       {/* Bottom caption lines */}
-      <rect x="4" y="42" width="8" height="1.4" rx="0.5" fill="#3a3226" opacity="0.7" />
-      <rect x="4" y="46" width="24" height="1" rx="0.5" fill="#8a7a63" opacity="0.6" />
-      <rect x="4" y="48.5" width="20" height="1" rx="0.5" fill="#8a7a63" opacity="0.6" />
+      <rect
+        x="4"
+        y="42"
+        width="8"
+        height="1.4"
+        rx="0.5"
+        fill="#3a3226"
+        opacity="0.7"
+      />
+      <rect
+        x="4"
+        y="46"
+        width="24"
+        height="1"
+        rx="0.5"
+        fill="#8a7a63"
+        opacity="0.6"
+      />
+      <rect
+        x="4"
+        y="48.5"
+        width="20"
+        height="1"
+        rx="0.5"
+        fill="#8a7a63"
+        opacity="0.6"
+      />
     </svg>
   );
 }
@@ -515,7 +722,7 @@ const PHOTO_PREVIEW_MAP = {
   illustration: "/images/themepreview/illustration.png",
   fullimage: "/images/themepreview/full-image.svg",
   travel: "/images/themepreview/travel-diary.svg",
-  memorial_light: "/images/themepreview/memorial-light.svg",
+  memorial_light: "/images/themepreview/memorial-light.png",
   memorial_dark: "/images/themepreview/memorial-dark.svg",
   couple_1: "/images/themepreview/couple-1.svg",
   couple_2: "/images/themepreview/couple-2.svg",

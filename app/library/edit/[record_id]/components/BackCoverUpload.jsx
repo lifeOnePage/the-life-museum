@@ -2,7 +2,7 @@
 
 import { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ImagePlus, RefreshCw, Upload, ChevronLeft, Trash2 } from "lucide-react";
+import { ImagePlus, RefreshCw, Upload, ChevronLeft, RotateCcw, Pencil } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { getProxiedUrl } from "@/app/lib/proxy";
 import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
@@ -196,7 +196,7 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
             {/* Preview + 항상 떠 있는 업로드/초기화 아이콘 */}
             {/* 뒷면 이미지를 초기화(비움)하면 저장 시 백엔드가 앞면 이미지로 대체하므로,
                 여기서도 같은 결과를 미리 보여준다. */}
-            <div className="relative h-36 w-full overflow-hidden rounded-lg border border-white/10 bg-white/5">
+            <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-white/10 bg-white/5">
               {(backCoverImageUrl || frontCover) && (
                 <img
                   src={backCoverImageUrl || frontCover}
@@ -213,13 +213,13 @@ const BackCoverUpload = forwardRef(function BackCoverUpload(
                       : "bg-black/60 text-white hover:bg-black/80"
                   }`}
                 >
-                  <Upload className="h-4 w-4" />
+                  <Pencil className="h-4 w-4" />
                 </button>
                 <button
                   onClick={handleClear}
                   className="flex h-9 w-9 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-black/80"
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <RotateCcw className="h-4 w-4" />
                 </button>
               </div>
             </div>

@@ -9,6 +9,10 @@ export const metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
   },
+  icons: {
+    icon: "/logo/logo_cropped.svg",
+    apple: "/logo/logo_512.png",
+  },
 };
 
 export const viewport = {

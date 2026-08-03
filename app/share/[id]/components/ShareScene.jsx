@@ -187,12 +187,46 @@ export default function ShareScene({
   selectedTheme,
   albumTitle,
   albumSubTitle,
+  stickers,
 }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [frontCoverImg, setFrontCoverImg] = useState(null);
   const [extractedColors, setExtractedColors] = useState(null);
   const [themeBgImg, setThemeBgImg] = useState(null);
   const [themeStickerImg, setThemeStickerImg] = useState(null);
+  const [stickerImages, setStickerImages] = useState({});
+
+  // 뒷면에 붙은 스티커만 — side 없는 기존 데이터는 뒷면으로 취급(하위 호환)
+  const backStickers = (stickers || []).filter((s) => s.side !== "front");
+
+  // Load sticker images
+  useEffect(() => {
+    const srcs = [...new Set(backStickers.map((s) => s?.src).filter(Boolean))];
+    if (srcs.length === 0) {
+      setStickerImages({});
+      return;
+    }
+    let cancelled = false;
+    Promise.all(
+      srcs.map(
+        (src) =>
+          new Promise((resolve) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve([src, img]);
+            img.onerror = () => resolve([src, null]);
+            img.src = src;
+          }),
+      ),
+    ).then((pairs) => {
+      if (cancelled) return;
+      setStickerImages(Object.fromEntries(pairs.filter(([, img]) => img)));
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify((stickers || []).map((s) => s.src))]);
 
   // Load theme background image and sticker
   useEffect(() => {
@@ -284,6 +318,8 @@ export default function ShareScene({
       extractedColors,
       themeBgImg,
       themeStickerImg,
+      backStickers,
+      stickerImages,
     );
   }, [
     themeKey,
@@ -295,6 +331,8 @@ export default function ShareScene({
     extractedColors,
     themeBgImg,
     themeStickerImg,
+    backStickers,
+    stickerImages,
   ]);
 
   // Drag-to-flip

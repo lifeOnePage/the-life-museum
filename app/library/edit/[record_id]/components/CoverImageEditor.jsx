@@ -8,6 +8,7 @@ import {
   RefreshCw,
   ChevronLeft,
   Upload,
+  Pencil,
 } from "lucide-react";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { getProxiedUrl } from "@/app/lib/proxy";
@@ -214,7 +215,7 @@ const CoverImageEditor = forwardRef(
               transition={{ duration: 0.2 }}
             >
               {/* Preview + 항상 떠 있는 업로드/AI 아이콘 */}
-              <div className="relative mb-3 h-36 w-full overflow-hidden rounded-lg border border-white/10 bg-white/5">
+              <div className="relative mb-3 aspect-square w-full overflow-hidden rounded-lg border border-white/10 bg-white/5">
                 {frontCover && (
                   <img
                     src={frontCover}
@@ -231,7 +232,7 @@ const CoverImageEditor = forwardRef(
                         : "bg-black/60 text-white hover:bg-black/80"
                     }`}
                   >
-                    <Upload className="h-4 w-4" />
+                    <Pencil className="h-4 w-4" />
                   </button>
                   <button
                     onClick={() => setView("generate")}
@@ -402,6 +403,7 @@ const CoverImageEditor = forwardRef(
                 record_id={record_id}
                 onApply={handleGeneratorApply}
                 onBack={() => setView("menu")}
+                frontCover={frontCover}
                 initialFrontCover={initialFrontCover}
                 photoMedia={photoMedia}
                 onRefreshPhotos={onRefreshPhotos}

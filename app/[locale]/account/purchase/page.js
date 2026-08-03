@@ -336,23 +336,6 @@ export default function AccountPurchasePage() {
                 {currentLocale === "ko" ? "간편결제 / 카드" : "Easy Pay / Card"}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <img
-                src="/logo/Toss_App_Icon.png"
-                alt="Toss Pay"
-                className="h-5 rounded-sm object-contain"
-              />
-              <img
-                src="/logo/bade_kakaopay.png"
-                alt="Kakao Pay"
-                className="h-5 rounded-sm object-contain"
-              />
-              <img
-                src="/logo/badge_npay.svg"
-                alt="Naver Pay"
-                className="h-5 rounded-sm object-contain"
-              />
-            </div>
           </button>
           {paymentError && (
             <p className="mt-3 text-center text-sm text-red-400/80">

@@ -2598,7 +2598,7 @@ const Index = ({ params }) => {
                         : selectedUrlType === "drive"
                           ? "https://drive.google.com/drive/folders/..."
                           : selectedUrlType === "icloud"
-                            ? "https://www.icloud.com/sharedalbum/..."
+                            ? "https://share.icloud.com/photos/..."
                             : t.serviceComingSoon
                     }
                     className={`w-full rounded-md border border-white/15 px-3 py-2 text-sm outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30 ${

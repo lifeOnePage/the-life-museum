@@ -63,7 +63,7 @@ const URL_TYPES = [
 const URL_PLACEHOLDERS = {
   google: "https://photos.google.com/...",
   drive: "https://drive.google.com/drive/folders/...",
-  icloud: "https://www.icloud.com/sharedalbum/...",
+  icloud: "https://share.icloud.com/photos/...",
 };
 
 export default function CreateAlbumModal({

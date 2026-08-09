@@ -156,6 +156,8 @@ export default function AlbumPreview3D({
         travel: "/images/albumtheme/travel/travel1_front.svg",
         couple_1: "/images/albumtheme/couple/couple-1.svg",
         couple_2: "/images/albumtheme/couple/couple-2.svg",
+        children_1: "/images/albumtheme/children/children-1.svg",
+        children_2: "/images/albumtheme/children/children-2.svg",
       };
 
       const [frontImg, backImg, bgImg, stickerImg, flowerImg] = await Promise.all([

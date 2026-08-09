@@ -7,8 +7,8 @@ import ScrollableChipRow from "./ScrollableChipRow";
 const THEME_LIST = Object.values(UNIFIED_THEMES);
 
 const T = {
-  ko: { comingSoon: "준비중이에요" },
-  en: { comingSoon: "Coming soon" },
+  ko: { comingSoon: "준비중이에요", all: "전체" },
+  en: { comingSoon: "Coming soon", all: "All" },
 };
 
 // Mini SVG previews for each theme layout
@@ -705,6 +705,45 @@ function TravelPreview() {
   );
 }
 
+function ChildrenPreview({ theme }) {
+  const isWhite = theme.key === "children_1";
+  const bg = isWhite ? "#ffffff" : "#e8ddc9";
+  const line = isWhite ? "#3a352e" : "#4a3f2e";
+  return (
+    <svg viewBox="0 0 44 56" className="h-full w-full">
+      <rect width="44" height="56" rx="2" fill={bg} />
+      {/* Tape */}
+      <rect x="15" y="3" width="10" height="4" rx="0.5" fill="#d98c7f" opacity="0.7" />
+      {/* Photo window */}
+      <rect
+        x="7"
+        y="6"
+        width="30"
+        height="27"
+        rx="0.5"
+        fill="#c9c2b2"
+        stroke="#fff"
+        strokeWidth="1.4"
+      />
+      {/* Leaf sprig */}
+      <path
+        d="M9 33 L9 40"
+        stroke={line}
+        strokeWidth="0.5"
+        fill="none"
+        opacity="0.8"
+      />
+      <ellipse cx="10.5" cy="35" rx="1.4" ry="0.8" fill="none" stroke={line} strokeWidth="0.4" opacity="0.8" />
+      <ellipse cx="7.5" cy="37.5" rx="1.4" ry="0.8" fill="none" stroke={line} strokeWidth="0.4" opacity="0.8" />
+      {/* Paper corner */}
+      <rect x="32" y="27" width="7" height="7" fill={isWhite ? "#e6e0d5" : "#d8cbaa"} opacity="0.8" />
+      {/* Title */}
+      <rect x="16" y="46" width="12" height="2" rx="1" fill={line} opacity="0.8" />
+      <rect x="19" y="50" width="6" height="0.8" rx="0.4" fill={line} opacity="0.5" />
+    </svg>
+  );
+}
+
 const PREVIEW_MAP = {
   fullimage: FullImagePreview,
   kitsch: KitschPreview,
@@ -713,6 +752,8 @@ const PREVIEW_MAP = {
   travel: TravelPreview,
   memorial_light: MemorialLightPreview,
   memorial_dark: MemorialDarkPreview,
+  children_1: ChildrenPreview,
+  children_2: ChildrenPreview,
 };
 
 // 사진 미리보기가 준비된 테마는 손그림 SVG 대신 실제 이미지를 보여준다.
@@ -734,17 +775,28 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
     (o) => o.key === selectedTheme,
   )?.category;
   const [activeCategory, setActiveCategory] = useState(
-    selectedCategory || "basic",
+    selectedCategory || "all",
   );
 
-  const themesInCategory = THEME_LIST.filter(
-    (o) => o.category === activeCategory,
-  );
+  const themesInCategory =
+    activeCategory === "all"
+      ? THEME_LIST
+      : THEME_LIST.filter((o) => o.category === activeCategory);
 
   return (
     <div className="space-y-3">
       {/* Category tabs */}
       <ScrollableChipRow>
+        <button
+          onClick={() => setActiveCategory("all")}
+          className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
+            activeCategory === "all"
+              ? "border-[#c4b49a] bg-[#c4b49a]/15 text-[#e8d5b7]"
+              : "border-white/10 text-[#9b8b7a] hover:border-white/25"
+          }`}
+        >
+          {t.all}
+        </button>
         {THEME_CATEGORIES.map((cat) => {
           const isActive = activeCategory === cat.key;
           return (
@@ -801,7 +853,7 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
                   )}
                 </div>
                 <p className="truncate text-xs font-medium text-[#e8d5b7]">
-                  {option.name}
+                  {locale === "en" ? option.nameEn || option.name : option.name}
                 </p>
               </button>
             );

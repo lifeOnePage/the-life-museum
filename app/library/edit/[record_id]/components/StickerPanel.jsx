@@ -9,12 +9,14 @@ const T = {
     hint: "스티커를 누르면 오른쪽 미리보기에 추가돼요. 몸통은 드래그로 이동 · 위쪽 손잡이로 회전 · 모서리 손잡이로 크기 조절하세요",
     front: "앞면",
     back: "뒷면",
+    all: "전체",
   },
   en: {
     noStickers: "No stickers yet",
     hint: "Tap a sticker to add it to the preview on the right — drag the body to move, the top handle to rotate, the corner handle to resize",
     front: "Front",
     back: "Back",
+    all: "All",
   },
 };
 
@@ -29,7 +31,7 @@ const StickerPanel = ({
 }) => {
   const t = T[locale] || T.ko;
   const [stickerPacks, setStickerPacks] = useState([]);
-  const [activeStickerPack, setActiveStickerPack] = useState(null);
+  const [activeStickerPack, setActiveStickerPack] = useState("all");
 
   // public/stickers/<packId>/ 폴더 구조를 그대로 반영한 팩 목록을 불러온다.
   useEffect(() => {
@@ -41,7 +43,7 @@ const StickerPanel = ({
           const packs = data.packs || [];
           setStickerPacks(packs);
           setActiveStickerPack((cur) =>
-            cur && packs.some((p) => p.id === cur) ? cur : packs[0]?.id ?? null,
+            cur === "all" || packs.some((p) => p.id === cur) ? cur : "all",
           );
         }
       })
@@ -95,6 +97,16 @@ const StickerPanel = ({
         <>
           {/* Pack chips */}
           <ScrollableChipRow>
+            <button
+              onClick={() => setActiveStickerPack("all")}
+              className={`shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition-colors ${
+                activeStickerPack === "all"
+                  ? "border-[#c4b49a] bg-[#c4b49a]/15 text-[#e8d5b7]"
+                  : "border-white/10 text-[#9b8b7a] hover:border-white/25"
+              }`}
+            >
+              {t.all}
+            </button>
             {stickerPacks.map((pack) => {
               const isActive = activeStickerPack === pack.id;
               return (
@@ -113,15 +125,24 @@ const StickerPanel = ({
             })}
           </ScrollableChipRow>
 
-          {/* Active pack's stickers */}
+          {/* 선택된 팩(또는 전체)의 스티커 */}
           {(() => {
-            const pack = stickerPacks.find((p) => p.id === activeStickerPack);
-            if (!pack) return null;
+            const displayedStickers =
+              activeStickerPack === "all"
+                ? stickerPacks.flatMap((pack) =>
+                    pack.stickers.map((asset) => ({
+                      ...asset,
+                      _packId: pack.id,
+                    })),
+                  )
+                : (stickerPacks.find((p) => p.id === activeStickerPack)
+                    ?.stickers ?? []);
+            if (displayedStickers.length === 0) return null;
             return (
               <div className="grid grid-cols-4 gap-2">
-                {pack.stickers.map((asset) => (
+                {displayedStickers.map((asset) => (
                   <button
-                    key={asset.id}
+                    key={`${asset._packId ?? activeStickerPack}-${asset.id}`}
                     onClick={() => addSticker(asset)}
                     title={asset.label}
                     className="relative flex aspect-square items-center justify-center rounded-md border border-white/10 bg-white/5 p-1.5 hover:border-[#c4b49a]/60"

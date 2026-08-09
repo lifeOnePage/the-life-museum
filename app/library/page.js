@@ -88,6 +88,8 @@ async function generateAlbumCovers(item, locale) {
     travel: "/images/albumtheme/travel/travel1_front.svg",
     couple_1: "/images/albumtheme/couple/couple-1.svg",
     couple_2: "/images/albumtheme/couple/couple-2.svg",
+    children_1: "/images/albumtheme/children/children-1.svg",
+    children_2: "/images/albumtheme/children/children-2.svg",
   };
 
   // 사용자 배치 스티커 — 고유 src만 로드해 {src: img} 맵 구성 (실패한 이미지는 제외)

@@ -20,6 +20,11 @@ const ZOOM_MAX = 2.5;
 // 수 초 걸리던 문제를 없앤다. 캐시되면 이후 선택은 "새 앞면 이미지 1장"만 기다린다.
 const loadImg = loadCachedImage;
 
+const T = {
+  ko: { front: "앞면", back: "뒷면" },
+  en: { front: "Front", back: "Back" },
+};
+
 export default function AlbumPreview2D({
   frontCover,
   backCoverImageUrl,
@@ -28,7 +33,6 @@ export default function AlbumPreview2D({
   selectedTheme,
   stickers,
   onStickersChange,
-  stickersEditable,
   onBackCoverDataUrlChange,
   albumTitle,
   albumSubTitle,
@@ -45,6 +49,7 @@ export default function AlbumPreview2D({
   // 라이브러리 캐시에 심어 복귀 즉시 최종 모습이 보이게 하는 용도
   onCoversComposited,
 }) {
+  const t = T[locale] || T.ko;
   const [isFlipped, setIsFlipped] = useState(false);
   const toggleFlip = () => {
     setIsFlipped((f) => {
@@ -60,6 +65,10 @@ export default function AlbumPreview2D({
       setIsFlipped(flipped);
     }
   }, [flipped]);
+
+  // 스티커는 항상 "지금 보이는 면"에서 바로 드래그로 편집할 수 있다 — 어떤
+  // 좌측 탭이 열려 있는지와 무관하게 뒤집힌 면을 그대로 편집 대상으로 삼는다.
+  const editableSide = isFlipped ? "back" : "front";
 
   const [frontCoverImg, setFrontCoverImg] = useState(null);
   const [backCoverImg, setBackCoverImg] = useState(null);
@@ -92,6 +101,8 @@ export default function AlbumPreview2D({
         travel: "/images/albumtheme/travel/travel1_front.svg",
         couple_1: "/images/albumtheme/couple/couple-1.svg",
         couple_2: "/images/albumtheme/couple/couple-2.svg",
+        children_1: "/images/albumtheme/children/children-1.svg",
+        children_2: "/images/albumtheme/children/children-2.svg",
       };
 
       const [frontImg, backImg, bgImg, stickerImg, flowerImg] = await Promise.all([
@@ -209,7 +220,7 @@ export default function AlbumPreview2D({
           locale,
           // 편집 중(스티커 오버레이가 직접 뜬 상태)에는 캔버스에 굽지 않고
           // DOM 오버레이로만 보여준다 — 그렇지 않으면 두 번 겹쳐 보인다.
-          stickers: stickersEditable === "front" ? [] : frontStickers,
+          stickers: editableSide === "front" ? [] : frontStickers,
           stickerImages,
         }),
       );
@@ -229,7 +240,7 @@ export default function AlbumPreview2D({
     locale,
     frontStickers,
     stickerImages,
-    stickersEditable,
+    editableSide,
   ]);
 
   // Debounced back cover canvas: coalesces rapid sequential updates (image loads,
@@ -251,7 +262,7 @@ export default function AlbumPreview2D({
         themeStickerImg,
         // 편집 중(스티커 오버레이가 직접 뜬 상태)에는 캔버스에 굽지 않고
         // DOM 오버레이로만 보여준다 — 그렇지 않으면 두 번 겹쳐 보인다.
-        stickersEditable === "back" ? [] : backStickers,
+        editableSide === "back" ? [] : backStickers,
         stickerImages,
       );
       setBackCoverDataUrl(dataUrl);
@@ -270,7 +281,7 @@ export default function AlbumPreview2D({
     themeBgImg,
     themeStickerImg,
     backStickers,
-    stickersEditable,
+    editableSide,
     stickerImages,
     onBackCoverDataUrlChange,
   ]);
@@ -291,12 +302,12 @@ export default function AlbumPreview2D({
   const frontStageRef = useRef(null);
   const backStageRef = useRef(null);
   const activeStageRef =
-    stickersEditable === "front" ? frontStageRef : backStageRef;
+    editableSide === "front" ? frontStageRef : backStageRef;
   const dragRef = useRef(null);
 
   useEffect(() => {
-    if (!stickersEditable) setSelectedStickerId(null);
-  }, [stickersEditable]);
+    setSelectedStickerId(null);
+  }, [editableSide]);
 
   const updateSticker = (id, patch) => {
     onStickersChange?.(
@@ -483,6 +494,7 @@ export default function AlbumPreview2D({
             alt=""
             draggable={false}
             onPointerDown={(e) => handleStickerPointerDown(e, s)}
+            onClick={(e) => e.stopPropagation()}
             className={`h-full w-full cursor-grab touch-none object-contain active:cursor-grabbing ${
               isSelected
                 ? "outline outline-2 outline-offset-2 outline-[#c4b49a]"
@@ -496,6 +508,7 @@ export default function AlbumPreview2D({
               <div className="pointer-events-none absolute bottom-full left-1/2 h-5 w-px -translate-x-1/2 bg-[#c4b49a]" />
               <button
                 onPointerDown={(e) => handleRotateDown(e, s)}
+                onClick={(e) => e.stopPropagation()}
                 className="absolute bottom-full left-1/2 flex h-6 w-6 -translate-x-1/2 -translate-y-5 cursor-grab touch-none items-center justify-center rounded-full border-2 border-[#c4b49a] bg-[#2a2318] text-[#c4b49a] active:cursor-grabbing"
                 title="회전"
               >
@@ -505,6 +518,7 @@ export default function AlbumPreview2D({
               {/* 크기 조절 손잡이 — 우하단 모서리 */}
               <button
                 onPointerDown={(e) => handleResizeDown(e, s)}
+                onClick={(e) => e.stopPropagation()}
                 className="absolute right-0 bottom-0 h-4 w-4 translate-x-1/2 translate-y-1/2 cursor-nwse-resize touch-none rounded-full border-2 border-[#c4b49a] bg-[#2a2318]"
                 title="크기 조절"
               />
@@ -535,6 +549,9 @@ export default function AlbumPreview2D({
         >
           <RefreshCw className="h-4 w-4" />
         </button>
+        <span className="text-xs font-medium text-[#e8d5b7]">
+          {isFlipped ? t.back : t.front}
+        </span>
       </div>
 
       <div
@@ -553,26 +570,26 @@ export default function AlbumPreview2D({
               transition: "transform 0.5s ease",
               transform: `rotateY(${isFlipped ? 180 : 0}deg)`,
             }}
-            onClick={stickersEditable ? undefined : toggleFlip}
+            onClick={toggleFlip}
           >
           {/* Front face */}
           <div
             ref={frontStageRef}
             onPointerMove={
-              stickersEditable === "front" ? handleStickerPointerMove : undefined
+              editableSide === "front" ? handleStickerPointerMove : undefined
             }
             onPointerUp={
-              stickersEditable === "front" ? handleStickerPointerUp : undefined
+              editableSide === "front" ? handleStickerPointerUp : undefined
             }
             onPointerCancel={
-              stickersEditable === "front" ? handleStickerPointerUp : undefined
+              editableSide === "front" ? handleStickerPointerUp : undefined
             }
             onClickCapture={(e) => {
-              if (stickersEditable === "front" && e.target === e.currentTarget) {
+              if (editableSide === "front" && e.target === e.currentTarget) {
                 setSelectedStickerId(null);
               }
             }}
-            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${stickersEditable === "front" ? "touch-none select-none" : ""}`}
+            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${editableSide === "front" ? "touch-none select-none" : ""}`}
             style={{ backfaceVisibility: "hidden" }}
           >
             {frontSrc && (
@@ -580,31 +597,31 @@ export default function AlbumPreview2D({
                 src={frontSrc}
                 alt=""
                 draggable={false}
-                className={`h-full w-full object-cover ${stickersEditable === "front" ? "pointer-events-none" : ""}`}
+                className={`h-full w-full object-cover ${editableSide === "front" ? "pointer-events-none" : ""}`}
               />
             )}
 
-            {stickersEditable === "front" && renderStickerOverlay(frontStickers)}
+            {editableSide === "front" && renderStickerOverlay(frontStickers)}
           </div>
 
           {/* Back face */}
           <div
             ref={backStageRef}
             onPointerMove={
-              stickersEditable === "back" ? handleStickerPointerMove : undefined
+              editableSide === "back" ? handleStickerPointerMove : undefined
             }
             onPointerUp={
-              stickersEditable === "back" ? handleStickerPointerUp : undefined
+              editableSide === "back" ? handleStickerPointerUp : undefined
             }
             onPointerCancel={
-              stickersEditable === "back" ? handleStickerPointerUp : undefined
+              editableSide === "back" ? handleStickerPointerUp : undefined
             }
             onClickCapture={(e) => {
-              if (stickersEditable === "back" && e.target === e.currentTarget) {
+              if (editableSide === "back" && e.target === e.currentTarget) {
                 setSelectedStickerId(null);
               }
             }}
-            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${stickersEditable === "back" ? "touch-none select-none" : ""}`}
+            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${editableSide === "back" ? "touch-none select-none" : ""}`}
             style={{
               backfaceVisibility: "hidden",
               transform: "rotateY(180deg)",
@@ -615,11 +632,11 @@ export default function AlbumPreview2D({
                 src={backSrc}
                 alt=""
                 draggable={false}
-                className={`h-full w-full object-cover ${stickersEditable === "back" ? "pointer-events-none" : ""}`}
+                className={`h-full w-full object-cover ${editableSide === "back" ? "pointer-events-none" : ""}`}
               />
             )}
 
-            {stickersEditable === "back" && renderStickerOverlay(backStickers)}
+            {editableSide === "back" && renderStickerOverlay(backStickers)}
           </div>
           </div>
         </div>

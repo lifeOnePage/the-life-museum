@@ -282,6 +282,74 @@ function drawCoupleFrontLayout(
   ctx.textAlign = "left";
 }
 
+// ─── Children/Parenting front cover: 폴라로이드 프레임 + 사진 창 + 앨범 타이틀 ───
+// 프레임 원본 에셋(children-1.svg/children-2.svg)은 사진 창이 투명 처리되어 있어
+// 사진을 먼저 채운 뒤 프레임을 그 위에 덮어 씌운다. children_1(화이트)은 프레임
+// 자체에 배경이 없어(전부 투명) 캔버스 배경을 직접 흰색으로 채워야 하고,
+// children_2(황토)는 프레임에 종이 질감 배경이 내장되어 있다.
+function drawChildrenFrontLayout(
+  ctx,
+  size,
+  sourceImg,
+  albumTitle,
+  frameImg,
+  variant,
+) {
+  const isWhite = variant === 1;
+  const bg = isWhite ? "#ffffff" : "#e8ddc9";
+  const textMain = isWhite ? "#3a352e" : "#4a3f2e";
+
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  // 사진 창(투명 컷아웃) 좌표 — children-1.svg/children-2.svg 실측값(비율)
+  const hole = isWhite
+    ? { x: size * 0.2256, y: size * 0.2168, w: size * 0.5293, h: size * 0.5225 }
+    : { x: size * 0.236, y: size * 0.2049, w: size * 0.5295, h: size * 0.5447 };
+
+  if (sourceImg) {
+    const imgRatio = sourceImg.width / sourceImg.height;
+    const boxRatio = hole.w / hole.h;
+    let sx, sy, sw, sh;
+    if (imgRatio > boxRatio) {
+      sh = sourceImg.height;
+      sw = sh * boxRatio;
+      sx = (sourceImg.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = sourceImg.width;
+      sh = sw / boxRatio;
+      sx = 0;
+      sy = (sourceImg.height - sh) / 2;
+    }
+    ctx.drawImage(sourceImg, sx, sy, sw, sh, hole.x, hole.y, hole.w, hole.h);
+  }
+
+  if (frameImg) {
+    ctx.drawImage(frameImg, 0, 0, size, size);
+  }
+
+  // 타이틀 — 사진 창 아래, 얇은 세리프 + 자간 + 짧은 장식선
+  const titleFont = resolveFont("Escoredream");
+  ctx.textAlign = "center";
+  ctx.fillStyle = textMain;
+  ctx.font = `500 ${size * 0.034}px ${titleFont}`;
+  ctx.letterSpacing = `${size * 0.006}px`;
+  ctx.fillText(albumTitle || "ALBUM", size / 2, size * 0.87);
+  ctx.letterSpacing = "0px";
+
+  ctx.strokeStyle = textMain;
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(size / 2 - size * 0.025, size * 0.887);
+  ctx.lineTo(size / 2 + size * 0.025, size * 0.887);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  ctx.textAlign = "left";
+}
+
 // ─── Memorial front cover: oval-framed photo + flower + name ───
 // (뒷면 memorial_light/memorial_dark와 동일한 팔레트를 사용)
 function drawMemorialFrontLayout(
@@ -541,6 +609,32 @@ export function generateFrontCoverDataUrl(frontCoverImg, config) {
       albumTitle,
       flowerImg,
       themeKey === "couple_1" ? 1 : 2,
+    );
+    drawUserStickers(ctx, size, stickers, stickerImages);
+    return canvas.toDataURL("image/jpeg", 0.95);
+  }
+
+  // Children/Parenting 테마도 뒷면과 짝을 이루는 고정 레이아웃(폴라로이드 프레임)을
+  // 쓴다 — flowerImg 슬롯을 프레임 이미지로 재사용한다.
+  if (themeKey === "children_1" || themeKey === "children_2") {
+    if (!frontCoverImg && !albumTitle && !(stickers && stickers.length))
+      return null;
+    const size = 1024;
+    const resolution = 2048;
+    const canvas = document.createElement("canvas");
+    canvas.width = resolution;
+    canvas.height = resolution;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(resolution / size, resolution / size);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    drawChildrenFrontLayout(
+      ctx,
+      size,
+      frontCoverImg,
+      albumTitle,
+      flowerImg,
+      themeKey === "children_1" ? 1 : 2,
     );
     drawUserStickers(ctx, size, stickers, stickerImages);
     return canvas.toDataURL("image/jpeg", 0.95);

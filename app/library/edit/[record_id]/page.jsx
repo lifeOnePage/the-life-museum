@@ -400,8 +400,6 @@ const Index = ({ params }) => {
   const [previewFlipped, setPreviewFlipped] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState(DEFAULT_THEME);
   const [stickers, setStickers] = useState([]);
-  // 스티커 패널에서 지금 편집 중인 면 — 미리보기 자동 플립에도 사용
-  const [stickerSide, setStickerSide] = useState("back");
   // 커버 이미지 패널(앞면/뒷면 통합)에서 지금 편집 중인 면
   const [coverImageSide, setCoverImageSide] = useState("front");
 
@@ -1594,7 +1592,6 @@ const Index = ({ params }) => {
               selectedTheme={selectedTheme}
               stickers={stickers}
               onStickersChange={setStickers}
-              stickersEditable={coverPanel === "sticker" ? stickerSide : false}
               albumTitle={albumTitle}
               albumSubTitle={albumSubtitle}
               titleOverlayEnabled={titleOverlayEnabled}
@@ -1654,12 +1651,12 @@ const Index = ({ params }) => {
                           key={item.key}
                           onClick={() => {
                             setCoverPanel(item.key);
+                            // 스티커 탭은 지금 보이는 면을 그대로 편집하므로 뒤집지 않는다.
+                            if (item.key === "sticker") return;
                             setPreviewFlipped(
-                              item.key === "sticker"
-                                ? stickerSide === "back"
-                                : item.key === "coverImage"
-                                  ? coverImageSide === "back"
-                                  : item.side === "back",
+                              item.key === "coverImage"
+                                ? coverImageSide === "back"
+                                : item.side === "back",
                             );
                           }}
                           className={`flex shrink-0 flex-col items-center gap-1 rounded-lg px-3 py-2.5 text-[11px] font-medium whitespace-nowrap transition-colors lg:w-full lg:text-center lg:leading-tight lg:break-keep lg:whitespace-normal ${
@@ -1903,11 +1900,10 @@ const Index = ({ params }) => {
                           locale={locale}
                           stickers={stickers}
                           onStickersChange={setStickers}
-                          activeSide={stickerSide}
-                          onActiveSideChange={(side) => {
-                            setStickerSide(side);
-                            setPreviewFlipped(side === "back");
-                          }}
+                          activeSide={previewFlipped ? "back" : "front"}
+                          onActiveSideChange={(side) =>
+                            setPreviewFlipped(side === "back")
+                          }
                         />
                       )}
                     </div>

@@ -1302,6 +1302,161 @@ function drawCoupleLayout(ctx, size, bio, timeline, photoImg) {
   ctx.textAlign = "left";
 }
 
+// ─── Children/Parenting 배경(뒷면) — 작은 원형 액자 사진 + "OUR STORY" + 짧은 글 +
+// 가로 넘버링 타임라인 + 하트 카피. children_1(화이트)/children_2(황토) 공용.
+function drawChildrenLayout(ctx, size, bio, timeline, photoImg, isWhite) {
+  const bg = isWhite ? "#fbf9f5" : "#e8ddc9";
+  const textMain = isWhite ? "#3a352e" : "#4a3f2e";
+  const textMuted = isWhite ? "#9a9184" : "#8f7d5f";
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, size, size);
+
+  const titleFont = bookkFontLoaded ? '"Bookk Gothic"' : "sans-serif";
+  const monoFont = monoplexFontLoaded ? '"MonoplexKR"' : "monospace";
+  ctx.textAlign = "center";
+
+  // 작은 원형 액자 사진
+  const photoR = size * 0.06;
+  const photoCx = size / 2;
+  const photoCy = size * 0.105;
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(photoCx, photoCy, photoR, 0, Math.PI * 2);
+  ctx.clip();
+  ctx.fillStyle = isWhite ? "#e6e0d5" : "#d8cbaa";
+  ctx.fillRect(photoCx - photoR, photoCy - photoR, photoR * 2, photoR * 2);
+  if (photoImg) {
+    const imgRatio = photoImg.width / photoImg.height;
+    let sx, sy, sw, sh;
+    if (imgRatio > 1) {
+      sh = photoImg.height;
+      sw = sh;
+      sx = (photoImg.width - sw) / 2;
+      sy = 0;
+    } else {
+      sw = photoImg.width;
+      sh = sw;
+      sx = 0;
+      sy = (photoImg.height - sh) / 2;
+    }
+    ctx.drawImage(
+      photoImg,
+      sx,
+      sy,
+      sw,
+      sh,
+      photoCx - photoR,
+      photoCy - photoR,
+      photoR * 2,
+      photoR * 2,
+    );
+  }
+  ctx.restore();
+  ctx.strokeStyle = textMuted;
+  ctx.globalAlpha = 0.5;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(photoCx, photoCy, photoR, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // 짧은 세로 구분선
+  const divider = (y) => {
+    ctx.strokeStyle = textMuted;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(size / 2, y);
+    ctx.lineTo(size / 2, y + size * 0.02);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  };
+
+  let cursorY = photoCy + photoR + size * 0.05;
+  divider(cursorY - size * 0.02);
+
+  // OUR STORY
+  ctx.font = `700 ${size * 0.026}px ${titleFont}`;
+  ctx.fillStyle = textMain;
+  ctx.letterSpacing = "3px";
+  ctx.fillText("OUR STORY", size / 2, cursorY);
+  ctx.letterSpacing = "0px";
+  cursorY += size * 0.045;
+
+  // 짧은 글 (bio)
+  if (bio) {
+    ctx.font = `400 ${size * 0.016}px ${titleFont}`;
+    ctx.fillStyle = textMuted;
+    const lines = wrapText(ctx, bio, size * 0.6).slice(0, 5);
+    for (const line of lines) {
+      ctx.fillText(line, size / 2, cursorY);
+      cursorY += size * 0.027;
+    }
+  }
+  cursorY += size * 0.025;
+  divider(cursorY);
+  cursorY += size * 0.055;
+
+  // 타임라인 헤더
+  ctx.font = `700 ${size * 0.022}px ${titleFont}`;
+  ctx.fillStyle = textMain;
+  ctx.letterSpacing = "3px";
+  ctx.fillText("OUR TIMELINE", size / 2, cursorY);
+  ctx.letterSpacing = "0px";
+  cursorY += size * 0.05;
+
+  // 가로 넘버링 타임라인 (최대 10개)
+  const items = (timeline || []).slice(0, 10);
+  if (items.length > 0) {
+    const left = size * 0.14;
+    const right = size * 0.86;
+    const lineY = cursorY + size * 0.018;
+    ctx.strokeStyle = textMuted;
+    ctx.globalAlpha = 0.35;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(left, lineY);
+    ctx.lineTo(right, lineY);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    const step = items.length > 1 ? (right - left) / (items.length - 1) : 0;
+    items.forEach((item, i) => {
+      const x = items.length > 1 ? left + step * i : size / 2;
+      ctx.font = `600 ${size * 0.0125}px ${monoFont}`;
+      ctx.fillStyle = textMain;
+      ctx.fillText(String(i + 1).padStart(2, "0"), x, lineY - size * 0.016);
+
+      ctx.fillStyle = textMain;
+      ctx.beginPath();
+      ctx.arc(x, lineY, size * 0.006, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (item.year) {
+        ctx.font = `500 ${size * 0.0115}px ${titleFont}`;
+        ctx.fillStyle = textMuted;
+        ctx.fillText(item.year, x, lineY + size * 0.026);
+      }
+    });
+    cursorY = lineY + size * 0.06;
+  } else {
+    cursorY += size * 0.02;
+  }
+
+  // 하트 + 하단 카피
+  drawHeartIcon(ctx, size / 2, cursorY, size * 0.012, textMain);
+  cursorY += size * 0.032;
+  ctx.font = `italic 400 ${size * 0.0145}px ${titleFont}`;
+  ctx.fillStyle = textMuted;
+  ctx.fillText(
+    "Every moment is a precious gift.",
+    size / 2,
+    Math.min(cursorY, size - size * 0.04),
+  );
+
+  ctx.textAlign = "left";
+}
+
 // ─── User-placed stickers (from the back theme editor) ───
 // stickers: [{ src, x, y, rotation, scale }] with x/y normalized to 0..1
 // stickerImages: { [src]: HTMLImageElement }
@@ -1389,6 +1544,17 @@ export function generateBackCoverDataUrl(
     case "couple_1":
     case "couple_2":
       drawCoupleLayout(ctx, size, bio, timeline, backCoverImg);
+      break;
+    case "children_1":
+    case "children_2":
+      drawChildrenLayout(
+        ctx,
+        size,
+        bio,
+        timeline,
+        backCoverImg,
+        themeKey === "children_1",
+      );
       break;
     case "memorial_light":
       drawMemorialLightLayout(ctx, size, bio, timeline, albumTitle, albumSubTitle);

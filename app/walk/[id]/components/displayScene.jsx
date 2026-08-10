@@ -484,22 +484,25 @@ export default function DisplayScene({ recordId, locale }) {
     }
   }, [isPlaying]);
 
-  // isMuted 변화에 따라 음소거 처리 (iOS는 volume read-only라 muted 속성 사용)
+  // isMuted 변화에 따라 음소거 처리 (iOS는 volume read-only라 muted 속성 사용).
+  // 영상 재생으로 덕킹 중이면 사용자가 음소거를 풀어도 덕킹을 유지한다.
   useEffect(() => {
     if (!bgmRef.current) return;
-    bgmRef.current.muted = isMuted;
+    bgmRef.current.muted = isMuted || bgmMutedByVideoRef.current;
   }, [isMuted]);
 
-  // 비디오 재생 시 BGM 뮤트/복원 콜백
+  // 비디오 재생 시 BGM 뮤트/복원 콜백.
+  // iOS는 HTMLMediaElement.volume이 read-only(no-op)라 volume 기반 덕킹이
+  // 동작하지 않는다 — muted 속성으로 덕킹하고, 복원 시 사용자 음소거 설정과 병합.
   const handleVideoBgmControl = useCallback(
     (videoIsPlaying) => {
       if (!bgmRef.current) return;
       if (videoIsPlaying) {
         bgmMutedByVideoRef.current = true;
-        bgmRef.current.volume = 0;
+        bgmRef.current.muted = true;
       } else {
         bgmMutedByVideoRef.current = false;
-        bgmRef.current.volume = isMuted ? 0 : 0.4;
+        bgmRef.current.muted = isMuted;
       }
     },
     [isMuted],

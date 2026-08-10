@@ -191,9 +191,14 @@ export default function Scene({
   const livePlanesRef = useRef(livePlanes);
   livePlanesRef.current = livePlanes;
 
-  // 중앙 독립 슬라이드쇼용 이미지 목록(앨범 순서 유지, 영상 제외 — '사진'만)
-  const centerImages = useMemo(
-    () => (mediaList || []).filter((m) => m.type === "image"),
+  // 중앙 독립 슬라이드쇼용 미디어 목록(앨범 순서 유지) — 사진 + 영상.
+  // 영상은 예전 벽면 auto 포커스가 재생했지만, 중앙 슬라이드쇼 전환으로 그 경로가
+  // 비활성화되어 영상이 전혀 재생되지 않았다 — 이제 중앙에서 홀드 후 재생한다.
+  const centerMedia = useMemo(
+    () =>
+      (mediaList || []).filter(
+        (m) => m.type === "image" || m.type === "video",
+      ),
     [mediaList],
   );
 
@@ -838,6 +843,12 @@ export default function Scene({
     // Pause auto-advance during pinch zoom
     if (!pinchRef.current.active) {
       let targetEffectiveSpeed = cameraSpeed;
+      // 중앙 슬라이드쇼가 영상을 홀드·재생 중이면 카메라를 서서히 정지 —
+      // 예전 벽면 auto 포커스의 영상 정지(VIDEO_CAMERA_STOP) 연출 복원.
+      // 감속·재가속의 완급은 아래 비대칭 스무딩이 담당한다.
+      if (s.centerVideoHold) {
+        targetEffectiveSpeed = 0;
+      }
       // 곡선 기반 수동 포커스(manualCurve)는 클론이 카메라 기준으로 다가오므로
       // 카메라를 감속시킬 이유가 없다. 감속하면 복도(벽면)만 느려져 자동 진행과
       // 다르게 보이고, 접근 속도 불일치의 원인이 됐던 로직이기도 하다.
@@ -877,7 +888,10 @@ export default function Scene({
         }
       }
       // 비대칭 스무딩: 감속은 빠르게(k=6), 가속은 천천히(k=2)
-      const k = targetEffectiveSpeed < s.smoothSpeed ? 6 : 2;
+      let k = targetEffectiveSpeed < s.smoothSpeed ? 6 : 2;
+      // 영상 홀드로 인한 정지는 더 완만하게 — '서서히 멈추는' 연출
+      // (k=1.2: 약 0.5초에 10%, 1초에 1% 수준으로 감속)
+      if (s.centerVideoHold && targetEffectiveSpeed === 0) k = 1.2;
       s.smoothSpeed +=
         (targetEffectiveSpeed - s.smoothSpeed) *
         (1 - Math.pow(0.01, delta * k));
@@ -1261,12 +1275,15 @@ export default function Scene({
 
       {/* 중앙 독립 슬라이드쇼(복도와 분리) — 모든 사진을 멀리서·천천히·순서대로 */}
       <CenterSlideshow
-        imageList={centerImages}
+        imageList={centerMedia}
         isPlaying={isPlaying}
         active={focusRender.mode !== "manual"}
         stateRef={state}
         maxTextureSize={textureConfig.maxTextureSize}
         cameraSpeed={cameraSpeed}
+        videoPreviewEnabled={videoPreviewEnabled}
+        videoMaxDuration={videoMaxDuration}
+        onVideoBgmControl={onVideoBgmControl}
       />
 
       {/* Auto Focus: Clone + Mirror + GlowBorder */}

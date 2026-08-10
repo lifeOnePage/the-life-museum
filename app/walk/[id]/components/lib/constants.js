@@ -42,6 +42,8 @@ export const SLIDE_TERMINAL_SPEED_RATIO = 0.55; // 종단 속도 = 평균 접근
 // 잔존 opacity(END/(START-END))가 1프레임 하드컷되는 팝이 생긴다.
 export const SLIDE_FADE_OUT_START_DIST = 80; // 이 거리부터 opacity 감소 시작
 export const SLIDE_FADE_OUT_END_DIST = 0; // 이 거리에서 opacity 0(통과 순간 소멸)
+// 영상 슬라이드: 이 거리에서 플레인이 멈춰 영상을 재생하고, 종료 후 통과를 재개
+export const SLIDE_VIDEO_HOLD_DIST = 100;
 
 // 모바일 터치 스크롤 감도 — 손가락 이동 1px당 수동 속도 가산량. 높일수록 같은
 // 스와이프로 더 멀리 이동(데스크톱 휠은 deltaY×0.8 별도).

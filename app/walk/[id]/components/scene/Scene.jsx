@@ -1065,6 +1065,13 @@ export default function Scene({
             });
           }
 
+          // 해제 전 모드 캡처 — manual 해제 시 auto 체인을 부활시키면 안 된다.
+          // (이 가드가 없어 수동 클릭 한 번이 '비활성화된 벽면 auto 포커스'를
+          //  되살렸고, pickAutoTarget이 카메라 25~55유닛 앞의 plane을 골라
+          //  클론을 코앞에 스폰 → 해제도 같은 분기로 돌아와 무한 체인이 됐다.
+          //  중앙 연출은 CenterSlideshow가 전담하므로 manual은 idle로만 복귀.)
+          const wasAutoHere = s.focusMode === "auto";
+
           // Dismiss
           s.focusMode = "idle";
           s.targetPlaneId = null;
@@ -1073,8 +1080,8 @@ export default function Scene({
           s.manualPlaneOriginalPos = null;
           s.videoTriggered = false;
 
-          // Immediately pick next auto
-          const next = pickAutoTarget(s);
+          // Immediately pick next auto (auto였을 때만 — manual은 idle 복귀)
+          const next = wasAutoHere ? pickAutoTarget(s) : null;
           if (next) {
             s.focusMode = "auto";
             s.targetPlaneId = next.id;

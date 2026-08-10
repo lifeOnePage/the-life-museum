@@ -259,7 +259,7 @@ function drawCoupleFrontLayout(
     ctx.textAlign = "center";
     ctx.font = `400 ${s(15)}px ${titleFont}`;
     ctx.letterSpacing = `${s(2)}px`;
-    ctx.fillText("사진으로 기록한 10년", size / 2, size - s(60));
+    ctx.fillText("사진으로 기록한 지난 이야기", size / 2, size - s(60));
     ctx.letterSpacing = "0px";
   } else {
     // 사진 위 중앙 타이틀 + 서브 카피
@@ -276,7 +276,7 @@ function drawCoupleFrontLayout(
     // 하단 하트 + 캡션
     drawHeart(ctx, size / 2, size - s(92), s(8), textColor);
     ctx.font = `400 ${s(15)}px ${titleFont}`;
-    ctx.fillText("사진으로 기록한 10년", size / 2, size - s(55));
+    ctx.fillText("사진으로 기록한 지난 이야기", size / 2, size - s(55));
   }
 
   ctx.textAlign = "left";

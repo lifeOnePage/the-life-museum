@@ -824,7 +824,18 @@ function drawMinimalistLayout(
 function drawMemorialTwoColumnTimeline(
   ctx,
   timeline,
-  { left, right, top, colGap, rowHeight, yearFont, eventFont, yearColor, eventColor, maxRows },
+  {
+    left,
+    right,
+    top,
+    colGap,
+    rowHeight,
+    yearFont,
+    eventFont,
+    yearColor,
+    eventColor,
+    maxRows,
+  },
 ) {
   const items = timeline.slice(0, maxRows * 2);
   if (items.length === 0) return top;
@@ -843,9 +854,13 @@ function drawMemorialTwoColumnTimeline(
       ctx.fillStyle = yearColor;
       ctx.fillText(item.year, colX, y);
       const yearWidth = ctx.measureText(item.year).width;
+      const eventX = colX + yearWidth + 24;
       ctx.font = eventFont;
       ctx.fillStyle = eventColor;
-      ctx.fillText(item.event, colX + yearWidth + 24, y);
+      // event가 길면 컬럼 폭(옆 컬럼 침범 방지)에 맞춰 한 줄로 잘라서 표시
+      const eventMaxW = colWidth - (eventX - colX);
+      const eventLine = wrapText(ctx, item.event || "", eventMaxW)[0] || "";
+      ctx.fillText(eventLine, eventX, y);
     });
   };
   renderCol(leftItems, leftX);
@@ -858,7 +873,10 @@ function drawMemorialTwoColumnTimeline(
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(left + colWidth + colGap / 2, top - 24);
-    ctx.lineTo(left + colWidth + colGap / 2, top + (rowCount - 1) * rowHeight + 8);
+    ctx.lineTo(
+      left + colWidth + colGap / 2,
+      top + (rowCount - 1) * rowHeight + 8,
+    );
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
@@ -926,8 +944,8 @@ function drawMemorialLightLayout(
       top: cursorY + 40,
       colGap: 60,
       rowHeight: 58,
-      yearFont: `700 22px ${font}`,
-      eventFont: `400 20px ${font}`,
+      yearFont: `700 16px ${font}`,
+      eventFont: `400 14px ${font}`,
       yearColor: textDark,
       eventColor: textMuted,
       maxRows: 6,
@@ -1037,8 +1055,8 @@ function drawMemorialDarkLayout(
       top: cursorY + 30,
       colGap: 60,
       rowHeight: 58,
-      yearFont: `700 22px ${font}`,
-      eventFont: `400 20px ${font}`,
+      yearFont: `700 16px ${font}`,
+      eventFont: `400 14px ${font}`,
       yearColor: textLight,
       eventColor: textMuted,
       maxRows: 6,
@@ -1188,8 +1206,22 @@ function drawHeartIcon(ctx, cx, cy, r, color) {
   ctx.fillStyle = color;
   ctx.beginPath();
   ctx.moveTo(cx, cy + r * 0.9);
-  ctx.bezierCurveTo(cx - r * 1.6, cy - r * 0.6, cx - r * 0.5, cy - r * 1.6, cx, cy - r * 0.5);
-  ctx.bezierCurveTo(cx + r * 0.5, cy - r * 1.6, cx + r * 1.6, cy - r * 0.6, cx, cy + r * 0.9);
+  ctx.bezierCurveTo(
+    cx - r * 1.6,
+    cy - r * 0.6,
+    cx - r * 0.5,
+    cy - r * 1.6,
+    cx,
+    cy - r * 0.5,
+  );
+  ctx.bezierCurveTo(
+    cx + r * 0.5,
+    cy - r * 1.6,
+    cx + r * 1.6,
+    cy - r * 0.6,
+    cx,
+    cy + r * 0.9,
+  );
   ctx.closePath();
   ctx.fill();
   ctx.restore();
@@ -1213,11 +1245,11 @@ function drawCoupleLayout(ctx, size, bio, timeline, photoImg) {
   ctx.font = `700 ${size * 0.032}px ${titleFont}`;
   ctx.fillStyle = textMain;
   ctx.letterSpacing = "2px";
-  ctx.fillText("OUR STORY", size / 2, size * 0.1);
+  ctx.fillText("OUR STORY", size / 2, size * 0.18);
   ctx.letterSpacing = "0px";
 
   // 짧은 글 (bio)
-  let cursorY = size * 0.145;
+  let cursorY = size * 0.25;
   if (bio) {
     ctx.font = `400 ${size * 0.0165}px ${titleFont}`;
     ctx.fillStyle = textMuted;
@@ -1277,14 +1309,19 @@ function drawCoupleLayout(ctx, size, bio, timeline, photoImg) {
 
   const renderRow = (item, i, colX) => {
     const y = listY + i * rowHeight;
-    const num = String(i + 1 + (colX > left ? maxRows : 0)).padStart(2, "0");
     ctx.textAlign = "left";
     ctx.font = `600 ${size * 0.014}px ${monoFont}`;
     ctx.fillStyle = textMuted;
-    ctx.fillText(num, colX, y);
+    const yearText = item.year || "";
+    ctx.fillText(yearText, colX, y);
+    // year 글자 수에 따라 폭이 달라지므로 실측 후 여백을 더해 event가 겹치지 않게 한다
+    const yearWidth = ctx.measureText(yearText).width;
+    const eventX = colX + Math.max(yearWidth + size * 0.012, size * 0.032);
     ctx.font = `400 ${size * 0.0145}px ${titleFont}`;
     ctx.fillStyle = textMain;
-    ctx.fillText(item.event || "", colX + size * 0.032, y);
+    const eventMaxW = colWidth - (eventX - colX);
+    const eventLine = wrapText(ctx, item.event || "", eventMaxW)[0] || "";
+    ctx.fillText(eventLine, eventX, y);
   };
   leftItems.forEach((item, i) => renderRow(item, i, left));
   rightItems.forEach((item, i) => renderRow(item, i, left + colWidth + colGap));
@@ -1296,7 +1333,11 @@ function drawCoupleLayout(ctx, size, bio, timeline, photoImg) {
   ctx.font = `500 ${size * 0.014}px ${titleFont}`;
   ctx.fillStyle = textMuted;
   ctx.letterSpacing = "2px";
-  ctx.fillText("TEN YEARS, OUR STORY", size / 2, Math.min(footerY, size - size * 0.04));
+  ctx.fillText(
+    "LAST YEARS, OUR STORY",
+    size / 2,
+    Math.min(footerY, size - size * 0.04),
+  );
   ctx.letterSpacing = "0px";
 
   ctx.textAlign = "left";
@@ -1315,13 +1356,13 @@ function drawChildrenLayout(ctx, size, bio, timeline, photoImg, isWhite) {
   const monoFont = monoplexFontLoaded ? '"MonoplexKR"' : "monospace";
   ctx.textAlign = "center";
 
-  // 작은 원형 액자 사진
+  // 작은 정사각형 액자 사진
   const photoR = size * 0.06;
   const photoCx = size / 2;
   const photoCy = size * 0.105;
   ctx.save();
   ctx.beginPath();
-  ctx.arc(photoCx, photoCy, photoR, 0, Math.PI * 2);
+  ctx.rect(photoCx - photoR, photoCy - photoR, photoR * 2, photoR * 2);
   ctx.clip();
   ctx.fillStyle = isWhite ? "#e6e0d5" : "#d8cbaa";
   ctx.fillRect(photoCx - photoR, photoCy - photoR, photoR * 2, photoR * 2);
@@ -1355,25 +1396,24 @@ function drawChildrenLayout(ctx, size, bio, timeline, photoImg, isWhite) {
   ctx.strokeStyle = textMuted;
   ctx.globalAlpha = 0.5;
   ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.arc(photoCx, photoCy, photoR, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.strokeRect(photoCx - photoR, photoCy - photoR, photoR * 2, photoR * 2);
   ctx.globalAlpha = 1;
 
   // 짧은 세로 구분선
   const divider = (y) => {
-    ctx.strokeStyle = textMuted;
-    ctx.globalAlpha = 0.5;
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = textMain;
+    ctx.globalAlpha = 0.4;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(size / 2, y);
-    ctx.lineTo(size / 2, y + size * 0.02);
+    ctx.lineTo(size / 2, y + size * 0.028);
     ctx.stroke();
     ctx.globalAlpha = 1;
   };
 
-  let cursorY = photoCy + photoR + size * 0.05;
-  divider(cursorY - size * 0.02);
+  let cursorY = photoCy + photoR + size * 0.065;
+  divider(cursorY - size * 0.033);
+  cursorY += size * 0.04;
 
   // OUR STORY
   ctx.font = `700 ${size * 0.026}px ${titleFont}`;
@@ -1387,72 +1427,106 @@ function drawChildrenLayout(ctx, size, bio, timeline, photoImg, isWhite) {
   if (bio) {
     ctx.font = `400 ${size * 0.016}px ${titleFont}`;
     ctx.fillStyle = textMuted;
-    const lines = wrapText(ctx, bio, size * 0.6).slice(0, 5);
+    const lines = wrapText(ctx, bio, size * 0.6).slice(0, 6);
     for (const line of lines) {
       ctx.fillText(line, size / 2, cursorY);
       cursorY += size * 0.027;
     }
   }
-  cursorY += size * 0.025;
+  cursorY += size * 0.005;
   divider(cursorY);
-  cursorY += size * 0.055;
+  cursorY += size * 0.085;
 
   // 타임라인 헤더
-  ctx.font = `700 ${size * 0.022}px ${titleFont}`;
+  ctx.font = `700 ${size * 0.026}px ${titleFont}`;
   ctx.fillStyle = textMain;
   ctx.letterSpacing = "3px";
   ctx.fillText("OUR TIMELINE", size / 2, cursorY);
   ctx.letterSpacing = "0px";
   cursorY += size * 0.05;
 
-  // 가로 넘버링 타임라인 (최대 10개)
+  // 가로 넘버링 타임라인 (최대 10개, 5개씩 두 줄 — 기본 테마들과 동일한 규칙)
   const items = (timeline || []).slice(0, 10);
   if (items.length > 0) {
     const left = size * 0.14;
     const right = size * 0.86;
-    const lineY = cursorY + size * 0.018;
-    ctx.strokeStyle = textMuted;
-    ctx.globalAlpha = 0.35;
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(left, lineY);
-    ctx.lineTo(right, lineY);
-    ctx.stroke();
-    ctx.globalAlpha = 1;
+    const useMultiRow = items.length > 5;
+    const rows = useMultiRow ? [items.slice(0, 5), items.slice(5)] : [items];
+    const eventLineHeight = size * 0.017;
+    const rowSpacing = size * 0.11;
+    const firstRowY = cursorY + size * 0.018;
 
-    const step = items.length > 1 ? (right - left) / (items.length - 1) : 0;
-    items.forEach((item, i) => {
-      const x = items.length > 1 ? left + step * i : size / 2;
-      ctx.font = `600 ${size * 0.0125}px ${monoFont}`;
-      ctx.fillStyle = textMain;
-      ctx.fillText(String(i + 1).padStart(2, "0"), x, lineY - size * 0.016);
-
-      ctx.fillStyle = textMain;
-      ctx.beginPath();
-      ctx.arc(x, lineY, size * 0.006, 0, Math.PI * 2);
-      ctx.fill();
-
-      if (item.year) {
-        ctx.font = `500 ${size * 0.0115}px ${titleFont}`;
-        ctx.fillStyle = textMuted;
-        ctx.fillText(item.year, x, lineY + size * 0.026);
+    const step = (rowItems) =>
+      rowItems.length > 1 ? (right - left) / (rowItems.length - 1) : 0;
+    const labelMaxWidth = (rowItems) =>
+      (rowItems.length > 1 ? step(rowItems) : size * 0.6) * 0.9;
+    const truncate = (text, maxWidth) => {
+      if (ctx.measureText(text).width <= maxWidth) return text;
+      let t = text;
+      while (t.length > 0 && ctx.measureText(t + "…").width > maxWidth) {
+        t = t.slice(0, -1);
       }
+      return t + "…";
+    };
+
+    let maxEventLines = 1;
+    rows.forEach((rowItems, rowIdx) => {
+      const lineY = firstRowY + rowIdx * rowSpacing;
+      const rowStep = step(rowItems);
+      const maxWidth = labelMaxWidth(rowItems);
+
+      ctx.strokeStyle = textMuted;
+      ctx.globalAlpha = 0.35;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(left, lineY);
+      ctx.lineTo(right, lineY);
+      ctx.stroke();
+      ctx.globalAlpha = 1;
+
+      rowItems.forEach((item, i) => {
+        const x = rowItems.length > 1 ? left + rowStep * i : size / 2;
+
+        if (item.year) {
+          ctx.font = `600 ${size * 0.0125}px ${monoFont}`;
+          ctx.fillStyle = textMain;
+          ctx.fillText(truncate(item.year, maxWidth), x, lineY - size * 0.016);
+        }
+
+        ctx.fillStyle = textMain;
+        ctx.beginPath();
+        ctx.arc(x, lineY, size * 0.006, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (item.event) {
+          ctx.font = `500 ${size * 0.0115}px ${titleFont}`;
+          ctx.fillStyle = textMuted;
+          const eventLines = wrapText(ctx, item.event, maxWidth).slice(0, 2);
+          maxEventLines = Math.max(maxEventLines, eventLines.length);
+          eventLines.forEach((line, li) => {
+            ctx.fillText(line, x, lineY + size * 0.026 + li * eventLineHeight);
+          });
+        }
+      });
     });
-    cursorY = lineY + size * 0.06;
+
+    cursorY =
+      firstRowY +
+      (rows.length - 1) * rowSpacing +
+      size * 0.026 +
+      (maxEventLines - 1) * eventLineHeight +
+      size * 0.045;
   } else {
     cursorY += size * 0.02;
   }
 
-  // 하트 + 하단 카피
-  drawHeartIcon(ctx, size / 2, cursorY, size * 0.012, textMain);
-  cursorY += size * 0.032;
+  // 하트 + 하단 카피 — 위 내용과 무관하게 캔버스 맨 아래 고정
+  const footerTextY = size - size * 0.045;
+  const heartY = footerTextY - size * 0.04;
+  drawHeartIcon(ctx, size / 2, heartY, size * 0.012, textMain);
   ctx.font = `italic 400 ${size * 0.0145}px ${titleFont}`;
   ctx.fillStyle = textMuted;
-  ctx.fillText(
-    "Every moment is a precious gift.",
-    size / 2,
-    Math.min(cursorY, size - size * 0.04),
-  );
+  ctx.fillText("Every moment is a precious gift.", size / 2, footerTextY);
 
   ctx.textAlign = "left";
 }
@@ -1557,10 +1631,24 @@ export function generateBackCoverDataUrl(
       );
       break;
     case "memorial_light":
-      drawMemorialLightLayout(ctx, size, bio, timeline, albumTitle, albumSubTitle);
+      drawMemorialLightLayout(
+        ctx,
+        size,
+        bio,
+        timeline,
+        albumTitle,
+        albumSubTitle,
+      );
       break;
     case "memorial_dark":
-      drawMemorialDarkLayout(ctx, size, bio, timeline, albumTitle, albumSubTitle);
+      drawMemorialDarkLayout(
+        ctx,
+        size,
+        bio,
+        timeline,
+        albumTitle,
+        albumSubTitle,
+      );
       break;
     case "minimalist":
     default:

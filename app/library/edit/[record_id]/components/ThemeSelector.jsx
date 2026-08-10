@@ -756,17 +756,54 @@ const PREVIEW_MAP = {
   children_2: ChildrenPreview,
 };
 
-// 사진 미리보기가 준비된 테마는 손그림 SVG 대신 실제 이미지를 보여준다.
+// 사진 미리보기가 준비된 테마는 손그림 SVG 대신 실제 이미지(앞면+뒷면)를 보여준다.
 const PHOTO_PREVIEW_MAP = {
-  minimalist: "/images/themepreview/minimalist.png",
-  kitsch: "/images/themepreview/kitsch.png",
-  illustration: "/images/themepreview/illustration.png",
-  fullimage: "/images/themepreview/full-image.svg",
-  travel: "/images/themepreview/travel-diary.svg",
-  memorial_light: "/images/themepreview/memorial-light.png",
-  memorial_dark: "/images/themepreview/memorial-dark.svg",
-  couple_1: "/images/themepreview/couple-1.svg",
-  couple_2: "/images/themepreview/couple-2.svg",
+  // minimalist/kitsch/illustration은 파일명과 실제 내용이 반대다 — ".png"
+  // 파일이 뒷면(스티커/타임라인) 디자인이고 "-back"이 오히려 원본 사진(앞면)이다.
+  minimalist: {
+    front: "/images/themepreview/minimalist-back.svg",
+    back: "/images/themepreview/minimalist.png",
+  },
+  kitsch: {
+    front: "/images/themepreview/kitsch-back.svg",
+    back: "/images/themepreview/kitsch.png",
+  },
+  illustration: {
+    front: "/images/themepreview/illustration-back.svg",
+    back: "/images/themepreview/illustration.png",
+  },
+  fullimage: {
+    front: "/images/themepreview/full-image.svg",
+    back: "/images/themepreview/full-image-back.svg",
+  },
+  travel: {
+    front: "/images/themepreview/travel-diary.svg",
+    back: "/images/themepreview/travel-diary-back.png",
+  },
+  memorial_light: {
+    front: "/images/themepreview/memorial-light.png",
+    back: "/images/themepreview/memorial-light-back.png",
+  },
+  memorial_dark: {
+    front: "/images/themepreview/memorial-dark.svg",
+    back: "/images/themepreview/memorial-dark-back.png",
+  },
+  couple_1: {
+    front: "/images/themepreview/couple-1.svg",
+    back: "/images/themepreview/couple-1-back.png",
+  },
+  couple_2: {
+    front: "/images/themepreview/couple-2.svg",
+    back: "/images/themepreview/couple-2-back.png",
+  },
+  children_1: {
+    front: "/images/themepreview/parenting-white.png",
+    back: "/images/themepreview/parenting-white-back.png",
+  },
+  children_2: {
+    front: "/images/themepreview/parenting-brown.png",
+    back: "/images/themepreview/parenting-brown-back.png",
+  },
 };
 
 const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
@@ -836,13 +873,21 @@ const ThemeSelector = ({ selectedTheme, onThemeChange, locale = "ko" }) => {
                     : "border-white/10 bg-white/5 hover:border-white/20"
                 }`}
               >
-                <div className="relative flex aspect-square w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/10 shadow-sm">
+                <div className="relative flex aspect-[2/1] w-full shrink-0 items-center justify-center overflow-hidden rounded-sm border border-white/10 shadow-sm">
                   {photoPreview ? (
-                    <img
-                      src={photoPreview}
-                      alt={option.name}
-                      className="h-full w-full object-cover"
-                    />
+                    <>
+                      <img
+                        src={photoPreview.front}
+                        alt={`${option.name} 앞면`}
+                        className="h-full w-1/2 object-cover"
+                      />
+                      <div className="h-full w-px shrink-0 bg-white/15" />
+                      <img
+                        src={photoPreview.back}
+                        alt={`${option.name} 뒷면`}
+                        className="h-full w-1/2 object-cover"
+                      />
+                    </>
                   ) : (
                     PreviewComponent && <PreviewComponent theme={option} />
                   )}

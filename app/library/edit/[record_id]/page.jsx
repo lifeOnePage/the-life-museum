@@ -75,6 +75,7 @@ import {
 } from "@/app/library/utils/albumListCache";
 import { generateFrontCoverDataUrl } from "@/app/lib/generateFrontCover";
 import { loadCachedImage } from "@/app/lib/loadCachedImage";
+import { authedFetch } from "@/app/utils/authedFetch";
 
 const ADMIN_EMAILS = new Set([
   "goodchaeee@naver.com",
@@ -347,9 +348,9 @@ function SortableTimelineItem({ id, item, index, onUpdate, onRemove, t }) {
       </div>
       <Input
         value={item.year}
-        onChange={(e) => onUpdate(index, "year", e.target.value.slice(0, 13))}
+        onChange={(e) => onUpdate(index, "year", e.target.value.slice(0, 9))}
         placeholder={t.yearPlaceholder}
-        maxLength={13}
+        maxLength={9}
         className="h-9 w-[70px] rounded-[5px] border-white/10 bg-[#2e2720] text-xs text-[#e8d5b7] placeholder:text-[#9b8b7a]/60"
       />
       <div className="relative flex-1">
@@ -532,13 +533,8 @@ const Index = ({ params }) => {
   useEffect(() => {
     const fetchRecord = async () => {
       try {
-        const response = await fetch(
+        const response = await authedFetch(
           `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-            },
-          },
         );
 
         const result = await response.json();
@@ -669,13 +665,12 @@ const Index = ({ params }) => {
   const saveRecordColors = async () => {
     const theme =
       UNIFIED_THEMES[selectedTheme] || UNIFIED_THEMES[DEFAULT_THEME];
-    const response = await fetch(
+    const response = await authedFetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
       {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           color: toApiColor(theme.text),
@@ -722,13 +717,12 @@ const Index = ({ params }) => {
   // Bio save logic (from BioEditor)
   const saveBio = async () => {
     if (!bio.trim()) return;
-    const response = await fetch(
+    const response = await authedFetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({
           result: bio,
@@ -756,13 +750,12 @@ const Index = ({ params }) => {
         description: description || "",
       };
     });
-    const response = await fetch(
+    const response = await authedFetch(
       `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/timeline`,
       {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("app_token")}`,
         },
         body: JSON.stringify({ events }),
       },
@@ -852,13 +845,12 @@ const Index = ({ params }) => {
           if (uploadedUrl !== null) {
             finalUrl = uploadedUrl;
           } else if (!backCoverImageUrl) {
-            const response = await fetch(
+            const response = await authedFetch(
               `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
               {
                 method: "PATCH",
                 headers: {
                   "Content-Type": "application/json",
-                  Authorization: `Bearer ${localStorage.getItem("app_token")}`,
                 },
                 body: JSON.stringify({ backCoverImageUrl: null }),
               },
@@ -1076,14 +1068,12 @@ const Index = ({ params }) => {
     setStoryGenCount(optimisticCount);
 
     try {
-      const token = localStorage.getItem("app_token");
-      const response = await fetch(
+      const response = await authedFetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}/lifestory/create`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ prompt: fullText, albumTitle }),
         },
@@ -1103,13 +1093,12 @@ const Index = ({ params }) => {
       setStoryGenCount(newCount);
 
       // Persist count to server
-      fetch(
+      authedFetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ storyGenCount: newCount }),
         },
@@ -1239,13 +1228,12 @@ const Index = ({ params }) => {
       : "";
 
     try {
-      const response = await fetch(
+      const response = await authedFetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
         {
           method: "PATCH",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
           },
           body: JSON.stringify({
             googlePhotoUrl: finalGoogleUrl,
@@ -1306,14 +1294,9 @@ const Index = ({ params }) => {
     setIsDeleting(true);
     setRecordError("");
     try {
-      const response = await fetch(
+      const response = await authedFetch(
         `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${record_id}`,
-        {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("app_token")}`,
-          },
-        },
+        { method: "DELETE" },
       );
       const data = await response.json();
       if (!response.ok) {
@@ -1342,7 +1325,12 @@ const Index = ({ params }) => {
   const RAIL_ITEMS = [
     { key: "theme", label: t.railTheme, icon: Palette, side: "back" },
     { key: "text", label: t.railText, icon: Type, side: "front" },
-    { key: "coverImage", label: t.railCoverImage, icon: ImageIcon, side: "front" },
+    {
+      key: "coverImage",
+      label: t.railCoverImage,
+      icon: ImageIcon,
+      side: "front",
+    },
     { key: "sticker", label: t.railSticker, icon: Sticker, side: "back" },
     { key: "story", label: t.railStory, icon: BookOpen, side: "back" },
     { key: "timeline", label: t.railTimeline, icon: History, side: "back" },
@@ -1870,14 +1858,14 @@ const Index = ({ params }) => {
                         coverPanel === "theme" ? "space-y-5" : "hidden"
                       }
                     >
-                      <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#2a2318] px-4 py-3.5">
+                      {/* <div className="flex items-start gap-3 rounded-xl border border-white/10 bg-[#2a2318] px-4 py-3.5">
                         <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c4b49a]/10">
                           <BookOpen className="h-3.5 w-3.5 text-[#c4b49a]" />
                         </div>
                         <p className="pt-0.5 text-xs leading-relaxed text-[#9b8b7a]">
                           {t.backCoverGuide}
                         </p>
-                      </div>
+                      </div> */}
 
                       {coverPanel === "theme" && (
                         <ThemeSelector

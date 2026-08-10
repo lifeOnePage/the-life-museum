@@ -69,6 +69,10 @@ export default function CenterSlideshow({
   // 로드 실패 지수 백오프(mi → { fails, nextAt }) — 실패 시 loadTex가 매 프레임
   // 재요청(최대 3건/프레임)하는 폭주를 차단. 2s→4s→…→최대 16s 후 재시도.
   const retryRef = useRef(new Map());
+  // 수동 클릭 포커스 세션당 '사진 1장 소비'를 1회만 수행하기 위한 래치.
+  // boolean이 아니라 포커스 대상 planeId를 담아, 수동 포커스 중 다른 plane을
+  // 다시 클릭(manual→manual 재타겟)해도 새 세션으로 인식되게 한다.
+  const manualHoldRef = useRef(null);
 
   const len = imageList?.length || 0;
 
@@ -176,8 +180,28 @@ export default function CenterSlideshow({
       mesh.visible = false;
       stateRef.current.centerActive = false;
       stateRef.current.centerManualDz = 0; // 비활성 동안 쌓인 수동 이동량 폐기(복귀 시 점프 방지)
+
+      // 수동 클릭 포커스(active=false인데 재생 중)로 중앙이 가려지는 경우:
+      // 현재 사진 A를 '소비'하고 타이머를 리셋한다. 클릭한 벽면 사진이 A를
+      // 대신해 지나가고, 포커스 해제 뒤에는 A+1이 먼 거리(SLIDE_START_DIST)에서
+      // 새로 등장한다. (리셋하지 않으면 얼어붙은 진행도 그대로 재개돼 사진이
+      // 카메라 코앞에서 튀어나온다 — 진행도 0.5만 돼도 이미 98유닛 거리)
+      // 일시정지(!isPlaying)는 해당 없음 — 멈춘 지점에서 이어서 진행해야 한다.
+      if (!active && isPlaying && len > 0) {
+        const holdId = stateRef.current.targetPlaneId ?? "manual";
+        if (manualHoldRef.current !== holdId) {
+          manualHoldRef.current = holdId;
+          idxRef.current = (idxRef.current + 1) % len;
+          elapsedRef.current = 0;
+        }
+        // 비활성 중에도 다음 사진은 미리 로드해 둔다 — 로딩이 안 끝나면 복귀 후
+        // 표시가 밀리는 동안에도 타이머는 흘러 다시 '코앞 등장'이 된다.
+        loadTex(idxRef.current);
+        loadTex((idxRef.current + 1) % len);
+      }
       return;
     }
+    manualHoldRef.current = null;
 
     const cur = idxRef.current;
     // 현재 + 다음 2장 미리 로드 (강한 플링 중에는 신규 로드 보류 — 잔렉 방지,

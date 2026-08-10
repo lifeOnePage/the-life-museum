@@ -9,6 +9,8 @@ import {
   OPACITY_PEAK_DIST,
   OPACITY_HOLD_DIST,
   FLING_LOAD_PAUSE_SPEED,
+  SLIDE_START_DIST,
+  SLIDE_FADE_OUT_START_DIST,
 } from "../lib/constants";
 
 // Compute the nearest wrapped Z position for a plane given the current camera Z
@@ -594,12 +596,27 @@ function WallPlane({
         state.currentScale[1],
       ];
 
-      // Distance-based opacity (same 4-zone curve as FocusClone)
-      // Use the plane's actual animated position so opacity tracks proximity
-      // during the fly-in animation, not just the target position.
+      // Distance-based opacity. 곡선 기반 수동 포커스(manualCurve)일 때는 중앙
+      // 슬라이드쇼와 동일한 페이드 구간을 써서 등장·통과 느낌을 일치시킨다
+      // (등장 420→205 페이드인, 통과 80→해제거리 페이드아웃).
+      // 그 외(일시정지 중 클릭 등 고정 오프셋)는 기존 4구간 커브 유지.
       const dist = Math.abs(cameraZ - state.currentPos[2]);
       let opacity = 0;
-      if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
+      if (stateRef.current.manualCurve) {
+        const fadeIn = Math.max(
+          0,
+          Math.min(1, (SLIDE_START_DIST - dist) / (SLIDE_START_DIST - 205)),
+        );
+        const fadeOut = Math.max(
+          0,
+          Math.min(
+            1,
+            (dist - FOCUS_DISMISS_DISTANCE) /
+              (SLIDE_FADE_OUT_START_DIST - FOCUS_DISMISS_DISTANCE),
+          ),
+        );
+        opacity = Math.min(fadeIn, fadeOut);
+      } else if (dist < OPACITY_APPEAR_DIST && dist > FOCUS_DISMISS_DISTANCE) {
         if (dist >= OPACITY_PEAK_DIST) {
           opacity =
             (OPACITY_APPEAR_DIST - dist) /

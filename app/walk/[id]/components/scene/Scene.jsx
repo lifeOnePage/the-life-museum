@@ -34,6 +34,12 @@ import {
   CORRIDOR_HALF,
   OPACITY_APPEAR_DIST,
   TOUCH_SCROLL_SENSITIVITY,
+  CAMERA_SPEED,
+  SLIDE_DWELL_SEC,
+  SLIDE_START_DIST,
+  SLIDE_END_DIST,
+  SLIDE_APPROACH_EASE,
+  SLIDE_TERMINAL_SPEED_RATIO,
 } from "../lib/constants";
 
 // ─── 동시 로딩 제한 ─────────────────────────────────────────────────────
@@ -475,7 +481,17 @@ export default function Scene({
       s.focusMode = "manual";
       s.targetPlaneId = planeId;
       s.fadeProgress = 0;
-      s.focusCloneZ = s.cameraZ - offset;
+      // 재생 중이면 중앙 슬라이드쇼와 '동일한 접근 곡선'을 태운다(manualCurve).
+      // 기존엔 클론을 월드 고정 Z(카메라 앞 130)에 두고 카메라가 다가가는 방식이라
+      // 접근 속도 = 카메라 속도였고, 포커스 중 카메라가 20%까지 감속해 자동 진행
+      // (종단 78u/s)보다 훨씬 느리게 다가왔다. 이제 CenterSlideshow와 같은
+      // SLIDE_START_DIST→SLIDE_END_DIST / easeOutTerminal 곡선을 따라간다.
+      // 일시정지 중 클릭은 기존대로 고정 오프셋(가까이 세워 감상)을 유지.
+      s.manualCurve = isPlaying;
+      s.manualElapsed = 0;
+      s.focusCloneZ = isPlaying
+        ? s.cameraZ - SLIDE_START_DIST
+        : s.cameraZ - offset;
       s.manualDisplayOffset = offset;
       s.manualPlaneOriginalPos = [
         plane.position[0],
@@ -486,7 +502,7 @@ export default function Scene({
       s.cloneReachedView = false;
       setFocusRender({ mode: "manual", targetId: planeId });
     },
-    [corridorSpan, startVideoPlayback, stopVideoPlayback, pauseVideoPlayback, resumeVideoPlayback],
+    [corridorSpan, isPlaying, startVideoPlayback, stopVideoPlayback, pauseVideoPlayback, resumeVideoPlayback],
   );
 
   // Pick the next plane in album order for auto focus (sequential, wraps around)
@@ -809,6 +825,7 @@ export default function Scene({
           s.fadeProgress = 0;
           s.focusCloneZ = 0;
           s.manualPlaneOriginalPos = null;
+          s.manualCurve = false;
           s.videoTriggered = false;
           setFocusRender({ mode: "idle", targetId: null });
         }
@@ -821,7 +838,14 @@ export default function Scene({
     // Pause auto-advance during pinch zoom
     if (!pinchRef.current.active) {
       let targetEffectiveSpeed = cameraSpeed;
-      if (s.focusMode === "auto" || s.focusMode === "manual") {
+      // 곡선 기반 수동 포커스(manualCurve)는 클론이 카메라 기준으로 다가오므로
+      // 카메라를 감속시킬 이유가 없다. 감속하면 복도(벽면)만 느려져 자동 진행과
+      // 다르게 보이고, 접근 속도 불일치의 원인이 됐던 로직이기도 하다.
+      // (일시정지 중 클릭 등 고정 오프셋 포커스는 기존대로 감속 유지)
+      if (
+        s.focusMode === "auto" ||
+        (s.focusMode === "manual" && !s.manualCurve)
+      ) {
         const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
         const focusRange = DISPLAY_OFFSET_Z - FOCUS_DISMISS_DISTANCE;
         const t =
@@ -926,6 +950,23 @@ export default function Scene({
       // Update fade progress
       s.fadeProgress = Math.min(1, s.fadeProgress + FOCUS_FADE_SPEED * delta);
 
+      // 수동 포커스(재생 중): 중앙 슬라이드쇼와 동일한 접근 곡선으로 클론 Z를
+      // 매 프레임 갱신 — 카메라 기준 거리라 카메라 속도와 무관하게 접근 속도가
+      // 자동 진행과 정확히 일치한다(초반 239u/s → 종단 78u/s).
+      if (s.manualCurve && s.focusMode === "manual") {
+        const pace = Math.max(0.05, (cameraSpeed || CAMERA_SPEED) / CAMERA_SPEED);
+        s.manualElapsed = (s.manualElapsed || 0) + Math.min(delta, 0.25) * pace;
+        const p = Math.max(0, Math.min(1, s.manualElapsed / SLIDE_DWELL_SEC));
+        const e =
+          SLIDE_APPROACH_EASE <= 1
+            ? p
+            : 1 - Math.pow(1 - p, SLIDE_APPROACH_EASE);
+        const pe =
+          (1 - SLIDE_TERMINAL_SPEED_RATIO) * e + SLIDE_TERMINAL_SPEED_RATIO * p;
+        const mDist = THREE.MathUtils.lerp(SLIDE_START_DIST, SLIDE_END_DIST, pe);
+        s.focusCloneZ = s.cameraZ - mDist;
+      }
+
       // Dismiss when camera approaches the clone's fixed position
       const distToClone = Math.abs(s.cameraZ - s.focusCloneZ);
 
@@ -972,6 +1013,7 @@ export default function Scene({
                 s.fadeProgress = 0;
                 s.focusCloneZ = 0;
                 s.manualPlaneOriginalPos = null;
+                s.manualCurve = false;
                 s.videoTriggered = false;
 
                 const next = pickAutoTarget(s);
@@ -1024,6 +1066,7 @@ export default function Scene({
         s.fadeProgress = 0;
         s.focusCloneZ = 0;
         s.manualPlaneOriginalPos = null;
+        s.manualCurve = false;
         s.videoTriggered = false;
 
         if (wasAuto) {
@@ -1078,6 +1121,7 @@ export default function Scene({
           s.fadeProgress = 0;
           s.focusCloneZ = 0;
           s.manualPlaneOriginalPos = null;
+          s.manualCurve = false;
           s.videoTriggered = false;
 
           // Immediately pick next auto (auto였을 때만 — manual은 idle 복귀)

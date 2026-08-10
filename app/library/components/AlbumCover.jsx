@@ -656,15 +656,6 @@ export default memo(function AlbumCover({
 
       {/* 내부 그룹: 메시 포함 */}
       <group ref={groupRef}>
-        {/* 은은한 테두리 — 선반에 꽂혀있는 축소 상태에서 커버가 검정/어두운 색이어도
-            배경과 구분되도록 하는 용도. 선택(확대)됐을 때는 커버 자체 디자인과
-            겹쳐 보여 오히려 지저분해지므로 그때는 숨긴다. */}
-        {!isSelected && (
-          <mesh raycast={() => null} scale={[1.06, 1.06, 0.97]}>
-            <boxGeometry args={[size, size, thickness]} />
-            <meshBasicMaterial color="#faf6ec" />
-          </mesh>
-        )}
         <mesh
           ref={meshRef}
           material={materials}

@@ -76,7 +76,7 @@ export default function CreateAlbumModal({
 }) {
   const t = T[locale] || T.ko;
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, refreshCredits } = useAuth();
   const [activeTab, setActiveTab] = useState("new"); // 'new' | 'share'
 
   // 첫 앨범(체험 미사용)은 무료, 이후는 결제된 생성권 1개 소모.
@@ -130,6 +130,9 @@ export default function CreateAlbumModal({
       }
       const json = await res.json();
       if (json.ok) {
+        // 생성권 차감을 화면에 즉시 반영 — 갱신하지 않으면 구매 배너/모달의
+        // 보유 개수가 이전 값으로 남아 "차감이 안 된다"는 혼란을 만든다
+        refreshCredits?.();
         onCreated?.(json.data);
         onClose();
         if (json.data?.id) {

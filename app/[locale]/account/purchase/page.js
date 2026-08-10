@@ -97,11 +97,28 @@ export default function AccountPurchasePage() {
 
   const selectedPkg = CREDIT_PACKAGES.find((p) => p.key === selectedPackage);
 
+  const ownedCredits = user?.credits ?? 0;
+
   if (!showPurchase) return null;
 
   return (
     <div>
       <h2 className="mb-6 text-xl font-semibold text-[#e8d5b7]">{t.charge}</h2>
+
+      {/* 보유 생성권 안내 — 이미 생성권이 있으면 결제 전에 알려준다 */}
+      {ownedCredits >= 1 && (
+        <div className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-[#c4b49a]/30 bg-[#c4b49a]/10 px-4 py-3">
+          <p className="text-sm text-[#c4b49a]">
+            {t.ownedCredits(ownedCredits)}
+          </p>
+          <Link
+            href={`/${currentLocale}/library`}
+            className="shrink-0 rounded-lg bg-[#c4b49a] px-3 py-1.5 text-xs font-semibold text-[#1a1510] transition hover:bg-[#e8d5b7]"
+          >
+            {t.goCreate}
+          </Link>
+        </div>
+      )}
 
       {/* 앨범 상품 리스트 */}
       <div className="mb-6 overflow-hidden rounded-xl border border-white/10">

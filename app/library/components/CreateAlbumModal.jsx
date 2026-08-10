@@ -24,7 +24,8 @@ const T = {
     adding: "추가 중...",
     add: "추가하기",
     errorAdd: "공유 앨범 추가에 실패했습니다.",
-    firstFree: "첫 앨범은 30일간 무료로 체험할 수 있어요",
+    firstFree: "첫 앨범은 무료 체험으로 생성됩니다",
+    creditUse: (n) => `생성권 1개가 사용됩니다 (보유 ${n}개)`,
     insufficient: "앨범을 만들려면 결제가 필요해요.",
     buyCredits: "결제하러 가기",
   },
@@ -46,7 +47,8 @@ const T = {
     adding: "Adding...",
     add: "Add",
     errorAdd: "Failed to add shared album.",
-    firstFree: "Your first album gets a free 30-day trial",
+    firstFree: "Your first album will be created with the free trial",
+    creditUse: (n) => `1 album credit will be used (${n} available)`,
     insufficient: "Payment is required to create an album.",
     buyCredits: "Proceed to payment",
   },
@@ -270,9 +272,10 @@ export default function CreateAlbumModal({
               />
             </div>
 
-            {isFirstFree && (
+            {/* 생성권 소모 안내: 무료 체험 대상이면 무료 안내, 아니면 1개 차감 + 보유 개수 */}
+            {canAfford && (
               <div className="rounded-xl border border-[#c4b49a]/30 bg-[#c4b49a]/10 p-3 text-center text-sm text-[#c4b49a]">
-                {t.firstFree}
+                {isFirstFree ? t.firstFree : t.creditUse(remainingSlots)}
               </div>
             )}
             {!canAfford && (

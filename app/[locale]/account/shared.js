@@ -75,6 +75,8 @@ export const T = {
     back: "돌아가기",
     purchasing: "결제 진행 중...",
     purchase: "결제하기",
+    ownedCredits: (n) => `보유 생성권 ${n}개 — 결제 없이 바로 만들 수 있어요`,
+    goCreate: "앨범 만들러 가기",
     paymentError: "결제 요청 중 오류가 발생했습니다.",
     paymentSuccess: "결제가 완료됐어요!",
     free: "무료",
@@ -128,6 +130,9 @@ export const T = {
     back: "Go back",
     purchasing: "Processing payment...",
     purchase: "Purchase",
+    ownedCredits: (n) =>
+      `You have ${n} album credit${n > 1 ? "s" : ""} — create one now, no payment needed`,
+    goCreate: "Create an album",
     paymentError: "An error occurred while requesting payment.",
     paymentSuccess: "Payment complete!",
     free: "Free",

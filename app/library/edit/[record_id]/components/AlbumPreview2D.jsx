@@ -105,15 +105,16 @@ export default function AlbumPreview2D({
         children_2: "/images/albumtheme/children/children-2.svg",
       };
 
-      const [frontImg, backImg, bgImg, stickerImg, flowerImg] = await Promise.all([
-        loadImg(frontCover),
-        loadImg(backSrc),
-        loadImg(bgMap[key] || null, false),
-        key === "kitsch"
-          ? loadImg("/images/albumtheme/kitsch 2.png", false)
-          : Promise.resolve(null),
-        loadImg(frontFrameMap[key] || null, false),
-      ]);
+      const [frontImg, backImg, bgImg, stickerImg, flowerImg] =
+        await Promise.all([
+          loadImg(frontCover),
+          loadImg(backSrc),
+          loadImg(bgMap[key] || null, false),
+          key === "kitsch"
+            ? loadImg("/images/albumtheme/kitsch 2.png", false)
+            : Promise.resolve(null),
+          loadImg(frontFrameMap[key] || null, false),
+        ]);
 
       if (cancelled) return;
 
@@ -396,7 +397,10 @@ export default function AlbumPreview2D({
     }
 
     if (drag.mode === "resize") {
-      const dist = Math.hypot(e.clientX - drag.centerX, e.clientY - drag.centerY);
+      const dist = Math.hypot(
+        e.clientX - drag.centerX,
+        e.clientY - drag.centerY,
+      );
       const scale = Math.min(2.5, Math.max(0.4, dist / STICKER_CORNER_DIST));
       updateSticker(drag.id, { scale: Math.round(scale * 100) / 100 });
     }
@@ -572,72 +576,72 @@ export default function AlbumPreview2D({
             }}
             onClick={toggleFlip}
           >
-          {/* Front face */}
-          <div
-            ref={frontStageRef}
-            onPointerMove={
-              editableSide === "front" ? handleStickerPointerMove : undefined
-            }
-            onPointerUp={
-              editableSide === "front" ? handleStickerPointerUp : undefined
-            }
-            onPointerCancel={
-              editableSide === "front" ? handleStickerPointerUp : undefined
-            }
-            onClickCapture={(e) => {
-              if (editableSide === "front" && e.target === e.currentTarget) {
-                setSelectedStickerId(null);
+            {/* Front face */}
+            <div
+              ref={frontStageRef}
+              onPointerMove={
+                editableSide === "front" ? handleStickerPointerMove : undefined
               }
-            }}
-            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${editableSide === "front" ? "touch-none select-none" : ""}`}
-            style={{ backfaceVisibility: "hidden" }}
-          >
-            {frontSrc && (
-              <img
-                src={frontSrc}
-                alt=""
-                draggable={false}
-                className={`h-full w-full object-cover ${editableSide === "front" ? "pointer-events-none" : ""}`}
-              />
-            )}
-
-            {editableSide === "front" && renderStickerOverlay(frontStickers)}
-          </div>
-
-          {/* Back face */}
-          <div
-            ref={backStageRef}
-            onPointerMove={
-              editableSide === "back" ? handleStickerPointerMove : undefined
-            }
-            onPointerUp={
-              editableSide === "back" ? handleStickerPointerUp : undefined
-            }
-            onPointerCancel={
-              editableSide === "back" ? handleStickerPointerUp : undefined
-            }
-            onClickCapture={(e) => {
-              if (editableSide === "back" && e.target === e.currentTarget) {
-                setSelectedStickerId(null);
+              onPointerUp={
+                editableSide === "front" ? handleStickerPointerUp : undefined
               }
-            }}
-            className={`absolute inset-0 overflow-hidden rounded-lg bg-black/20 shadow-xl ${editableSide === "back" ? "touch-none select-none" : ""}`}
-            style={{
-              backfaceVisibility: "hidden",
-              transform: "rotateY(180deg)",
-            }}
-          >
-            {backSrc && (
-              <img
-                src={backSrc}
-                alt=""
-                draggable={false}
-                className={`h-full w-full object-cover ${editableSide === "back" ? "pointer-events-none" : ""}`}
-              />
-            )}
+              onPointerCancel={
+                editableSide === "front" ? handleStickerPointerUp : undefined
+              }
+              onClickCapture={(e) => {
+                if (editableSide === "front" && e.target === e.currentTarget) {
+                  setSelectedStickerId(null);
+                }
+              }}
+              className={`absolute inset-0 overflow-hidden rounded-lg border border-amber-50/20 bg-black/20 shadow-xl ${editableSide === "front" ? "touch-none select-none" : ""}`}
+              style={{ backfaceVisibility: "hidden" }}
+            >
+              {frontSrc && (
+                <img
+                  src={frontSrc}
+                  alt=""
+                  draggable={false}
+                  className={`h-full w-full object-cover ${editableSide === "front" ? "pointer-events-none" : ""}`}
+                />
+              )}
 
-            {editableSide === "back" && renderStickerOverlay(backStickers)}
-          </div>
+              {editableSide === "front" && renderStickerOverlay(frontStickers)}
+            </div>
+
+            {/* Back face */}
+            <div
+              ref={backStageRef}
+              onPointerMove={
+                editableSide === "back" ? handleStickerPointerMove : undefined
+              }
+              onPointerUp={
+                editableSide === "back" ? handleStickerPointerUp : undefined
+              }
+              onPointerCancel={
+                editableSide === "back" ? handleStickerPointerUp : undefined
+              }
+              onClickCapture={(e) => {
+                if (editableSide === "back" && e.target === e.currentTarget) {
+                  setSelectedStickerId(null);
+                }
+              }}
+              className={`absolute inset-0 overflow-hidden rounded-lg border border-amber-50/20 bg-black/20 shadow-xl ${editableSide === "back" ? "touch-none select-none" : ""}`}
+              style={{
+                backfaceVisibility: "hidden",
+                transform: "rotateY(180deg)",
+              }}
+            >
+              {backSrc && (
+                <img
+                  src={backSrc}
+                  alt=""
+                  draggable={false}
+                  className={`h-full w-full object-cover ${editableSide === "back" ? "pointer-events-none" : ""}`}
+                />
+              )}
+
+              {editableSide === "back" && renderStickerOverlay(backStickers)}
+            </div>
           </div>
         </div>
       </div>

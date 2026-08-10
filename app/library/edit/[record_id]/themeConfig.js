@@ -7,7 +7,7 @@ export const THEME_CATEGORIES = [
   { key: "couple", name: "연인", nameEn: "Couple" },
   { key: "parenting", name: "육아", nameEn: "Parenting" },
   // { key: "retro", name: "레트로", nameEn: "Retro" },
-  { key: "memorial", name: "추모", nameEn: "Memorial" },
+  { key: "memorial", name: "인물", nameEn: "Portrait" },
 ];
 
 export const UNIFIED_THEMES = {
@@ -115,7 +115,7 @@ export const UNIFIED_THEMES = {
     category: "memorial",
     name: "인물 라이트",
     nameEn: "Portrait Light",
-    description: "크림 배경에 2단 연혁과 추모 문구",
+    description: "크림 배경에 2단 연혁과 인물 소개 문구",
     descriptionEn: "Cream background with a two-column timeline",
     bg: "#ece7df",
     accent: "#3a352e",
@@ -126,7 +126,7 @@ export const UNIFIED_THEMES = {
     category: "memorial",
     name: "인물 다크",
     nameEn: "Portrait Dark",
-    description: "블랙 배경에 2단 연혁과 추모 문구",
+    description: "블랙 배경에 2단 연혁과 인물 소개 문구",
     descriptionEn: "Black background with a two-column timeline",
     bg: "#141414",
     accent: "#e8d5b7",

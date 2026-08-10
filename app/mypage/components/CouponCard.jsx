@@ -37,6 +37,16 @@ export default function CouponCard() {
         setCode("");
         return;
       }
+      if (json.type === "album") {
+        // 필드 누락 시에도 throw로 catch(실패 메시지)에 빠지지 않게 방어
+        setMessage({
+          type: "ok",
+          text: `앨범 생성권 ${(json.added ?? 0).toLocaleString()}개가 지급되었어요! (보유: ${(json.credits ?? 0).toLocaleString()}개)`,
+        });
+        setCode("");
+        await refreshCredits();
+        return;
+      }
       setMessage({
         type: "ok",
         text: `${json.added.toLocaleString()} 크레딧이 지급되었어요! (보유: ${json.credits.toLocaleString()})`,

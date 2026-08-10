@@ -32,7 +32,7 @@ export default function AccountCouponPage() {
   const [saveCouponSuccess, setSaveCouponSuccess] = useState("");
 
   // 쿠폰 등록 — 서버가 타입(즉시지급/할인)을 판별해준다.
-  // discount 타입은 보관함에 등록되고, credit 타입은 앨범 생성권이 즉시 지급된다.
+  // discount 타입은 보관함에 등록되고, album/credit 타입은 앨범 생성권(=credits)이 즉시 지급된다.
   const handleSaveCoupon = async () => {
     if (!saveCouponCode.trim()) return;
     setSaveCouponValidating(true);

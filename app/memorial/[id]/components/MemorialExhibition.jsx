@@ -5,13 +5,16 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
 import { useRecordData } from "@/app/lib/useRecordData";
 import { useBGM } from "@/app/vhs/[id]/components/lib/useBGM";
-import BackgroundMediaFlow from "./BackgroundMediaFlow";
-import Gravestone from "./Gravestone";
-import TimelineColumns from "./TimelineColumns";
+import IntroPoster from "./IntroPoster";
+import BottomNavBar from "./BottomNavBar";
+import StoryTab from "./StoryTab";
+import PlaceholderTab from "./PlaceholderTab";
 
 export default function MemorialExhibition({ recordId }) {
   const router = useRouter();
-  const { data, loading, error, mediaLoading } = useRecordData(recordId);
+  const { data, loading, error } = useRecordData(recordId);
+  const [introDismissed, setIntroDismissed] = useState(false);
+  const [activeTab, setActiveTab] = useState("home");
 
   const bgmUrl = data?.bgmUrl || data?.bgm || null;
   const { isMuted, toggleMute, startBGM, setBgmPlaying, hasBgm, bgmStarted } =
@@ -32,10 +35,30 @@ export default function MemorialExhibition({ recordId }) {
     [mediaList],
   );
 
+  // 스토리 탭 사진 카드용 — 이미지 타입만
+  const imageList = useMemo(
+    () => mediaList.filter((m) => m.type === "image"),
+    [mediaList],
+  );
+
   const name = data?.title ?? "";
   const years = data?.subtitle ?? "";
   const memorialText = data?.lifestory?.content ?? "";
   const events = data?.timeline?.events ?? [];
+
+  // 인트로 포스터용 "시작연도~끝연도" — 타임라인 이벤트의 최소/최대 연도에서 자동 계산
+  const posterYearRange = useMemo(() => {
+    const yearNums = events
+      .map((ev) => {
+        const m = String(ev.timestamp || "").match(/\d{4}/);
+        return m ? parseInt(m[0], 10) : null;
+      })
+      .filter((n) => n != null);
+    if (yearNums.length === 0) return "";
+    const min = Math.min(...yearNums);
+    const max = Math.max(...yearNums);
+    return min === max ? `${min}` : `${min} ~ ${max}`;
+  }, [events]);
 
   // 자동재생 정책: 최초 사용자 제스처에서 BGM 시작
   useEffect(() => {
@@ -74,24 +97,51 @@ export default function MemorialExhibition({ recordId }) {
     );
   }
 
+  if (!introDismissed) {
+    return (
+      <IntroPoster
+        name={name}
+        yearRange={posterYearRange}
+        subtitle={years}
+        profileItem={profileItem}
+        style={data?.memorialPosterStyle || "classic"}
+        tone={data?.memorialPosterTone || "dark"}
+        aspectRatio={data?.memorialAspectRatio || "9:16"}
+        onEnter={() => setIntroDismissed(true)}
+      />
+    );
+  }
+
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-black">
-      {/* 배경: 좌→우로 흐르는 미디어 */}
-      <BackgroundMediaFlow mediaList={mediaList} />
-
-      {/* 하단 좌/우 타임라인 */}
-      <TimelineColumns events={events} />
-
-      {/* 중앙 gravestone — 전체 높이가 아니라 하단에 붙는 밴드 */}
-      <div className="absolute bottom-[3vh] left-1/2 top-[11vh] z-10 w-[min(500px,38vw)] -translate-x-1/2">
-        <Gravestone
+      {activeTab === "home" && (
+        <IntroPoster
           name={name}
-          years={years}
-          memorialText={memorialText}
+          yearRange={posterYearRange}
+          subtitle={years}
           profileItem={profileItem}
-          mediaList={mediaList}
+          style={data?.memorialPosterStyle || "classic"}
+          tone={data?.memorialPosterTone || "dark"}
+          aspectRatio={data?.memorialAspectRatio || "9:16"}
+          onEnter={() => setActiveTab("story")}
         />
-      </div>
+      )}
+
+      {activeTab === "story" && (
+        <StoryTab
+          name={name}
+          yearRange={posterYearRange}
+          subtitle={years}
+          images={imageList}
+          events={events}
+          bio={memorialText}
+        />
+      )}
+
+      {activeTab === "memory" && <PlaceholderTab label="메모리" />}
+      {activeTab === "guestbook" && <PlaceholderTab label="방명록" />}
+
+      <BottomNavBar activeTab={activeTab} onChange={setActiveTab} />
 
       {/* 컨트롤: 뒤로가기 / 음소거 */}
       <button
@@ -109,13 +159,6 @@ export default function MemorialExhibition({ recordId }) {
         >
           {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
-      )}
-
-      {/* 빈 미디어 상태 */}
-      {!mediaLoading && mediaList.length === 0 && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center">
-          <div className="text-sm text-white/40">표시할 미디어가 없습니다</div>
-        </div>
       )}
     </div>
   );

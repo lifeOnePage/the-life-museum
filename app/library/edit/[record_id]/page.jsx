@@ -58,6 +58,9 @@ const VHSPreview = dynamic(() => import("./components/VHSPreview"), {
 const WalkPreview = dynamic(() => import("./components/WalkPreview"), {
   ssr: false,
 });
+const MemorialPreview = dynamic(() => import("./components/MemorialPreview"), {
+  ssr: false,
+});
 import TutorialOverlay from "./components/TutorialOverlay";
 import ThemeSelector from "./components/ThemeSelector";
 import StickerPanel from "./components/StickerPanel";
@@ -120,6 +123,17 @@ const T = {
     recordType: "메모리 타입",
     recordTypeExhibit: "Time Travel",
     recordTypeRetroTape: "Retro Tape",
+    recordTypeMemorial: "메모리얼",
+    memorialPosterStyle: "포스터 스타일",
+    memorialPosterStyleClassic: "클래식",
+    memorialPosterStyleGlow: "글로우",
+    memorialPosterStyleFrameless: "프레임리스",
+    memorialPosterTone: "포스터 톤",
+    memorialPosterToneDark: "다크",
+    memorialPosterToneWhite: "화이트",
+    memorialAspectRatio: "화면 비율",
+    memorialAspectRatioPortrait: "9:16 (세로)",
+    memorialAspectRatioLandscape: "16:9 (가로)",
     backCoverImage: "뒷면 이미지 설정하기",
     theme: "테마",
     backCoverGuide:
@@ -195,6 +209,17 @@ const T = {
     recordType: "Record Type",
     recordTypeExhibit: "Time Travel",
     recordTypeRetroTape: "Retro Tape",
+    recordTypeMemorial: "Memorial",
+    memorialPosterStyle: "Poster Style",
+    memorialPosterStyleClassic: "Classic",
+    memorialPosterStyleGlow: "Glow",
+    memorialPosterStyleFrameless: "Frameless",
+    memorialPosterTone: "Poster Tone",
+    memorialPosterToneDark: "Dark",
+    memorialPosterToneWhite: "White",
+    memorialAspectRatio: "Aspect Ratio",
+    memorialAspectRatioPortrait: "9:16 (Portrait)",
+    memorialAspectRatioLandscape: "16:9 (Landscape)",
     backCoverImage: "Set Back Cover Image",
     theme: "Theme",
     backCoverGuide:
@@ -437,6 +462,11 @@ const Index = ({ params }) => {
   const [walkCameraSpeed, setWalkCameraSpeed] = useState(15);
   const [walkVideoPreview, setWalkVideoPreview] = useState(false);
   const [walkVideoMaxDuration, setWalkVideoMaxDuration] = useState(30);
+  // Memorial-specific settings (record에 저장됨)
+  const [memorialSettingsOpen, setMemorialSettingsOpen] = useState(false);
+  const [memorialPosterStyle, setMemorialPosterStyle] = useState("classic");
+  const [memorialPosterTone, setMemorialPosterTone] = useState("dark");
+  const [memorialAspectRatio, setMemorialAspectRatio] = useState("9:16");
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
@@ -619,6 +649,12 @@ const Index = ({ params }) => {
             setWalkVideoPreview(data.walkVideoPreview);
           if (data.walkVideoMaxDuration != null)
             setWalkVideoMaxDuration(data.walkVideoMaxDuration);
+          if (data.memorialPosterStyle)
+            setMemorialPosterStyle(data.memorialPosterStyle);
+          if (data.memorialPosterTone)
+            setMemorialPosterTone(data.memorialPosterTone);
+          if (data.memorialAspectRatio)
+            setMemorialAspectRatio(data.memorialAspectRatio);
 
           // Photo drive now auto-fetches on mount via useEffect
 
@@ -648,6 +684,9 @@ const Index = ({ params }) => {
             walkCameraSpeed: data.walkCameraSpeed ?? 15,
             walkVideoPreview: data.walkVideoPreview ?? false,
             walkVideoMaxDuration: data.walkVideoMaxDuration ?? 30,
+            memorialPosterStyle: data.memorialPosterStyle || "classic",
+            memorialPosterTone: data.memorialPosterTone || "dark",
+            memorialAspectRatio: data.memorialAspectRatio || "9:16",
           };
         }
       } catch (error) {
@@ -702,6 +741,12 @@ const Index = ({ params }) => {
             recordType === "exhibit" ? walkVideoPreview : undefined,
           walkVideoMaxDuration:
             recordType === "exhibit" ? walkVideoMaxDuration : undefined,
+          memorialPosterStyle:
+            recordType === "memorial" ? memorialPosterStyle : undefined,
+          memorialPosterTone:
+            recordType === "memorial" ? memorialPosterTone : undefined,
+          memorialAspectRatio:
+            recordType === "memorial" ? memorialAspectRatio : undefined,
         }),
       },
     );
@@ -809,7 +854,10 @@ const Index = ({ params }) => {
       vhsVideoMode !== initialState.current.vhsVideoMode ||
       walkCameraSpeed !== initialState.current.walkCameraSpeed ||
       walkVideoPreview !== initialState.current.walkVideoPreview ||
-      walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration;
+      walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration ||
+      memorialPosterStyle !== initialState.current.memorialPosterStyle ||
+      memorialPosterTone !== initialState.current.memorialPosterTone ||
+      memorialAspectRatio !== initialState.current.memorialAspectRatio;
 
     if (
       !isCoverDirty &&
@@ -931,6 +979,9 @@ const Index = ({ params }) => {
           initialState.current.walkCameraSpeed = walkCameraSpeed;
           initialState.current.walkVideoPreview = walkVideoPreview;
           initialState.current.walkVideoMaxDuration = walkVideoMaxDuration;
+          initialState.current.memorialPosterStyle = memorialPosterStyle;
+          initialState.current.memorialPosterTone = memorialPosterTone;
+          initialState.current.memorialAspectRatio = memorialAspectRatio;
         }
       }
     }
@@ -1029,7 +1080,10 @@ const Index = ({ params }) => {
     vhsVideoMode !== initialState.current.vhsVideoMode ||
     walkCameraSpeed !== initialState.current.walkCameraSpeed ||
     walkVideoPreview !== initialState.current.walkVideoPreview ||
-    walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration;
+    walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration ||
+    memorialPosterStyle !== initialState.current.memorialPosterStyle ||
+    memorialPosterTone !== initialState.current.memorialPosterTone ||
+    memorialAspectRatio !== initialState.current.memorialAspectRatio;
 
   const handleExit = async () => {
     if (pendingSaveRef.current) {
@@ -1570,6 +1624,17 @@ const Index = ({ params }) => {
               onVideoPreviewChange={setWalkVideoPreview}
               videoMaxDuration={walkVideoMaxDuration}
               onVideoMaxDurationChange={setWalkVideoMaxDuration}
+            />
+          ) : recordType === "memorial" && activeTab === "memory" ? (
+            <MemorialPreview
+              photoMedia={photoDrive.photoMedia}
+              mediaLoading={photoDrive.isLoading}
+              albumTitle={albumTitle}
+              albumSubtitle={albumSubtitle}
+              timeline={timeline}
+              posterStyle={memorialPosterStyle}
+              posterTone={memorialPosterTone}
+              aspectRatio={memorialAspectRatio}
             />
           ) : (
             <AlbumPreview2D
@@ -2150,7 +2215,9 @@ const Index = ({ params }) => {
                         <span className="text-[11px] text-[#9b8b7a]">
                           {recordType === "exhibit"
                             ? t.recordTypeExhibit
-                            : t.recordTypeRetroTape}
+                            : recordType === "retro_tape"
+                              ? t.recordTypeRetroTape
+                              : t.recordTypeMemorial}
                         </span>
                       </div>
                       {recordTypeOpen ? (
@@ -2178,6 +2245,10 @@ const Index = ({ params }) => {
                                 {
                                   value: "retro_tape",
                                   label: t.recordTypeRetroTape,
+                                },
+                                {
+                                  value: "memorial",
+                                  label: t.recordTypeMemorial,
                                 },
                               ].map((option) => (
                                 <label
@@ -2408,6 +2479,161 @@ const Index = ({ params }) => {
                             </span>
                           </div>
                         </div>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Memorial Settings — only shown for memorial */}
+                  {recordType === "memorial" && (
+                    <>
+                      {/* Poster Style Section */}
+                      <div className="rounded-lg border border-white/10">
+                        <button
+                          onClick={() =>
+                            setMemorialSettingsOpen(!memorialSettingsOpen)
+                          }
+                          className="flex w-full items-center justify-between px-4 py-3"
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold text-[#e8d5b7]">
+                              {t.memorialPosterStyle}
+                            </span>
+                            <span className="text-[11px] text-[#9b8b7a]">
+                              {memorialPosterStyle === "classic"
+                                ? t.memorialPosterStyleClassic
+                                : memorialPosterStyle === "glow"
+                                  ? t.memorialPosterStyleGlow
+                                  : t.memorialPosterStyleFrameless}
+                            </span>
+                          </div>
+                          {memorialSettingsOpen ? (
+                            <ChevronDown className="h-4 w-4 text-[#9b8b7a]" />
+                          ) : (
+                            <ChevronRight className="h-4 w-4 text-[#9b8b7a]" />
+                          )}
+                        </button>
+                        <AnimatePresence initial={false}>
+                          {memorialSettingsOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className="flex flex-col gap-4 border-t border-white/8 px-4 pt-3 pb-4">
+                                <div className="flex flex-col gap-2">
+                                  {[
+                                    {
+                                      value: "classic",
+                                      label: t.memorialPosterStyleClassic,
+                                    },
+                                    {
+                                      value: "glow",
+                                      label: t.memorialPosterStyleGlow,
+                                    },
+                                    {
+                                      value: "frameless",
+                                      label: t.memorialPosterStyleFrameless,
+                                    },
+                                  ].map((option) => (
+                                    <label
+                                      key={option.value}
+                                      onClick={() =>
+                                        setMemorialPosterStyle(option.value)
+                                      }
+                                      className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
+                                        memorialPosterStyle === option.value
+                                          ? "border-[#c4a882] bg-[#c4a882]/10"
+                                          : "border-white/10 hover:border-white/20"
+                                      }`}
+                                    >
+                                      <div
+                                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                                          memorialPosterStyle === option.value
+                                            ? "border-[#c4a882]"
+                                            : "border-white/30"
+                                        }`}
+                                      >
+                                        {memorialPosterStyle ===
+                                          option.value && (
+                                          <div className="h-2 w-2 rounded-full bg-[#c4a882]" />
+                                        )}
+                                      </div>
+                                      <span className="text-sm text-[#e8d5b7]">
+                                        {option.label}
+                                      </span>
+                                    </label>
+                                  ))}
+                                </div>
+
+                                <div>
+                                  <span className="mb-2 block text-sm font-semibold text-[#e8d5b7]">
+                                    {t.memorialPosterTone}
+                                  </span>
+                                  <div className="flex gap-2">
+                                    {[
+                                      {
+                                        value: "dark",
+                                        label: t.memorialPosterToneDark,
+                                      },
+                                      {
+                                        value: "white",
+                                        label: t.memorialPosterToneWhite,
+                                      },
+                                    ].map((option) => (
+                                      <button
+                                        key={option.value}
+                                        onClick={() =>
+                                          setMemorialPosterTone(option.value)
+                                        }
+                                        className={`flex-1 rounded-lg border px-4 py-2 text-sm transition-colors ${
+                                          memorialPosterTone === option.value
+                                            ? "border-[#c4a882] bg-[#c4a882]/10 text-[#e8d5b7]"
+                                            : "border-white/10 text-[#9b8b7a] hover:border-white/20"
+                                        }`}
+                                      >
+                                        {option.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <span className="mb-2 block text-sm font-semibold text-[#e8d5b7]">
+                                    {t.memorialAspectRatio}
+                                  </span>
+                                  <div className="flex gap-2">
+                                    {[
+                                      {
+                                        value: "9:16",
+                                        label: t.memorialAspectRatioPortrait,
+                                      },
+                                      {
+                                        value: "16:9",
+                                        label: t.memorialAspectRatioLandscape,
+                                      },
+                                    ].map((option) => (
+                                      <button
+                                        key={option.value}
+                                        onClick={() =>
+                                          setMemorialAspectRatio(option.value)
+                                        }
+                                        className={`flex-1 rounded-lg border px-4 py-2 text-sm transition-colors ${
+                                          memorialAspectRatio === option.value
+                                            ? "border-[#c4a882] bg-[#c4a882]/10 text-[#e8d5b7]"
+                                            : "border-white/10 text-[#9b8b7a] hover:border-white/20"
+                                        }`}
+                                      >
+                                        {option.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
                       </div>
                     </>
                   )}

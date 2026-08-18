@@ -12,10 +12,7 @@ import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 
 // ▶︎ 링 파라미터 (ExhibitionRingFront의 검증된 비율 기반)
 const PLANE_W = 0.8;
-const PLANE_H = 1.0; // 4:5 세로 — 목업의 폴라로이드 비율
-const FRAME_PAD = 0.05; // 폴라로이드 흰 테두리
-const FRAME_W = PLANE_W + FRAME_PAD * 2;
-const FRAME_H = PLANE_H + FRAME_PAD * 4; // 하단 여백이 더 넓은 폴라로이드
+const PLANE_H = 1.0; // 4:5 세로 — 목업의 사진 비율
 const GAP_ARC = 0.25; // 플레인 사이 호 길이 여유
 const MIN_RADIUS = 1.6; // 소형 앨범도 링 형태를 유지하는 최소 반지름
 const CAM_Y = 2;
@@ -35,6 +32,11 @@ const RING_FIT_FRAC = 0.9;
 // 깊이별 크기 과장 — 링 전체가 보이는 원거리 구도에서는 실제 원근만으로는
 // 앞/뒤 크기 차가 약해서, 목업의 납작한 3D 타원 느낌을 위해 보정
 const DEPTH_SCALE = 0.25;
+// 살짝 기울임 (rad) — 오버뷰는 카드가 뒤로 눕는 느낌, 포커스는 목업처럼
+// 미묘한 3D 카드 기울기
+const OVERVIEW_TILT_X = -0.09;
+const FOCUS_TILT_X = -0.04;
+const FOCUS_TILT_Y = -0.09;
 
 function wrapPi(a) {
   let t = (a + Math.PI) % (Math.PI * 2);
@@ -237,17 +239,6 @@ const MediaPlane = React.forwardRef(function MediaPlane(
 
   return (
     <group ref={ref}>
-      {/* 폴라로이드 프레임 */}
-      <mesh renderOrder={9} position={[0, -FRAME_PAD, -0.002]}>
-        <planeGeometry args={[FRAME_W, FRAME_H]} />
-        <meshBasicMaterial
-          color="#ffffff"
-          transparent
-          side={THREE.DoubleSide}
-          depthWrite={false}
-        />
-      </mesh>
-
       {/* 링 상태 미디어 (썸네일) */}
       <mesh renderOrder={10} onClick={handleClick}>
         <planeGeometry args={[PLANE_W, PLANE_H]} />
@@ -308,7 +299,7 @@ function RingScene({
     const tanX = tanY * (size.width / size.height);
     // 가로: 링 전체(지름 + 프레임 폭)가 화면 너비의 RING_FIT_FRAC에 들어오는 거리
     // — 링의 최좌/최우 지점(x=±R)은 링 중심(z=0)과 같은 깊이에 있다
-    let overviewTz = (radius + FRAME_W) / (RING_FIT_FRAC * tanX);
+    let overviewTz = (radius + PLANE_W) / (RING_FIT_FRAC * tanX);
     // 세로: 정면 사진 중심이 화면 하단부(하프FOV의 64% 아래)에 오도록
     // 링의 기울기(frontDrop)를 카메라 거리에서 역산
     const pitch = Math.atan(CAM_Y / overviewTz);
@@ -322,9 +313,9 @@ function RingScene({
     // 와이드 화면 안전장치: 정면 사진이 세로로 잘리지 않는 최소 거리 보장
     overviewTz = Math.max(
       overviewTz,
-      radius + (CAM_Y + frontDrop + FRAME_H / 2) / tanY,
+      radius + (CAM_Y + frontDrop + PLANE_H / 2) / tanY,
     );
-    const focusY = -frontDrop - FRAME_PAD; // 프레임 중심 (프레임이 아래로 치우침)
+    const focusY = -frontDrop; // 정면 플레인 중심
 
     // ── 회전 갱신 ──
     if (draggingRef.current) {
@@ -340,6 +331,7 @@ function RingScene({
     }
 
     // ── 플레인 배치 ──
+    const rotRate = Math.min(1, 8 * dt);
     for (let i = 0; i < N; i++) {
       const m = planeRefs.current[i];
       if (!m) continue;
@@ -349,7 +341,13 @@ function RingScene({
       // 기울어진 링 연출: 앞(z=+R)은 내려가고 뒤는 올라감
       const y = -(z / radius) * frontDrop;
       m.position.set(x, y, z + i * 0.001); // 인덱스 오프셋으로 z-fighting 방지
-      m.rotation.set(0, 0, 0); // 전부 카메라 방향
+      // 살짝 기울임: 오버뷰는 뒤로 눕는 카드, 포커스는 미묘한 3D 카드 기울기
+      const isFoc = focusedIndex === i;
+      const rx = isFoc ? FOCUS_TILT_X : OVERVIEW_TILT_X;
+      const ry = isFoc ? FOCUS_TILT_Y : 0;
+      m.rotation.x += (rx - m.rotation.x) * rotRate;
+      m.rotation.y += (ry - m.rotation.y) * rotRate;
+      m.rotation.z = 0;
       m.scale.setScalar(1 + (z / radius) * DEPTH_SCALE); // 앞쪽 크게, 뒤쪽 작게
       m.renderOrder = Math.round((z + radius) * 100);
     }
@@ -361,8 +359,8 @@ function RingScene({
     let tz = overviewTz;
     if (focused) {
       // 정면 플레인(x=0, z=R)의 프레임이 화면 너비 FOCUS_FILL_W를 채우는 거리
-      const dWidth = FRAME_W / (2 * FOCUS_FILL_W * tanX);
-      const dHeight = FRAME_H / (2 * FOCUS_FILL_H * tanY);
+      const dWidth = PLANE_W / (2 * FOCUS_FILL_W * tanX);
+      const dHeight = PLANE_H / (2 * FOCUS_FILL_H * tanY);
       // 정면 플레인은 깊이 스케일로 (1+DEPTH_SCALE)배 커져 있으므로 그만큼 물러남
       const d = Math.max(dWidth, dHeight) * (1 + DEPTH_SCALE);
       tx = 0;

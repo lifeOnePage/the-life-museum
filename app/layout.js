@@ -1,6 +1,7 @@
 // app/layout.js
 import { AuthProvider } from "./contexts/AuthContext";
 import DeepLinkHandler from "./components/DeepLinkHandler";
+import AgentationToolbar from "./components/AgentationToolbar";
 import "./globals.css";
 
 export const metadata = {
@@ -36,6 +37,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <DeepLinkHandler />
           {children}
+          <AgentationToolbar />
         </AuthProvider>
       </body>
     </html>

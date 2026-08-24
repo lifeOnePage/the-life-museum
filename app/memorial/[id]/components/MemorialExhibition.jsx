@@ -8,11 +8,12 @@ import { useBGM } from "@/app/vhs/[id]/components/lib/useBGM";
 import IntroPoster from "./IntroPoster";
 import BottomNavBar from "./BottomNavBar";
 import StoryTab from "./StoryTab";
-import PlaceholderTab from "./PlaceholderTab";
+import MemoryTab from "./MemoryTab";
+import GuestbookTab from "./GuestbookTab";
 
 export default function MemorialExhibition({ recordId }) {
   const router = useRouter();
-  const { data, loading, error } = useRecordData(recordId);
+  const { data, loading, error, mediaLoading } = useRecordData(recordId);
   const [introDismissed, setIntroDismissed] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
 
@@ -138,8 +139,20 @@ export default function MemorialExhibition({ recordId }) {
         />
       )}
 
-      {activeTab === "memory" && <PlaceholderTab label="메모리" />}
-      {activeTab === "guestbook" && <PlaceholderTab label="방명록" />}
+      {activeTab === "memory" && (
+        <MemoryTab
+          mediaList={mediaList}
+          mediaLoading={mediaLoading}
+          tone={data?.memorialPosterTone || "dark"}
+        />
+      )}
+      {activeTab === "guestbook" && (
+        <GuestbookTab
+          recordId={recordId}
+          profileItem={profileItem}
+          tone={data?.memorialPosterTone || "dark"}
+        />
+      )}
 
       <BottomNavBar activeTab={activeTab} onChange={setActiveTab} />
 

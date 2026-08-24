@@ -11,9 +11,9 @@ import React, {
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
 
 // ▶︎ 링 파라미터 (ExhibitionRingFront의 검증된 비율 기반)
-const PLANE_W = 0.8;
-const PLANE_H = 1.0; // 4:5 세로 — 목업의 사진 비율
-const GAP_ARC = 0.25; // 플레인 사이 호 길이 여유
+const PLANE_W = 1.2;
+const PLANE_H = 1.5; // 4:5 세로 — 목업의 사진 비율
+const GAP_ARC = -0.15; // 플레인 사이 호 길이 — 음수: 목업처럼 살짝 겹침
 const MIN_RADIUS = 1.6; // 소형 앨범도 링 형태를 유지하는 최소 반지름
 const CAM_Y = 2;
 const CAM_Z = 22;
@@ -22,7 +22,13 @@ const IDLE_SPEED = 0.05; // rad/s — 유휴 자동 회전
 const TAP_MAX_TRAVEL = 6; // px — 이 이상 움직이면 클릭이 아니라 드래그
 // 링에 올리는 최대 플레인 수 — 대형 앨범(수백 장)은 균등 샘플링.
 // 목업 기준 링 전체가 한 화면에 들어오는 밀도(+타임트래블 200장 성능 문제 재발 방지).
-const MAX_PLANES = 18;
+// MemoryTab의 좌우 넘김 버튼이 순환 인덱스 계산에 같이 쓴다.
+export const MAX_PLANES = 36;
+// 링 디스크의 기울기 (rad) — 0이면 완전히 누운 원판, 클수록 정면을 향해 섬.
+// 목업처럼 누운 원판을 비스듬히 내려다보는 구도
+const RING_TILT = 0.33;
+// 링 디스크의 좌우 롤 (rad) — 목업처럼 오른쪽이 살짝 들리는 대각선 구도
+const RING_ROLL = 0.14;
 // 포커스 시 화면을 채우는 비율 (프레임 기준) — 가장자리에 약간의 여백
 const FOCUS_FILL_W = 0.86;
 const FOCUS_FILL_H = 0.92;
@@ -38,10 +44,17 @@ const OVERVIEW_TILT_X = -0.09;
 const FOCUS_TILT_X = -0.04;
 const FOCUS_TILT_Y = -0.09;
 
+// 포커스 스냅(버튼·드래그 릴리즈) 트윈 시간 (ms)
+const SNAP_MS = 650;
+
 function wrapPi(a) {
   let t = (a + Math.PI) % (Math.PI * 2);
   if (t < 0) t += Math.PI * 2;
   return t - Math.PI;
+}
+
+function easeInOutCubic(t) {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 }
 
 function ringRadius(n) {
@@ -125,6 +138,47 @@ function ImageMat({ url }) {
       map={tex}
       toneMapped={false}
       transparent
+      side={THREE.DoubleSide}
+      depthWrite={false}
+    />
+  );
+}
+
+// 바닥 반사용 그라데이션 알파맵 (모듈 싱글톤) — 바닥과 맞닿는 쪽이 진하고
+// 아래로 갈수록 투명해진다
+let reflectionAlphaMap = null;
+function getReflectionAlphaMap() {
+  if (reflectionAlphaMap) return reflectionAlphaMap;
+  const canvas = document.createElement("canvas");
+  canvas.width = 1;
+  canvas.height = 64;
+  const ctx = canvas.getContext("2d");
+  const grad = ctx.createLinearGradient(0, 0, 0, 64);
+  // 반사 메시는 scale.y=-1이라 캔버스 아래쪽(stop 1)이 사진 바닥 쪽에 온다
+  grad.addColorStop(0, "rgba(255,255,255,0)");
+  grad.addColorStop(1, "rgba(255,255,255,0.55)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 1, 64);
+  reflectionAlphaMap = new THREE.CanvasTexture(canvas);
+  return reflectionAlphaMap;
+}
+
+// 바닥 반사 재질 — 링 썸네일과 같은 텍스처(useLoader 캐시 공유)에
+// 그라데이션 알파를 곱해 아래로 사라지는 반사를 만든다
+function ReflectionMat({ url }) {
+  const effUrl = useMemo(() => proxify(url), [url]);
+  const tex = useLoader(THREE.TextureLoader, effUrl, (loader) => {
+    loader.setCrossOrigin("anonymous");
+  });
+  const alphaMap = useMemo(() => getReflectionAlphaMap(), []);
+
+  return (
+    <meshBasicMaterial
+      map={tex}
+      alphaMap={alphaMap}
+      toneMapped={false}
+      transparent
+      opacity={0.25}
       side={THREE.DoubleSide}
       depthWrite={false}
     />
@@ -256,6 +310,23 @@ const MediaPlane = React.forwardRef(function MediaPlane(
         )}
       </mesh>
 
+      {/* 바닥 반사 — 사진 아래에 상하반전 미러 + 그라데이션 페이드.
+          Suspense가 mesh 바깥이라 로드 전 흰 플레인이 생기지 않는다 */}
+      {ringUrl && (
+        <MaterialErrorBoundary key={`refl-${ringUrl}`} fallback={null}>
+          <Suspense fallback={null}>
+            <mesh
+              renderOrder={8}
+              position={[0, -PLANE_H - 0.04, 0]}
+              scale={[1, -1, 1]}
+            >
+              <planeGeometry args={[PLANE_W, PLANE_H]} />
+              <ReflectionMat url={ringUrl} />
+            </mesh>
+          </Suspense>
+        </MaterialErrorBoundary>
+      )}
+
       {/* 포커스 승격 레이어 — Suspense가 mesh 바깥이라 로드 전에는 mesh 자체가
           없어 흰 플레인이 번쩍이지 않고, 로드 완료 전까지 썸네일이 그대로 보임 */}
       {focusUrl && (
@@ -291,6 +362,7 @@ function RingScene({
   const planeRefs = useRef([]);
   const lookRef = useRef(new THREE.Vector3(0, 0, 0));
   const goalRef = useRef(new THREE.Vector3());
+  const snapRef = useRef(null); // { index, from, to, start } — 포커스 이징 트윈
 
   useFrame((_, dt) => {
     // ── 스크린 반응형 프레이밍 ──
@@ -300,32 +372,43 @@ function RingScene({
     // 가로: 링 전체(지름 + 프레임 폭)가 화면 너비의 RING_FIT_FRAC에 들어오는 거리
     // — 링의 최좌/최우 지점(x=±R)은 링 중심(z=0)과 같은 깊이에 있다
     let overviewTz = (radius + PLANE_W) / (RING_FIT_FRAC * tanX);
-    // 세로: 정면 사진 중심이 화면 하단부(하프FOV의 64% 아래)에 오도록
-    // 링의 기울기(frontDrop)를 카메라 거리에서 역산
-    const pitch = Math.atan(CAM_Y / overviewTz);
-    const targetAngle = 0.64 * halfFovY;
-    // 상한을 반지름에 묶어 목업처럼 납작한 타원을 유지
-    const frontDrop = THREE.MathUtils.clamp(
-      Math.tan(targetAngle + pitch) * (overviewTz - radius) - CAM_Y,
-      0.6,
-      radius * 0.45,
+    // 기울어진 디스크에서 정면 플레인의 하강량·실제 깊이
+    const dropY = Math.sin(RING_TILT) * radius;
+    const frontZ = Math.cos(RING_TILT) * radius;
+    // 와이드 화면 안전장치: 링의 최하단(롤 포함)이 세로로 잘리지 않는 최소 거리
+    const lowestY = Math.hypot(
+      radius * Math.sin(RING_ROLL),
+      dropY * Math.cos(RING_ROLL),
     );
-    // 와이드 화면 안전장치: 정면 사진이 세로로 잘리지 않는 최소 거리 보장
     overviewTz = Math.max(
       overviewTz,
-      radius + (CAM_Y + frontDrop + PLANE_H / 2) / tanY,
+      frontZ + (CAM_Y + lowestY + PLANE_H / 2) / tanY,
     );
-    const focusY = -frontDrop; // 정면 플레인 중심
+    // 정면 플레인 중심 (롤 적용 후 위치)
+    const focusX = Math.sin(RING_ROLL) * dropY;
+    const focusY = -Math.cos(RING_ROLL) * dropY;
 
     // ── 회전 갱신 ──
     if (draggingRef.current) {
       // 드래그 중에는 포인터 핸들러가 ringAngleRef를 직접 움직인다
+      snapRef.current = null;
     } else if (focusedIndex != null) {
-      // 포커스 대상이 정면(π/2)에 오도록 스냅
-      const target = Math.PI / 2 - focusedIndex * step;
-      const diff = wrapPi(target - ringAngleRef.current);
-      ringAngleRef.current += diff * Math.min(1, 8 * dt);
+      // 포커스 대상이 정면(π/2)에 오도록 easeInOutCubic 트윈으로 스냅
+      // (버튼 연타·드래그 릴리즈 시엔 현재 각도에서 새 트윈을 시작)
+      if (!snapRef.current || snapRef.current.index !== focusedIndex) {
+        const target = Math.PI / 2 - focusedIndex * step;
+        snapRef.current = {
+          index: focusedIndex,
+          from: ringAngleRef.current,
+          to: ringAngleRef.current + wrapPi(target - ringAngleRef.current),
+          start: performance.now(),
+        };
+      }
+      const { from, to, start } = snapRef.current;
+      const t = Math.min(1, (performance.now() - start) / SNAP_MS);
+      ringAngleRef.current = from + (to - from) * easeInOutCubic(t);
     } else {
+      snapRef.current = null;
       // 유휴 자동 회전
       ringAngleRef.current -= IDLE_SPEED * dt;
     }
@@ -336,10 +419,13 @@ function RingScene({
       const m = planeRefs.current[i];
       if (!m) continue;
       const a = i * step + ringAngleRef.current;
-      const x = Math.cos(a) * radius;
-      const z = Math.sin(a) * radius;
-      // 기울어진 링 연출: 앞(z=+R)은 내려가고 뒤는 올라감
-      const y = -(z / radius) * frontDrop;
+      const x0 = Math.cos(a) * radius;
+      const zc = Math.sin(a) * radius; // 기울기 전 디스크 평면상의 깊이
+      // 디스크를 X축(앞뒤 기울기) + Z축(좌우 롤)으로 실제 회전시킨 위치
+      const y0 = -Math.sin(RING_TILT) * zc;
+      const x = x0 * Math.cos(RING_ROLL) - y0 * Math.sin(RING_ROLL);
+      const y = x0 * Math.sin(RING_ROLL) + y0 * Math.cos(RING_ROLL);
+      const z = Math.cos(RING_TILT) * zc;
       m.position.set(x, y, z + i * 0.001); // 인덱스 오프셋으로 z-fighting 방지
       // 살짝 기울임: 오버뷰는 뒤로 눕는 카드, 포커스는 미묘한 3D 카드 기울기
       const isFoc = focusedIndex === i;
@@ -348,8 +434,8 @@ function RingScene({
       m.rotation.x += (rx - m.rotation.x) * rotRate;
       m.rotation.y += (ry - m.rotation.y) * rotRate;
       m.rotation.z = 0;
-      m.scale.setScalar(1 + (z / radius) * DEPTH_SCALE); // 앞쪽 크게, 뒤쪽 작게
-      m.renderOrder = Math.round((z + radius) * 100);
+      m.scale.setScalar(1 + (zc / radius) * DEPTH_SCALE); // 앞쪽 크게, 뒤쪽 작게
+      m.renderOrder = Math.round((zc + radius) * 100);
     }
 
     // ── 카메라 ──
@@ -358,14 +444,14 @@ function RingScene({
     let ty = CAM_Y;
     let tz = overviewTz;
     if (focused) {
-      // 정면 플레인(x=0, z=R)의 프레임이 화면 너비 FOCUS_FILL_W를 채우는 거리
+      // 정면 플레인의 사진이 화면 너비 FOCUS_FILL_W를 채우는 거리
       const dWidth = PLANE_W / (2 * FOCUS_FILL_W * tanX);
       const dHeight = PLANE_H / (2 * FOCUS_FILL_H * tanY);
       // 정면 플레인은 깊이 스케일로 (1+DEPTH_SCALE)배 커져 있으므로 그만큼 물러남
       const d = Math.max(dWidth, dHeight) * (1 + DEPTH_SCALE);
-      tx = 0;
+      tx = focusX;
       ty = focusY;
-      tz = radius + d;
+      tz = frontZ + d;
     }
 
     const rate = Math.min(1, 5 * dt);
@@ -374,7 +460,11 @@ function RingScene({
     camera.position.z += (tz - camera.position.z) * rate;
 
     // 시선: overview는 원점(초기 프레이밍과 동일), focused는 플레인 중심
-    goalRef.current.set(0, focused ? focusY : 0, focused ? radius : 0);
+    goalRef.current.set(
+      focused ? focusX : 0,
+      focused ? focusY : 0,
+      focused ? frontZ : 0,
+    );
     lookRef.current.lerp(goalRef.current, rate);
     camera.lookAt(lookRef.current);
   });
@@ -478,6 +568,12 @@ export default function MediaRing({
     [N, step, onFocusChange],
   );
 
+  // 포커스 중 사진 바깥(빈 공간) 탭 → 링 전체 화면으로 복귀
+  const handlePointerMissed = useCallback(() => {
+    if (dragStateRef.current.travel > TAP_MAX_TRAVEL) return; // 드래그는 무시
+    if (focusedRef.current != null) onFocusChange(null);
+  }, [onFocusChange]);
+
   const handlePlaneTap = useCallback(
     (i) => {
       // R3F의 e.delta는 순변위 기준이라, 제자리로 돌아온 드래그를 탭으로 오인할
@@ -504,6 +600,7 @@ export default function MediaRing({
       <Canvas
         camera={{ position: [0, CAM_Y, CAM_Z], fov: FOV }}
         gl={{ antialias: true, alpha: true }}
+        onPointerMissed={handlePointerMissed}
       >
         <Suspense fallback={null}>
           <RingScene

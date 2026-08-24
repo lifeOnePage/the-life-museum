@@ -9,7 +9,7 @@ import IntroPoster from "./IntroPoster";
 import BottomNavBar from "./BottomNavBar";
 import StoryTab from "./StoryTab";
 import MemoryTab from "./MemoryTab";
-import PlaceholderTab from "./PlaceholderTab";
+import GuestbookTab from "./GuestbookTab";
 
 export default function MemorialExhibition({ recordId }) {
   const router = useRouter();
@@ -146,7 +146,13 @@ export default function MemorialExhibition({ recordId }) {
           tone={data?.memorialPosterTone || "dark"}
         />
       )}
-      {activeTab === "guestbook" && <PlaceholderTab label="방명록" />}
+      {activeTab === "guestbook" && (
+        <GuestbookTab
+          recordId={recordId}
+          profileItem={profileItem}
+          tone={data?.memorialPosterTone || "dark"}
+        />
+      )}
 
       <BottomNavBar activeTab={activeTab} onChange={setActiveTab} />
 

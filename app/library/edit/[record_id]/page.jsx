@@ -62,6 +62,7 @@ const MemorialPreview = dynamic(() => import("./components/MemorialPreview"), {
   ssr: false,
 });
 import TutorialOverlay from "./components/TutorialOverlay";
+import MemorialConvertModal from "@/app/components/memorial/MemorialConvertModal";
 import ThemeSelector from "./components/ThemeSelector";
 import StickerPanel from "./components/StickerPanel";
 import BgmEditor, { BGM_LIST } from "./components/BgmEditor";
@@ -447,6 +448,8 @@ const Index = ({ params }) => {
   // Collapsible sections (앨범 메모리 탭)
   const [bgmOpen, setBgmOpen] = useState(true);
   const [recordTypeOpen, setRecordTypeOpen] = useState(true);
+  // 추모 앨범 전환 모달 (새 앨범 생성 — 원본 유지)
+  const [showConvertModal, setShowConvertModal] = useState(false);
   const [recordType, setRecordType] = useState("exhibit");
 
   // VHS-specific settings
@@ -2237,23 +2240,32 @@ const Index = ({ params }) => {
                         >
                           <div className="border-t border-white/8 px-4 pt-3 pb-4">
                             <div className="flex flex-col gap-2">
-                              {[
-                                {
-                                  value: "exhibit",
-                                  label: t.recordTypeExhibit,
-                                },
-                                {
-                                  value: "retro_tape",
-                                  label: t.recordTypeRetroTape,
-                                },
-                                {
-                                  value: "memorial",
-                                  label: t.recordTypeMemorial,
-                                },
-                              ].map((option) => (
+                              {/* memorial은 영속 미디어 전용 타입 — in-place 전환
+                                  불가. 비-memorial 레코드는 전환 버튼으로만 진입 */}
+                              {(recordType === "memorial"
+                                ? [
+                                    {
+                                      value: "memorial",
+                                      label: t.recordTypeMemorial,
+                                    },
+                                  ]
+                                : [
+                                    {
+                                      value: "exhibit",
+                                      label: t.recordTypeExhibit,
+                                    },
+                                    {
+                                      value: "retro_tape",
+                                      label: t.recordTypeRetroTape,
+                                    },
+                                  ]
+                              ).map((option) => (
                                 <label
                                   key={option.value}
-                                  onClick={() => setRecordType(option.value)}
+                                  onClick={() =>
+                                    recordType !== "memorial" &&
+                                    setRecordType(option.value)
+                                  }
                                   className={`flex cursor-pointer items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
                                     recordType === option.value
                                       ? "border-[#c4a882] bg-[#c4a882]/10"
@@ -2276,6 +2288,28 @@ const Index = ({ params }) => {
                                   </span>
                                 </label>
                               ))}
+                              {recordType !== "memorial" ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setShowConvertModal(true)}
+                                  className="flex items-center gap-3 rounded-lg border border-dashed border-[#c4a882]/50 px-4 py-3 text-left transition-colors hover:bg-[#c4a882]/10"
+                                >
+                                  <Sparkles className="h-4 w-4 shrink-0 text-[#c4a882]" />
+                                  <span>
+                                    <span className="block text-sm text-[#e8d5b7]">
+                                      추모 앨범으로 전환
+                                    </span>
+                                    <span className="mt-0.5 block text-[11px] text-[#9b8b7a]">
+                                      사진을 골라 새 추모 앨범을 만듭니다 (원본
+                                      유지)
+                                    </span>
+                                  </span>
+                                </button>
+                              ) : (
+                                <p className="px-1 text-[11px] text-[#9b8b7a]">
+                                  추모 앨범은 다른 타입으로 변경할 수 없습니다
+                                </p>
+                              )}
                             </div>
                           </div>
                         </motion.div>
@@ -2930,6 +2964,19 @@ const Index = ({ params }) => {
           }}
         />
       )}
+
+      {/* 추모 앨범 전환 모달 — 스크랩 미디어에서 최대 36장 선택 → 새 앨범 생성 */}
+      <MemorialConvertModal
+        open={showConvertModal}
+        onClose={() => setShowConvertModal(false)}
+        recordId={record_id}
+        albumTitle={albumTitle}
+        albumSubtitle={albumSubtitle}
+        photoMedia={photoDrive.photoMedia}
+        isLoading={photoDrive.isLoading}
+        onRefresh={photoDrive.refresh}
+        locale={locale}
+      />
     </div>
   );
 };

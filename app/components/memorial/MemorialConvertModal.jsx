@@ -12,22 +12,25 @@ import { useMemorialCreate } from "./useMemorialCreate";
 const T = {
   ko: {
     title: "추모 앨범으로 전환",
-    subtitle: "간직할 사진을 골라주세요 — 원본 앨범은 그대로 유지됩니다",
+    subtitle:
+      "고인의 삶을 기리는 추모 앨범을 새로 만듭니다. 링크로 연결된 사진은 시간이 지나면 볼 수 없게 될 수 있으니, 오래 간직하고 싶은 사진을 골라 안전하게 보존해 드려요.",
+    creditNotice:
+      "원본 앨범은 그대로 유지되며, 앨범 생성권 1개가 사용됩니다.",
     selected: "선택",
     submit: "추모 앨범 만들기",
     empty: "불러올 사진이 없습니다. 앨범 저장소 연결을 확인해주세요.",
     loading: "앨범 사진을 불러오는 중...",
-    creditNotice: "일반 생성과 동일하게 앨범 생성권 1개가 사용됩니다",
   },
   en: {
     title: "Convert to Memorial Album",
     subtitle:
-      "Choose the photos to keep — your original album stays untouched",
+      "Create a new memorial album honoring their life. Linked photos may expire over time, so pick the ones you want to keep and we'll preserve them safely.",
+    creditNotice:
+      "Your original album stays untouched. Uses 1 album credit.",
     selected: "selected",
     submit: "Create Memorial Album",
     empty: "No photos available. Check the album source connection.",
     loading: "Loading album photos...",
-    creditNotice: "Uses 1 album credit, same as creating a new album",
   },
 };
 
@@ -115,8 +118,11 @@ export default function MemorialConvertModal({
               <h2 className="font-serif text-lg font-medium tracking-wide">
                 {t.title}
               </h2>
-              <p className="mt-0.5 text-xs text-black/50">
-                {t.subtitle} · {t.creditNotice}
+              <p className="mt-0.5 max-w-xl text-xs leading-relaxed text-black/50">
+                {t.subtitle}
+              </p>
+              <p className="mt-1 max-w-xl text-xs leading-relaxed text-black/40">
+                {t.creditNotice}
               </p>
             </div>
             <div className="flex items-center gap-2">

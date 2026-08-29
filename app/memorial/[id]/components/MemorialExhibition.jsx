@@ -4,6 +4,7 @@ import { useMemo, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
 import { useRecordData, invalidateRecord } from "@/app/lib/useRecordData";
+import { getMediaType } from "@/app/library/utils/mediaType";
 import { useBGM } from "@/app/vhs/[id]/components/lib/useBGM";
 import IntroPoster from "./IntroPoster";
 import BottomNavBar from "./BottomNavBar";
@@ -54,11 +55,15 @@ export default function MemorialExhibition({ recordId }) {
     [data],
   );
 
-  // 프로필 이미지 = mediaList의 첫 번째 image 타입
-  const profileItem = useMemo(
-    () => mediaList.find((m) => m.type === "image") || mediaList[0] || null,
-    [mediaList],
-  );
+  // 프로필 이미지 = 커버 이미지(이미지 타입일 때) 우선 — 편집 화면 포스터
+  // 미리보기와 동기화. 커버가 없거나 영상이면 mediaList 첫 image로 폴백.
+  const profileItem = useMemo(() => {
+    const coverUrl = data?.coverImage?.url;
+    if (coverUrl && getMediaType(coverUrl) === "image") {
+      return { type: "image", original_url: coverUrl, thumbnail_url: coverUrl };
+    }
+    return mediaList.find((m) => m.type === "image") || mediaList[0] || null;
+  }, [data, mediaList]);
 
   // 스토리 탭 사진 카드용 — 이미지 타입만
   const imageList = useMemo(

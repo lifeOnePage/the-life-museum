@@ -1,12 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import {
   TONE_STYLES,
   getFrameWrapperStyle,
   getFrameInnerProps,
 } from "@/app/memorial/[id]/components/introPosterStyles";
+import { getMediaType } from "@/app/library/utils/mediaType";
 
 function yearRangeFromTimeline(timeline) {
   const yearNums = (timeline ?? [])
@@ -34,13 +35,21 @@ export default function MemorialPreview({
   posterStyle = "classic",
   posterTone = "dark",
   aspectRatio = "9:16",
+  coverImageUrl = null,
+  viewUrl = null,
 }) {
   const imageList = useMemo(
     () => (photoMedia ?? []).filter((m) => m.type === "image" && !m.is_cover),
     [photoMedia],
   );
   const photo = imageList[0] || null;
-  const photoSrc = photo?.original_url || photo?.thumbnail_url || "";
+  // 포스터 인물 사진은 커버 이미지와 동기화 — 커버가 이미지일 때 우선 사용
+  // (감상 화면 MemorialExhibition의 profileItem 선정과 동일 기준)
+  const coverIsImage =
+    coverImageUrl && getMediaType(coverImageUrl) === "image";
+  const photoSrc = coverIsImage
+    ? coverImageUrl
+    : photo?.original_url || photo?.thumbnail_url || "";
   const yearRange = useMemo(() => yearRangeFromTimeline(timeline), [timeline]);
 
   const toneStyle = TONE_STYLES[posterTone] || TONE_STYLES.dark;
@@ -49,7 +58,19 @@ export default function MemorialPreview({
   const isPortrait = aspectRatio !== "16:9";
 
   return (
-    <div className="flex h-full w-full items-center justify-center bg-black">
+    <div className="relative flex h-full w-full items-center justify-center bg-black">
+      {/* 미리보기는 정적 포스터 — 실제 상호작용(탭 전환·링·방명록)은 감상 화면에서 */}
+      {viewUrl && (
+        <a
+          href={viewUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="absolute top-3 right-3 z-10 flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-[11px] text-white/70 backdrop-blur-sm transition-colors hover:bg-white/20 hover:text-white"
+        >
+          감상 화면에서 보기
+          <ExternalLink size={11} />
+        </a>
+      )}
       <div
         className={`relative flex h-full overflow-hidden ${
           isPortrait ? "aspect-[9/16]" : "aspect-[16/9]"

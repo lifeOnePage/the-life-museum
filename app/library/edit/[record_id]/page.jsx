@@ -1638,6 +1638,8 @@ const Index = ({ params }) => {
               posterStyle={memorialPosterStyle}
               posterTone={memorialPosterTone}
               aspectRatio={memorialAspectRatio}
+              coverImageUrl={frontCover}
+              viewUrl={`/${locale}/memorial/${record_id}`}
             />
           ) : (
             <AlbumPreview2D
@@ -2306,8 +2308,12 @@ const Index = ({ params }) => {
                                   </span>
                                 </button>
                               ) : (
-                                <p className="px-1 text-[11px] text-[#9b8b7a]">
-                                  추모 앨범은 다른 타입으로 변경할 수 없습니다
+                                <p className="px-1 text-[11px] leading-relaxed text-[#9b8b7a]">
+                                  이 앨범은 소중한 분을 기리기 위한 추모
+                                  앨범으로 만들어졌어요. 시간이 지나도 고른
+                                  사진들이 그대로 보존됩니다. 다른 테마의
+                                  전시가 필요하시면 라이브러리에서 새 앨범을
+                                  만들어주세요.
                                 </p>
                               )}
                             </div>

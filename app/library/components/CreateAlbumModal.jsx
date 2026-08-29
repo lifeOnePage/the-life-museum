@@ -4,6 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { useAuth } from "@/app/contexts/AuthContext";
+import { uploadMediaFiles } from "@/app/lib/uploadMediaFiles";
+import MemorialSourceSection from "@/app/components/memorial/MemorialSourceSection";
+import CreationProgressPanel from "@/app/components/memorial/CreationProgressPanel";
+import { useGooglePhotosPicker } from "@/app/components/memorial/useGooglePhotosPicker";
+import { useMemorialCreate } from "@/app/components/memorial/useMemorialCreate";
 
 const T = {
   ko: {
@@ -88,14 +93,72 @@ export default function CreateAlbumModal({
   // 새 앨범 만들기 상태
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
+  // 앨범 타입: 일반(공유 링크 스크래핑) | 추모(큐레이션·영속 미디어)
+  const [albumType, setAlbumType] = useState("standard");
   // 사진 저장소: 종류 선택 + 단일 URL 입력 (edit 페이지와 동일 구조)
   const [selectedUrlType, setSelectedUrlType] = useState("google");
   const [urlValue, setUrlValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  // 추모 앨범 소스 (구글포토 피커 ↔ 직접 업로드는 상호 배타)
+  const picker = useGooglePhotosPicker();
+  const [memorialFiles, setMemorialFiles] = useState([]);
+  const memorialCreate = useMemorialCreate();
+  const memorialReady =
+    memorialFiles.length > 0 ||
+    (picker.phase === "done" && picker.result?.items.length > 0);
+
   // 공유 앨범 추가 상태
   const [shareUrl, setShareUrl] = useState("");
   const [sharing, setSharing] = useState(false);
+
+  // 추모 앨범 생성 — 업로드/피커 결과를 백엔드 인제스트로 등록 후 폴링
+  const handleMemorialSubmit = async () => {
+    try {
+      let media;
+      if (memorialFiles.length > 0) {
+        const uploaded = await uploadMediaFiles(memorialFiles, {
+          prefix: "memorial/uploads",
+          onFileDone: (done) =>
+            memorialCreate.setUploadProgress(done, memorialFiles.length),
+        });
+        media = {
+          source: "upload",
+          items: uploaded.map((u) => ({
+            url: u.url,
+            type: u.srcType === 1 ? "video" : "image",
+          })),
+        };
+      } else if (picker.result) {
+        // 토큰/baseUrl은 ~60분 만료 — done 직후 즉시 제출되는 경로
+        media = {
+          source: "google_picker",
+          accessToken: picker.result.accessToken,
+          items: picker.result.items.map((it) => ({
+            url: it.baseUrl,
+            type: it.type,
+            mimeType: it.mimeType,
+          })),
+        };
+      } else {
+        return;
+      }
+
+      const newRecord = await memorialCreate.create({
+        title: title.trim(),
+        subTitle: subtitle.trim(),
+        media,
+      });
+      if (newRecord) {
+        refreshCredits?.();
+        onCreated?.(newRecord);
+        onClose();
+        router.push(`/library/edit/${newRecord.id}`);
+      }
+    } catch {
+      // 에러는 memorialCreate.error로 표시됨
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -104,6 +167,11 @@ export default function CreateAlbumModal({
     if (!canAfford) {
       router.push(`/${locale}/account/purchase`);
       onClose();
+      return;
+    }
+
+    if (albumType === "memorial") {
+      await handleMemorialSubmit();
       return;
     }
 
@@ -177,10 +245,20 @@ export default function CreateAlbumModal({
     }
   };
 
+  const guardedClose = () => {
+    if (submitting || memorialCreate.busy) {
+      const ok = window.confirm(
+        "앨범을 만드는 중이에요. 창을 닫아도 생성은 계속됩니다. 닫을까요?",
+      );
+      if (!ok) return;
+    }
+    onClose();
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
-      onClick={onClose}
+      onClick={guardedClose}
     >
       <div
         className="mx-4 w-full max-w-md rounded-2xl bg-[#1e1a14] p-6 shadow-xl ring-1 ring-white/10"
@@ -213,7 +291,55 @@ export default function CreateAlbumModal({
         {/* 새 앨범 만들기 탭 */}
         {activeTab === "new" && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* 사진 저장소: 종류 선택 + 단일 URL 입력 */}
+            {/* 앨범 타입: 일반 | 추모 */}
+            <div className="flex gap-2">
+              {[
+                { key: "standard", label: "일반 앨범", desc: "공유 링크 연결" },
+                {
+                  key: "memorial",
+                  label: "추모 앨범",
+                  desc: "사진을 골라 영구 보존",
+                },
+              ].map((opt) => (
+                <button
+                  key={opt.key}
+                  type="button"
+                  onClick={() => setAlbumType(opt.key)}
+                  disabled={memorialCreate.busy}
+                  className={`flex-1 rounded-lg border px-3 py-2.5 text-left transition-all ${
+                    albumType === opt.key
+                      ? "border-[#c4b49a] bg-[#c4b49a]/10"
+                      : "border-white/15 hover:border-white/25"
+                  }`}
+                >
+                  <span
+                    className={`block text-sm font-medium ${
+                      albumType === opt.key
+                        ? "text-[#c4b49a]"
+                        : "text-[#9b8b7a]"
+                    }`}
+                  >
+                    {opt.label}
+                  </span>
+                  <span className="mt-0.5 block text-[11px] text-[#9b8b7a]/70">
+                    {opt.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* 추모 앨범: 미디어 소스 선택 */}
+            {albumType === "memorial" && (
+              <MemorialSourceSection
+                picker={picker}
+                files={memorialFiles}
+                setFiles={setMemorialFiles}
+                disabled={memorialCreate.busy}
+              />
+            )}
+
+            {/* 사진 저장소: 종류 선택 + 단일 URL 입력 (일반 앨범) */}
+            {albumType === "standard" && (
             <div>
               <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
                 {t.photoStorage}
@@ -247,6 +373,7 @@ export default function CreateAlbumModal({
                 }`}
               />
             </div>
+            )}
             {/* 제목 */}
             <div>
               <label className="mb-1 block text-sm font-normal text-[#9b8b7a]">
@@ -287,21 +414,43 @@ export default function CreateAlbumModal({
               </p>
             )}
 
+            {/* 추모 앨범 생성 진행 상태 / 에러 */}
+            {albumType === "memorial" && (
+              <>
+                {memorialCreate.error && (
+                  <p className="text-center text-xs text-red-400">
+                    {memorialCreate.error}
+                  </p>
+                )}
+                <div className="text-[#e8d5b7]">
+                  <CreationProgressPanel
+                    phase={memorialCreate.phase}
+                    progress={memorialCreate.progress}
+                    timedOut={memorialCreate.timedOut}
+                  />
+                </div>
+              </>
+            )}
+
             {/* 버튼 */}
             <div className="mt-2 flex gap-3">
               <button
                 type="button"
-                onClick={onClose}
+                onClick={guardedClose}
                 className="flex-1 rounded-lg border border-white/10 py-2 font-medium text-[#c4b49a] transition hover:bg-white/5"
               >
                 {t.cancel}
               </button>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={
+                  submitting ||
+                  memorialCreate.busy ||
+                  (albumType === "memorial" && canAfford && !memorialReady)
+                }
                 className="flex-1 rounded-lg bg-[#c4b49a] py-2 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7] disabled:opacity-40"
               >
-                {submitting
+                {submitting || memorialCreate.busy
                   ? t.creating
                   : !canAfford
                     ? t.buyCredits

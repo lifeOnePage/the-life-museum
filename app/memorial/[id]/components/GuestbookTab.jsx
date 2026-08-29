@@ -13,23 +13,32 @@ function mediaSrc(item) {
   return item?.original_url || item?.thumbnail_url || "";
 }
 
-// 화분 슬롯 배치 — 프레임 앞·주위 타원 호, 깊이는 scale·zIndex(top)로 표현.
-// reserved: 방문자 몫으로 비워두는 정면 중앙 자리.
-// 배열 순서 = 채움 순서 — 엔트리가 적을 때 중앙 앞부터 좌우 대칭으로 퍼진다
-const SLOTS = [
-  { left: 50, top: 56, scale: 0.8 },
-  { left: 35, top: 55, scale: 0.78 },
-  { left: 65, top: 55, scale: 0.78 },
-  { left: 22, top: 61, scale: 0.88 },
-  { left: 78, top: 61, scale: 0.88 },
-  { left: 12, top: 52, scale: 0.7 },
-  { left: 88, top: 52, scale: 0.7 },
-  { left: 24, top: 46, scale: 0.58 },
-  { left: 76, top: 46, scale: 0.58 },
-  { left: 8, top: 42, scale: 0.5 },
-  { left: 92, top: 42, scale: 0.5 },
-  { left: 50, top: 64, scale: 1.0, reserved: true },
-];
+// 화분 슬롯 — 프레임을 두르는 타원 링 위에 원형 배치.
+// 정면 아래(90°)가 방문자 몫(reserved)이고, 채움 순서는 정면 양옆부터
+// 좌우 번갈아 뒤쪽으로 퍼진다. 뒤쪽 화분은 프레임 뒤로 가려진다(z-0).
+const RING_CX = 50; // 타원 중심 x (%)
+const RING_CY = 51; // 타원 중심 y (%)
+const RING_RX = 34; // 가로 반지름 (%)
+const RING_RY = 11; // 세로 반지름 (%) — 납작한 원근 타원
+const SLOT_COUNT = 12;
+
+const SLOTS = (() => {
+  const slots = [];
+  const stepDeg = 360 / SLOT_COUNT;
+  for (let k = 0; k < SLOT_COUNT; k++) {
+    // k=0은 정면(90°=화면 아래), 이후 +1,-1,+2,-2... 순으로 벌어짐
+    const side = k === 0 ? 0 : Math.ceil(k / 2) * (k % 2 === 1 ? 1 : -1);
+    const a = ((90 + side * stepDeg) * Math.PI) / 180;
+    const depth = (Math.sin(a) + 1) / 2; // 1=정면, 0=뒤
+    slots.push({
+      left: RING_CX + RING_RX * Math.cos(a),
+      top: RING_CY + RING_RY * Math.sin(a),
+      scale: 0.55 + 0.45 * depth,
+      reserved: k === 0,
+    });
+  }
+  return slots;
+})();
 const OPEN_SLOTS = SLOTS.filter((s) => !s.reserved);
 const POT_BASE_WIDTH = "min(13vw, 9vh)";
 
@@ -166,8 +175,9 @@ export default function GuestbookTab({ recordId, profileItem, tone = "dark" }) {
       </div>
 
       {/* 화분들 — 래퍼가 스태킹 컨텍스트를 만들어 슬롯 zIndex가 시트(z-50)를
-          넘보지 못하게 한다. 빈 영역 터치를 막지 않도록 pointer-events 제어 */}
-      <div className="pointer-events-none absolute inset-0 z-10">
+          넘보지 못하게 한다. z-0이라 뒤쪽 화분은 프레임(z-10) 뒤로 가려진다.
+          빈 영역 터치를 막지 않도록 pointer-events 제어 */}
+      <div className="pointer-events-none absolute inset-0 z-0">
         {SLOTS.map((slot, i) => {
         const zIndex = Math.round(slot.top);
         const style = {

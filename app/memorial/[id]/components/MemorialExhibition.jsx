@@ -3,7 +3,7 @@
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
-import { useRecordData } from "@/app/lib/useRecordData";
+import { useRecordData, invalidateRecord } from "@/app/lib/useRecordData";
 import { useBGM } from "@/app/vhs/[id]/components/lib/useBGM";
 import IntroPoster from "./IntroPoster";
 import BottomNavBar from "./BottomNavBar";
@@ -20,6 +20,30 @@ export default function MemorialExhibition({ recordId }) {
   const bgmUrl = data?.bgmUrl || data?.bgm || null;
   const { isMuted, toggleMute, startBGM, setBgmPlaying, hasBgm, bgmStarted } =
     useBGM(bgmUrl);
+
+  // 생성/전환 직후 미디어 인제스트가 진행 중이면 "준비 중" 화면 + 폴링.
+  // (빈 mediaList가 recordCache에 영구 캐시되는 것을 막기 위해 준비 완료 시
+  //  캐시 무효화 후 전체 리로드)
+  const isPreparing = data?.mediaStatus === "processing";
+  useEffect(() => {
+    if (!isPreparing) return;
+    const timer = setInterval(async () => {
+      try {
+        const res = await fetch(
+          `https://the-life-museum-backend-production.up.railway.app/api/v1/record/${recordId}`,
+        );
+        const json = await res.json();
+        if (json?.data?.mediaStatus === "ready") {
+          clearInterval(timer);
+          invalidateRecord(recordId);
+          window.location.reload();
+        }
+      } catch {
+        // 일시 오류 — 다음 폴링에서 재시도
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [isPreparing, recordId]);
 
   // 배경/슬라이드쇼용 미디어 (image + video)
   const mediaList = useMemo(
@@ -80,6 +104,20 @@ export default function MemorialExhibition({ recordId }) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-black">
         <div className="text-sm text-white/50">불러오는 중...</div>
+      </div>
+    );
+  }
+
+  if (isPreparing) {
+    return (
+      <div className="flex h-screen w-screen flex-col items-center justify-center gap-4 bg-black">
+        <span className="h-6 w-6 animate-spin rounded-full border-2 border-white/40 border-t-transparent" />
+        <div className="text-center">
+          <p className="text-sm text-white/70">앨범을 준비하고 있어요</p>
+          <p className="mt-1 text-xs text-white/40">
+            사진을 안전하게 옮기는 중입니다 — 잠시만 기다려주세요
+          </p>
+        </div>
       </div>
     );
   }

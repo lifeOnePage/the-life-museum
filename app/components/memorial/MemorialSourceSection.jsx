@@ -62,7 +62,7 @@ export default function MemorialSourceSection({
   return (
     <div>
       <label className="mb-1 block text-sm font-medium text-[#c4b49a]">
-        추모 미디어 (최대 {MEMORIAL_MAX_MEDIA}개)
+        미디어 업로드 (최대 {MEMORIAL_MAX_MEDIA}개)
       </label>
 
       {/* 소스 카드 */}

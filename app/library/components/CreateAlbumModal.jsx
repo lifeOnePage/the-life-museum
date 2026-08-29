@@ -93,8 +93,10 @@ export default function CreateAlbumModal({
   // 새 앨범 만들기 상태
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
-  // 앨범 타입: 일반(공유 링크 스크래핑) | 추모(큐레이션·영속 미디어)
+  // 앨범 타입: 테마(공유 링크 스크래핑) | 추모(큐레이션·영속 미디어)
   const [albumType, setAlbumType] = useState("standard");
+  // new 탭 2단계: 종류 선택 → 타입별 입력 (입력 단계에서 뒤로가기 가능)
+  const [step, setStep] = useState("type"); // "type" | "form"
   // 사진 저장소: 종류 선택 + 단일 URL 입력 (edit 페이지와 동일 구조)
   const [selectedUrlType, setSelectedUrlType] = useState("google");
   const [urlValue, setUrlValue] = useState("");
@@ -288,45 +290,68 @@ export default function CreateAlbumModal({
           </button>
         </div>
 
-        {/* 새 앨범 만들기 탭 */}
-        {activeTab === "new" && (
+        {/* 새 앨범 만들기 — 1단계: 앨범 종류 선택 */}
+        {activeTab === "new" && step === "type" && (
+          <div className="flex flex-col gap-3">
+            <p className="text-sm text-[#9b8b7a]">
+              어떤 앨범을 만들까요?
+            </p>
+            {[
+              {
+                key: "standard",
+                label: "테마 앨범",
+                desc: "공유 앨범 링크를 연결해 나만의 전시를 만들어요",
+              },
+              {
+                key: "memorial",
+                label: "추모 앨범",
+                desc: "소중한 사람을 추억하는 공간 — 간직할 사진을 골라 영구히 보존해요",
+              },
+            ].map((opt) => (
+              <button
+                key={opt.key}
+                type="button"
+                onClick={() => {
+                  setAlbumType(opt.key);
+                  setStep("form");
+                }}
+                className="rounded-xl border border-white/15 px-4 py-4 text-left transition-all hover:border-[#c4b49a] hover:bg-[#c4b49a]/5"
+              >
+                <span className="block text-base font-medium text-[#e8d5b7]">
+                  {opt.label}
+                </span>
+                <span className="mt-1 block text-xs leading-relaxed text-[#9b8b7a]">
+                  {opt.desc}
+                </span>
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={onClose}
+              className="mt-1 rounded-lg border border-white/10 py-2 font-medium text-[#c4b49a] transition hover:bg-white/5"
+            >
+              {t.cancel}
+            </button>
+          </div>
+        )}
+
+        {/* 새 앨범 만들기 — 2단계: 타입별 입력 */}
+        {activeTab === "new" && step === "form" && (
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            {/* 앨범 타입: 일반 | 추모 */}
-            <div className="flex gap-2">
-              {[
-                { key: "standard", label: "일반 앨범", desc: "공유 링크 연결" },
-                {
-                  key: "memorial",
-                  label: "추모 앨범",
-                  desc: "사진을 골라 영구 보존",
-                },
-              ].map((opt) => (
-                <button
-                  key={opt.key}
-                  type="button"
-                  onClick={() => setAlbumType(opt.key)}
-                  disabled={memorialCreate.busy}
-                  className={`flex-1 rounded-lg border px-3 py-2.5 text-left transition-all ${
-                    albumType === opt.key
-                      ? "border-[#c4b49a] bg-[#c4b49a]/10"
-                      : "border-white/15 hover:border-white/25"
-                  }`}
-                >
-                  <span
-                    className={`block text-sm font-medium ${
-                      albumType === opt.key
-                        ? "text-[#c4b49a]"
-                        : "text-[#9b8b7a]"
-                    }`}
-                  >
-                    {opt.label}
-                  </span>
-                  <span className="mt-0.5 block text-[11px] text-[#9b8b7a]/70">
-                    {opt.desc}
-                  </span>
-                </button>
-              ))}
-            </div>
+            {/* 종류 선택으로 돌아가기 */}
+            <button
+              type="button"
+              onClick={() => !memorialCreate.busy && setStep("type")}
+              className="flex items-center gap-1.5 self-start text-xs text-[#9b8b7a] transition hover:text-[#c4b49a]"
+            >
+              <span aria-hidden>←</span>
+              <span>
+                <span className="font-medium text-[#c4b49a]">
+                  {albumType === "memorial" ? "추모 앨범" : "테마 앨범"}
+                </span>{" "}
+                · 종류 다시 선택
+              </span>
+            </button>
 
             {/* 추모 앨범: 미디어 소스 선택 */}
             {albumType === "memorial" && (
@@ -383,7 +408,11 @@ export default function CreateAlbumModal({
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder={t.titlePlaceholder}
+                placeholder={
+                  albumType === "memorial"
+                    ? "ex. 어머니의 아름다운 날들"
+                    : t.titlePlaceholder
+                }
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>
@@ -397,7 +426,11 @@ export default function CreateAlbumModal({
                 type="text"
                 value={subtitle}
                 onChange={(e) => setSubtitle(e.target.value)}
-                placeholder={t.subtitlePlaceholder}
+                placeholder={
+                  albumType === "memorial"
+                    ? "ex. 늘 그리운 당신에게"
+                    : t.subtitlePlaceholder
+                }
                 className="w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-[#e8d5b7] placeholder-white/25 outline-none focus:border-[#c4b49a]"
               />
             </div>

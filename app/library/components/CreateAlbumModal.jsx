@@ -305,7 +305,7 @@ export default function CreateAlbumModal({
               {
                 key: "memorial",
                 label: "추모 앨범",
-                desc: "소중한 사람을 추억하는 공간 — 간직할 사진을 골라 영구히 보존해요",
+                desc: "소중한 사람을 추억하는 공간이에요. 간직할 사진을 골라 영구히 보존해 드려요.",
               },
             ].map((opt) => (
               <button

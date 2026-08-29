@@ -345,12 +345,7 @@ export default function CreateAlbumModal({
               className="flex items-center gap-1.5 self-start text-xs text-[#9b8b7a] transition hover:text-[#c4b49a]"
             >
               <span aria-hidden>←</span>
-              <span>
-                <span className="font-medium text-[#c4b49a]">
-                  {albumType === "memorial" ? "추모 앨범" : "테마 앨범"}
-                </span>{" "}
-                · 종류 다시 선택
-              </span>
+              <span>이전으로</span>
             </button>
 
             {/* 추모 앨범: 미디어 소스 선택 */}

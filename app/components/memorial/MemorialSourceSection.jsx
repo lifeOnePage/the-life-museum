@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ImagePlus, RefreshCw, X } from "lucide-react";
+import { ImagePlus, X } from "lucide-react";
 import { MEMORIAL_MAX_MEDIA } from "@/app/lib/constants";
 import { isNativeApp } from "@/app/utils/platform";
 
@@ -24,6 +24,13 @@ export default function MemorialSourceSection({
   const fileRef = useRef(null);
   const [previews, setPreviews] = useState([]);
   const native = isNativeApp();
+
+  // 피커 실패 원인은 콘솔에만 남긴다 (origin 미등록 등 개발 설정 문제 추적용)
+  useEffect(() => {
+    if (picker.phase === "error" && picker.error) {
+      console.warn("[GooglePhotosPicker]", picker.error);
+    }
+  }, [picker.phase, picker.error]);
 
   // 파일 썸네일 objectURL 관리 (revoke on change/unmount)
   useEffect(() => {
@@ -143,21 +150,7 @@ export default function MemorialSourceSection({
           </button>
         </div>
       )}
-      {picker.phase === "error" && (
-        <div className="flex items-center justify-between rounded-lg border border-red-400/30 bg-red-400/10 px-3 py-2">
-          <span className="text-xs text-red-300">
-            {picker.error?.message || "구글포토 연결에 실패했습니다"}
-          </span>
-          <button
-            type="button"
-            onClick={startPicker}
-            className="ml-2 shrink-0 text-xs text-[#c4b49a] underline underline-offset-2"
-          >
-            <RefreshCw size={12} className="mr-1 inline" />
-            재시도
-          </button>
-        </div>
-      )}
+      {/* 피커 실패 시 상세 에러 UI는 표시하지 않음 — 카드를 다시 누르면 재시도 */}
 
       {/* 업로드 파일 스트립 */}
       {files.length > 0 && (

@@ -119,11 +119,36 @@ function PlaceholderMat({ isDark }) {
   );
 }
 
+// 원본 비율 유지 cover 크롭 — 플레인 비율(PLANE_W/H) 대비 넘치는 축을
+// repeat/offset으로 잘라낸다 (CSS object-fit: cover와 동일).
+function applyCoverFit(tex, mediaRatio) {
+  if (!mediaRatio || !Number.isFinite(mediaRatio)) return;
+  const planeRatio = PLANE_W / PLANE_H;
+  let repeatX = 1;
+  let repeatY = 1;
+  if (mediaRatio > planeRatio) {
+    repeatX = planeRatio / mediaRatio; // 원본이 더 가로로 김 → 좌우 크롭
+  } else {
+    repeatY = mediaRatio / planeRatio; // 원본이 더 세로로 김 → 상하 크롭
+  }
+  tex.repeat.set(repeatX, repeatY);
+  tex.offset.set((1 - repeatX) / 2, (1 - repeatY) / 2);
+}
+
 function ImageMat({ url }) {
   const effUrl = useMemo(() => proxify(url), [url]);
   const tex = useLoader(THREE.TextureLoader, effUrl, (loader) => {
     loader.setCrossOrigin("anonymous");
   });
+
+  // cover 크롭은 첫 렌더 전에(useMemo) 적용 — 일그러진 프레임이 한 순간도
+  // 화면에 보이지 않도록. 캐시된 텍스처에 대해 멱등이라 재실행도 무해.
+  useMemo(() => {
+    const img = tex?.image;
+    if (img?.width && img?.height) {
+      applyCoverFit(tex, img.width / img.height);
+    }
+  }, [tex]);
 
   useEffect(() => {
     // useLoader 캐시가 같은 텍스처를 재사용하므로 최초 1회만 설정 (재업로드 방지)
@@ -208,6 +233,10 @@ function loadVideoTexture(url) {
       video.addEventListener(
         "loadedmetadata",
         () => {
+          // 원본 비율 cover 크롭 — resolve 전에 적용해 조정 과정이 안 보이게
+          if (video.videoWidth && video.videoHeight) {
+            applyCoverFit(tex, video.videoWidth / video.videoHeight);
+          }
           entry.status = "done";
           entry.texture = tex;
           resolve(tex);

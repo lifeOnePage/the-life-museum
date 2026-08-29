@@ -9,6 +9,7 @@ import React, {
   useRef,
 } from "react";
 import { Canvas, useFrame, useLoader, useThree } from "@react-three/fiber";
+import { MEMORIAL_MAX_MEDIA } from "@/app/lib/constants";
 
 // ▶︎ 링 파라미터 (ExhibitionRingFront의 검증된 비율 기반)
 const PLANE_W = 1.2;
@@ -23,7 +24,9 @@ const TAP_MAX_TRAVEL = 6; // px — 이 이상 움직이면 클릭이 아니라 
 // 링에 올리는 최대 플레인 수 — 대형 앨범(수백 장)은 균등 샘플링.
 // 목업 기준 링 전체가 한 화면에 들어오는 밀도(+타임트래블 200장 성능 문제 재발 방지).
 // MemoryTab의 좌우 넘김 버튼이 순환 인덱스 계산에 같이 쓴다.
-export const MAX_PLANES = 36;
+// 영속 미디어 상한(MEMORIAL_MAX_MEDIA)과 동일 — 새 추모 앨범은 고른 모든
+// 미디어가 링에 그대로 올라간다 (레거시 스크랩 앨범만 샘플링됨).
+export const MAX_PLANES = MEMORIAL_MAX_MEDIA;
 // 링 디스크의 기울기 (rad) — 0이면 완전히 누운 원판, 클수록 정면을 향해 섬.
 // 목업처럼 누운 원판을 비스듬히 내려다보는 구도
 const RING_TILT = 0.33;

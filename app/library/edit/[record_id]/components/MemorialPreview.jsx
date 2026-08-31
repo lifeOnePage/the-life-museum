@@ -80,6 +80,7 @@ export default function MemorialPreview({
           ref={iframeRef}
           src={`${viewUrl}?preview=1`}
           title="추모 앨범 미리보기"
+          scrolling="no"
           className="h-full w-full border-0"
         />
       </div>

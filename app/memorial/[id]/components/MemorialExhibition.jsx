@@ -24,6 +24,9 @@ export default function MemorialExhibition({ recordId, preview = false }) {
   const [overrides, setOverrides] = useState(null);
   useEffect(() => {
     if (!preview) return;
+    // 임베드 프레임 안에서 문서 스크롤바가 보이지 않게 고정
+    document.documentElement.style.overflow = "hidden";
+    document.body.style.overflow = "hidden";
     const onMessage = (e) => {
       if (e.origin !== window.location.origin) return;
       if (e.data?.type === "tlm-memorial-preview") {

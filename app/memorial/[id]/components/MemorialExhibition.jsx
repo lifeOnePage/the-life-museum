@@ -12,11 +12,36 @@ import StoryTab from "./StoryTab";
 import MemoryTab from "./MemoryTab";
 import GuestbookTab from "./GuestbookTab";
 
-export default function MemorialExhibition({ recordId }) {
+export default function MemorialExhibition({ recordId, preview = false }) {
   const router = useRouter();
   const { data, loading, error, mediaLoading } = useRecordData(recordId);
   const [introDismissed, setIntroDismissed] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
+
+  // 편집 화면 iframe 임베드(preview) 모드 — 저장 전 편집 상태(제목·부제·
+  // 포스터 설정·커버)를 부모 창의 postMessage로 받아 즉시 반영한다.
+  // 포스터 설정은 아직 백엔드에 저장되지 않으므로 이 주입이 유일한 반영 경로.
+  const [overrides, setOverrides] = useState(null);
+  useEffect(() => {
+    if (!preview) return;
+    const onMessage = (e) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.type === "tlm-memorial-preview") {
+        setOverrides(e.data.overrides || null);
+      }
+    };
+    window.addEventListener("message", onMessage);
+    // 마운트 완료를 알려 부모가 현재 편집 상태를 재전송하게 한다
+    window.parent?.postMessage(
+      { type: "tlm-memorial-preview-ready" },
+      window.location.origin,
+    );
+    return () => window.removeEventListener("message", onMessage);
+  }, [preview]);
+  const ov = overrides || {};
+  const posterStyle = ov.posterStyle ?? data?.memorialPosterStyle ?? "classic";
+  const posterTone = ov.posterTone ?? data?.memorialPosterTone ?? "dark";
+  const posterRatio = ov.aspectRatio ?? data?.memorialAspectRatio ?? "9:16";
 
   const bgmUrl = data?.bgmUrl || data?.bgm || null;
   const { isMuted, toggleMute, startBGM, setBgmPlaying, hasBgm, bgmStarted } =
@@ -58,12 +83,12 @@ export default function MemorialExhibition({ recordId }) {
   // 프로필 이미지 = 커버 이미지(이미지 타입일 때) 우선 — 편집 화면 포스터
   // 미리보기와 동기화. 커버가 없거나 영상이면 mediaList 첫 image로 폴백.
   const profileItem = useMemo(() => {
-    const coverUrl = data?.coverImage?.url;
+    const coverUrl = ov.coverImageUrl ?? data?.coverImage?.url;
     if (coverUrl && getMediaType(coverUrl) === "image") {
       return { type: "image", original_url: coverUrl, thumbnail_url: coverUrl };
     }
     return mediaList.find((m) => m.type === "image") || mediaList[0] || null;
-  }, [data, mediaList]);
+  }, [data, mediaList, ov.coverImageUrl]);
 
   // 스토리 탭 사진 카드용 — 이미지 타입만
   const imageList = useMemo(
@@ -71,8 +96,8 @@ export default function MemorialExhibition({ recordId }) {
     [mediaList],
   );
 
-  const name = data?.title ?? "";
-  const years = data?.subtitle ?? "";
+  const name = ov.title ?? data?.title ?? "";
+  const years = ov.subtitle ?? data?.subtitle ?? "";
   const memorialText = data?.lifestory?.content ?? "";
   const events = data?.timeline?.events ?? [];
 
@@ -90,16 +115,16 @@ export default function MemorialExhibition({ recordId }) {
     return min === max ? `${min}` : `${min} ~ ${max}`;
   }, [events]);
 
-  // 자동재생 정책: 최초 사용자 제스처에서 BGM 시작
+  // 자동재생 정책: 최초 사용자 제스처에서 BGM 시작 (편집 미리보기에선 미재생)
   useEffect(() => {
-    if (!hasBgm || bgmStarted) return;
+    if (!hasBgm || bgmStarted || preview) return;
     const start = () => {
       startBGM();
       setBgmPlaying(true);
     };
     window.addEventListener("pointerdown", start, { once: true });
     return () => window.removeEventListener("pointerdown", start);
-  }, [hasBgm, bgmStarted, startBGM, setBgmPlaying]);
+  }, [hasBgm, bgmStarted, preview, startBGM, setBgmPlaying]);
 
   const handleExit = useCallback(() => {
     router.back();
@@ -148,9 +173,9 @@ export default function MemorialExhibition({ recordId }) {
         yearRange={posterYearRange}
         subtitle={years}
         profileItem={profileItem}
-        style={data?.memorialPosterStyle || "classic"}
-        tone={data?.memorialPosterTone || "dark"}
-        aspectRatio={data?.memorialAspectRatio || "9:16"}
+        style={posterStyle}
+        tone={posterTone}
+        aspectRatio={posterRatio}
         onEnter={() => setIntroDismissed(true)}
       />
     );
@@ -164,9 +189,9 @@ export default function MemorialExhibition({ recordId }) {
           yearRange={posterYearRange}
           subtitle={years}
           profileItem={profileItem}
-          style={data?.memorialPosterStyle || "classic"}
-          tone={data?.memorialPosterTone || "dark"}
-          aspectRatio={data?.memorialAspectRatio || "9:16"}
+          style={posterStyle}
+          tone={posterTone}
+          aspectRatio={posterRatio}
           onEnter={() => setActiveTab("story")}
         />
       )}
@@ -186,28 +211,30 @@ export default function MemorialExhibition({ recordId }) {
         <MemoryTab
           mediaList={mediaList}
           mediaLoading={mediaLoading}
-          tone={data?.memorialPosterTone || "dark"}
+          tone={posterTone}
         />
       )}
       {activeTab === "guestbook" && (
         <GuestbookTab
           recordId={recordId}
           profileItem={profileItem}
-          tone={data?.memorialPosterTone || "dark"}
+          tone={posterTone}
         />
       )}
 
       <BottomNavBar activeTab={activeTab} onChange={setActiveTab} />
 
-      {/* 컨트롤: 뒤로가기 / 음소거 */}
-      <button
-        onClick={handleExit}
-        className="absolute top-5 left-5 z-30 flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-2 text-xs text-white/70 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white"
-      >
-        <ArrowLeft size={14} />
-        나가기
-      </button>
-      {hasBgm && (
+      {/* 컨트롤: 뒤로가기 / 음소거 — 편집 미리보기에선 숨김 */}
+      {!preview && (
+        <button
+          onClick={handleExit}
+          className="absolute top-5 left-5 z-30 flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-2 text-xs text-white/70 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white"
+        >
+          <ArrowLeft size={14} />
+          나가기
+        </button>
+      )}
+      {hasBgm && !preview && (
         <button
           onClick={toggleMute}
           className="absolute top-5 right-5 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white"

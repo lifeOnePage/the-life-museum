@@ -1630,11 +1630,9 @@ const Index = ({ params }) => {
             />
           ) : recordType === "memorial" && activeTab === "memory" ? (
             <MemorialPreview
-              photoMedia={photoDrive.photoMedia}
-              mediaLoading={photoDrive.isLoading}
+              reloadKey={lastSavedAt?.getTime() ?? 0}
               albumTitle={albumTitle}
               albumSubtitle={albumSubtitle}
-              timeline={timeline}
               posterStyle={memorialPosterStyle}
               posterTone={memorialPosterTone}
               aspectRatio={memorialAspectRatio}

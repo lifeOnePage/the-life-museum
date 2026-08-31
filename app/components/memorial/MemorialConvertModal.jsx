@@ -115,13 +115,13 @@ export default function MemorialConvertModal({
           {/* 헤더 */}
           <div className="flex items-center justify-between border-b border-black/10 px-5 py-4">
             <div>
-              <h2 className="font-serif text-lg font-medium tracking-wide">
+              <h2 className="font-serif text-xl font-medium tracking-wide">
                 {t.title}
               </h2>
-              <p className="mt-0.5 max-w-xl text-xs leading-relaxed text-black/50">
+              <p className="mt-1.5 max-w-xl text-sm leading-relaxed text-black/70">
                 {t.subtitle}
               </p>
-              <p className="mt-1 max-w-xl text-xs leading-relaxed text-black/40">
+              <p className="mt-1 max-w-xl text-[13px] leading-relaxed text-black/55">
                 {t.creditNotice}
               </p>
             </div>

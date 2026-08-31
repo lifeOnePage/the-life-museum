@@ -2301,9 +2301,10 @@ const Index = ({ params }) => {
                                     <span className="block text-sm text-[#e8d5b7]">
                                       추모 앨범으로 전환
                                     </span>
-                                    <span className="mt-0.5 block text-[11px] text-[#9b8b7a]">
-                                      사진을 골라 새 추모 앨범을 만듭니다 (원본
-                                      유지)
+                                    <span className="mt-0.5 block text-[11px] leading-relaxed text-[#9b8b7a]">
+                                      소중한 분을 기리는 공간을 새로 만들어요.
+                                      간직하고 싶은 사진을 골라 오래도록 보존해
+                                      드려요. 지금 앨범은 그대로 남아요.
                                     </span>
                                   </span>
                                 </button>

@@ -179,70 +179,77 @@ export default function GuestbookTab({ recordId, profileItem, tone = "dark" }) {
           빈 영역 터치를 막지 않도록 pointer-events 제어 */}
       <div className="pointer-events-none absolute inset-0 z-0">
         {SLOTS.map((slot, i) => {
-        const zIndex = Math.round(slot.top);
-        const style = {
-          left: `${slot.left}%`,
-          top: `${slot.top}%`,
-          transform: "translateX(-50%)",
-          zIndex,
-        };
+          const zIndex = Math.round(slot.top);
+          const style = {
+            left: `${slot.left}%`,
+            top: `${slot.top}%`,
+            transform: "translateX(-50%)",
+            zIndex,
+          };
 
-        if (slot.reserved) {
-          // 방문자 몫의 빈 자리 — 제출 완료 시 화분이 페이드인
-          if (potFilled || phase === "revealing") {
+          if (slot.reserved) {
+            // 방문자 몫의 빈 자리 — 제출 완료 시 화분이 페이드인
+            if (potFilled || phase === "revealing") {
+              return (
+                // 포지셔닝(translateX)은 바깥 div가, 애니메이션은 안쪽 motion.div가
+                // 담당 — framer-motion이 transform을 덮어쓰기 때문에 분리 필수
+                <div key="reserved" className="absolute" style={style}>
+                  <motion.div
+                    initial={
+                      phase === "revealing"
+                        ? { opacity: 0, y: 10, scale: 0.7 }
+                        : false
+                    }
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
+                    onAnimationComplete={() =>
+                      phase === "revealing" && setPhase("done")
+                    }
+                  >
+                    <FlowerPot
+                      width={`calc(${POT_BASE_WIDTH} * ${slot.scale})`}
+                    />
+                  </motion.div>
+                </div>
+              );
+            }
+            // 빈 자리 표시(바닥 마커) — 탭하면 작성 시트 열림
             return (
-              // 포지셔닝(translateX)은 바깥 div가, 애니메이션은 안쪽 motion.div가
-              // 담당 — framer-motion이 transform을 덮어쓰기 때문에 분리 필수
-              <div key="reserved" className="absolute" style={style}>
-                <motion.div
-                  initial={
-                    phase === "revealing"
-                      ? { opacity: 0, y: 10, scale: 0.7 }
-                      : false
-                  }
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.7, ease: "easeOut" }}
-                  onAnimationComplete={() =>
-                    phase === "revealing" && setPhase("done")
-                  }
-                >
-                  <FlowerPot width={`calc(${POT_BASE_WIDTH} * ${slot.scale})`} />
-                </motion.div>
-              </div>
+              <button
+                key="reserved"
+                type="button"
+                onClick={() => setSheetOpen(true)}
+                className="pointer-events-auto absolute"
+                style={style}
+                aria-label="추모의 글 남기기"
+              >
+                <div
+                  className={`rounded-full border ${
+                    isDark ? "border-white/25" : "border-black/20"
+                  }`}
+                  style={{
+                    width: `calc(${POT_BASE_WIDTH} * 0.8)`,
+                    height: "1.6vh",
+                    transform: "translateY(5.5vh)",
+                  }}
+                />
+              </button>
             );
           }
-          // 빈 자리 표시(바닥 마커) — 탭하면 작성 시트 열림
-          return (
-            <button
-              key="reserved"
-              type="button"
-              onClick={() => setSheetOpen(true)}
-              className="pointer-events-auto absolute"
-              style={style}
-              aria-label="추모의 글 남기기"
-            >
-              <div
-                className={`rounded-full border ${
-                  isDark ? "border-white/25" : "border-black/20"
-                }`}
-                style={{
-                  width: `calc(${POT_BASE_WIDTH} * 0.8)`,
-                  height: "1.6vh",
-                  transform: "translateY(5.5vh)",
-                }}
-              />
-            </button>
-          );
-        }
 
-        const entryIdx = OPEN_SLOTS.indexOf(slot);
-        const entry = entries[entryIdx];
-        if (!entry) return null;
-        return (
-          <div key={entry.id} className="absolute" style={style}>
-            <FlowerPot width={`calc(${POT_BASE_WIDTH} * ${slot.scale})`} />
-          </div>
-        );
+          // 방명록이 없어도 공간을 두르는 장식 화분은 항상 놓는다 —
+          // 정면(reserved) 자리만 방문자의 제출을 기다리며 비워둔다
+          const entryIdx = OPEN_SLOTS.indexOf(slot);
+          const entry = entries[entryIdx];
+          return (
+            <div
+              key={entry?.id ?? `deco-${i}`}
+              className="absolute"
+              style={style}
+            >
+              <FlowerPot width={`calc(${POT_BASE_WIDTH} * ${slot.scale})`} />
+            </div>
+          );
         })}
       </div>
 

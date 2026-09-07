@@ -45,6 +45,13 @@ export default function MemorialExhibition({ recordId, preview = false }) {
   const posterStyle = ov.posterStyle ?? data?.memorialPosterStyle ?? "classic";
   const posterTone = ov.posterTone ?? data?.memorialPosterTone ?? "dark";
   const posterRatio = ov.aspectRatio ?? data?.memorialAspectRatio ?? "9:16";
+  const guestbookEnabled =
+    ov.guestbookEnabled ?? data?.guestbookEnabled ?? true;
+
+  // 방명록이 꺼진 상태에서 방명록 탭에 남아있지 않도록 (프리뷰 실시간 토글 대응)
+  useEffect(() => {
+    if (!guestbookEnabled && activeTab === "guestbook") setActiveTab("home");
+  }, [guestbookEnabled, activeTab]);
 
   const bgmUrl = data?.bgmUrl || data?.bgm || null;
   const { isMuted, toggleMute, startBGM, setBgmPlaying, hasBgm, bgmStarted } =
@@ -179,6 +186,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
         style={posterStyle}
         tone={posterTone}
         aspectRatio={posterRatio}
+        guestbookEnabled={guestbookEnabled}
         onEnter={() => setIntroDismissed(true)}
       />
     );
@@ -195,6 +203,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
           style={posterStyle}
           tone={posterTone}
           aspectRatio={posterRatio}
+          guestbookEnabled={guestbookEnabled}
           onEnter={() => setActiveTab("story")}
         />
       )}
@@ -217,7 +226,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
           tone={posterTone}
         />
       )}
-      {activeTab === "guestbook" && (
+      {activeTab === "guestbook" && guestbookEnabled && (
         <GuestbookTab
           recordId={recordId}
           profileItem={profileItem}
@@ -225,7 +234,11 @@ export default function MemorialExhibition({ recordId, preview = false }) {
         />
       )}
 
-      <BottomNavBar activeTab={activeTab} onChange={setActiveTab} />
+      <BottomNavBar
+        activeTab={activeTab}
+        onChange={setActiveTab}
+        showGuestbook={guestbookEnabled}
+      />
 
       {/* 컨트롤: 뒤로가기 / 음소거 — 편집 미리보기에선 숨김 */}
       {!preview && (

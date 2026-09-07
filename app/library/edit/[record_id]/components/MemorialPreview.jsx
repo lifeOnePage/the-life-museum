@@ -17,6 +17,7 @@ export default function MemorialPreview({
   posterTone = "dark",
   aspectRatio = "9:16",
   coverImageUrl = null,
+  guestbookEnabled = true,
   viewUrl = null,
 }) {
   const iframeRef = useRef(null);
@@ -28,6 +29,7 @@ export default function MemorialPreview({
     posterTone,
     aspectRatio,
     coverImageUrl,
+    guestbookEnabled,
   };
 
   const postOverrides = () => {
@@ -47,6 +49,7 @@ export default function MemorialPreview({
     posterTone,
     aspectRatio,
     coverImageUrl,
+    guestbookEnabled,
   ]);
 
   // iframe 내부 앱이 마운트 완료를 알려오면 현재 상태 전송

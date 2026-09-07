@@ -24,6 +24,7 @@ export default function IntroPoster({
   style = "classic",
   tone = "dark",
   aspectRatio = "9:16",
+  guestbookEnabled = true,
   onEnter,
 }) {
   const toneStyle = TONE_STYLES[tone] || TONE_STYLES.dark;
@@ -80,11 +81,13 @@ export default function IntroPoster({
           </p>
         )}
 
-        {/* 안내 문구 */}
+        {/* 안내 문구 — 방명록 off일 때는 방명록 언급 없이 표시 */}
         <p
           className={`mt-[4vh] flex items-center justify-center gap-[0.6vh] text-center text-[1.4vh] tracking-wide ${toneStyle.hintText}`}
         >
-          화면을 터치하여 고인의 삶을 만나고 방명록에 글을 남겨주세요
+          {guestbookEnabled
+            ? "화면을 터치하여 소중한 삶의 기억을 만나고 방명록에 마음을 남겨주세요"
+            : "화면을 터치하여 소중한 삶의 기억을 만나보세요"}
           <ArrowRight className="h-[1.6vh] w-[1.6vh] shrink-0" />
         </p>
       </div>

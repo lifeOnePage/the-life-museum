@@ -470,6 +470,7 @@ const Index = ({ params }) => {
   const [memorialPosterStyle, setMemorialPosterStyle] = useState("classic");
   const [memorialPosterTone, setMemorialPosterTone] = useState("dark");
   const [memorialAspectRatio, setMemorialAspectRatio] = useState("9:16");
+  const [guestbookEnabled, setGuestbookEnabled] = useState(true);
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
@@ -658,6 +659,8 @@ const Index = ({ params }) => {
             setMemorialPosterTone(data.memorialPosterTone);
           if (data.memorialAspectRatio)
             setMemorialAspectRatio(data.memorialAspectRatio);
+          if (data.guestbookEnabled != null)
+            setGuestbookEnabled(data.guestbookEnabled);
 
           // Photo drive now auto-fetches on mount via useEffect
 
@@ -690,6 +693,7 @@ const Index = ({ params }) => {
             memorialPosterStyle: data.memorialPosterStyle || "classic",
             memorialPosterTone: data.memorialPosterTone || "dark",
             memorialAspectRatio: data.memorialAspectRatio || "9:16",
+            guestbookEnabled: data.guestbookEnabled ?? true,
           };
         }
       } catch (error) {
@@ -750,6 +754,8 @@ const Index = ({ params }) => {
             recordType === "memorial" ? memorialPosterTone : undefined,
           memorialAspectRatio:
             recordType === "memorial" ? memorialAspectRatio : undefined,
+          guestbookEnabled:
+            recordType === "memorial" ? guestbookEnabled : undefined,
         }),
       },
     );
@@ -860,7 +866,8 @@ const Index = ({ params }) => {
       walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration ||
       memorialPosterStyle !== initialState.current.memorialPosterStyle ||
       memorialPosterTone !== initialState.current.memorialPosterTone ||
-      memorialAspectRatio !== initialState.current.memorialAspectRatio;
+      memorialAspectRatio !== initialState.current.memorialAspectRatio ||
+      guestbookEnabled !== initialState.current.guestbookEnabled;
 
     if (
       !isCoverDirty &&
@@ -985,6 +992,7 @@ const Index = ({ params }) => {
           initialState.current.memorialPosterStyle = memorialPosterStyle;
           initialState.current.memorialPosterTone = memorialPosterTone;
           initialState.current.memorialAspectRatio = memorialAspectRatio;
+          initialState.current.guestbookEnabled = guestbookEnabled;
         }
       }
     }
@@ -1086,7 +1094,8 @@ const Index = ({ params }) => {
     walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration ||
     memorialPosterStyle !== initialState.current.memorialPosterStyle ||
     memorialPosterTone !== initialState.current.memorialPosterTone ||
-    memorialAspectRatio !== initialState.current.memorialAspectRatio;
+    memorialAspectRatio !== initialState.current.memorialAspectRatio ||
+    guestbookEnabled !== initialState.current.guestbookEnabled;
 
   const handleExit = async () => {
     if (pendingSaveRef.current) {
@@ -1637,6 +1646,7 @@ const Index = ({ params }) => {
               posterTone={memorialPosterTone}
               aspectRatio={memorialAspectRatio}
               coverImageUrl={frontCover}
+              guestbookEnabled={guestbookEnabled}
               viewUrl={`/${locale}/memorial/${record_id}`}
             />
           ) : (
@@ -2307,13 +2317,47 @@ const Index = ({ params }) => {
                                   </span>
                                 </button>
                               ) : (
-                                <p className="px-1 text-[11px] leading-relaxed text-[#9b8b7a]">
-                                  이 앨범은 소중한 분을 기리기 위한 추모
-                                  앨범으로 만들어졌어요. 시간이 지나도 고른
-                                  사진들이 그대로 보존됩니다. 다른 테마의
-                                  전시가 필요하시면 라이브러리에서 새 앨범을
-                                  만들어주세요.
-                                </p>
+                                <>
+                                  <p className="px-1 text-[11px] leading-relaxed text-[#9b8b7a]">
+                                    이 앨범은 소중한 분을 기리기 위한 추모
+                                    앨범으로 만들어졌어요. 다른 테마의 전시가
+                                    필요하시면 라이브러리에서 새 앨범을
+                                    만들어주세요.
+                                  </p>
+                                  {/* 방명록 수신 on/off */}
+                                  <div className="flex items-center justify-between rounded-lg border border-white/10 px-4 py-3">
+                                    <span>
+                                      <span className="block text-sm text-[#e8d5b7]">
+                                        방명록 받기
+                                      </span>
+                                      <span className="mt-0.5 block text-[11px] text-[#9b8b7a]">
+                                        끄면 감상 화면에서 방명록 탭이 보이지
+                                        않아요
+                                      </span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={guestbookEnabled}
+                                      onClick={() =>
+                                        setGuestbookEnabled((v) => !v)
+                                      }
+                                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                                        guestbookEnabled
+                                          ? "bg-[#c4a882]"
+                                          : "bg-white/20"
+                                      }`}
+                                    >
+                                      <span
+                                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
+                                          guestbookEnabled
+                                            ? "left-[calc(100%-1.375rem)]"
+                                            : "left-0.5"
+                                        }`}
+                                      />
+                                    </button>
+                                  </div>
+                                </>
                               )}
                             </div>
                           </div>

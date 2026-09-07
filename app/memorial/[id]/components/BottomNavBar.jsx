@@ -11,11 +11,19 @@ const TABS = [
 
 /**
  * 하단 탭 네비게이션 (홈/스토리/메모리/방명록).
+ * showGuestbook=false면 방명록 탭을 숨긴다 (앨범 설정의 방명록 off).
  */
-export default function BottomNavBar({ activeTab, onChange }) {
+export default function BottomNavBar({
+  activeTab,
+  onChange,
+  showGuestbook = true,
+}) {
+  const tabs = showGuestbook
+    ? TABS
+    : TABS.filter((tab) => tab.key !== "guestbook");
   return (
     <div className="absolute bottom-0 left-0 z-40 flex w-full items-center justify-around border-t border-white/10 bg-black/70 pt-[1vh] pb-[max(1vh,env(safe-area-inset-bottom))] backdrop-blur-md">
-      {TABS.map(({ key, label, icon: Icon }) => {
+      {tabs.map(({ key, label, icon: Icon }) => {
         const active = activeTab === key;
         return (
           <button

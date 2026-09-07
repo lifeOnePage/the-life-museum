@@ -194,7 +194,7 @@ export default function GuestbookSheet({ open, tone, onClose, onSubmit }) {
                 aria-label="미리 준비된 추모 문구 선택"
               >
                 <option value="" disabled>
-                  미리 준비된 문구를 골라 쓸 수도 있어요
+                  ex. {MESSAGE_PRESETS[0]}
                 </option>
                 {MESSAGE_PRESETS.map((preset) => (
                   <option key={preset} value={preset}>

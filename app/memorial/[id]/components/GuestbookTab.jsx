@@ -13,18 +13,20 @@ function mediaSrc(item) {
   return item?.original_url || item?.thumbnail_url || "";
 }
 
-// 화분 슬롯 — 프레임을 두르는 타원 링 위에 원형 배치.
+// 화분 슬롯 — 완전한 원형 링이 아니라 정면을 향해 열린 호(arc) 위에 배치.
 // 정면 아래(90°)가 방문자 몫(reserved)이고, 채움 순서는 정면 양옆부터
-// 좌우 번갈아 뒤쪽으로 퍼진다. 뒤쪽 화분은 프레임 뒤로 가려진다(z-0).
+// 좌우 번갈아 뒤쪽으로 퍼진다. 뒤로 갈수록 작아져 원근감을 준다.
 const RING_CX = 50; // 타원 중심 x (%)
-const RING_CY = 51; // 타원 중심 y (%)
+const RING_CY = 53; // 타원 중심 y (%)
 const RING_RX = 34; // 가로 반지름 (%)
 const RING_RY = 11; // 세로 반지름 (%) — 납작한 원근 타원
 const SLOT_COUNT = 12;
+const ARC_HALF_DEG = 100; // 정면(90°) 기준 좌우로 퍼지는 최대 각도 — 뒤쪽은 비운다
 
 const SLOTS = (() => {
   const slots = [];
-  const stepDeg = 360 / SLOT_COUNT;
+  const maxSide = Math.ceil((SLOT_COUNT - 1) / 2);
+  const stepDeg = ARC_HALF_DEG / maxSide;
   for (let k = 0; k < SLOT_COUNT; k++) {
     // k=0은 정면(90°=화면 아래), 이후 +1,-1,+2,-2... 순으로 벌어짐
     const side = k === 0 ? 0 : Math.ceil(k / 2) * (k % 2 === 1 ? 1 : -1);
@@ -33,7 +35,7 @@ const SLOTS = (() => {
     slots.push({
       left: RING_CX + RING_RX * Math.cos(a),
       top: RING_CY + RING_RY * Math.sin(a),
-      scale: 0.55 + 0.45 * depth,
+      scale: 0.5 + 0.5 * depth,
       reserved: k === 0,
     });
   }
@@ -147,7 +149,7 @@ export default function GuestbookTab({ recordId, profileItem, tone = "dark" }) {
 
       {/* 왜곡된 사각 프레임 속 인물 사진 */}
       <div
-        className="absolute top-[12vh] left-1/2 z-10 -translate-x-1/2"
+        className="absolute top-[16vh] left-1/2 z-10 -translate-x-1/2"
         style={{ perspective: "700px" }}
       >
         <div

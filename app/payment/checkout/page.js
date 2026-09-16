@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { applyCouponDiscount } from "@/app/utils/payment";
+import * as PortOne from "@portone/browser-sdk/v2";
 
 const APP_SCHEME = "thelifemuseum";
 
@@ -32,11 +33,15 @@ const T = {
     loading: "결제 준비 중...",
     error: "결제 오류",
     returnToApp: "앱으로 돌아가기",
+    proceed: "결제 진행하기",
+    popupHint: "결제창이 열리지 않았나요? 브라우저의 팝업 차단을 해제한 뒤 다시 시도해주세요.",
   },
   en: {
     loading: "Preparing payment...",
     error: "Payment Error",
     returnToApp: "Return to App",
+    proceed: "Proceed to Payment",
+    popupHint: "Payment window not showing? Please disable your browser's popup blocker and try again.",
   },
 };
 
@@ -53,11 +58,30 @@ function CheckoutContent() {
   const t = T[locale] || T.ko;
 
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("idle"); // idle | loading | error
+  const [showPopupHint, setShowPopupHint] = useState(false);
+  const [coupon, setCoupon] = useState(null);
+  const [couponResolved, setCouponResolved] = useState(false);
 
+  // 클릭 시점에 쿠폰 조회 await 없이 바로 requestPayment를 호출할 수 있도록
+  // 버튼이 보이는 동안 미리 백그라운드에서 조회해둠 (팝업 차단 회피 목적)
   useEffect(() => {
-    // PayPal(international)은 현재 비활성화 — 국내 결제만 지원
-    startDomesticPayment();
+    resolveCoupon().then((c) => {
+      setCoupon(c);
+      setCouponResolved(true);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  function handleProceed() {
+    setShowPopupHint(false);
+    setStatus("loading");
+    // 팝업 차단 정책은 "사용자 제스처 직후 동기 호출"만 허용하는 브라우저가 있어
+    // 클릭 핸들러 안에서 바로 호출해야 함 (useEffect 자동 호출 시 일부 브라우저에서
+    // 결제창이 조용히 차단됨 — 실사용 중 카드 결제창이 안 뜨는 문제로 확인됨)
+    const hintTimer = setTimeout(() => setShowPopupHint(true), 4000);
+    startDomesticPayment().finally(() => clearTimeout(hintTimer));
+  }
 
   // 보관함에서 쿠폰 정보 조회 — 유효하지 않으면 null (정가 결제로 진행)
   async function resolveCoupon() {
@@ -84,17 +108,19 @@ function CheckoutContent() {
   async function startDomesticPayment() {
     const pricing = PACKAGE_PRICES[pkg];
     if (!pricing) {
+      setStatus("error");
       setError("Invalid package");
       return;
     }
 
     try {
       // 쿠폰이 무효하면 couponCode 없이 정가 결제 (서버 금액 검증과 일치시키기 위함)
-      const coupon = await resolveCoupon();
-      const effectiveCouponCode = coupon ? couponCode : "";
-      const finalAmount = applyCouponDiscount(pricing, coupon);
+      // 클릭 이전에 미리 조회해둔 값을 사용 — click과 requestPayment 사이 await를
+      // 최소화해 팝업 차단을 피하기 위함 (아직 안 끝났으면 여기서만 대기)
+      const resolvedCoupon = couponResolved ? coupon : await resolveCoupon();
+      const effectiveCouponCode = resolvedCoupon ? couponCode : "";
+      const finalAmount = applyCouponDiscount(pricing, resolvedCoupon);
 
-      const PortOne = await import("@portone/browser-sdk/v2");
       const paymentId = `${pkg}_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
 
       // 모바일 결제창은 리다이렉트 → complete 페이지에서 결제 검증 후 앨범 생성권 지급
@@ -132,6 +158,7 @@ function CheckoutContent() {
       // 국내 결제 성공 → 앨범 생성권 지급
       await confirmAndAddCredits({ pkg, token, couponCode: effectiveCouponCode, paymentId: response.paymentId });
     } catch (err) {
+      setStatus("error");
       setError(err.message);
     }
   }
@@ -194,7 +221,7 @@ function CheckoutContent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[#1a1510]">
       <div className="mx-4 w-full max-w-sm rounded-2xl bg-[#1e1a14] p-8 text-center shadow-xl ring-1 ring-white/10">
-        {error ? (
+        {status === "error" ? (
           <>
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/20">
               <svg className="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -210,11 +237,21 @@ function CheckoutContent() {
               {t.returnToApp}
             </button>
           </>
-        ) : (
+        ) : status === "loading" ? (
           <>
             <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-white/10 border-t-[#c4b49a]" />
             <p className="text-[#e8d5b7]">{t.loading}</p>
+            {showPopupHint && (
+              <p className="mt-4 text-sm text-amber-400/90">{t.popupHint}</p>
+            )}
           </>
+        ) : (
+          <button
+            onClick={handleProceed}
+            className="w-full rounded-lg bg-[#c4b49a] py-3 font-medium text-[#1a1510] transition hover:bg-[#e8d5b7]"
+          >
+            {t.proceed}
+          </button>
         )}
       </div>
     </div>

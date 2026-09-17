@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowRight, ChevronDown, X } from "lucide-react";
 import { FLOWER_LABELS, FLOWER_TYPES } from "./guestbookApi";
+import { getFlowerAsset } from "./guestbookAssets";
 
 // 미리 준비된 추모 문구 — 선택하면 아래 입력란에 채워지고 자유롭게 고칠 수 있다
 const MESSAGE_PRESETS = [
@@ -163,7 +164,7 @@ export default function GuestbookSheet({ open, tone, onClose, onSubmit }) {
                   >
                     <img
                       ref={(el) => (flowerRefs.current[type] = el)}
-                      src="/images/memorial/flower.png"
+                      src={getFlowerAsset(type).flower}
                       alt={FLOWER_LABELS[type]}
                       draggable={false}
                       className="pointer-events-none h-[9vh] w-auto select-none"

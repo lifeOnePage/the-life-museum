@@ -1,0 +1,10 @@
+{
+  "description": "Simplifies life story creation for seniors by guiding them through easy steps to generate personalized albums using voice or text inputs.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

@@ -13,13 +13,14 @@ function mediaSrc(item) {
 
 /**
  * 메모리얼 감상 진입 전 인트로 포스터 화면.
- * 세로 순서: 앞면 사진 → 타이틀(이름) → 시작연도~끝연도 → 섭타이틀(부제목) → 안내 문구.
+ * 세로 순서: 앞면 사진 → 타이틀(이름) → 시작연도~끝연도 → 섭타이틀(부제목) → 좌우명 → 안내 문구.
  * 화면을 터치하면 실제 전시(onEnter)로 넘어간다.
  */
 export default function IntroPoster({
   name,
   yearRange,
   subtitle,
+  motto = "",
   profileItem,
   style = "classic",
   tone = "dark",
@@ -78,6 +79,15 @@ export default function IntroPoster({
             className={`mt-[2.5vh] max-w-[90%] text-center text-[1.6vh] leading-[1.9] font-light tracking-wide ${toneStyle.subText}`}
           >
             {subtitle}
+          </p>
+        )}
+
+        {/* 좌우명 — 섭타이틀 바로 아래(섭타이틀이 없으면 연도 아래) */}
+        {motto && (
+          <p
+            className={`${subtitle ? "mt-[1.4vh]" : "mt-[2.5vh]"} max-w-[90%] text-center font-serif text-[1.55vh] leading-[1.8] tracking-wide italic ${toneStyle.subText}`}
+          >
+            {motto}
           </p>
         )}
 

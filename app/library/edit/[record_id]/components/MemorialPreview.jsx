@@ -6,8 +6,8 @@ import { useEffect, useRef } from "react";
  * 편집 화면 오른쪽 미리보기 패널용 메모리얼 프리뷰.
  * 실제 감상 페이지(/memorial/[id]?preview=1)를 iframe으로 임베드해
  * 원본 감상 인터랙션(인트로 탭 전환·미디어 링·방명록)을 그대로 제공한다.
- * 저장 전 편집 상태(제목·부제·포스터 설정·커버)는 postMessage로 실시간 주입
- * — 포스터 설정은 백엔드에 저장되지 않으므로 이 주입이 유일한 반영 경로다.
+ * 저장 전 편집 상태(제목·부제·모토·포스터 설정·커버·사용자 지정 탭)는 postMessage로 실시간 주입
+ * — 저장 전 상태를 즉시 보여주기 위한 경로이며, 저장 후에는 백엔드 값으로 렌더링된다.
  */
 export default function MemorialPreview({
   reloadKey = 0,
@@ -18,6 +18,12 @@ export default function MemorialPreview({
   aspectRatio = "9:16",
   coverImageUrl = null,
   guestbookEnabled = true,
+  motto = "",
+  customTabEnabled = false,
+  customTabLabel = "",
+  customTabMode = "newtab",
+  externalLinkUrl = null,
+  externalLinkTitle = null,
   viewUrl = null,
 }) {
   const iframeRef = useRef(null);
@@ -30,6 +36,12 @@ export default function MemorialPreview({
     aspectRatio,
     coverImageUrl,
     guestbookEnabled,
+    motto: motto ?? "",
+    customTabEnabled,
+    customTabLabel: customTabLabel ?? "",
+    customTabMode,
+    externalLinkUrl,
+    externalLinkTitle,
   };
 
   const postOverrides = () => {
@@ -50,6 +62,12 @@ export default function MemorialPreview({
     aspectRatio,
     coverImageUrl,
     guestbookEnabled,
+    motto,
+    customTabEnabled,
+    customTabLabel,
+    customTabMode,
+    externalLinkUrl,
+    externalLinkTitle,
   ]);
 
   // iframe 내부 앱이 마운트 완료를 알려오면 현재 상태 전송

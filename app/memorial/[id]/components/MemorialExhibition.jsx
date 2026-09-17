@@ -2,15 +2,17 @@
 
 import { useMemo, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRecordData, invalidateRecord } from "@/app/lib/useRecordData";
 import { getMediaType } from "@/app/library/utils/mediaType";
 import { useBGM } from "@/app/vhs/[id]/components/lib/useBGM";
 import IntroPoster from "./IntroPoster";
-import BottomNavBar from "./BottomNavBar";
+import BottomNavBar, { normalizeExternalUrl } from "./BottomNavBar";
+import BgmToggle from "./BgmToggle";
 import StoryTab from "./StoryTab";
 import MemoryTab from "./MemoryTab";
 import GuestbookTab from "./GuestbookTab";
+import CustomLinkTab from "./CustomLinkTab";
 
 export default function MemorialExhibition({ recordId, preview = false }) {
   const router = useRouter();
@@ -20,7 +22,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
 
   // 편집 화면 iframe 임베드(preview) 모드 — 저장 전 편집 상태(제목·부제·
   // 포스터 설정·커버)를 부모 창의 postMessage로 받아 즉시 반영한다.
-  // 포스터 설정은 아직 백엔드에 저장되지 않으므로 이 주입이 유일한 반영 경로.
+  // 저장 전 편집 상태(모토·포스터 설정·사용자 지정 탭 포함)를 즉시 반영하기 위한 경로.
   const [overrides, setOverrides] = useState(null);
   useEffect(() => {
     if (!preview) return;
@@ -48,14 +50,69 @@ export default function MemorialExhibition({ recordId, preview = false }) {
   const guestbookEnabled =
     ov.guestbookEnabled ?? data?.guestbookEnabled ?? true;
 
+  // 좌우명 — 인트로 포스터·스토리 탭에 표시 (편집 프리뷰 오버라이드 우선)
+  const motto = ov.motto ?? data?.memorialMotto ?? "";
+
+  // 사용자 지정 링크 탭 — 활성화 + URL(기존 externalLinkUrl)이 있을 때만.
+  // 라벨은 customTabLabel → externalLinkTitle → "링크" 순으로 폴백.
+  const customTab = useMemo(() => {
+    const enabled = ov.customTabEnabled ?? data?.customTabEnabled;
+    const rawUrl = ov.externalLinkUrl ?? data?.externalLinkUrl;
+    if (!enabled || !rawUrl) return null;
+    return {
+      label:
+        (ov.customTabLabel ?? data?.customTabLabel) ||
+        (ov.externalLinkTitle ?? data?.externalLinkTitle) ||
+        "링크",
+      url: normalizeExternalUrl(rawUrl),
+      mode: (ov.customTabMode ?? data?.customTabMode) || "newtab",
+    };
+  }, [
+    data,
+    ov.customTabEnabled,
+    ov.externalLinkUrl,
+    ov.customTabLabel,
+    ov.externalLinkTitle,
+    ov.customTabMode,
+  ]);
+
   // 방명록이 꺼진 상태에서 방명록 탭에 남아있지 않도록 (프리뷰 실시간 토글 대응)
   useEffect(() => {
     if (!guestbookEnabled && activeTab === "guestbook") setActiveTab("home");
   }, [guestbookEnabled, activeTab]);
 
+  // 링크 탭이 꺼지거나 새 창 모드로 바뀌면 임베드 탭에 남아있지 않도록
+  useEffect(() => {
+    if (activeTab === "custom" && (!customTab || customTab.mode !== "embed")) {
+      setActiveTab("home");
+    }
+  }, [customTab, activeTab]);
+
   const bgmUrl = data?.bgmUrl || data?.bgm || null;
   const { isMuted, toggleMute, startBGM, setBgmPlaying, hasBgm, bgmStarted } =
     useBGM(bgmUrl);
+  // 사용자가 재생/정지 버튼으로 고른 상태 (useBGM 은 isPlaying 을 ref 로만 갖고 있어 별도 보관)
+  const [bgmPlaying, setBgmPlayingState] = useState(false);
+  const isBgmPlaying = bgmStarted && bgmPlaying && !isMuted;
+
+  // 재생/정지 토글 — 아직 시작 전이면 제스처 안에서 시작, 음소거면 해제, 그 외 pause/resume
+  const handleBgmToggle = useCallback(() => {
+    if (!bgmStarted) {
+      startBGM();
+      setBgmPlaying(true);
+      setBgmPlayingState(true);
+    } else if (isMuted) {
+      toggleMute();
+      setBgmPlaying(true);
+      setBgmPlayingState(true);
+    } else if (isBgmPlaying) {
+      setBgmPlaying(false);
+      setBgmPlayingState(false);
+    } else {
+      setBgmPlaying(true);
+      setBgmPlayingState(true);
+    }
+  }, [bgmStarted, isMuted, isBgmPlaying, startBGM, setBgmPlaying, toggleMute]);
 
   // 생성/전환 직후 미디어 인제스트가 진행 중이면 "준비 중" 화면 + 폴링.
   // (빈 mediaList가 recordCache에 영구 캐시되는 것을 막기 위해 준비 완료 시
@@ -131,6 +188,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
     const start = () => {
       startBGM();
       setBgmPlaying(true);
+      setBgmPlayingState(true);
     };
     window.addEventListener("pointerdown", start, { once: true });
     return () => window.removeEventListener("pointerdown", start);
@@ -177,18 +235,34 @@ export default function MemorialExhibition({ recordId, preview = false }) {
   }
 
   if (!introDismissed) {
+    // IntroPoster 루트가 <button> 이라 BGM 버튼을 안에 중첩할 수 없음 —
+    // 형제 오버레이로 얹고 BgmToggle 이 클릭 전파를 막아 onEnter 가 같이 발동하지 않게 한다
     return (
-      <IntroPoster
-        name={name}
-        yearRange={posterYearRange}
-        subtitle={years}
-        profileItem={profileItem}
-        style={posterStyle}
-        tone={posterTone}
-        aspectRatio={posterRatio}
-        guestbookEnabled={guestbookEnabled}
-        onEnter={() => setIntroDismissed(true)}
-      />
+      <div className="relative h-screen w-screen overflow-hidden bg-black">
+        <IntroPoster
+          name={name}
+          yearRange={posterYearRange}
+          subtitle={years}
+          motto={motto}
+          profileItem={profileItem}
+          style={posterStyle}
+          tone={posterTone}
+          aspectRatio={posterRatio}
+          guestbookEnabled={guestbookEnabled}
+          onEnter={() => {
+            // 인트로 터치 → 바로 스토리 탭으로 (홈 포스터를 한 번 더 거치지 않음)
+            setIntroDismissed(true);
+            setActiveTab("story");
+          }}
+        />
+        {hasBgm && !preview && (
+          <BgmToggle
+            isPlaying={isBgmPlaying}
+            onToggle={handleBgmToggle}
+            className="absolute top-5 right-5 z-30"
+          />
+        )}
+      </div>
     );
   }
 
@@ -199,6 +273,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
           name={name}
           yearRange={posterYearRange}
           subtitle={years}
+          motto={motto}
           profileItem={profileItem}
           style={posterStyle}
           tone={posterTone}
@@ -213,7 +288,9 @@ export default function MemorialExhibition({ recordId, preview = false }) {
           name={name}
           yearRange={posterYearRange}
           subtitle={years}
+          motto={motto}
           images={imageList}
+          mediaList={mediaList}
           events={events}
           bio={memorialText}
         />
@@ -234,13 +311,22 @@ export default function MemorialExhibition({ recordId, preview = false }) {
         />
       )}
 
+      {activeTab === "custom" && customTab && customTab.mode === "embed" && (
+        <CustomLinkTab
+          label={customTab.label}
+          url={customTab.url}
+          tone={posterTone}
+        />
+      )}
+
       <BottomNavBar
         activeTab={activeTab}
         onChange={setActiveTab}
         showGuestbook={guestbookEnabled}
+        customTab={customTab}
       />
 
-      {/* 컨트롤: 뒤로가기 / 음소거 — 편집 미리보기에선 숨김 */}
+      {/* 컨트롤: 뒤로가기 / BGM 재생·정지 — 편집 미리보기에선 숨김 */}
       {!preview && (
         <button
           onClick={handleExit}
@@ -251,13 +337,11 @@ export default function MemorialExhibition({ recordId, preview = false }) {
         </button>
       )}
       {hasBgm && !preview && (
-        <button
-          onClick={toggleMute}
-          className="absolute top-5 right-5 z-30 flex h-9 w-9 items-center justify-center rounded-full bg-white/5 text-white/70 backdrop-blur-sm transition-colors hover:bg-white/15 hover:text-white"
-          aria-label={isMuted ? "음소거 해제" : "음소거"}
-        >
-          {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
-        </button>
+        <BgmToggle
+          isPlaying={isBgmPlaying}
+          onToggle={handleBgmToggle}
+          className="absolute top-5 right-5 z-30"
+        />
       )}
     </div>
   );

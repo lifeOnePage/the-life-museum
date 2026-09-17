@@ -128,7 +128,8 @@ const T = {
     mottoLabel: "모토",
     mottoPlaceholder: "삶의 모토를 입력하세요",
     customTabTitle: "사용자 지정 탭",
-    customTabDesc: "감상 화면 하단에 외부 링크 탭을 추가해요",
+    customTabDesc:
+      "외부 링크가 연결되어 있으면 감상 화면 하단 탭으로 보여줘요. 끄면 숨겨져요",
     customTabLabelField: "탭 이름",
     customTabLabelPlaceholder: "예: 홈페이지",
     customTabModeNewtab: "새 창에서 열기",
@@ -225,7 +226,7 @@ const T = {
     mottoPlaceholder: "Enter a life motto",
     customTabTitle: "Custom Tab",
     customTabDesc:
-      "Adds an external link tab at the bottom of the viewing screen",
+      "Shows the linked external link as a bottom tab on the viewing screen. Turn off to hide it",
     customTabLabelField: "Tab name",
     customTabLabelPlaceholder: "e.g. Homepage",
     customTabModeNewtab: "Open in new window",
@@ -495,7 +496,7 @@ const Index = ({ params }) => {
   // 추모 모토 (부제목과 별개, 최대 25자)
   const [memorialMotto, setMemorialMotto] = useState("");
   // 사용자 지정 탭 (감상 화면 하단 외부 링크 탭) — URL은 externalLinkUrl 재사용
-  const [customTabEnabled, setCustomTabEnabled] = useState(false);
+  const [customTabEnabled, setCustomTabEnabled] = useState(true); // 외부 링크 탭은 기본 노출
   const [customTabLabel, setCustomTabLabel] = useState("");
   const [customTabMode, setCustomTabMode] = useState("newtab");
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
@@ -689,7 +690,7 @@ const Index = ({ params }) => {
           if (data.guestbookEnabled != null)
             setGuestbookEnabled(data.guestbookEnabled);
           setMemorialMotto(data.memorialMotto || "");
-          setCustomTabEnabled(data.customTabEnabled ?? false);
+          setCustomTabEnabled(data.customTabEnabled ?? true);
           setCustomTabLabel(data.customTabLabel || "");
           setCustomTabMode(data.customTabMode || "newtab");
 
@@ -726,7 +727,7 @@ const Index = ({ params }) => {
             memorialAspectRatio: data.memorialAspectRatio || "9:16",
             guestbookEnabled: data.guestbookEnabled ?? true,
             memorialMotto: data.memorialMotto || "",
-            customTabEnabled: data.customTabEnabled ?? false,
+            customTabEnabled: data.customTabEnabled ?? true,
             customTabLabel: data.customTabLabel || "",
             customTabMode: data.customTabMode || "newtab",
           };
@@ -1417,7 +1418,7 @@ const Index = ({ params }) => {
     setMemorialAspectRatio(s.memorialAspectRatio ?? "9:16");
     setGuestbookEnabled(s.guestbookEnabled ?? true);
     setMemorialMotto(s.memorialMotto ?? "");
-    setCustomTabEnabled(s.customTabEnabled ?? false);
+    setCustomTabEnabled(s.customTabEnabled ?? true);
     setCustomTabLabel(s.customTabLabel ?? "");
     setCustomTabMode(s.customTabMode ?? "newtab");
     setUsedChips(new Set());

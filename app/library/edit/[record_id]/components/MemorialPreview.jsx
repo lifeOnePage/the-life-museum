@@ -19,7 +19,7 @@ export default function MemorialPreview({
   coverImageUrl = null,
   guestbookEnabled = true,
   motto = "",
-  customTabEnabled = false,
+  customTabEnabled = true,
   customTabLabel = "",
   customTabMode = "newtab",
   externalLinkUrl = null,

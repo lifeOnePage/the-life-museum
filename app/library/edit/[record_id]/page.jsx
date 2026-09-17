@@ -1354,14 +1354,23 @@ const Index = ({ params }) => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            googlePhotoUrl: finalGoogleUrl,
-            googleDriveUrl: finalGoogleDriveUrl,
-            icloudUrl: finalIcloudUrl,
-            myboxUrl: finalMyboxUrl,
-            externalLinkTitle: editExternalLinkTitle,
-            externalLinkUrl: finalExternalLinkUrl,
-          }),
+          // 추모 앨범은 영속 미디어 전용이라 백엔드가 소스 URL 필드를(빈 값이라도) 거부한다
+          // → 외부 링크만 보낸다
+          body: JSON.stringify(
+            recordType === "memorial"
+              ? {
+                  externalLinkTitle: editExternalLinkTitle,
+                  externalLinkUrl: finalExternalLinkUrl,
+                }
+              : {
+                  googlePhotoUrl: finalGoogleUrl,
+                  googleDriveUrl: finalGoogleDriveUrl,
+                  icloudUrl: finalIcloudUrl,
+                  myboxUrl: finalMyboxUrl,
+                  externalLinkTitle: editExternalLinkTitle,
+                  externalLinkUrl: finalExternalLinkUrl,
+                },
+          ),
         },
       );
 
@@ -1370,10 +1379,12 @@ const Index = ({ params }) => {
         throw new Error(data.error || t.errorSave);
       }
 
-      setGooglePhotoUrl(finalGoogleUrl);
-      setGoogleDriveUrl(finalGoogleDriveUrl);
-      setIcloudUrl(finalIcloudUrl);
-      setMyboxUrl(finalMyboxUrl);
+      if (recordType !== "memorial") {
+        setGooglePhotoUrl(finalGoogleUrl);
+        setGoogleDriveUrl(finalGoogleDriveUrl);
+        setIcloudUrl(finalIcloudUrl);
+        setMyboxUrl(finalMyboxUrl);
+      }
       setExternalLinkTitle(editExternalLinkTitle);
       setExternalLinkUrl(finalExternalLinkUrl);
       setEditExternalLinkUrl(finalExternalLinkUrl);
@@ -3055,63 +3066,66 @@ const Index = ({ params }) => {
                     className="w-full rounded-md border border-white/15 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30"
                   />
                 </div>
-                <div>
-                  <label className="mb-2 block text-xs font-medium text-[#9b8b7a]">
-                    {t.photoStorage}
-                  </label>
-                  <div className="mb-3 flex gap-2">
-                    {[
-                      { key: "google", label: "Google Photo" },
-                      { key: "drive", label: "Google Drive" },
-                      { key: "icloud", label: "iCloud" },
-                      { key: "mybox", label: "Mybox" },
-                    ].map((opt) => (
-                      <button
-                        key={opt.key}
-                        type="button"
-                        onClick={() => {
-                          setSelectedUrlType(opt.key);
-                          setEditUrlValue(
-                            opt.key === "google"
-                              ? editGooglePhotoUrl
-                              : opt.key === "drive"
-                                ? editGoogleDriveUrl
-                                : opt.key === "icloud"
-                                  ? editIcloudUrl
-                                  : editMyboxUrl,
-                          );
-                        }}
-                        className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
-                          selectedUrlType === opt.key
-                            ? "border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
-                            : "border-white/15 text-[#9b8b7a] hover:border-white/25"
-                        }`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                {/* 사진 저장소 — 추모 앨범은 영속 미디어를 쓰므로 소스 링크 섹션을 숨긴다 */}
+                {recordType !== "memorial" && (
+                  <div>
+                    <label className="mb-2 block text-xs font-medium text-[#9b8b7a]">
+                      {t.photoStorage}
+                    </label>
+                    <div className="mb-3 flex gap-2">
+                      {[
+                        { key: "google", label: "Google Photo" },
+                        { key: "drive", label: "Google Drive" },
+                        { key: "icloud", label: "iCloud" },
+                        { key: "mybox", label: "Mybox" },
+                      ].map((opt) => (
+                        <button
+                          key={opt.key}
+                          type="button"
+                          onClick={() => {
+                            setSelectedUrlType(opt.key);
+                            setEditUrlValue(
+                              opt.key === "google"
+                                ? editGooglePhotoUrl
+                                : opt.key === "drive"
+                                  ? editGoogleDriveUrl
+                                  : opt.key === "icloud"
+                                    ? editIcloudUrl
+                                    : editMyboxUrl,
+                            );
+                          }}
+                          className={`flex-1 rounded-lg border px-3 py-2 text-xs font-medium transition-all ${
+                            selectedUrlType === opt.key
+                              ? "border-[#c4b49a] bg-[#c4b49a]/10 text-[#c4b49a]"
+                              : "border-white/15 text-[#9b8b7a] hover:border-white/25"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                    <input
+                      type="text"
+                      value={editUrlValue}
+                      onChange={(e) => setEditUrlValue(e.target.value)}
+                      disabled={selectedUrlType === "mybox"}
+                      placeholder={
+                        selectedUrlType === "google"
+                          ? "https://photos.google.com/..."
+                          : selectedUrlType === "drive"
+                            ? "https://drive.google.com/drive/folders/..."
+                            : selectedUrlType === "icloud"
+                              ? "https://share.icloud.com/photos/..."
+                              : t.serviceComingSoon
+                      }
+                      className={`w-full rounded-md border border-white/15 px-3 py-2 text-sm outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30 ${
+                        selectedUrlType === "mybox"
+                          ? "cursor-not-allowed bg-white/5 text-[#9b8b7a]"
+                          : "bg-[#2e2720] text-[#e8d5b7]"
+                      }`}
+                    />
                   </div>
-                  <input
-                    type="text"
-                    value={editUrlValue}
-                    onChange={(e) => setEditUrlValue(e.target.value)}
-                    disabled={selectedUrlType === "mybox"}
-                    placeholder={
-                      selectedUrlType === "google"
-                        ? "https://photos.google.com/..."
-                        : selectedUrlType === "drive"
-                          ? "https://drive.google.com/drive/folders/..."
-                          : selectedUrlType === "icloud"
-                            ? "https://share.icloud.com/photos/..."
-                            : t.serviceComingSoon
-                    }
-                    className={`w-full rounded-md border border-white/15 px-3 py-2 text-sm outline-none placeholder:text-[#9b8b7a]/60 focus:border-white/30 ${
-                      selectedUrlType === "mybox"
-                        ? "cursor-not-allowed bg-white/5 text-[#9b8b7a]"
-                        : "bg-[#2e2720] text-[#e8d5b7]"
-                    }`}
-                  />
-                </div>
+                )}
               </div>
 
               {recordError && (

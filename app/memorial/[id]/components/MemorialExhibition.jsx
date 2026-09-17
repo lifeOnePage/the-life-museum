@@ -53,10 +53,11 @@ export default function MemorialExhibition({ recordId, preview = false }) {
   // 좌우명 — 인트로 포스터·스토리 탭에 표시 (편집 프리뷰 오버라이드 우선)
   const motto = ov.motto ?? data?.memorialMotto ?? "";
 
-  // 사용자 지정 링크 탭 — 활성화 + URL(기존 externalLinkUrl)이 있을 때만.
+  // 사용자 지정 링크 탭 — 외부 링크(기존 externalLinkUrl)가 있으면 기본으로 하단 탭에
+  // 노출하고, 편집 화면에서 끈 경우(customTabEnabled=false)에만 숨긴다.
   // 라벨은 customTabLabel → externalLinkTitle → "링크" 순으로 폴백.
   const customTab = useMemo(() => {
-    const enabled = ov.customTabEnabled ?? data?.customTabEnabled;
+    const enabled = ov.customTabEnabled ?? data?.customTabEnabled ?? true;
     const rawUrl = ov.externalLinkUrl ?? data?.externalLinkUrl;
     if (!enabled || !rawUrl) return null;
     return {

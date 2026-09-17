@@ -2,8 +2,19 @@
 
 import { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight, X } from "lucide-react";
+import { ArrowRight, ChevronDown, X } from "lucide-react";
 import { FLOWER_LABELS, FLOWER_TYPES } from "./guestbookApi";
+import { getFlowerAsset } from "./guestbookAssets";
+
+// 미리 준비된 추모 문구 — 선택하면 아래 입력란에 채워지고 자유롭게 고칠 수 있다
+const MESSAGE_PRESETS = [
+  "삼가 고인의 명복을 빕니다",
+  "좋은 곳에서 편히 쉬세요",
+  "따뜻했던 기억을 오래 간직하겠습니다",
+  "함께한 시간들을 잊지 않겠습니다",
+  "그리운 마음을 담아 기도합니다",
+  "하늘에서 평안하시길 바랍니다",
+];
 
 /**
  * 방명록 작성 바텀시트.
@@ -153,7 +164,7 @@ export default function GuestbookSheet({ open, tone, onClose, onSubmit }) {
                   >
                     <img
                       ref={(el) => (flowerRefs.current[type] = el)}
-                      src="/images/memorial/flower.png"
+                      src={getFlowerAsset(type).flower}
                       alt={FLOWER_LABELS[type]}
                       draggable={false}
                       className="pointer-events-none h-[9vh] w-auto select-none"
@@ -172,6 +183,30 @@ export default function GuestbookSheet({ open, tone, onClose, onSubmit }) {
               <span className="text-[1.7vh] font-medium">
                 추모의 한마디를 남겨주세요
               </span>
+            </div>
+            {/* 프리셋 드롭다운 — 고르면 입력란에 채워지고 자유롭게 수정 가능 */}
+            <div className="relative mt-[1.2vh]">
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) setMessage(e.target.value);
+                }}
+                className={`w-full appearance-none rounded-lg border px-4 py-[1.4vh] pr-10 text-[1.5vh] outline-none ${fieldBg} ${subText}`}
+                aria-label="미리 준비된 추모 문구 선택"
+              >
+                <option value="" disabled>
+                  ex. {MESSAGE_PRESETS[0]}
+                </option>
+                {MESSAGE_PRESETS.map((preset) => (
+                  <option key={preset} value={preset}>
+                    {preset}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className={`pointer-events-none absolute top-1/2 right-4 -translate-y-1/2 ${subText}`}
+              />
             </div>
             <div className="relative mt-[1.2vh]">
               <textarea

@@ -446,8 +446,8 @@ export default function MyShelfPage({ params }) {
   const filteredAlbums =
     filterType === "all" ? albums : albums.filter((a) => a.role === filterType);
 
-  // Canvas에는 최대 15개만 전달 (3행×5열)
-  const visibleAlbums = filteredAlbums.slice(0, 15);
+  // 전체 앨범을 전달 — 행이 늘어나면 선반이 세로로 확장되고 스크롤로 탐색
+  const visibleAlbums = filteredAlbums;
 
   const selectedRole = selectedAlbum?.data?.role;
   const selData = selectedAlbum?.data;

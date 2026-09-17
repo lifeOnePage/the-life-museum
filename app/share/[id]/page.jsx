@@ -355,6 +355,14 @@ export default function SharePage({ params }) {
     }
   }, [loading, error]);
 
+  // 추모 앨범은 앨범 표지 화면을 건너뛰고 바로 감상 화면으로 이동
+  // (비공개 앨범은 아래 잠금 화면이 우선)
+  const isMemorial =
+    recordData?.exhibitionType === "memorial" && recordData?.isPublic !== false;
+  useEffect(() => {
+    if (isMemorial) router.replace(`/memorial/${id}`);
+  }, [isMemorial, id, router]);
+
   const frontCover = recordData?.coverImage?.url || null;
   const backCoverImage = recordData?.backCoverImageUrl || frontCover;
   const albumTitle = recordData?.title || "";
@@ -484,6 +492,15 @@ export default function SharePage({ params }) {
           {t.privateAlbum}
         </p>
         <p className="text-xs tracking-wider text-white/30">{t.privateDesc}</p>
+      </div>
+    );
+  }
+
+  // 추모 앨범: 감상 화면으로 리다이렉트되는 동안 표지 화면이 번쩍이지 않게
+  if (isMemorial) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-black">
+        <div className="text-sm text-white/50">감상 화면으로 이동 중...</div>
       </div>
     );
   }
@@ -687,9 +704,12 @@ export default function SharePage({ params }) {
         <button
           onClick={() => {
             // ?share=1: 공유 감상 모드 — 소유자용 기능(액자 사진 바꾸기 등) 비활성화
-            const route = recordData?.exhibitionType === "memorial_tape"
-              ? `/vhs/${id}?share=1`
-              : `/walk/${id}`;
+            const route =
+              recordData?.exhibitionType === "memorial_tape"
+                ? `/vhs/${id}?share=1`
+                : recordData?.exhibitionType === "memorial"
+                  ? `/memorial/${id}`
+                  : `/walk/${id}`;
             router.push(route);
           }}
           aria-label={t.gallery}

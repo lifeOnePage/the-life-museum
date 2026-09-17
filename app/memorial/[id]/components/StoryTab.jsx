@@ -1,141 +1,18 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
-
-function mediaSrc(item) {
-  return item?.original_url || item?.thumbnail_url || "";
-}
+import { useCallback, useMemo, useState } from "react";
+import MediaRing, { MAX_PLANES } from "./MediaRing";
+import MediaRingNav from "./MediaRingNav";
+import { nextRingIndex, prevRingIndex, ringMediaOf } from "./ringMedia";
 
 function shortYear(ts) {
   return String(ts ?? "").slice(0, 4);
 }
 
-// 유휴 상태에서 자동으로 회전하는 속도 (아이템/ms)
-const IDLE_SPEED = 0.00004;
-// 화살표 클릭 시 다음/이전 사진으로 스냅되는 데 걸리는 시간(ms)
-const SNAP_DURATION_MS = 900;
-
-function easeInOutCubic(t) {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
-
-// 원형으로 배치된 사진들 — 천천히 자동 회전하며, 화살표로 특정 사진에 스냅 포커싱된다.
-function PhotoCarousel({ images }) {
-  const count = images.length;
-  const [pos, setPos] = useState(0);
-  const rafRef = useRef(null);
-  const lastTsRef = useRef(null);
-  const snapRef = useRef(null); // { from, to, start }
-
-  useEffect(() => {
-    if (count === 0) return;
-
-    const tick = (ts) => {
-      if (lastTsRef.current == null) lastTsRef.current = ts;
-      const dt = ts - lastTsRef.current;
-      lastTsRef.current = ts;
-
-      setPos((prev) => {
-        if (snapRef.current) {
-          const { from, to, start } = snapRef.current;
-          const t = Math.min(1, (ts - start) / SNAP_DURATION_MS);
-          const eased = easeInOutCubic(t);
-          const next = from + (to - from) * eased;
-          if (t >= 1) {
-            snapRef.current = null;
-            return to % count;
-          }
-          return next;
-        }
-        return (prev + dt * IDLE_SPEED) % count;
-      });
-
-      rafRef.current = requestAnimationFrame(tick);
-    };
-
-    rafRef.current = requestAnimationFrame(tick);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      lastTsRef.current = null;
-    };
-  }, [count]);
-
-  const snapTo = (dir) => {
-    if (count === 0) return;
-    const currentTarget = snapRef.current ? snapRef.current.to : pos;
-    snapRef.current = {
-      from: pos,
-      to: currentTarget + dir,
-      start: performance.now(),
-    };
-  };
-
-  if (count === 0) return null;
-
-  return (
-    <div
-      className="relative h-full w-full shrink-0"
-      style={{ perspective: "1600px" }}
-    >
-      <div className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
-        {images.map((img, i) => {
-          let offset = ((i - pos + count / 2) % count) - count / 2;
-          if (offset < -count / 2) offset += count;
-          const absOffset = Math.abs(offset);
-          const scale = Math.max(0.5, 1 - absOffset * 0.18);
-          const opacity = Math.max(0.12, 1 - absOffset * 0.32);
-          const translateX = offset * 32; // vw
-          const translateY = absOffset * absOffset * 1.4; // vh — 원호를 그리며 아래로 처짐
-          const rotateY = offset * -26; // deg
-          const zIndex = Math.round(1000 - absOffset * 10);
-
-          return (
-            <div
-              key={img.id ?? i}
-              className="absolute top-1/2 left-1/2 h-[42vh] w-[30vh] overflow-hidden bg-white/5"
-              style={{
-                transform: `translate(-50%, -50%) translate(${translateX}vw, ${translateY}vh) rotateY(${rotateY}deg) scale(${scale})`,
-                opacity,
-                zIndex,
-                clipPath: "polygon(10% 0%, 100% 0%, 90% 100%, 0% 100%)",
-                transition: "opacity 0.2s linear",
-              }}
-            >
-              <img
-                src={mediaSrc(img)}
-                alt=""
-                draggable={false}
-                className="h-full w-full object-cover"
-              />
-            </div>
-          );
-        })}
-      </div>
-
-      {count > 1 && (
-        <>
-          <button
-            type="button"
-            onClick={() => snapTo(-1)}
-            className="absolute top-1/2 left-[2%] z-[2000] -translate-y-1/2 text-white/40 transition-colors hover:text-white/80"
-            aria-label="이전 사진"
-          >
-            <ChevronLeft size={26} />
-          </button>
-          <button
-            type="button"
-            onClick={() => snapTo(1)}
-            className="absolute top-1/2 right-[2%] z-[2000] -translate-y-1/2 text-white/40 transition-colors hover:text-white/80"
-            aria-label="다음 사진"
-          >
-            <ChevronRight size={26} />
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
+// 스토리 탭 슬라이드쇼 자동 넘김 간격 (ms) — 유휴 시 다음 사진으로
+const AUTO_ADVANCE_MS = 4500;
+// images 기본값 — 매 렌더 새 배열이면 ringMedia 메모가 무효화되므로 모듈 상수로 고정
+const EMPTY_LIST = [];
 
 const H_ABOVE = 9; // vh — 축 위 라벨 영역
 const H_BELOW = 8; // vh — 축 아래 라벨 영역
@@ -245,40 +122,88 @@ function FlagTimeline({ events, selectedIndex, onSelect }) {
 
 /**
  * "스토리" 탭.
- * 순서: 사진 3D 회전 카드 → 타이틀/연도/섭타이틀 → 연도 축 대각선 플래그 타임라인 → 생애문(bio).
+ * 순서: 사진 슬라이드쇼(MediaRing 포커스 구도) → 타이틀/연도/좌우명/섭타이틀
+ *       → 연도 축 대각선 플래그 타임라인 → 생애문(bio).
+ * props: mediaList(우선, 커버 포함 image+video) / images(레거시 폴백) / motto(좌우명)
  */
 export default function StoryTab({
   name,
   yearRange,
   subtitle,
-  images = [],
+  motto,
+  mediaList,
+  images = EMPTY_LIST,
   events = [],
   bio,
 }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const selectedEvent = events[selectedIndex] || null;
 
+  // 슬라이드쇼 미디어 — 메모리 탭과 같은 목록(커버 제외, image+video).
+  // mediaList가 없으면(레거시 호출) 이미지 목록으로 폴백
+  const ringMedia = useMemo(
+    () => ringMediaOf(mediaList ?? images),
+    [mediaList, images],
+  );
+  const ringCount = Math.min(ringMedia.length, MAX_PLANES);
+  const [idx, setIdx] = useState(0);
+
+  // 좌우 넘김 — 메모리 탭 포커스 뷰와 같은 방향 규칙
+  const goPrev = useCallback(
+    () => setIdx((i) => prevRingIndex(i, ringCount)),
+    [ringCount],
+  );
+  const goNext = useCallback(
+    () => setIdx((i) => nextRingIndex(i, ringCount)),
+    [ringCount],
+  );
+
   return (
     <div className="h-full w-full overflow-y-auto bg-black px-[6%] pt-[5vh] pb-[10vh] text-white">
-      {/* 사진 회전 + 타이틀/연도/섭타이틀 (오른쪽 아래에 겹쳐서 배치) */}
-      <div className="relative w-full" style={{ height: "48vh" }}>
-        <PhotoCarousel images={images} />
-
-        <div className="absolute right-[2%] bottom-0 z-[2100] flex max-w-[46%] flex-col items-end text-right">
-          <h2 className="font-serif text-[2.6vh] leading-tight font-medium tracking-wide">
-            {name}
-          </h2>
-          {yearRange && (
-            <p className="mt-[1vh] text-[1.5vh] tracking-[0.25em] text-white/50">
-              {yearRange}
-            </p>
-          )}
-          {subtitle && (
-            <p className="mt-[1.5vh] text-[1.4vh] leading-[1.8] font-light text-white/60">
-              {subtitle}
-            </p>
-          )}
+      {/* 사진 슬라이드쇼 — 메모리 탭의 플레인 선택(포커스) 구도를 그대로 재사용.
+          세로 스크롤 페이지 안이라 touch-action: pan-y (가로 드래그만 링이 받음) */}
+      {ringCount > 0 && (
+        <div className="relative w-full" style={{ height: "48vh" }}>
+          <div className="absolute inset-0 h-full w-full">
+            <MediaRing
+              mediaList={ringMedia}
+              focusedIndex={idx}
+              onFocusChange={setIdx}
+              isDark
+              lockFocus
+              autoAdvanceMs={AUTO_ADVANCE_MS}
+              touchAction="pan-y"
+            />
+          </div>
+          <MediaRingNav
+            isDark
+            onPrev={goPrev}
+            onNext={goNext}
+            showArrows={ringCount > 1}
+          />
         </div>
+      )}
+
+      {/* 타이틀/연도/좌우명/섭타이틀 — 포커스 구도가 블록 폭을 거의 채우므로 아래에 중앙 배치 */}
+      <div className="mx-auto mt-[3vh] flex w-full max-w-[86%] flex-col items-center text-center">
+        <h2 className="font-serif text-[2.6vh] leading-tight font-medium tracking-wide">
+          {name}
+        </h2>
+        {yearRange && (
+          <p className="mt-[1vh] text-[1.5vh] tracking-[0.25em] text-white/50">
+            {yearRange}
+          </p>
+        )}
+        {motto && (
+          <p className="mt-[1.5vh] font-serif text-[1.7vh] leading-[1.7] italic text-white/70">
+            {motto}
+          </p>
+        )}
+        {subtitle && (
+          <p className="mt-[1.5vh] text-[1.4vh] leading-[1.8] font-light text-white/60">
+            {subtitle}
+          </p>
+        )}
       </div>
 
       {/* 대각선 플래그 타임라인 */}

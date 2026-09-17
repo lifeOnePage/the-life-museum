@@ -125,6 +125,16 @@ const T = {
     recordTypeExhibit: "Time Travel",
     recordTypeRetroTape: "Retro Tape",
     recordTypeMemorial: "메모리얼",
+    mottoLabel: "모토",
+    mottoPlaceholder: "삶의 모토를 입력하세요",
+    customTabTitle: "사용자 지정 탭",
+    customTabDesc: "감상 화면 하단에 외부 링크 탭을 추가해요",
+    customTabLabelField: "탭 이름",
+    customTabLabelPlaceholder: "예: 홈페이지",
+    customTabModeNewtab: "새 창에서 열기",
+    customTabModeEmbed: "페이지 안에서 보기",
+    customTabLinked: "연결된 링크",
+    customTabNoLink: "정보 수정에서 외부 링크를 먼저 연결해주세요",
     memorialPosterStyle: "포스터 스타일",
     memorialPosterStyleClassic: "클래식",
     memorialPosterStyleGlow: "글로우",
@@ -211,6 +221,17 @@ const T = {
     recordTypeExhibit: "Time Travel",
     recordTypeRetroTape: "Retro Tape",
     recordTypeMemorial: "Memorial",
+    mottoLabel: "Motto",
+    mottoPlaceholder: "Enter a life motto",
+    customTabTitle: "Custom Tab",
+    customTabDesc:
+      "Adds an external link tab at the bottom of the viewing screen",
+    customTabLabelField: "Tab name",
+    customTabLabelPlaceholder: "e.g. Homepage",
+    customTabModeNewtab: "Open in new window",
+    customTabModeEmbed: "Show inside the page",
+    customTabLinked: "Linked URL",
+    customTabNoLink: "Connect an external link in Edit Info first",
     memorialPosterStyle: "Poster Style",
     memorialPosterStyleClassic: "Classic",
     memorialPosterStyleGlow: "Glow",
@@ -470,6 +491,13 @@ const Index = ({ params }) => {
   const [memorialPosterStyle, setMemorialPosterStyle] = useState("classic");
   const [memorialPosterTone, setMemorialPosterTone] = useState("dark");
   const [memorialAspectRatio, setMemorialAspectRatio] = useState("9:16");
+  const [guestbookEnabled, setGuestbookEnabled] = useState(true);
+  // 추모 모토 (부제목과 별개, 최대 25자)
+  const [memorialMotto, setMemorialMotto] = useState("");
+  // 사용자 지정 탭 (감상 화면 하단 외부 링크 탭) — URL은 externalLinkUrl 재사용
+  const [customTabEnabled, setCustomTabEnabled] = useState(false);
+  const [customTabLabel, setCustomTabLabel] = useState("");
+  const [customTabMode, setCustomTabMode] = useState("newtab");
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
@@ -658,6 +686,12 @@ const Index = ({ params }) => {
             setMemorialPosterTone(data.memorialPosterTone);
           if (data.memorialAspectRatio)
             setMemorialAspectRatio(data.memorialAspectRatio);
+          if (data.guestbookEnabled != null)
+            setGuestbookEnabled(data.guestbookEnabled);
+          setMemorialMotto(data.memorialMotto || "");
+          setCustomTabEnabled(data.customTabEnabled ?? false);
+          setCustomTabLabel(data.customTabLabel || "");
+          setCustomTabMode(data.customTabMode || "newtab");
 
           // Photo drive now auto-fetches on mount via useEffect
 
@@ -690,6 +724,11 @@ const Index = ({ params }) => {
             memorialPosterStyle: data.memorialPosterStyle || "classic",
             memorialPosterTone: data.memorialPosterTone || "dark",
             memorialAspectRatio: data.memorialAspectRatio || "9:16",
+            guestbookEnabled: data.guestbookEnabled ?? true,
+            memorialMotto: data.memorialMotto || "",
+            customTabEnabled: data.customTabEnabled ?? false,
+            customTabLabel: data.customTabLabel || "",
+            customTabMode: data.customTabMode || "newtab",
           };
         }
       } catch (error) {
@@ -750,6 +789,14 @@ const Index = ({ params }) => {
             recordType === "memorial" ? memorialPosterTone : undefined,
           memorialAspectRatio:
             recordType === "memorial" ? memorialAspectRatio : undefined,
+          guestbookEnabled:
+            recordType === "memorial" ? guestbookEnabled : undefined,
+          memorialMotto: recordType === "memorial" ? memorialMotto : undefined,
+          customTabEnabled:
+            recordType === "memorial" ? customTabEnabled : undefined,
+          customTabLabel:
+            recordType === "memorial" ? customTabLabel : undefined,
+          customTabMode: recordType === "memorial" ? customTabMode : undefined,
         }),
       },
     );
@@ -860,7 +907,12 @@ const Index = ({ params }) => {
       walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration ||
       memorialPosterStyle !== initialState.current.memorialPosterStyle ||
       memorialPosterTone !== initialState.current.memorialPosterTone ||
-      memorialAspectRatio !== initialState.current.memorialAspectRatio;
+      memorialAspectRatio !== initialState.current.memorialAspectRatio ||
+      guestbookEnabled !== initialState.current.guestbookEnabled ||
+      memorialMotto !== initialState.current.memorialMotto ||
+      customTabEnabled !== initialState.current.customTabEnabled ||
+      customTabLabel !== initialState.current.customTabLabel ||
+      customTabMode !== initialState.current.customTabMode;
 
     if (
       !isCoverDirty &&
@@ -985,6 +1037,11 @@ const Index = ({ params }) => {
           initialState.current.memorialPosterStyle = memorialPosterStyle;
           initialState.current.memorialPosterTone = memorialPosterTone;
           initialState.current.memorialAspectRatio = memorialAspectRatio;
+          initialState.current.guestbookEnabled = guestbookEnabled;
+          initialState.current.memorialMotto = memorialMotto;
+          initialState.current.customTabEnabled = customTabEnabled;
+          initialState.current.customTabLabel = customTabLabel;
+          initialState.current.customTabMode = customTabMode;
         }
       }
     }
@@ -1086,7 +1143,12 @@ const Index = ({ params }) => {
     walkVideoMaxDuration !== initialState.current.walkVideoMaxDuration ||
     memorialPosterStyle !== initialState.current.memorialPosterStyle ||
     memorialPosterTone !== initialState.current.memorialPosterTone ||
-    memorialAspectRatio !== initialState.current.memorialAspectRatio;
+    memorialAspectRatio !== initialState.current.memorialAspectRatio ||
+    guestbookEnabled !== initialState.current.guestbookEnabled ||
+    memorialMotto !== initialState.current.memorialMotto ||
+    customTabEnabled !== initialState.current.customTabEnabled ||
+    customTabLabel !== initialState.current.customTabLabel ||
+    customTabMode !== initialState.current.customTabMode;
 
   const handleExit = async () => {
     if (pendingSaveRef.current) {
@@ -1338,6 +1400,15 @@ const Index = ({ params }) => {
     setTitleColor(s.titleColor);
     setTitleStrokeOpacity(s.titleStrokeOpacity ?? 100);
     setBackCoverImageUrl(s.backCoverImageUrl);
+    // 추모 앨범 설정도 초기 상태로 — 변경 감지(dirty check)에 포함된 필드들
+    setMemorialPosterStyle(s.memorialPosterStyle ?? "classic");
+    setMemorialPosterTone(s.memorialPosterTone ?? "dark");
+    setMemorialAspectRatio(s.memorialAspectRatio ?? "9:16");
+    setGuestbookEnabled(s.guestbookEnabled ?? true);
+    setMemorialMotto(s.memorialMotto ?? "");
+    setCustomTabEnabled(s.customTabEnabled ?? false);
+    setCustomTabLabel(s.customTabLabel ?? "");
+    setCustomTabMode(s.customTabMode ?? "newtab");
     setUsedChips(new Set());
   };
 
@@ -1630,14 +1701,21 @@ const Index = ({ params }) => {
             />
           ) : recordType === "memorial" && activeTab === "memory" ? (
             <MemorialPreview
-              photoMedia={photoDrive.photoMedia}
-              mediaLoading={photoDrive.isLoading}
+              reloadKey={lastSavedAt?.getTime() ?? 0}
               albumTitle={albumTitle}
               albumSubtitle={albumSubtitle}
-              timeline={timeline}
               posterStyle={memorialPosterStyle}
               posterTone={memorialPosterTone}
               aspectRatio={memorialAspectRatio}
+              coverImageUrl={frontCover}
+              guestbookEnabled={guestbookEnabled}
+              motto={memorialMotto}
+              customTabEnabled={customTabEnabled}
+              customTabLabel={customTabLabel}
+              customTabMode={customTabMode}
+              externalLinkUrl={externalLinkUrl}
+              externalLinkTitle={externalLinkTitle}
+              viewUrl={`/${locale}/memorial/${record_id}`}
             />
           ) : (
             <AlbumPreview2D
@@ -1775,6 +1853,29 @@ const Index = ({ params }) => {
                             className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
                           />
                         </div>
+                        {/* 추모 모토 (memorial 전용, 부제목과 별개, 25자) */}
+                        {recordType === "memorial" && (
+                          <div>
+                            <div className="mb-1.5 flex items-center justify-between">
+                              <label className="block text-xs font-medium text-[#9b8b7a]">
+                                {t.mottoLabel}
+                              </label>
+                              <span className="text-[10px] text-[#9b8b7a]">
+                                {memorialMotto.length}/25
+                              </span>
+                            </div>
+                            <input
+                              type="text"
+                              value={memorialMotto}
+                              onChange={(e) =>
+                                setMemorialMotto(e.target.value.slice(0, 25))
+                              }
+                              maxLength={25}
+                              placeholder={t.mottoPlaceholder}
+                              className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Title Overlay Section - on/off switch, no separate collapse */}
@@ -2299,16 +2400,175 @@ const Index = ({ params }) => {
                                     <span className="block text-sm text-[#e8d5b7]">
                                       추모 앨범으로 전환
                                     </span>
-                                    <span className="mt-0.5 block text-[11px] text-[#9b8b7a]">
-                                      사진을 골라 새 추모 앨범을 만듭니다 (원본
-                                      유지)
+                                    <span className="mt-0.5 block text-[11px] leading-relaxed text-[#9b8b7a]">
+                                      소중한 분을 기리는 공간을 새로 만들어요.
+                                      간직하고 싶은 사진을 골라 오래도록 보존해
+                                      드려요. 지금 앨범은 그대로 남아요.
                                     </span>
                                   </span>
                                 </button>
                               ) : (
-                                <p className="px-1 text-[11px] text-[#9b8b7a]">
-                                  추모 앨범은 다른 타입으로 변경할 수 없습니다
-                                </p>
+                                <>
+                                  <p className="px-1 text-[11px] leading-relaxed text-[#9b8b7a]">
+                                    이 앨범은 소중한 분을 기리기 위한 추모
+                                    앨범으로 만들어졌어요. 다른 테마의 전시가
+                                    필요하시면 라이브러리에서 새 앨범을
+                                    만들어주세요.
+                                  </p>
+                                  {/* 방명록 수신 on/off */}
+                                  <div className="flex items-center justify-between rounded-lg border border-white/10 px-4 py-3">
+                                    <span>
+                                      <span className="block text-sm text-[#e8d5b7]">
+                                        방명록 받기
+                                      </span>
+                                      <span className="mt-0.5 block text-[11px] text-[#9b8b7a]">
+                                        끄면 감상 화면에서 방명록 탭이 보이지
+                                        않아요
+                                      </span>
+                                    </span>
+                                    <button
+                                      type="button"
+                                      role="switch"
+                                      aria-checked={guestbookEnabled}
+                                      onClick={() =>
+                                        setGuestbookEnabled((v) => !v)
+                                      }
+                                      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                                        guestbookEnabled
+                                          ? "bg-[#c4a882]"
+                                          : "bg-white/20"
+                                      }`}
+                                    >
+                                      <span
+                                        className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
+                                          guestbookEnabled
+                                            ? "left-[calc(100%-1.375rem)]"
+                                            : "left-0.5"
+                                        }`}
+                                      />
+                                    </button>
+                                  </div>
+                                  {/* 사용자 지정 탭 (외부 링크 탭) on/off + 이름 + 열기 방식 */}
+                                  <div className="rounded-lg border border-white/10">
+                                    <div className="flex items-center justify-between px-4 py-3">
+                                      <span>
+                                        <span className="block text-sm text-[#e8d5b7]">
+                                          {t.customTabTitle}
+                                        </span>
+                                        <span className="mt-0.5 block text-[11px] text-[#9b8b7a]">
+                                          {t.customTabDesc}
+                                        </span>
+                                      </span>
+                                      <button
+                                        type="button"
+                                        role="switch"
+                                        aria-checked={customTabEnabled}
+                                        onClick={() =>
+                                          setCustomTabEnabled((v) => !v)
+                                        }
+                                        className={`relative h-6 w-11 shrink-0 rounded-full transition-colors ${
+                                          customTabEnabled
+                                            ? "bg-[#c4a882]"
+                                            : "bg-white/20"
+                                        }`}
+                                      >
+                                        <span
+                                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition-all ${
+                                            customTabEnabled
+                                              ? "left-[calc(100%-1.375rem)]"
+                                              : "left-0.5"
+                                          }`}
+                                        />
+                                      </button>
+                                    </div>
+                                    <AnimatePresence initial={false}>
+                                      {customTabEnabled && (
+                                        <motion.div
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{
+                                            height: "auto",
+                                            opacity: 1,
+                                          }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.2 }}
+                                          className="overflow-hidden"
+                                        >
+                                          <div className="flex flex-col gap-3 border-t border-white/8 px-4 pt-3 pb-4">
+                                            {/* 탭 이름 (10자) */}
+                                            <div>
+                                              <div className="mb-1.5 flex items-center justify-between">
+                                                <label className="block text-xs font-medium text-[#9b8b7a]">
+                                                  {t.customTabLabelField}
+                                                </label>
+                                                <span className="text-[10px] text-[#9b8b7a]">
+                                                  {customTabLabel.length}/10
+                                                </span>
+                                              </div>
+                                              <input
+                                                type="text"
+                                                value={customTabLabel}
+                                                onChange={(e) =>
+                                                  setCustomTabLabel(
+                                                    e.target.value.slice(0, 10),
+                                                  )
+                                                }
+                                                maxLength={10}
+                                                placeholder={
+                                                  t.customTabLabelPlaceholder
+                                                }
+                                                className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
+                                              />
+                                            </div>
+                                            {/* 열기 방식: 새 창 / 페이지 내부 */}
+                                            <div className="grid grid-cols-2 gap-2">
+                                              {[
+                                                {
+                                                  value: "newtab",
+                                                  label: t.customTabModeNewtab,
+                                                },
+                                                {
+                                                  value: "embed",
+                                                  label: t.customTabModeEmbed,
+                                                },
+                                              ].map((option) => (
+                                                <button
+                                                  key={option.value}
+                                                  type="button"
+                                                  onClick={() =>
+                                                    setCustomTabMode(
+                                                      option.value,
+                                                    )
+                                                  }
+                                                  className={`rounded-lg border px-3 py-2 text-xs transition-colors ${
+                                                    customTabMode ===
+                                                    option.value
+                                                      ? "border-[#c4a882] bg-[#c4a882]/10 text-[#e8d5b7]"
+                                                      : "border-white/10 text-[#9b8b7a] hover:border-white/20"
+                                                  }`}
+                                                >
+                                                  {option.label}
+                                                </button>
+                                              ))}
+                                            </div>
+                                            {/* 연결된 링크 안내 (URL은 정보 수정 다이얼로그의 외부 링크) */}
+                                            {externalLinkUrl ? (
+                                              <p className="truncate text-[11px] text-[#9b8b7a]">
+                                                {t.customTabLinked}:{" "}
+                                                <span className="text-[#e8d5b7]/80">
+                                                  {externalLinkUrl}
+                                                </span>
+                                              </p>
+                                            ) : (
+                                              <p className="text-[11px] text-amber-400/90">
+                                                {t.customTabNoLink}
+                                              </p>
+                                            )}
+                                          </div>
+                                        </motion.div>
+                                      )}
+                                    </AnimatePresence>
+                                  </div>
+                                </>
                               )}
                             </div>
                           </div>

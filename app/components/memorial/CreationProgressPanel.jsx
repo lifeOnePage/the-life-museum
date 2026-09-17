@@ -12,7 +12,7 @@ export default function CreationProgressPanel({ phase, progress, timedOut }) {
   } else if (phase === "registering") {
     message = "미디어를 등록하는 중이에요";
   } else if (phase === "processing") {
-    message = "사진을 안전하게 옮기는 중이에요 — 잠시만 기다려주세요";
+    message = "사진을 안전하게 옮기고 있어요. 잠시만 기다려주세요.";
     if (progress?.total) {
       detail = `${progress.ready ?? 0} / ${progress.total}`;
       if (progress.failed > 0) detail += ` (실패 ${progress.failed})`;
@@ -47,7 +47,7 @@ export default function CreationProgressPanel({ phase, progress, timedOut }) {
       )}
       {timedOut && (
         <p className="mt-2 text-xs opacity-60">
-          시간이 걸리고 있어요 — 백그라운드에서 계속 진행됩니다
+          시간이 조금 걸리고 있어요. 창을 닫아도 계속 진행됩니다.
         </p>
       )}
     </div>

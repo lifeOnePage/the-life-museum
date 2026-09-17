@@ -93,7 +93,7 @@ export default function ShelfCanvas({
   }, [windowWidth]);
 
   const ROWS = useMemo(() => {
-    return Math.min(5, Math.max(2, Math.ceil(albums.length / COLS)));
+    return Math.max(2, Math.ceil(albums.length / COLS));
   }, [albums.length, COLS]);
 
   // baseZ: 뷰포트 종횡비에 따라 카메라 Z를 자동 조정하여 앨범이 잘리지 않게 함
@@ -137,9 +137,10 @@ export default function ShelfCanvas({
     return { min, max };
   }, [ROWS, baseZ]);
 
-  // Camera refs
+  // Camera refs — 세로 오프셋은 최상단(scrollBounds.max)에서 시작해
+  // 행이 많아도 첫 화면에 최신 앨범(맨 윗줄)이 보이게 한다
   const cameraXOffsetRef = useRef(0);
-  const cameraYOffsetRef = useRef(0);
+  const cameraYOffsetRef = useRef(scrollBounds.max);
   const cameraZRef = useRef(baseZ);
   const scrollMinRef = useRef(scrollBounds.min);
   const scrollMaxRef = useRef(scrollBounds.max);
@@ -150,15 +151,22 @@ export default function ShelfCanvas({
     cameraZRef.current = baseZ;
   }, [baseZ]);
 
-  // 스크롤 한계 갱신 + 현재 오프셋을 새 범위로 재클램프
+  // 스크롤 한계 갱신 — 행 수가 바뀌면(로드/필터) 최상단으로 스냅해 최신
+  // 앨범이 먼저 보이게 하고, 그 외(리사이즈 등)에는 현재 오프셋만 재클램프
+  const prevRowsRef = useRef(ROWS);
   useEffect(() => {
     scrollMinRef.current = scrollBounds.min;
     scrollMaxRef.current = scrollBounds.max;
-    cameraYOffsetRef.current = Math.max(
-      scrollBounds.min,
-      Math.min(scrollBounds.max, cameraYOffsetRef.current),
-    );
-  }, [scrollBounds]);
+    if (prevRowsRef.current !== ROWS) {
+      prevRowsRef.current = ROWS;
+      cameraYOffsetRef.current = scrollBounds.max;
+    } else {
+      cameraYOffsetRef.current = Math.max(
+        scrollBounds.min,
+        Math.min(scrollBounds.max, cameraYOffsetRef.current),
+      );
+    }
+  }, [scrollBounds, ROWS]);
 
   // 제스처 훅 (touch + wheel은 내부 addEventListener, pointer만 반환)
   const { onPointerDown, onPointerMove, onPointerUp, isScrollingRef } =

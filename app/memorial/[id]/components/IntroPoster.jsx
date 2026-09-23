@@ -13,8 +13,10 @@ function mediaSrc(item) {
 
 /**
  * 메모리얼 감상 진입 전 인트로 포스터 화면.
- * 세로 순서: 앞면 사진 → 타이틀(이름) → 시작연도~끝연도 → 섭타이틀(부제목) → 좌우명 → 안내 문구.
- * 화면을 터치하면 실제 전시(onEnter)로 넘어간다.
+ * 세로 순서: 앞면 사진 → 타이틀(이름) → 시작연도~끝연도 → 섭타이틀(부제목) → 좌우명 → 안내 문구
+ *           → (선택) 키오스크 모드 시작 버튼.
+ * 화면을 터치하면 실제 전시(onEnter)로 넘어가고, 키오스크 버튼은 onEnterKiosk 로 진입한다.
+ * 루트는 <button> 이 아니라 role="button" div — 안에 실제 <button>(키오스크)을 중첩하기 위함.
  */
 export default function IntroPoster({
   name,
@@ -27,17 +29,28 @@ export default function IntroPoster({
   aspectRatio = "9:16",
   guestbookEnabled = true,
   onEnter,
+  onEnterKiosk = null,
 }) {
   const toneStyle = TONE_STYLES[tone] || TONE_STYLES.dark;
+  const isDark = tone !== "white";
   const frameWrapperStyle = getFrameWrapperStyle(style);
   const frameInner = getFrameInnerProps(style, tone);
   const photoSrc = mediaSrc(profileItem);
   const isPortrait = aspectRatio !== "16:9";
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onEnter}
+      onKeyDown={(e) => {
+        // 안쪽 키오스크 <button>에서 올라온 키 이벤트는 그 버튼의 기본 동작(click)에 맡긴다
+        if (e.target !== e.currentTarget) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onEnter?.();
+        }
+      }}
       className={`relative flex h-screen w-screen cursor-pointer flex-col items-center justify-center overflow-hidden px-[6%] py-[6vh] text-left ${toneStyle.bg}`}
     >
       <div
@@ -100,7 +113,26 @@ export default function IntroPoster({
             : "화면을 터치하여 소중한 삶의 기억을 만나보세요"}
           <ArrowRight className="h-[1.6vh] w-[1.6vh] shrink-0" />
         </p>
+
+        {/* 키오스크 모드 시작 — 포스터 터치와 같은 진입이지만 kiosk 플래그가 켜져
+            새 창으로 여는 외부 링크 탭이 숨겨진다 (돌아올 방법이 없는 이탈 방지) */}
+        {onEnterKiosk && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onEnterKiosk();
+            }}
+            className={`mt-[2.4vh] rounded-full border px-[2.6vh] py-[1.1vh] text-[1.35vh] tracking-wide transition-colors ${
+              isDark
+                ? "border-white/25 text-white/70 hover:border-white/50 hover:text-white"
+                : "border-black/25 text-black/60 hover:border-black/50 hover:text-black"
+            }`}
+          >
+            키오스크 모드로 시작
+          </button>
+        )}
       </div>
-    </button>
+    </div>
   );
 }

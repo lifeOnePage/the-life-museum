@@ -1727,6 +1727,7 @@ const Index = ({ params }) => {
               customTabMode={customTabMode}
               externalLinkUrl={externalLinkUrl}
               externalLinkTitle={externalLinkTitle}
+              bgmUrl={bgmUrl}
               viewUrl={`/${locale}/memorial/${record_id}`}
             />
           ) : (

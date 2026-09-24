@@ -58,6 +58,15 @@ const VHSPreview = dynamic(() => import("./components/VHSPreview"), {
 const WalkPreview = dynamic(() => import("./components/WalkPreview"), {
   ssr: false,
 });
+// 프로토콜이 없는 링크는 https:// 를 붙여 저장·검사 (감상 화면 BottomNavBar 규칙과 동일)
+function normalizeExternalUrl(url) {
+  const trimmed = String(url || "").trim();
+  if (!trimmed) return "";
+  return /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+    ? trimmed
+    : `https://${trimmed}`;
+}
+
 const MemorialPreview = dynamic(() => import("./components/MemorialPreview"), {
   ssr: false,
 });
@@ -127,15 +136,29 @@ const T = {
     recordTypeMemorial: "메모리얼",
     mottoLabel: "모토",
     mottoPlaceholder: "삶의 모토를 입력하세요",
-    customTabTitle: "사용자 지정 탭",
+    customTabTitle: "외부 링크 탭",
     customTabDesc:
-      "외부 링크가 연결되어 있으면 감상 화면 하단 탭으로 보여줘요. 끄면 숨겨져요",
+      "온라인 추모관, 장례식장 안내, 기부 페이지처럼 함께 보여주고 싶은 외부 페이지를 감상 화면 하단 탭으로 연결해요. 링크 주소와 탭 이름을 정하면 방문객이 탭을 눌러 바로 이동할 수 있어요. 끄면 탭이 보이지 않아요",
     customTabLabelField: "탭 이름",
-    customTabLabelPlaceholder: "예: 홈페이지",
+    customTabLabelPlaceholder: "예: 온라인 추모관",
+    customTabUrlField: "링크 주소",
+    customTabUrlPlaceholder: "https://...",
+    customTabModeField: "링크를 여는 방식",
     customTabModeNewtab: "새 창에서 열기",
     customTabModeEmbed: "페이지 안에서 보기",
-    customTabLinked: "연결된 링크",
-    customTabNoLink: "정보 수정에서 외부 링크를 먼저 연결해주세요",
+    customTabNoLink: "링크 주소를 입력하면 감상 화면 하단에 탭이 생겨요",
+    customTabCheckChecking:
+      "이 링크를 페이지 안에서 열 수 있는지 확인하고 있어요…",
+    customTabCheckEmbeddable:
+      "이 링크는 페이지 안에서 바로 볼 수 있어요. 방문객이 감상 화면을 떠나지 않도록 '페이지 안에서 보기'를 추천해요",
+    customTabCheckBlocked:
+      "이 사이트는 자체 보안 정책 때문에 페이지 안에서 열리지 않아요. 새 창으로 여는 방식을 추천해요",
+    customTabCheckUnknown:
+      "링크에 접속하지 못해 페이지 안에서 열리는지 확인할 수 없었어요. 주소를 다시 확인하거나 새 창으로 여는 방식을 권해요",
+    customTabEmbedWarning:
+      "'페이지 안에서 보기'를 선택했지만 이 사이트는 페이지 안에서 열리지 않아 방문객에게 빈 화면이 보일 수 있어요",
+    customTabCheckInvalid:
+      "링크 주소 형식을 확인해주세요 (예: https://example.com)",
     memorialPosterStyle: "포스터 스타일",
     memorialPosterStyleClassic: "클래식",
     memorialPosterStyleGlow: "글로우",
@@ -224,15 +247,29 @@ const T = {
     recordTypeMemorial: "Memorial",
     mottoLabel: "Motto",
     mottoPlaceholder: "Enter a life motto",
-    customTabTitle: "Custom Tab",
+    customTabTitle: "External Link Tab",
     customTabDesc:
-      "Shows the linked external link as a bottom tab on the viewing screen. Turn off to hide it",
+      "Add an external page you want visitors to see, such as an online memorial, funeral information, or a donation page, as a bottom tab on the viewing screen. Enter the link and a tab name, and visitors can jump to it from the tab. Turn off to hide the tab",
     customTabLabelField: "Tab name",
-    customTabLabelPlaceholder: "e.g. Homepage",
+    customTabLabelPlaceholder: "e.g. Online memorial",
+    customTabUrlField: "Link URL",
+    customTabUrlPlaceholder: "https://...",
+    customTabModeField: "How the link opens",
     customTabModeNewtab: "Open in new window",
     customTabModeEmbed: "Show inside the page",
-    customTabLinked: "Linked URL",
-    customTabNoLink: "Connect an external link in Edit Info first",
+    customTabNoLink: "Enter a link URL to add a tab to the viewing screen",
+    customTabCheckChecking:
+      "Checking whether this link can open inside the page…",
+    customTabCheckEmbeddable:
+      "This link can be shown inside the page. We recommend 'Show inside the page' so visitors stay on the memorial",
+    customTabCheckBlocked:
+      "This site blocks being shown inside other pages. We recommend opening it in a new window",
+    customTabCheckUnknown:
+      "We couldn't reach the link to check. Please verify the address, or use 'Open in new window'",
+    customTabEmbedWarning:
+      "'Show inside the page' is selected, but this site cannot be shown inside the page, so visitors may see a blank screen",
+    customTabCheckInvalid:
+      "Please check the link format (e.g. https://example.com)",
     memorialPosterStyle: "Poster Style",
     memorialPosterStyleClassic: "Classic",
     memorialPosterStyleGlow: "Glow",
@@ -499,6 +536,10 @@ const Index = ({ params }) => {
   const [customTabEnabled, setCustomTabEnabled] = useState(true); // 외부 링크 탭은 기본 노출
   const [customTabLabel, setCustomTabLabel] = useState("");
   const [customTabMode, setCustomTabMode] = useState("newtab");
+  // 링크 임베드 가능 여부 검사 (백엔드 /link/embed-check) — status: idle | checking | ok | blocked | unknown
+  const [embedCheck, setEmbedCheck] = useState({ url: "", status: "idle" });
+  // 검사 결과로 열기 방식을 자동 결정한 URL — 같은 URL에 대해 사용자의 수동 선택을 덮어쓰지 않는다
+  const autoModeUrlRef = useRef("");
   const [keywordsExpanded, setKeywordsExpanded] = useState(false);
   const [keywordHelpOpen, setKeywordHelpOpen] = useState(false);
   const [timelineHelpOpen, setTimelineHelpOpen] = useState(true);
@@ -555,6 +596,66 @@ const Index = ({ params }) => {
   const [externalLinkUrl, setExternalLinkUrl] = useState("");
   const [editExternalLinkTitle, setEditExternalLinkTitle] = useState("");
   const [editExternalLinkUrl, setEditExternalLinkUrl] = useState("");
+
+  // 외부 링크 임베드 가능 여부 검사 — 링크 주소가 바뀌면(디바운스) 백엔드에 물어보고,
+  // 새 URL이면 결과에 따라 열기 방식을 자동 결정(가능→페이지 안, 불가/불명→새 창).
+  useEffect(() => {
+    if (recordType !== "memorial" || !customTabEnabled) return undefined;
+    const url = normalizeExternalUrl(externalLinkUrl);
+    const host = url.replace(/^https?:\/\//i, "").split("/")[0];
+    if (!url) {
+      setEmbedCheck({ url: "", status: "idle" });
+      return undefined;
+    }
+    if (!host.includes(".")) {
+      setEmbedCheck({ url, status: "invalid" });
+      return undefined;
+    }
+    // 같은 URL에 확정 결과(ok/blocked/unknown)가 있으면 재검사 안 함.
+    // 'checking'은 취소된 검사가 남긴 상태일 수 있으므로 다시 검사한다
+    if (
+      embedCheck.url === url &&
+      (embedCheck.status === "ok" ||
+        embedCheck.status === "blocked" ||
+        embedCheck.status === "unknown")
+    ) {
+      return undefined;
+    }
+    // 새 URL이면 이전 URL의 판정이 남아 보이지 않도록 바로 "확인 중"으로
+    if (embedCheck.url !== url) setEmbedCheck({ url, status: "checking" });
+    let cancelled = false;
+    const timer = setTimeout(async () => {
+      setEmbedCheck({ url, status: "checking" });
+      let status = "unknown";
+      try {
+        const res = await authedFetch(
+          `https://the-life-museum-backend-production.up.railway.app/api/v1/link/embed-check?url=${encodeURIComponent(url)}`,
+        );
+        const json = await res.json();
+        if (res.ok && json?.data) {
+          status =
+            json.data.embeddable === true
+              ? "ok"
+              : json.data.embeddable === false
+                ? "blocked"
+                : "unknown";
+        }
+      } catch {
+        status = "unknown";
+      }
+      if (cancelled) return;
+      setEmbedCheck({ url, status });
+      if (autoModeUrlRef.current !== url) {
+        autoModeUrlRef.current = url;
+        setCustomTabMode(status === "ok" ? "embed" : "newtab");
+      }
+    }, 700);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordType, customTabEnabled, externalLinkUrl]);
 
   // Stable ID counter for timeline items
   const nextIdRef = useRef(1);
@@ -661,6 +762,9 @@ const Index = ({ params }) => {
           setMyboxUrl(data.myboxUrl || "");
           setExternalLinkTitle(data.externalLinkTitle || "");
           setExternalLinkUrl(data.externalLinkUrl || "");
+          autoModeUrlRef.current = normalizeExternalUrl(
+            data.externalLinkUrl || "",
+          );
           console.log("storyGenCount from GET:", data.storyGenCount);
           if (data.storyGenCount != null) {
             setStoryGenCount(data.storyGenCount);
@@ -730,6 +834,7 @@ const Index = ({ params }) => {
             customTabEnabled: data.customTabEnabled ?? true,
             customTabLabel: data.customTabLabel || "",
             customTabMode: data.customTabMode || "newtab",
+            externalLinkUrl: data.externalLinkUrl || "",
           };
         }
       } catch (error) {
@@ -798,6 +903,10 @@ const Index = ({ params }) => {
           customTabLabel:
             recordType === "memorial" ? customTabLabel : undefined,
           customTabMode: recordType === "memorial" ? customTabMode : undefined,
+          externalLinkUrl:
+            recordType === "memorial"
+              ? normalizeExternalUrl(externalLinkUrl)
+              : undefined,
         }),
       },
     );
@@ -913,7 +1022,9 @@ const Index = ({ params }) => {
       memorialMotto !== initialState.current.memorialMotto ||
       customTabEnabled !== initialState.current.customTabEnabled ||
       customTabLabel !== initialState.current.customTabLabel ||
-      customTabMode !== initialState.current.customTabMode;
+      customTabMode !== initialState.current.customTabMode ||
+      (recordType === "memorial" &&
+        externalLinkUrl !== initialState.current.externalLinkUrl);
 
     if (
       !isCoverDirty &&
@@ -1043,6 +1154,11 @@ const Index = ({ params }) => {
           initialState.current.customTabEnabled = customTabEnabled;
           initialState.current.customTabLabel = customTabLabel;
           initialState.current.customTabMode = customTabMode;
+          if (recordType === "memorial") {
+            const savedUrl = normalizeExternalUrl(externalLinkUrl);
+            setExternalLinkUrl(savedUrl);
+            initialState.current.externalLinkUrl = savedUrl;
+          }
         }
       }
     }
@@ -1149,7 +1265,9 @@ const Index = ({ params }) => {
     memorialMotto !== initialState.current.memorialMotto ||
     customTabEnabled !== initialState.current.customTabEnabled ||
     customTabLabel !== initialState.current.customTabLabel ||
-    customTabMode !== initialState.current.customTabMode;
+    customTabMode !== initialState.current.customTabMode ||
+    (recordType === "memorial" &&
+      externalLinkUrl !== initialState.current.externalLinkUrl);
 
   const handleExit = async () => {
     if (pendingSaveRef.current) {
@@ -1389,6 +1507,7 @@ const Index = ({ params }) => {
       setExternalLinkTitle(editExternalLinkTitle);
       setExternalLinkUrl(finalExternalLinkUrl);
       setEditExternalLinkUrl(finalExternalLinkUrl);
+      initialState.current.externalLinkUrl = finalExternalLinkUrl;
       setShowRecordEditDialog(false);
     } catch (err) {
       setRecordError(err.message);
@@ -1421,6 +1540,11 @@ const Index = ({ params }) => {
     setCustomTabEnabled(s.customTabEnabled ?? true);
     setCustomTabLabel(s.customTabLabel ?? "");
     setCustomTabMode(s.customTabMode ?? "newtab");
+    if (s.externalLinkUrl != null) {
+      setExternalLinkUrl(s.externalLinkUrl);
+      // 복원된 URL의 재검사가 복원된 열기 방식을 덮어쓰지 않도록
+      autoModeUrlRef.current = normalizeExternalUrl(s.externalLinkUrl);
+    }
     setUsedChips(new Set());
   };
 
@@ -1727,6 +1851,7 @@ const Index = ({ params }) => {
               customTabMode={customTabMode}
               externalLinkUrl={externalLinkUrl}
               externalLinkTitle={externalLinkTitle}
+              bgmUrl={bgmUrl}
               viewUrl={`/${locale}/memorial/${record_id}`}
             />
           ) : (
@@ -2531,7 +2656,34 @@ const Index = ({ params }) => {
                                                 className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
                                               />
                                             </div>
-                                            {/* 열기 방식: 새 창 / 페이지 내부 */}
+                                            {/* 링크 주소 — 추모 앨범은 여기서 바로 연결 (정보 수정 다이얼로그와 같은 externalLinkUrl) */}
+                                            <div>
+                                              <label className="mb-1.5 block text-xs font-medium text-[#9b8b7a]">
+                                                {t.customTabUrlField}
+                                              </label>
+                                              <input
+                                                type="url"
+                                                value={externalLinkUrl}
+                                                onChange={(e) =>
+                                                  setExternalLinkUrl(
+                                                    e.target.value,
+                                                  )
+                                                }
+                                                placeholder={
+                                                  t.customTabUrlPlaceholder
+                                                }
+                                                className="focus:border-[#e8d5b7 ] w-full rounded-[5px] border border-white/10 bg-[#2e2720] px-3 py-2 text-sm text-[#e8d5b7] placeholder:text-[#9b8b7a]/60 focus:outline-none"
+                                              />
+                                              {!externalLinkUrl.trim() && (
+                                                <p className="mt-1.5 text-[11px] text-[#9b8b7a]">
+                                                  {t.customTabNoLink}
+                                                </p>
+                                              )}
+                                            </div>
+                                            {/* 열기 방식: 새 창 / 페이지 내부 — 임베드 검사 결과로 기본값 결정 */}
+                                            <label className="-mb-1 block text-xs font-medium text-[#9b8b7a]">
+                                              {t.customTabModeField}
+                                            </label>
                                             <div className="grid grid-cols-2 gap-2">
                                               {[
                                                 {
@@ -2546,11 +2698,16 @@ const Index = ({ params }) => {
                                                 <button
                                                   key={option.value}
                                                   type="button"
-                                                  onClick={() =>
+                                                  onClick={() => {
                                                     setCustomTabMode(
                                                       option.value,
-                                                    )
-                                                  }
+                                                    );
+                                                    // 사용자가 직접 고른 선택은 진행 중인 검사 결과가 덮어쓰지 않는다
+                                                    autoModeUrlRef.current =
+                                                      normalizeExternalUrl(
+                                                        externalLinkUrl,
+                                                      );
+                                                  }}
                                                   className={`rounded-lg border px-3 py-2 text-xs transition-colors ${
                                                     customTabMode ===
                                                     option.value
@@ -2562,17 +2719,40 @@ const Index = ({ params }) => {
                                                 </button>
                                               ))}
                                             </div>
-                                            {/* 연결된 링크 안내 (URL은 정보 수정 다이얼로그의 외부 링크) */}
-                                            {externalLinkUrl ? (
-                                              <p className="truncate text-[11px] text-[#9b8b7a]">
-                                                {t.customTabLinked}:{" "}
-                                                <span className="text-[#e8d5b7]/80">
-                                                  {externalLinkUrl}
-                                                </span>
+                                            {/* 임베드 가능 여부 안내 — 옵션 선택과 함께 보여준다 */}
+                                            {embedCheck.status ===
+                                              "checking" && (
+                                              <p className="text-[11px] text-[#9b8b7a]">
+                                                {t.customTabCheckChecking}
                                               </p>
-                                            ) : (
+                                            )}
+                                            {embedCheck.status === "ok" && (
+                                              <p className="text-[11px] text-emerald-300/90">
+                                                {t.customTabCheckEmbeddable}
+                                              </p>
+                                            )}
+                                            {embedCheck.status === "blocked" &&
+                                              customTabMode !== "embed" && (
+                                                <p className="text-[11px] text-[#9b8b7a]">
+                                                  {t.customTabCheckBlocked}
+                                                </p>
+                                              )}
+                                            {embedCheck.status === "blocked" &&
+                                              customTabMode === "embed" && (
+                                                <p className="text-[11px] text-amber-400/90">
+                                                  {t.customTabEmbedWarning}
+                                                </p>
+                                              )}
+                                            {embedCheck.status ===
+                                              "unknown" && (
                                               <p className="text-[11px] text-amber-400/90">
-                                                {t.customTabNoLink}
+                                                {t.customTabCheckUnknown}
+                                              </p>
+                                            )}
+                                            {embedCheck.status ===
+                                              "invalid" && (
+                                              <p className="text-[11px] text-amber-400/90">
+                                                {t.customTabCheckInvalid}
                                               </p>
                                             )}
                                           </div>

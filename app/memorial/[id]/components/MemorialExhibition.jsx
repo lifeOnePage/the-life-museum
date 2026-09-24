@@ -19,6 +19,9 @@ export default function MemorialExhibition({ recordId, preview = false }) {
   const { data, loading, error, mediaLoading } = useRecordData(recordId);
   const [introDismissed, setIntroDismissed] = useState(false);
   const [activeTab, setActiveTab] = useState("home");
+  // 키오스크 모드 — 인트로의 "키오스크 모드로 시작" 버튼으로 진입. 다른 사이트로
+  // 이탈하면 돌아올 방법이 없으므로 새 창으로 여는 링크 탭·버튼을 숨긴다
+  const [kiosk, setKiosk] = useState(false);
 
   // 편집 화면 iframe 임베드(preview) 모드 — 저장 전 편집 상태(제목·부제·
   // 포스터 설정·커버)를 부모 창의 postMessage로 받아 즉시 반영한다.
@@ -56,26 +59,37 @@ export default function MemorialExhibition({ recordId, preview = false }) {
   // 사용자 지정 링크 탭 — 외부 링크(기존 externalLinkUrl)가 있으면 기본으로 하단 탭에
   // 노출하고, 편집 화면에서 끈 경우(customTabEnabled=false)에만 숨긴다.
   // 라벨은 customTabLabel → externalLinkTitle → "링크" 순으로 폴백.
+  // 키오스크 모드에서는 "새 창으로 열기" 탭을 아예 숨긴다 (페이지 안에서 보기는 유지).
   const customTab = useMemo(() => {
     const enabled = ov.customTabEnabled ?? data?.customTabEnabled ?? true;
     const rawUrl = ov.externalLinkUrl ?? data?.externalLinkUrl;
     if (!enabled || !rawUrl) return null;
+    const mode = (ov.customTabMode ?? data?.customTabMode) || "newtab";
+    if (kiosk && mode === "newtab") return null;
     return {
       label:
         (ov.customTabLabel ?? data?.customTabLabel) ||
         (ov.externalLinkTitle ?? data?.externalLinkTitle) ||
         "링크",
       url: normalizeExternalUrl(rawUrl),
-      mode: (ov.customTabMode ?? data?.customTabMode) || "newtab",
+      mode,
     };
   }, [
     data,
+    kiosk,
     ov.customTabEnabled,
     ov.externalLinkUrl,
     ov.customTabLabel,
     ov.externalLinkTitle,
     ov.customTabMode,
   ]);
+
+  // 인트로에서 전시로 진입 — 포스터 터치(일반) / 키오스크 버튼(kiosk) 공용
+  const enterExhibition = useCallback((kioskMode = false) => {
+    setKiosk(kioskMode);
+    setIntroDismissed(true);
+    setActiveTab("story");
+  }, []);
 
   // 방명록이 꺼진 상태에서 방명록 탭에 남아있지 않도록 (프리뷰 실시간 토글 대응)
   useEffect(() => {
@@ -89,12 +103,19 @@ export default function MemorialExhibition({ recordId, preview = false }) {
     }
   }, [customTab, activeTab]);
 
-  const bgmUrl = data?.bgmUrl || data?.bgm || null;
+  // BGM URL — 편집 프리뷰는 저장 전 선택값(null 이면 "없음")을 오버라이드로 받는다
+  const bgmUrl = Object.prototype.hasOwnProperty.call(ov, "bgmUrl")
+    ? ov.bgmUrl || null
+    : data?.bgmUrl || data?.bgm || null;
   const { isMuted, toggleMute, startBGM, setBgmPlaying, hasBgm, bgmStarted } =
     useBGM(bgmUrl);
   // 사용자가 재생/정지 버튼으로 고른 상태 (useBGM 은 isPlaying 을 ref 로만 갖고 있어 별도 보관)
   const [bgmPlaying, setBgmPlayingState] = useState(false);
   const isBgmPlaying = bgmStarted && bgmPlaying && !isMuted;
+  // URL 이 바뀌면(프리뷰에서 곡 변경) 새 오디오는 정지 상태 — 버튼도 "재생"으로 되돌린다
+  useEffect(() => {
+    setBgmPlayingState(false);
+  }, [bgmUrl]);
 
   // 재생/정지 토글 — 아직 시작 전이면 제스처 안에서 시작, 음소거면 해제, 그 외 pause/resume
   const handleBgmToggle = useCallback(() => {
@@ -236,8 +257,8 @@ export default function MemorialExhibition({ recordId, preview = false }) {
   }
 
   if (!introDismissed) {
-    // IntroPoster 루트가 <button> 이라 BGM 버튼을 안에 중첩할 수 없음 —
-    // 형제 오버레이로 얹고 BgmToggle 이 클릭 전파를 막아 onEnter 가 같이 발동하지 않게 한다
+    // BGM 버튼은 포스터 위 형제 오버레이 — BgmToggle 이 클릭 전파를 막아 onEnter 가
+    // 같이 발동하지 않는다. 편집 미리보기에서도 노출해 저장 전 곡을 들어볼 수 있게 한다
     return (
       <div className="relative h-screen w-screen overflow-hidden bg-black">
         <IntroPoster
@@ -250,13 +271,11 @@ export default function MemorialExhibition({ recordId, preview = false }) {
           tone={posterTone}
           aspectRatio={posterRatio}
           guestbookEnabled={guestbookEnabled}
-          onEnter={() => {
-            // 인트로 터치 → 바로 스토리 탭으로 (홈 포스터를 한 번 더 거치지 않음)
-            setIntroDismissed(true);
-            setActiveTab("story");
-          }}
+          // 인트로 터치 → 바로 스토리 탭으로 (홈 포스터를 한 번 더 거치지 않음)
+          onEnter={() => enterExhibition(false)}
+          onEnterKiosk={() => enterExhibition(true)}
         />
-        {hasBgm && !preview && (
+        {hasBgm && (
           <BgmToggle
             isPlaying={isBgmPlaying}
             onToggle={handleBgmToggle}
@@ -281,6 +300,8 @@ export default function MemorialExhibition({ recordId, preview = false }) {
           aspectRatio={posterRatio}
           guestbookEnabled={guestbookEnabled}
           onEnter={() => setActiveTab("story")}
+          // 홈 탭에서도 키오스크 모드로 전환 가능 (이미 키오스크면 버튼 숨김)
+          onEnterKiosk={kiosk ? null : () => enterExhibition(true)}
         />
       )}
 
@@ -317,6 +338,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
           label={customTab.label}
           url={customTab.url}
           tone={posterTone}
+          allowNewWindow={!kiosk}
         />
       )}
 
@@ -327,7 +349,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
         customTab={customTab}
       />
 
-      {/* 컨트롤: 뒤로가기 / BGM 재생·정지 — 편집 미리보기에선 숨김 */}
+      {/* 컨트롤: 뒤로가기(편집 미리보기에선 숨김) / BGM 재생·정지(미리보기에서도 노출) */}
       {!preview && (
         <button
           onClick={handleExit}
@@ -337,7 +359,7 @@ export default function MemorialExhibition({ recordId, preview = false }) {
           나가기
         </button>
       )}
-      {hasBgm && !preview && (
+      {hasBgm && (
         <BgmToggle
           isPlaying={isBgmPlaying}
           onToggle={handleBgmToggle}

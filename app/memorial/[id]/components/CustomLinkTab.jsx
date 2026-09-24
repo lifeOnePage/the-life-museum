@@ -8,7 +8,12 @@ import { TONE_STYLES } from "./introPosterStyles";
  * 상단 슬림 바에 탭 라벨 + "새 창에서 열기" 버튼, 그 아래 iframe.
  * X-Frame-Options / CSP 로 임베드를 막는 사이트는 빈 화면으로 보일 수 있어 안내 문구를 둔다.
  */
-export default function CustomLinkTab({ label, url, tone = "dark" }) {
+export default function CustomLinkTab({
+  label,
+  url,
+  tone = "dark",
+  allowNewWindow = true, // 키오스크 모드에선 false — 새 창으로 이탈하면 돌아올 방법이 없다
+}) {
   const toneStyle = TONE_STYLES[tone] || TONE_STYLES.dark;
   const isDark = tone !== "white";
   const navClearance = "calc(8vh + env(safe-area-inset-bottom))";
@@ -31,18 +36,19 @@ export default function CustomLinkTab({ label, url, tone = "dark" }) {
         <span className="truncate text-[1.6vh] font-medium tracking-wide">
           {label}
         </span>
-        <button
-          type="button"
-          onClick={openInNewTab}
-          className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[1.3vh] transition-colors ${
-            isDark
-              ? "bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
-              : "bg-black/10 text-black/70 hover:bg-black/15 hover:text-black"
-          }`}
-        >
-          <ExternalLink size={12} />
-          새 창에서 열기
-        </button>
+        {allowNewWindow && (
+          <button
+            type="button"
+            onClick={openInNewTab}
+            className={`flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[1.3vh] transition-colors ${
+              isDark
+                ? "bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
+                : "bg-black/10 text-black/70 hover:bg-black/15 hover:text-black"
+            }`}
+          >
+            <ExternalLink size={12} />새 창에서 열기
+          </button>
+        )}
       </div>
       <p
         className={`shrink-0 py-[0.8vh] text-center text-[1.25vh] tracking-wide ${toneStyle.hintText}`}
@@ -57,7 +63,12 @@ export default function CustomLinkTab({ label, url, tone = "dark" }) {
           src={url}
           title={label}
           className="h-full w-full border-0"
-          sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+          // 키오스크에선 임베드된 사이트가 새 창을 띄우는 경로(allow-popups)도 막는다
+          sandbox={
+            allowNewWindow
+              ? "allow-scripts allow-same-origin allow-popups allow-forms"
+              : "allow-scripts allow-same-origin allow-forms"
+          }
           referrerPolicy="no-referrer"
           loading="lazy"
         />

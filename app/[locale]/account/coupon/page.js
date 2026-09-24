@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
-import { getPlatform } from "@/app/utils/platform";
 import { useCouponWallet } from "../CouponContext";
 import { T, BASE_URL, getStoredLocale, formatPrice } from "../shared";
 
@@ -19,12 +18,6 @@ export default function AccountCouponPage() {
     setCurrentLocale(getStoredLocale());
   }, []);
   const t = T[currentLocale] || T.ko;
-
-  // 네이티브 Android 앱에선 쿠폰 UI 자체를 숨긴다 (Play 심사 대응).
-  const [showPurchase, setShowPurchase] = useState(true);
-  useEffect(() => {
-    setShowPurchase(getPlatform() !== "android");
-  }, []);
 
   const [saveCouponCode, setSaveCouponCode] = useState("");
   const [saveCouponValidating, setSaveCouponValidating] = useState(false);
@@ -91,8 +84,6 @@ export default function AccountCouponPage() {
   const handleApplySavedCoupon = (coupon) => {
     setCouponDiscount(coupon);
   };
-
-  if (!showPurchase) return null;
 
   return (
     <div>

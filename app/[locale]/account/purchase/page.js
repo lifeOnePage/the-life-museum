@@ -6,7 +6,6 @@ import { useAuth } from "@/app/contexts/AuthContext";
 import { authedFetch } from "@/app/utils/authedFetch";
 import { requestCreditPurchase, applyCouponDiscount } from "@/app/utils/payment";
 import LegalModal from "@/app/components/LegalModal";
-import { getPlatform } from "@/app/utils/platform";
 import { useCouponWallet } from "../CouponContext";
 import { T, BASE_URL, CREDIT_PACKAGES, getStoredLocale, formatPrice } from "../shared";
 
@@ -19,12 +18,6 @@ export default function AccountPurchasePage() {
     setCurrentLocale(getStoredLocale());
   }, []);
   const t = T[currentLocale] || T.ko;
-
-  // 네이티브 Android 앱에선 결제 UI 자체를 숨긴다 (Play 심사 대응).
-  const [showPurchase, setShowPurchase] = useState(true);
-  useEffect(() => {
-    setShowPurchase(getPlatform() !== "android");
-  }, []);
 
   const [chargeCouponOpen, setChargeCouponOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState(CREDIT_PACKAGES[1]?.key);
@@ -98,8 +91,6 @@ export default function AccountPurchasePage() {
   const selectedPkg = CREDIT_PACKAGES.find((p) => p.key === selectedPackage);
 
   const ownedCredits = user?.credits ?? 0;
-
-  if (!showPurchase) return null;
 
   return (
     <div>

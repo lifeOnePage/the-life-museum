@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import AppName from "@/app/components/AppName";
 import Footer from "@/app/components/Footer";
-import { getPlatform } from "@/app/utils/platform";
 import { CouponProvider } from "./CouponContext";
 import {
   T,
@@ -34,12 +33,6 @@ export default function AccountLayout({ children }) {
     setCurrentLocale(getStoredLocale());
   }, []);
 
-  // 네이티브 Android 앱에서는 결제/쿠폰 메뉴 자체를 숨긴다 (Play 심사 대응).
-  const [showPurchase, setShowPurchase] = useState(true);
-  useEffect(() => {
-    setShowPurchase(getPlatform() !== "android");
-  }, []);
-
   const activeSection = sectionFromPathname(pathname);
 
   const MENU = [
@@ -49,28 +42,24 @@ export default function AccountLayout({ children }) {
       icon: <IconProfile />,
       href: `/${currentLocale}/account/profile`,
     },
-    ...(showPurchase
-      ? [
-          {
-            key: "plan",
-            label: t.plan,
-            children: [
-              {
-                key: "charge",
-                label: t.charge,
-                icon: <IconCredits />,
-                href: `/${currentLocale}/account/purchase`,
-              },
-              {
-                key: "coupon",
-                label: t.coupon,
-                icon: <IconCoupon />,
-                href: `/${currentLocale}/account/coupon`,
-              },
-            ],
-          },
-        ]
-      : []),
+    {
+      key: "plan",
+      label: t.plan,
+      children: [
+        {
+          key: "charge",
+          label: t.charge,
+          icon: <IconCredits />,
+          href: `/${currentLocale}/account/purchase`,
+        },
+        {
+          key: "coupon",
+          label: t.coupon,
+          icon: <IconCoupon />,
+          href: `/${currentLocale}/account/coupon`,
+        },
+      ],
+    },
   ];
 
   const handleNav = (href) => {

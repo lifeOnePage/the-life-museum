@@ -19,6 +19,7 @@ import { CSS } from "@dnd-kit/utilities";
 import {
   ArrowRight,
   ChevronLeft,
+  ChevronDown,
   Check,
   Plus,
   X,
@@ -60,7 +61,7 @@ const C = {
   danger: "#a13f3f",
 };
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 7;
 
 // ─────────────────────────────────────────────
 // Shared primitives
@@ -122,6 +123,40 @@ function SecondaryBtn({ onClick, children, icon }) {
   );
 }
 
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      onClick={() => onChange(!checked)}
+      aria-pressed={checked}
+      style={{
+        width: 48,
+        height: 28,
+        borderRadius: 999,
+        border: "none",
+        background: checked ? C.accent : C.divider,
+        position: "relative",
+        cursor: "pointer",
+        flexShrink: 0,
+        transition: "background 0.2s",
+      }}
+    >
+      <span
+        style={{
+          position: "absolute",
+          top: 3,
+          left: checked ? 23 : 3,
+          width: 22,
+          height: 22,
+          borderRadius: "50%",
+          background: "#fff",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
+          transition: "left 0.2s",
+        }}
+      />
+    </button>
+  );
+}
+
 function Chip({ onClick, children, active }) {
   return (
     <button
@@ -164,7 +199,7 @@ function PageTitle({ children }) {
   return (
     <h2
       style={{
-        fontSize: 30,
+        fontSize: 34,
         fontWeight: 800,
         color: C.textPrimary,
         lineHeight: 1.3,
@@ -180,7 +215,7 @@ function PageSub({ children }) {
   return (
     <p
       style={{
-        fontSize: 16,
+        fontSize: 18,
         color: C.textSecondary,
         lineHeight: 1.7,
         marginTop: 8,
@@ -304,7 +339,7 @@ function Step0({ onNext }) {
         </span>
         <h1
           style={{
-            fontSize: 30,
+            fontSize: 34,
             fontWeight: 800,
             color: C.textPrimary,
             lineHeight: 1.35,
@@ -312,10 +347,9 @@ function Step0({ onNext }) {
             margin: 0,
           }}
         >
-          살아온 날들을
-          <br />한 권의 <span style={{ color: C.accent }}>앨범</span>에
+          당신의 이야기를,
           <br />
-          담아보세요
+          영원한 <span style={{ color: C.accent }}>기억</span>으로
         </h1>
         <p
           style={{
@@ -346,11 +380,57 @@ function Step0({ onNext }) {
           alt="예시 앨범"
           style={{
             width: "100%",
-            aspectRatio: "1176 / 1337",
+            height: 280,
             objectFit: "cover",
+            objectPosition: "center 30%",
             display: "block",
           }}
         />
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 0 }}>
+        {[
+          {
+            src: "/simple/ai.png",
+            title: "AI가 이야기를 대신 써드려요",
+          },
+          {
+            src: "/simple/timeline.png",
+            title: "인생의 순간들을 타임라인으로",
+          },
+          {
+            src: "/simple/story.png",
+            title: "사진과 글이 하나의 이야기로",
+          },
+        ].map((f, i, arr) => (
+          <div
+            key={f.title}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 16,
+              padding: "16px 0",
+              borderBottom:
+                i < arr.length - 1 ? `1px solid ${C.divider}` : "none",
+            }}
+          >
+            <img
+              src={f.src}
+              alt=""
+              style={{ width: 88, height: 88, flexShrink: 0 }}
+            />
+            <p
+              style={{
+                fontSize: 17,
+                fontWeight: 700,
+                color: C.textPrimary,
+                letterSpacing: "-0.3px",
+              }}
+            >
+              {f.title}
+            </p>
+          </div>
+        ))}
       </div>
 
       <button
@@ -373,7 +453,7 @@ function Step0({ onNext }) {
           boxShadow: "0 10px 24px rgba(108,100,89,0.35)",
         }}
       >
-        앨범 만들기 시작
+        기억 만들기 시작
         <ArrowRight size={20} strokeWidth={2} />
       </button>
     </div>
@@ -386,14 +466,14 @@ function Step0({ onNext }) {
 const REG_FIELDS = [
   {
     key: "name",
-    icon: <User size={18} strokeWidth={1.5} />,
+    icon: <User size={20} strokeWidth={1.5} />,
     question: "성함이 어떻게 되세요?",
     hint: "앨범 표지에 이름이 들어가요",
     placeholder: "예: 홍길동",
   },
   {
     key: "birth",
-    icon: <Calendar size={18} strokeWidth={1.5} />,
+    icon: <Calendar size={20} strokeWidth={1.5} />,
     question: "생년월일을 알려주세요",
     hint: "숫자 8자리로 입력해주세요",
     placeholder: "예: 19501015",
@@ -401,7 +481,7 @@ const REG_FIELDS = [
   },
   {
     key: "phone",
-    icon: <Phone size={18} strokeWidth={1.5} />,
+    icon: <Phone size={20} strokeWidth={1.5} />,
     question: "핸드폰 번호를 알려주세요",
     hint: "완성된 앨범을 보내드릴게요",
     placeholder: "010-0000-0000",
@@ -539,7 +619,6 @@ function Step1({ onNext, info, setInfo, backRef }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 40 }}>
       <div>
-        <StepLabel>당신에 대해서</StepLabel>
         <PageTitle>
           당신에 대해서
           <br />
@@ -616,7 +695,7 @@ function Step1({ onNext, info, setInfo, backRef }) {
             }}
           >
             <span style={{ color: C.accent }}>{field.icon}</span>
-            <span style={{ fontSize: 13, color: C.textMuted }}>
+            <span style={{ fontSize: 15, color: C.textMuted }}>
               {field.hint}
             </span>
           </div>
@@ -1121,11 +1200,28 @@ function Step2({
   setStage,
 }) {
   const MIN = 3;
+  const MAX_MILESTONES = 10;
   const [cur, setCur] = useState(0);
   const [questions, setQuestions] = useState([...MAIN_QUESTIONS]);
   const [showAlt, setShowAlt] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const [draftYear, setDraftYear] = useState("");
+  const [draftEvent, setDraftEvent] = useState("");
+  const eventRef = useRef(null);
+
+  function addMilestone() {
+    if (!draftYear.trim() || !draftEvent.trim()) return;
+    const newId = Math.max(0, ...milestones.map((m) => m.id)) + 1;
+    setMilestones([
+      ...milestones,
+      { id: newId, year: draftYear.trim(), event: draftEvent.trim() },
+    ]);
+    setDraftYear("");
+    setDraftEvent("");
+    setAdding(false);
+  }
 
   useEffect(() => {
     if (!backRef) return;
@@ -1134,7 +1230,11 @@ function Step2({
     } else if (stage === "review") {
       backRef.current = () => {
         setStage("question");
-        setCur(questions.length - 1);
+        let lastAnswered = 0;
+        milestones.forEach((m, i) => {
+          if (m.year && m.event && i < questions.length) lastAnswered = i;
+        });
+        setCur(lastAnswered);
       };
     } else if (stage === "question" && cur > 0) {
       backRef.current = () => setCur((c) => c - 1);
@@ -1146,12 +1246,20 @@ function Step2({
     return () => {
       backRef.current = null;
     };
-  }, [backRef, stage, cur, showAlt, questions.length]);
+  }, [backRef, stage, cur, showAlt, questions.length, milestones]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
   );
 
   const m = milestones[cur] || { year: "", event: "" };
+
+  useEffect(() => {
+    const el = eventRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [m.event, cur]);
+
   const filled = milestones.filter((x) => x.year && x.event);
   const currentOk = m.year.trim() && m.event.trim();
   const canFinish = filled.length >= MIN;
@@ -1229,96 +1337,93 @@ function Step2({
   // ── Stage: intro ──
   if (stage === "intro") {
     content = (
-      <div
-        style={{
-          position: "relative",
-          margin: "-32px -24px 0",
-          minHeight: "calc(100dvh - 130px)",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
-        <img
-          src="/simple/simplegallery.png"
-          alt="인생 갤러리 예시"
-          style={{
-            position: "absolute",
-            inset: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
+      <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+        <div>
+          <StepLabel>타임라인</StepLabel>
+          <PageTitle>
+            이번 단계는
+            <br />
+            타임라인을 만드는 단계예요
+          </PageTitle>
+          <PageSub>
+            연도와 있었던 일을 편하게 적어주시면 돼요.
+            <br />
+            정확한 날짜가 아니어도, 마이크로 말씀하셔도 괜찮아요.
+          </PageSub>
+        </div>
+
         <div
           style={{
-            position: "absolute",
-            inset: 0,
-            background:
-              "linear-gradient(180deg, rgba(42,42,42,0.55) 0%, rgba(42,42,42,0.25) 35%, rgba(42,42,42,0.75) 100%)",
-          }}
-        />
-        <div
-          style={{
-            position: "relative",
-            flex: 1,
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-between",
-            padding: "40px 24px 32px",
+            padding: "28px 20px",
+            borderRadius: 20,
+            background: C.raised,
           }}
         >
-          <div>
-            <h2
+          <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+            <p
               style={{
-                fontSize: 30,
-                fontWeight: 800,
-                color: "#fff",
-                lineHeight: 1.3,
-                letterSpacing: "-0.8px",
+                fontSize: 17,
+                fontWeight: 700,
+                color: C.textPrimary,
+                letterSpacing: "-0.3px",
+                lineHeight: 1.4,
                 margin: 0,
               }}
             >
-              기억에 남는
-              <br />
-              순간들을 알려주세요
-            </h2>
-            <p
-              style={{
-                fontSize: 19,
-                fontWeight: 700,
-                color: "#EEDDC4",
-                letterSpacing: "-0.3px",
-                lineHeight: 1.4,
-                marginTop: 16,
-              }}
-            >
-              지금 제일 생각나는 순간은 언제인가요?
+              Q. 지금 제일 생각나는 순간은 언제인가요?
             </p>
+            <div>
+              <div
+                style={{
+                  fontSize: 20,
+                  fontWeight: 500,
+                  padding: "10px 0",
+                  color: C.textSecondary,
+                  borderBottom: `2px solid ${C.accent}`,
+                }}
+              >
+                2002년 쯤
+              </div>
+            </div>
+            <div style={{ position: "relative" }}>
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 400,
+                  padding: "10px 56px 10px 0",
+                  color: C.textSecondary,
+                  borderBottom: `2px solid ${C.accent}`,
+                  lineHeight: 1.7,
+                }}
+              >
+                첫 아이가 태어난 날
+              </div>
+              <span
+                style={{
+                  position: "absolute",
+                  right: 0,
+                  bottom: 4,
+                  width: 40,
+                  height: 40,
+                  borderRadius: "50%",
+                  background: C.accent,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Mic size={18} strokeWidth={2} color="#fff" />
+              </span>
+            </div>
           </div>
-          <button
-            onClick={() => setStage("question")}
-            style={{
-              width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-              padding: "18px 28px",
-              borderRadius: 16,
-              fontSize: 18,
-              fontWeight: 700,
-              background: "#fff",
-              color: C.accent,
-              border: "none",
-              cursor: "pointer",
-              letterSpacing: "-0.3px",
-              boxShadow: "0 10px 24px rgba(0,0,0,0.35)",
-            }}
-          >
-            이제 시작하기
-            <ArrowRight size={20} strokeWidth={2} />
-          </button>
         </div>
+
+        <PrimaryBtn
+          onClick={() => setStage("question")}
+          icon={<ArrowRight size={20} strokeWidth={2} />}
+        >
+          시작하기
+        </PrimaryBtn>
       </div>
     );
   } else if (stage === "review") {
@@ -1371,6 +1476,96 @@ function Step2({
             </div>
           </SortableContext>
         </DndContext>
+
+        {filled.length < MAX_MILESTONES &&
+          (adding ? (
+            <div
+              style={{
+                padding: "16px",
+                borderRadius: 16,
+                background: C.raised,
+                display: "flex",
+                flexDirection: "column",
+                gap: 14,
+              }}
+            >
+              <input
+                autoFocus
+                value={draftYear}
+                onChange={(e) => setDraftYear(e.target.value)}
+                placeholder="예: 1985년 쯤"
+                className="w-full outline-none"
+                style={{
+                  fontSize: 18,
+                  fontWeight: 600,
+                  padding: "10px 0",
+                  background: "transparent",
+                  color: C.textPrimary,
+                  border: "none",
+                  borderBottom: `1.5px solid ${C.divider}`,
+                  width: "100%",
+                  display: "block",
+                }}
+              />
+              <textarea
+                value={draftEvent}
+                onChange={(e) => setDraftEvent(e.target.value)}
+                placeholder="어떤 일이 있었나요?"
+                rows={2}
+                className="w-full outline-none resize-none"
+                style={{
+                  fontSize: 16,
+                  padding: "10px 0",
+                  background: "transparent",
+                  color: C.textPrimary,
+                  border: "none",
+                  borderBottom: `1.5px solid ${C.divider}`,
+                  width: "100%",
+                  display: "block",
+                  lineHeight: 1.6,
+                }}
+              />
+              <div style={{ display: "flex", gap: 10 }}>
+                <SecondaryBtn
+                  onClick={() => {
+                    setAdding(false);
+                    setDraftYear("");
+                    setDraftEvent("");
+                  }}
+                >
+                  취소
+                </SecondaryBtn>
+                <PrimaryBtn
+                  onClick={addMilestone}
+                  disabled={!draftYear.trim() || !draftEvent.trim()}
+                >
+                  추가하기
+                </PrimaryBtn>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setAdding(true)}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 8,
+                padding: "14px",
+                borderRadius: 16,
+                background: "transparent",
+                border: `1.5px dashed ${C.divider}`,
+                color: C.textSecondary,
+                fontSize: 15,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              <Plus size={16} strokeWidth={2} />
+              순간 추가하기 ({filled.length}/{MAX_MILESTONES})
+            </button>
+          ))}
+
         <PrimaryBtn
           onClick={onNext}
           icon={<ArrowRight size={20} strokeWidth={2} />}
@@ -1417,7 +1612,7 @@ function Step2({
           <div>
             <p
               style={{
-                fontSize: 24,
+                fontSize: 27,
                 fontWeight: 700,
                 color: C.textPrimary,
                 letterSpacing: "-0.4px",
@@ -1503,11 +1698,12 @@ function Step2({
             <div>
               <div style={{ position: "relative" }}>
                 <textarea
+                  ref={eventRef}
                   id={`event-${cur}`}
-                  placeholder="간단하게 적어주세요 (오른쪽 마이크를 눌러 말씀하셔도 돼요)"
+                  placeholder="간단하게 적어주세요"
                   value={m.event}
                   onChange={(e) => upd("event", e.target.value)}
-                  rows={3}
+                  rows={1}
                   className="w-full resize-none outline-none"
                   style={{
                     fontSize: 18,
@@ -1520,6 +1716,7 @@ function Step2({
                     lineHeight: 1.7,
                     width: "100%",
                     display: "block",
+                    overflow: "hidden",
                   }}
                   onFocus={(e) =>
                     (e.currentTarget.style.borderBottomColor = C.accent)
@@ -1560,19 +1757,30 @@ function Step2({
 
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {canFinish && !isLast ? (
-              <div style={{ display: "flex", gap: 10 }}>
-                <div style={{ flex: 1 }}>
-                  <SecondaryBtn onClick={advance}>다음</SecondaryBtn>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <PrimaryBtn
-                    onClick={() => setStage("review")}
-                    icon={<ArrowRight size={20} strokeWidth={2} />}
-                  >
-                    완성하기 ({filled.length}개)
-                  </PrimaryBtn>
-                </div>
-              </div>
+              <>
+                <PrimaryBtn
+                  onClick={advance}
+                  icon={<ArrowRight size={20} strokeWidth={2} />}
+                >
+                  다음
+                </PrimaryBtn>
+                <button
+                  onClick={() => setStage("review")}
+                  style={{
+                    width: "100%",
+                    padding: "16px 24px",
+                    borderRadius: 14,
+                    fontSize: 16,
+                    fontWeight: 600,
+                    background: C.accentSubtle,
+                    color: C.accent,
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  여기서 완성하기 ({filled.length}개)
+                </button>
+              </>
             ) : (
               <PrimaryBtn
                 onClick={advance}
@@ -1826,7 +2034,7 @@ function Step3({ onNext, info, milestones, story, setStory }) {
             onClick={onNext}
             icon={<ArrowRight size={20} strokeWidth={2} />}
           >
-            사진 넣기
+            다음 단계로
           </PrimaryBtn>
           {!editing &&
             (regenCount < MAX_REGENERATIONS ? (
@@ -1861,11 +2069,24 @@ function Step3({ onNext, info, milestones, story, setStory }) {
 // ─────────────────────────────────────────────
 // Step 4 — Photos + Cover
 // ─────────────────────────────────────────────
-function Step4({ onNext, photos, setPhotos, coverIdx, setCoverIdx }) {
-  const MIN = 5,
-    MAX = 20;
+function Step4({ onNext, photos, setPhotos, coverIdx, setCoverIdx, backRef }) {
+  const MAX = 20;
   const fileRef = useRef(null);
-  const valid = photos.length >= MIN;
+  const valid = photos.length > 0;
+  const [stage, setStage] = useState("intro");
+
+  useEffect(() => {
+    if (!backRef) return;
+    if (stage === "upload") {
+      backRef.current = () => setStage("intro");
+    } else {
+      backRef.current = null;
+    }
+    return () => {
+      backRef.current = null;
+    };
+  }, [backRef, stage]);
+
   function handleFiles(files) {
     if (!files) return;
     Array.from(files).forEach((file) => {
@@ -1877,6 +2098,33 @@ function Step4({ onNext, photos, setPhotos, coverIdx, setCoverIdx }) {
       r.readAsDataURL(file);
     });
   }
+
+  if (stage === "intro") {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+        <div>
+          <StepLabel>사진 넣기</StepLabel>
+          <PageTitle>
+            이번 단계는
+            <br />
+            사진을 넣는 단계예요
+          </PageTitle>
+          <PageSub>
+            가지고 계신 사진 중에서 편하게 골라주세요.
+            <br />
+            몇 장이든 괜찮고, 나중에 더 추가하실 수도 있어요.
+          </PageSub>
+        </div>
+        <PrimaryBtn
+          onClick={() => setStage("upload")}
+          icon={<ArrowRight size={20} strokeWidth={2} />}
+        >
+          시작하기
+        </PrimaryBtn>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
       <div>
@@ -1886,7 +2134,6 @@ function Step4({ onNext, photos, setPhotos, coverIdx, setCoverIdx }) {
           <br />
           넣어주세요
         </PageTitle>
-        <PageSub>별표를 눌러 표지 사진을 선택하세요</PageSub>
       </div>
       <button
         onClick={() => fileRef.current?.click()}
@@ -1913,10 +2160,10 @@ function Step4({ onNext, photos, setPhotos, coverIdx, setCoverIdx }) {
         <Camera size={34} color={C.accent} strokeWidth={1.25} />
         <div style={{ textAlign: "center" }}>
           <p style={{ fontSize: 17, fontWeight: 700, color: C.textPrimary }}>
-            사진 선택하기
+            여기를 눌러 사진을 골라주세요
           </p>
           <p style={{ fontSize: 13, color: C.textMuted, marginTop: 4 }}>
-            갤러리에서 여러 장 선택 가능
+            갤러리가 열리면 여러 장을 한 번에 고르실 수 있어요
           </p>
         </div>
       </button>
@@ -1928,42 +2175,11 @@ function Step4({ onNext, photos, setPhotos, coverIdx, setCoverIdx }) {
         className="hidden"
         onChange={(e) => handleFiles(e.target.files)}
       />
-      <div>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: 8,
-          }}
-        >
-          <span
-            style={{ fontSize: 14, color: C.textSecondary, fontWeight: 600 }}
-          >
-            {photos.length}장 선택됨
-          </span>
-          <span style={{ fontSize: 14, color: valid ? C.accent : C.textMuted }}>
-            {valid ? "준비 완료" : `${MIN - photos.length}장 더 필요`}
-          </span>
-        </div>
-        <div
-          style={{
-            height: 4,
-            borderRadius: 999,
-            background: C.divider,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              height: "100%",
-              borderRadius: 999,
-              background: `linear-gradient(90deg, ${C.accentMid}, ${C.accent})`,
-              width: `${Math.min((photos.length / MIN) * 100, 100)}%`,
-              transition: "width 0.4s",
-            }}
-          />
-        </div>
-      </div>
+      {photos.length > 0 && (
+        <span style={{ fontSize: 14, color: C.textSecondary, fontWeight: 600 }}>
+          {photos.length}장 선택됨
+        </span>
+      )}
       {photos.length > 0 && (
         <>
           <div
@@ -2111,9 +2327,7 @@ function Step4({ onNext, photos, setPhotos, coverIdx, setCoverIdx }) {
         disabled={!valid}
         icon={<ArrowRight size={20} strokeWidth={2} />}
       >
-        {valid
-          ? `${photos.length}장으로 앨범 만들기`
-          : `${MIN}장 이상 필요해요`}
+        {valid ? `${photos.length}장으로 다음` : "사진을 한 장 골라주세요"}
       </PrimaryBtn>
     </div>
   );
@@ -2122,18 +2336,240 @@ function Step4({ onNext, photos, setPhotos, coverIdx, setCoverIdx }) {
 // ─────────────────────────────────────────────
 // Step 5 — Final Review + Customization
 // ─────────────────────────────────────────────
+const BGM_OPTIONS = [
+  { id: "piano", label: "잔잔한 피아노" },
+  { id: "strings", label: "따뜻한 현악" },
+  { id: "none", label: "음악 없이" },
+];
+
+// ─────────────────────────────────────────────
+// Step 5 — Add-ons (optional)
+// ─────────────────────────────────────────────
 function Step5({
+  onNext,
+  subtitle,
+  setSubtitle,
+  bgm,
+  setBgm,
+  externalLink,
+  setExternalLink,
+  guestbookEnabled,
+  setGuestbookEnabled,
+}) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 32 }}>
+      <div>
+        <StepLabel>추가 기능</StepLabel>
+        <PageTitle>
+          더 추가하고 싶은
+          <br />
+          기능이 있나요?
+        </PageTitle>
+        <PageSub>전부 선택 사항이에요, 원하는 것만 골라주세요</PageSub>
+      </div>
+
+      {/* Life quote */}
+      <div>
+        <SectionHead>
+          나의 인생 문장{" "}
+          <span style={{ fontWeight: 400, color: C.textMuted }}>(선택)</span>
+        </SectionHead>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "4px 0",
+            borderBottom: `2px solid ${C.divider}`,
+          }}
+        >
+          <Type size={16} color={C.textMuted} strokeWidth={1.5} />
+          <input
+            value={subtitle}
+            onChange={(e) => setSubtitle(e.target.value)}
+            placeholder="예: 가장 중요한 건 눈에 보이지 않는다."
+            className="w-full outline-none"
+            style={{
+              fontSize: 17,
+              fontWeight: 500,
+              padding: "12px 0",
+              background: "transparent",
+              color: C.textPrimary,
+              border: "none",
+              width: "100%",
+              letterSpacing: "-0.2px",
+            }}
+            onFocus={(e) => {
+              const p = e.currentTarget.parentElement;
+              if (p) p.style.borderBottomColor = C.accent;
+            }}
+            onBlur={(e) => {
+              const p = e.currentTarget.parentElement;
+              if (p) p.style.borderBottomColor = C.divider;
+            }}
+          />
+        </div>
+        <div
+          style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}
+        >
+          {["현재를 즐겨라", "오늘도 감사한 하루"].map((ex) => (
+            <Chip
+              key={ex}
+              onClick={() => setSubtitle(ex)}
+              active={subtitle === ex}
+            >
+              {ex}
+            </Chip>
+          ))}
+        </div>
+      </div>
+
+      {/* BGM */}
+      <div>
+        <SectionHead>
+          배경 음악{" "}
+          <span style={{ fontWeight: 400, color: C.textMuted }}>(선택)</span>
+        </SectionHead>
+        <div style={{ position: "relative" }}>
+          <select
+            value={bgm || ""}
+            onChange={(e) => setBgm(e.target.value)}
+            style={{
+              width: "100%",
+              appearance: "none",
+              padding: "14px 44px 14px 16px",
+              borderRadius: 14,
+              background: C.raised,
+              border: `1.5px solid ${bgm ? C.accent : C.divider}`,
+              color: bgm ? C.accent : C.textMuted,
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            <option value="">음악 선택 안 함</option>
+            {BGM_OPTIONS.map((b) => (
+              <option key={b.id} value={b.id}>
+                {b.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDown
+            size={18}
+            color={C.textMuted}
+            strokeWidth={2}
+            style={{
+              position: "absolute",
+              right: 16,
+              top: "50%",
+              transform: "translateY(-50%)",
+              pointerEvents: "none",
+            }}
+          />
+        </div>
+      </div>
+
+      {/* External link */}
+      <div>
+        <SectionHead>
+          외부 링크{" "}
+          <span style={{ fontWeight: 400, color: C.textMuted }}>(선택)</span>
+        </SectionHead>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "4px 0",
+            borderBottom: `2px solid ${C.divider}`,
+          }}
+        >
+          <input
+            value={externalLink}
+            onChange={(e) => setExternalLink(e.target.value)}
+            placeholder="예: 유튜브 영상, 블로그 글 주소"
+            className="w-full outline-none"
+            style={{
+              fontSize: 17,
+              fontWeight: 500,
+              padding: "12px 0",
+              background: "transparent",
+              color: C.textPrimary,
+              border: "none",
+              width: "100%",
+              letterSpacing: "-0.2px",
+            }}
+            onFocus={(e) => {
+              const p = e.currentTarget.parentElement;
+              if (p) p.style.borderBottomColor = C.accent;
+            }}
+            onBlur={(e) => {
+              const p = e.currentTarget.parentElement;
+              if (p) p.style.borderBottomColor = C.divider;
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Guestbook toggle */}
+      <button
+        onClick={() => setGuestbookEnabled(!guestbookEnabled)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 12,
+          padding: "14px 16px",
+          borderRadius: 14,
+          background: C.raised,
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        <span>
+          <span
+            style={{
+              display: "block",
+              fontSize: 15,
+              fontWeight: 600,
+              color: C.textPrimary,
+            }}
+          >
+            방명록 사용
+          </span>
+          <span style={{ fontSize: 13, color: C.textMuted }}>
+            가족들이 앨범에 메시지를 남길 수 있어요
+          </span>
+        </span>
+        <Toggle
+          checked={guestbookEnabled}
+          onChange={setGuestbookEnabled}
+        />
+      </button>
+
+      <PrimaryBtn onClick={onNext} icon={<ArrowRight size={20} strokeWidth={2} />}>
+        다음
+      </PrimaryBtn>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// Step 6 — Final Review
+// ─────────────────────────────────────────────
+function Step6({
   info,
   milestones,
   photos,
   coverIdx,
   story,
   subtitle,
-  setSubtitle,
   onRestart,
 }) {
   const [creating, setCreating] = useState(false);
   const [done, setDone] = useState(false);
+  const [kakaoConsent, setKakaoConsent] = useState(false);
   const filled = milestones.filter((m) => m.year && m.event);
 
   if (done) {
@@ -2380,66 +2816,10 @@ function Step5({
         </div>
       )}
 
-      {/* Subtitle */}
-      <div>
-        <SectionHead>
-          나의 인생 문장{" "}
-          <span style={{ fontWeight: 400, color: C.textMuted }}>(선택)</span>
-        </SectionHead>
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            padding: "4px 0",
-            borderBottom: `2px solid ${C.divider}`,
-          }}
-        >
-          <Type size={16} color={C.textMuted} strokeWidth={1.5} />
-          <input
-            value={subtitle}
-            onChange={(e) => setSubtitle(e.target.value)}
-            placeholder="예: 가장 중요한 건 눈에 보이지 않는다."
-            className="w-full outline-none"
-            style={{
-              fontSize: 17,
-              fontWeight: 500,
-              padding: "12px 0",
-              background: "transparent",
-              color: C.textPrimary,
-              border: "none",
-              width: "100%",
-              letterSpacing: "-0.2px",
-            }}
-            onFocus={(e) => {
-              const p = e.currentTarget.parentElement;
-              if (p) p.style.borderBottomColor = C.accent;
-            }}
-            onBlur={(e) => {
-              const p = e.currentTarget.parentElement;
-              if (p) p.style.borderBottomColor = C.divider;
-            }}
-          />
-        </div>
-        <div
-          style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}
-        >
-          {["현재를 즐겨라", "오늘도 감사한 하루"].map((ex) => (
-            <Chip
-              key={ex}
-              onClick={() => setSubtitle(ex)}
-              active={subtitle === ex}
-            >
-              {ex}
-            </Chip>
-          ))}
-        </div>
-      </div>
-
       {/* Cover strip */}
       {photos.length > 0 && (
         <div>
-          <SectionHead>표지 사진</SectionHead>
+          <SectionHead>사진</SectionHead>
           <div
             style={{
               display: "flex",
@@ -2528,6 +2908,41 @@ function Step5({
         </div>
       )}
 
+      {/* Kakao consent */}
+      <button
+        onClick={() => setKakaoConsent(!kakaoConsent)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 12,
+          padding: "14px 16px",
+          borderRadius: 14,
+          background: C.raised,
+          border: "none",
+          cursor: "pointer",
+          textAlign: "left",
+        }}
+      >
+        <span
+          style={{
+            width: 20,
+            height: 20,
+            borderRadius: 6,
+            border: `2px solid ${kakaoConsent ? C.accent : C.divider}`,
+            background: kakaoConsent ? C.accent : "transparent",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          {kakaoConsent && <Check size={13} color="#fff" strokeWidth={3} />}
+        </span>
+        <span style={{ fontSize: 14, color: C.textPrimary, lineHeight: 1.5 }}>
+          완성된 앨범 링크를 카카오톡으로 받는 것에 동의해요
+        </span>
+      </button>
+
       {creating ? (
         <div
           style={{
@@ -2554,6 +2969,7 @@ function Step5({
               setDone(true);
             }, 3000);
           }}
+          disabled={!kakaoConsent}
           icon={<Sparkles size={18} strokeWidth={1.5} />}
         >
           앨범 생성하기
@@ -2578,6 +2994,9 @@ export default function SimpleAlbumPage() {
   const [coverIdx, setCoverIdx] = useState(0);
   const [story, setStory] = useState("");
   const [subtitle, setSubtitle] = useState("");
+  const [bgm, setBgm] = useState(null);
+  const [externalLink, setExternalLink] = useState("");
+  const [guestbookEnabled, setGuestbookEnabled] = useState(false);
   const backRef = useRef(null);
 
   function next() {
@@ -2607,6 +3026,9 @@ export default function SimpleAlbumPage() {
     setCoverIdx(0);
     setStory("");
     setSubtitle("");
+    setBgm(null);
+    setExternalLink("");
+    setGuestbookEnabled(false);
     setStep(0);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -2734,17 +3156,30 @@ export default function SimpleAlbumPage() {
             setPhotos={setPhotos}
             coverIdx={coverIdx}
             setCoverIdx={setCoverIdx}
+            backRef={backRef}
           />
         )}
         {step === 5 && (
           <Step5
+            onNext={next}
+            subtitle={subtitle}
+            setSubtitle={setSubtitle}
+            bgm={bgm}
+            setBgm={setBgm}
+            externalLink={externalLink}
+            setExternalLink={setExternalLink}
+            guestbookEnabled={guestbookEnabled}
+            setGuestbookEnabled={setGuestbookEnabled}
+          />
+        )}
+        {step === 6 && (
+          <Step6
             info={info}
             milestones={milestones}
             photos={photos}
             coverIdx={coverIdx}
             story={story}
             subtitle={subtitle}
-            setSubtitle={setSubtitle}
             onRestart={restart}
           />
         )}

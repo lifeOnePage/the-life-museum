@@ -13,6 +13,7 @@ import {
 import { authedFetch } from "@/app/utils/authedFetch";
 import { getProxiedUrl } from "@/app/lib/proxy";
 import { useChunkedGrid } from "@/app/lib/useChunkedGrid";
+import LazyImage from "@/app/lib/LazyImage";
 import CoverImageGenerator from "./CoverImageGenerator";
 import ScrollToTopButton from "./ScrollToTopButton";
 
@@ -20,24 +21,6 @@ const API_URL = "https://the-life-museum-backend-production.up.railway.app";
 
 // 사진이 이 수 이상이면 스크롤 부담이 커져 "맨 위로" 플로팅 버튼을 노출한다.
 const SCROLL_TOP_FAB_MIN_PHOTOS = 15;
-
-function LazyImage({ src, alt, className }) {
-  const [loaded, setLoaded] = useState(false);
-  return (
-    <div className="relative h-full w-full">
-      {!loaded && (
-        <div className="absolute inset-0 animate-pulse rounded-md bg-[#d5d5d7]" />
-      )}
-      <img
-        src={src}
-        alt={alt}
-        loading="lazy"
-        onLoad={() => setLoaded(true)}
-        className={`${className} transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`}
-      />
-    </div>
-  );
-}
 
 const T = {
   ko: {

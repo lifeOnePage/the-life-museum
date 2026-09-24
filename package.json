@@ -55,6 +55,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.16",
+    "agentation": "^3.0.2",
     "autoprefixer": "^10.4.21",
     "jsdoc": "^4.0.5",
     "postcss": "^8.5.6",

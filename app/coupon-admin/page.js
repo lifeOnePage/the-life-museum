@@ -77,7 +77,7 @@ export default function CouponAdminPage() {
   return (
     <div style={pageStyle}>
       <div style={{ width: "100%", maxWidth: 720 }}>
-        <h1 style={{ fontSize: 22, margin: "0 0 20px" }}>크레딧 쿠폰 발행</h1>
+        <h1 style={{ fontSize: 22, margin: "0 0 20px" }}>쿠폰 발행</h1>
         {token ? (
           <AdminPanel token={token} onExpired={onExpired} />
         ) : (
@@ -144,8 +144,9 @@ function PasswordGate({ onAuthed }) {
 
 // ── 발행 패널 ───────────────────────────────────────────────
 function AdminPanel({ token, onExpired }) {
-  const [couponType, setCouponType] = useState("credit"); // "credit" | "discount"
-  const [creditAmount, setCreditAmount] = useState(1000);
+  const [couponType, setCouponType] = useState("album"); // "album" | "credit" | "discount"
+  const [albumCount, setAlbumCount] = useState(1);
+  const [creditAmount, setCreditAmount] = useState(1);
   const [discountPercent, setDiscountPercent] = useState(10);
   const [maxDiscount, setMaxDiscount] = useState(5000);
   const [count, setCount] = useState(1);
@@ -200,12 +201,22 @@ function AdminPanel({ token, onExpired }) {
         method: "POST",
         body: JSON.stringify({
           coupon_type: couponType,
-          ...(couponType === "credit"
-            ? { credit_amount: Number(creditAmount) }
-            : {
-                discount_percent: Number(discountPercent),
-                max_discount_krw: Number(maxDiscount),
-              }),
+          ...(couponType === "album"
+            ? {
+                // 입력 min/max와 동일한 [1, 100] 정수로 클램프 — 범위 밖/소수
+                // 입력이 BE 400·Pydantic 422(detail 배열 → "[object Object]" 표시)로
+                // 이어지는 것 방지
+                credit_amount: Math.min(
+                  100,
+                  Math.max(1, Math.floor(Number(albumCount) || 1)),
+                ),
+              }
+            : couponType === "credit"
+              ? { credit_amount: Number(creditAmount) }
+              : {
+                  discount_percent: Number(discountPercent),
+                  max_discount_krw: Number(maxDiscount),
+                }),
           count: Number(count),
           prefix,
         }),
@@ -237,6 +248,7 @@ function AdminPanel({ token, onExpired }) {
         {/* 타입 선택 */}
         <div style={{ display: "flex", gap: 8 }}>
           {[
+            { key: "album", label: "앨범 생성권 쿠폰 (즉시 지급)" },
             { key: "credit", label: "크레딧 쿠폰 (즉시 지급)" },
             { key: "discount", label: "할인 쿠폰 (결제 시 % 차감)" },
           ].map((tab) => (
@@ -259,11 +271,23 @@ function AdminPanel({ token, onExpired }) {
           style={{
             display: "grid",
             gridTemplateColumns:
-              couponType === "credit" ? "1fr 1fr 1fr" : "1fr 1fr 1fr 1fr",
+              couponType === "discount" ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr",
             gap: 8,
           }}
         >
-          {couponType === "credit" ? (
+          {couponType === "album" ? (
+            <label style={{ display: "grid", gap: 4, fontSize: 13, color: "#bbb" }}>
+              앨범 생성권 개수
+              <input
+                type="number"
+                min={1}
+                max={100}
+                style={inputStyle}
+                value={albumCount}
+                onChange={(e) => setAlbumCount(e.target.value)}
+              />
+            </label>
+          ) : couponType === "credit" ? (
             <label style={{ display: "grid", gap: 4, fontSize: 13, color: "#bbb" }}>
               크레딧 수량
               <input
@@ -370,7 +394,9 @@ function AdminPanel({ token, onExpired }) {
                 <span style={{ color: "#7dff9b" }}>
                   {c.coupon_type === "discount"
                     ? `${c.discount_percent}% 할인 (최대 ₩${(c.max_discount_krw || 0).toLocaleString()})`
-                    : `${(c.credit_amount || 0).toLocaleString()} 크레딧`}
+                    : c.coupon_type === "album"
+                      ? `앨범 생성권 ${(c.credit_amount || 0).toLocaleString()}개`
+                      : `${(c.credit_amount || 0).toLocaleString()} 크레딧`}
                 </span>
               </div>
             ))}
@@ -425,7 +451,9 @@ function AdminPanel({ token, onExpired }) {
                   <td style={{ padding: "6px 8px" }}>
                     {c.coupon_type === "discount"
                       ? `${c.discount_percent}% (최대 ₩${(c.max_discount_krw || 0).toLocaleString()})`
-                      : `${(c.credit_amount || 0).toLocaleString()} 크레딧`}
+                      : c.coupon_type === "album"
+                        ? `앨범 생성권 ${(c.credit_amount || 0).toLocaleString()}개`
+                        : `${(c.credit_amount || 0).toLocaleString()} 크레딧`}
                   </td>
                   <td
                     style={{

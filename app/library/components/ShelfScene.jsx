@@ -93,9 +93,9 @@ export default function ShelfScene({
     [windowWidth],
   );
 
-  // ROWS: 데스크탑은 2 고정, 모바일은 앨범 수에 따라 동적 확장 (최대 5)
+  // ROWS: 앨범 수에 따라 동적 확장 (최소 2단) — 전체 앨범을 항상 표시
   const ROWS = useMemo(() => {
-    return Math.min(5, Math.max(2, Math.ceil(albums.length / COLS)));
+    return Math.max(2, Math.ceil(albums.length / COLS));
   }, [windowWidth, albums.length, COLS]);
 
   // 씬 y-offset: 헤더/필터 UI와 겹침 방지
